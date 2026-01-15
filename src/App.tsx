@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Senseis from "./pages/Senseis";
 import Classes from "./pages/Classes";
+import Attendance from "./pages/Attendance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +30,7 @@ const App = () => (
             <Route path="/senseis" element={<Senseis />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/schedule" element={<Dashboard />} />
-            <Route path="/attendance" element={<Dashboard />} />
+            <Route path="/attendance" element={<Attendance />} />
             <Route path="/payments" element={<Dashboard />} />
             <Route path="/graduations" element={<Dashboard />} />
             <Route path="*" element={<NotFound />} />
