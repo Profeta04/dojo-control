@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -7,25 +7,46 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Calendar, UserPlus } from "lucide-react";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { differenceInYears, parse, isValid } from "date-fns";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 });
 
-const signupSchema = loginSchema.extend({
+const signupSchema = z.object({
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
   confirmPassword: z.string(),
+  birthDate: z.string().min(1, "Data de nascimento é obrigatória"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
 });
 
+const guardianSchema = z.object({
+  guardianEmail: z.string().email("Email do responsável inválido"),
+  guardianPassword: z.string().min(6, "A senha do responsável deve ter pelo menos 6 caracteres"),
+  guardianConfirmPassword: z.string(),
+}).refine((data) => data.guardianPassword === data.guardianConfirmPassword, {
+  message: "As senhas do responsável não coincidem",
+  path: ["guardianConfirmPassword"],
+});
+
+function calculateAge(birthDateStr: string): number | null {
+  const birthDate = parse(birthDateStr, "yyyy-MM-dd", new Date());
+  if (!isValid(birthDate)) return null;
+  return differenceInYears(new Date(), birthDate);
+}
+
 export default function Auth() {
   const navigate = useNavigate();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, signIn, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -38,12 +59,35 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [signupBirthDate, setSignupBirthDate] = useState("");
+  
+  // Guardian form
+  const [addGuardian, setAddGuardian] = useState(false);
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianPassword, setGuardianPassword] = useState("");
+  const [guardianConfirmPassword, setGuardianConfirmPassword] = useState("");
+
+  const isMinor = useMemo(() => {
+    if (!signupBirthDate) return false;
+    const age = calculateAge(signupBirthDate);
+    return age !== null && age < 18;
+  }, [signupBirthDate]);
 
   useEffect(() => {
     if (user && !authLoading) {
       navigate("/dashboard");
     }
   }, [user, authLoading, navigate]);
+
+  // Reset guardian fields when not a minor
+  useEffect(() => {
+    if (!isMinor) {
+      setAddGuardian(false);
+      setGuardianEmail("");
+      setGuardianPassword("");
+      setGuardianConfirmPassword("");
+    }
+  }, [isMinor]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,42 +122,157 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const result = signupSchema.safeParse({
+    // Validate student data
+    const studentResult = signupSchema.safeParse({
       email: signupEmail,
       password: signupPassword,
       name: signupName,
       confirmPassword: signupConfirmPassword,
+      birthDate: signupBirthDate,
     });
     
-    if (!result.success) {
+    if (!studentResult.success) {
       toast({
         title: "Erro de validação",
-        description: result.error.errors[0].message,
+        description: studentResult.error.errors[0].message,
         variant: "destructive",
       });
       return;
     }
 
-    setLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName);
-    setLoading(false);
-
-    if (error) {
-      let message = "Erro ao criar conta";
-      if (error.message.includes("already registered")) {
-        message = "Este email já está cadastrado";
-      }
-      toast({
-        title: "Erro",
-        description: message,
-        variant: "destructive",
+    // Validate guardian data if minor wants to add guardian
+    if (isMinor && addGuardian) {
+      const guardianResult = guardianSchema.safeParse({
+        guardianEmail,
+        guardianPassword,
+        guardianConfirmPassword,
       });
-    } else {
+      
+      if (!guardianResult.success) {
+        toast({
+          title: "Erro de validação",
+          description: guardianResult.error.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if guardian email is the same as student email
+      if (guardianEmail === signupEmail) {
+        toast({
+          title: "Erro de validação",
+          description: "O email do responsável deve ser diferente do email do aluno",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+    
+    try {
+      let guardianUserId: string | null = null;
+
+      // Create guardian account first if needed
+      if (isMinor && addGuardian) {
+        const { data: guardianData, error: guardianError } = await supabase.auth.signUp({
+          email: guardianEmail,
+          password: guardianPassword,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              name: `Responsável de ${signupName}`,
+            },
+          },
+        });
+
+        if (guardianError) {
+          let message = "Erro ao criar conta do responsável";
+          if (guardianError.message.includes("already registered")) {
+            message = "O email do responsável já está cadastrado";
+          }
+          toast({
+            title: "Erro",
+            description: message,
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
+        guardianUserId = guardianData.user?.id || null;
+      }
+
+      // Create student account
+      const { data: studentData, error: studentError } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: signupName,
+          },
+        },
+      });
+
+      if (studentError) {
+        let message = "Erro ao criar conta";
+        if (studentError.message.includes("already registered")) {
+          message = "Este email já está cadastrado";
+        }
+        toast({
+          title: "Erro",
+          description: message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Update student profile with birth_date and guardian info
+      if (studentData.user) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            birth_date: signupBirthDate,
+            guardian_user_id: guardianUserId,
+            guardian_email: isMinor && addGuardian ? guardianEmail : null,
+          })
+          .eq("user_id", studentData.user.id);
+
+        if (updateError) {
+          console.error("Error updating profile:", updateError);
+        }
+      }
+
       toast({
         title: "Conta criada com sucesso!",
-        description: "Seu cadastro está pendente de aprovação por um Sensei.",
+        description: isMinor && addGuardian 
+          ? "Seu cadastro e do responsável estão pendentes de aprovação." 
+          : "Seu cadastro está pendente de aprovação por um Sensei.",
+      });
+
+      // Clear form
+      setSignupName("");
+      setSignupEmail("");
+      setSignupPassword("");
+      setSignupConfirmPassword("");
+      setSignupBirthDate("");
+      setGuardianEmail("");
+      setGuardianPassword("");
+      setGuardianConfirmPassword("");
+      setAddGuardian(false);
+
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+        variant: "destructive",
       });
     }
+    
+    setLoading(false);
   };
 
   if (authLoading) {
@@ -201,6 +360,29 @@ export default function Auth() {
                     required
                   />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="signup-birthdate">Data de nascimento</Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-birthdate"
+                      type="date"
+                      value={signupBirthDate}
+                      onChange={(e) => setSignupBirthDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      required
+                      className="pr-10"
+                    />
+                    <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  </div>
+                  {signupBirthDate && (
+                    <p className="text-xs text-muted-foreground">
+                      Idade: {calculateAge(signupBirthDate)} anos
+                      {isMinor && " (menor de idade)"}
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
@@ -234,6 +416,68 @@ export default function Auth() {
                     required
                   />
                 </div>
+
+                {/* Guardian section for minors */}
+                {isMinor && (
+                  <div className="border border-border rounded-lg p-4 space-y-4 bg-muted/30">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="add-guardian"
+                        checked={addGuardian}
+                        onCheckedChange={(checked) => setAddGuardian(checked === true)}
+                      />
+                      <Label htmlFor="add-guardian" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        Adicionar conta de responsável
+                      </Label>
+                    </div>
+                    
+                    {addGuardian && (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          O responsável poderá acessar e gerenciar a conta do aluno menor de idade.
+                        </p>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guardian-email">Email do responsável</Label>
+                          <Input
+                            id="guardian-email"
+                            type="email"
+                            placeholder="responsavel@email.com"
+                            value={guardianEmail}
+                            onChange={(e) => setGuardianEmail(e.target.value)}
+                            required={addGuardian}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guardian-password">Senha do responsável</Label>
+                          <Input
+                            id="guardian-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={guardianPassword}
+                            onChange={(e) => setGuardianPassword(e.target.value)}
+                            required={addGuardian}
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="guardian-confirm-password">Confirmar senha do responsável</Label>
+                          <Input
+                            id="guardian-confirm-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={guardianConfirmPassword}
+                            onChange={(e) => setGuardianConfirmPassword(e.target.value)}
+                            required={addGuardian}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Cadastrar

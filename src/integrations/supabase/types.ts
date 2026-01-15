@@ -317,8 +317,11 @@ export type Database = {
           approved_by: string | null
           avatar_url: string | null
           belt_grade: Database["public"]["Enums"]["belt_grade"] | null
+          birth_date: string | null
           created_at: string
           email: string
+          guardian_email: string | null
+          guardian_user_id: string | null
           id: string
           name: string
           phone: string | null
@@ -333,8 +336,11 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           belt_grade?: Database["public"]["Enums"]["belt_grade"] | null
+          birth_date?: string | null
           created_at?: string
           email: string
+          guardian_email?: string | null
+          guardian_user_id?: string | null
           id?: string
           name: string
           phone?: string | null
@@ -349,8 +355,11 @@ export type Database = {
           approved_by?: string | null
           avatar_url?: string | null
           belt_grade?: Database["public"]["Enums"]["belt_grade"] | null
+          birth_date?: string | null
           created_at?: string
           email?: string
+          guardian_email?: string | null
+          guardian_user_id?: string | null
           id?: string
           name?: string
           phone?: string | null
