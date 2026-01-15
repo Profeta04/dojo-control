@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
   { title: "Agenda", href: "/schedule", icon: <CalendarDays className="h-5 w-5" /> },
   { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-5 w-5" />, roles: ["admin", "sensei"] },
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, roles: ["admin", "sensei"] },
+  { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, roles: ["student"] },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" /> },
 ];
 
