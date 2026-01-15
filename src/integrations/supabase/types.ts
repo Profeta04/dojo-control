@@ -274,6 +274,7 @@ export type Database = {
           id: string
           notes: string | null
           paid_date: string | null
+          receipt_url: string | null
           reference_month: string
           registered_by: string
           status: Database["public"]["Enums"]["payment_status"]
@@ -287,6 +288,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_date?: string | null
+          receipt_url?: string | null
           reference_month: string
           registered_by: string
           status?: Database["public"]["Enums"]["payment_status"]
@@ -300,6 +302,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_date?: string | null
+          receipt_url?: string | null
           reference_month?: string
           registered_by?: string
           status?: Database["public"]["Enums"]["payment_status"]

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -16,6 +16,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
   CreditCard, 
@@ -24,7 +31,11 @@ import {
   AlertTriangle,
   Copy,
   QrCode,
-  Mail
+  Mail,
+  Upload,
+  Loader2,
+  FileImage,
+  ExternalLink
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
@@ -44,7 +55,13 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 export default function StudentPaymentsPage() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [copied, setCopied] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   // Fetch student's payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -79,6 +96,83 @@ export default function StudentPaymentsPage() {
         description: "Não foi possível copiar a chave Pix.",
         variant: "destructive",
       });
+    }
+  };
+
+  const openUploadDialog = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setUploadDialogOpen(true);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedPayment || !user) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Tipo de arquivo inválido",
+        description: "Envie uma imagem (JPG, PNG, WEBP) ou PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O arquivo deve ter no máximo 5MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/${selectedPayment.id}-${Date.now()}.${fileExt}`;
+
+      // Upload file
+      const { error: uploadError } = await supabase.storage
+        .from("payment-receipts")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("payment-receipts")
+        .getPublicUrl(fileName);
+
+      // Update payment with receipt URL
+      const { error: updateError } = await supabase
+        .from("payments")
+        .update({ receipt_url: urlData.publicUrl })
+        .eq("id", selectedPayment.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Comprovante enviado!",
+        description: "Seu comprovante foi enviado e está aguardando verificação.",
+      });
+
+      setUploadDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["student-payments", user.id] });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar",
+        description: error.message || "Não foi possível enviar o comprovante.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -149,8 +243,7 @@ export default function StudentPaymentsPage() {
 
           <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
             <p className="text-sm text-amber-800 dark:text-amber-200">
-              <strong>Importante:</strong> Após realizar o pagamento, aguarde a confirmação pelo sistema. 
-              O status será atualizado automaticamente após a verificação.
+              <strong>Importante:</strong> Após realizar o pagamento, envie o comprovante clicando no botão "Enviar Comprovante" na tabela abaixo.
             </p>
           </div>
         </CardContent>
@@ -190,6 +283,7 @@ export default function StudentPaymentsPage() {
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Comprovante</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,6 +308,36 @@ export default function StudentPaymentsPage() {
                           {PAYMENT_STATUS_LABELS[payment.status]}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-right">
+                        {payment.receipt_url ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                          >
+                            <a 
+                              href={payment.receipt_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="gap-1"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              Ver
+                            </a>
+                          </Button>
+                        ) : payment.status !== "pago" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openUploadDialog(payment)}
+                          >
+                            <Upload className="h-4 w-4 mr-1" />
+                            Enviar
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -229,6 +353,61 @@ export default function StudentPaymentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Enviar Comprovante
+            </DialogTitle>
+            <DialogDescription>
+              {selectedPayment && (
+                <>Pagamento de {formatMonth(selectedPayment.reference_month)} - {formatCurrency(selectedPayment.amount)}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div 
+              className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground">Enviando...</p>
+                </div>
+              ) : (
+                <>
+                  <FileImage className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm font-medium">Clique para selecionar o comprovante</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    JPG, PNG, WEBP ou PDF (máx. 5MB)
+                  </p>
+                </>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              className="hidden"
+              onChange={handleFileSelect}
+              disabled={uploading}
+            />
+
+            <div className="p-3 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                💡 Envie uma foto ou print do comprovante de pagamento Pix. 
+                Após a verificação, o status será atualizado.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
