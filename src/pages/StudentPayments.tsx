@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { GuardianPasswordGate } from "@/components/auth/GuardianPasswordGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PaymentStatus, PAYMENT_STATUS_LABELS } from "@/lib/constants";
 
@@ -52,7 +53,7 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 };
 
 export default function StudentPaymentsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { settings } = useDojoSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -62,8 +63,34 @@ export default function StudentPaymentsPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [guardianVerified, setGuardianVerified] = useState(false);
   
   const pixKey = settings.pix_key || "Chave Pix não configurada";
+
+  // Check if user is a minor with a guardian
+  const isMinorWithGuardian = useMemo(() => {
+    if (!profile?.birth_date || !profile?.guardian_email) return false;
+    const birthDate = new Date(profile.birth_date);
+    const age = differenceInYears(new Date(), birthDate);
+    return age < 18;
+  }, [profile]);
+
+  // Check if guardian verification is still valid (stored in sessionStorage)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("guardian_verified");
+    if (stored) {
+      try {
+        const { expiry } = JSON.parse(stored);
+        if (Date.now() < expiry) {
+          setGuardianVerified(true);
+        } else {
+          sessionStorage.removeItem("guardian_verified");
+        }
+      } catch {
+        sessionStorage.removeItem("guardian_verified");
+      }
+    }
+  }, []);
 
   // Fetch student's payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -231,6 +258,20 @@ export default function StudentPaymentsPage() {
 
   if (authLoading || paymentsLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  }
+
+  // Show guardian password gate for minors with guardian
+  if (isMinorWithGuardian && !guardianVerified) {
+    return (
+      <DashboardLayout>
+        <GuardianPasswordGate
+          guardianEmail={profile?.guardian_email || ""}
+          onSuccess={() => setGuardianVerified(true)}
+          title="Área de Pagamentos"
+          description="Acesso restrito para maiores de idade"
+        />
+      </DashboardLayout>
+    );
   }
 
   return (
