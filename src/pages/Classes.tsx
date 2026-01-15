@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -37,34 +36,38 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, GraduationCap, Users, Clock, UserPlus, UserMinus, Loader2, Calendar, Edit, Trash2 } from "lucide-react";
+import { Plus, GraduationCap, Users, Clock, UserPlus, UserMinus, Loader2, Edit, Trash2, CalendarDays, X } from "lucide-react";
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
+import { format, isSameDay, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Class = Tables<"classes">;
 type Profile = Tables<"profiles">;
+type ClassSchedule = Tables<"class_schedule">;
 
 interface ClassWithDetails extends Class {
   sensei?: Profile;
   students?: Profile[];
   studentCount?: number;
+  schedules?: ClassSchedule[];
 }
 
 const classSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   description: z.string().optional(),
-  schedule: z.string().min(3, "Horário é obrigatório"),
   max_students: z.number().min(1, "Mínimo 1 aluno").optional(),
 });
 
 export default function Classes() {
-  const navigate = useNavigate();
-  const { user, canManageStudents, isAdmin, isSensei, loading: authLoading } = useAuth();
+  const { user, canManageStudents, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<ClassWithDetails | null>(null);
@@ -73,10 +76,15 @@ export default function Classes() {
   // Form state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [schedule, setSchedule] = useState("");
   const [maxStudents, setMaxStudents] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [editMode, setEditMode] = useState(false);
+
+  // Schedule form state
+  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
+  const [startTime, setStartTime] = useState("19:00");
+  const [endTime, setEndTime] = useState("20:00");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Fetch classes with details
   const { data: classes, isLoading } = useQuery({
@@ -90,17 +98,14 @@ export default function Classes() {
       if (error) throw error;
       if (!classesData) return [];
 
-      // Fetch additional details for each class
       const classesWithDetails: ClassWithDetails[] = await Promise.all(
         classesData.map(async (cls) => {
-          // Get sensei info
           const { data: senseiProfile } = await supabase
             .from("profiles")
             .select("*")
             .eq("user_id", cls.sensei_id)
             .single();
 
-          // Get enrolled students
           const { data: enrollments } = await supabase
             .from("class_students")
             .select("student_id")
@@ -116,11 +121,20 @@ export default function Classes() {
             students = studentProfiles || [];
           }
 
+          // Fetch schedules for this class
+          const { data: schedules } = await supabase
+            .from("class_schedule")
+            .select("*")
+            .eq("class_id", cls.id)
+            .gte("date", format(startOfMonth(new Date()), "yyyy-MM-dd"))
+            .order("date");
+
           return {
             ...cls,
             sensei: senseiProfile || undefined,
             students,
             studentCount: students.length,
+            schedules: schedules || [],
           };
         })
       );
@@ -130,13 +144,12 @@ export default function Classes() {
     enabled: !!user,
   });
 
-  // Fetch available students (approved, not in selected class)
+  // Fetch available students
   const { data: availableStudents } = useQuery({
     queryKey: ["available-students", selectedClass?.id],
     queryFn: async () => {
       if (!selectedClass) return [];
 
-      // Get students with student role
       const { data: studentRoles } = await supabase
         .from("user_roles")
         .select("user_id")
@@ -146,7 +159,6 @@ export default function Classes() {
 
       const studentUserIds = studentRoles.map((r) => r.user_id);
 
-      // Get approved profiles
       const { data: profiles } = await supabase
         .from("profiles")
         .select("*")
@@ -155,7 +167,6 @@ export default function Classes() {
 
       if (!profiles) return [];
 
-      // Filter out students already enrolled in this class
       const enrolledIds = selectedClass.students?.map((s) => s.user_id) || [];
       return profiles.filter((p) => !enrolledIds.includes(p.user_id));
     },
@@ -165,20 +176,49 @@ export default function Classes() {
   const resetForm = () => {
     setName("");
     setDescription("");
-    setSchedule("");
     setMaxStudents("");
     setEditMode(false);
     setSelectedClass(null);
+  };
+
+  const resetScheduleForm = () => {
+    setSelectedDates([]);
+    setStartTime("19:00");
+    setEndTime("20:00");
+    setCurrentMonth(new Date());
   };
 
   const openEditDialog = (cls: ClassWithDetails) => {
     setSelectedClass(cls);
     setName(cls.name);
     setDescription(cls.description || "");
-    setSchedule(cls.schedule);
     setMaxStudents(cls.max_students?.toString() || "");
     setEditMode(true);
     setDialogOpen(true);
+  };
+
+  const openScheduleDialog = (cls: ClassWithDetails) => {
+    setSelectedClass(cls);
+    // Pre-select existing schedule dates
+    const existingDates = cls.schedules?.map((s) => new Date(s.date + "T00:00:00")) || [];
+    setSelectedDates(existingDates);
+    if (cls.schedules && cls.schedules.length > 0) {
+      setStartTime(cls.schedules[0].start_time.slice(0, 5));
+      setEndTime(cls.schedules[0].end_time.slice(0, 5));
+    }
+    setScheduleDialogOpen(true);
+  };
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    
+    setSelectedDates((prev) => {
+      const exists = prev.some((d) => isSameDay(d, date));
+      if (exists) {
+        return prev.filter((d) => !isSameDay(d, date));
+      }
+      return [...prev, date];
+    });
   };
 
   const handleCreateOrUpdateClass = async (e: React.FormEvent) => {
@@ -187,7 +227,6 @@ export default function Classes() {
     const validation = classSchema.safeParse({
       name,
       description: description || undefined,
-      schedule,
       max_students: maxStudents ? parseInt(maxStudents) : undefined,
     });
 
@@ -206,7 +245,7 @@ export default function Classes() {
       const classData = {
         name,
         description: description || null,
-        schedule,
+        schedule: "Ver calendário", // Placeholder - actual schedule in class_schedule table
         max_students: maxStudents ? parseInt(maxStudents) : null,
         sensei_id: user!.id,
         is_active: true,
@@ -220,31 +259,70 @@ export default function Classes() {
 
         if (error) throw error;
 
-        toast({
-          title: "Turma atualizada!",
-          description: `${name} foi atualizada com sucesso.`,
-        });
+        toast({ title: "Turma atualizada!", description: `${name} foi atualizada.` });
       } else {
         const { error } = await supabase.from("classes").insert(classData);
-
         if (error) throw error;
-
-        toast({
-          title: "Turma criada!",
-          description: `${name} foi criada com sucesso.`,
-        });
+        toast({ title: "Turma criada!", description: `${name} foi criada. Agora defina os dias de aula.` });
       }
 
       setDialogOpen(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
     } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Erro ao salvar turma", variant: "destructive" });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    if (!selectedClass) return;
+
+    setFormLoading(true);
+
+    try {
+      // Get current month range for deletion
+      const monthStart = format(startOfMonth(currentMonth), "yyyy-MM-dd");
+      const monthEnd = format(endOfMonth(currentMonth), "yyyy-MM-dd");
+
+      // Delete existing schedules for this month
+      await supabase
+        .from("class_schedule")
+        .delete()
+        .eq("class_id", selectedClass.id)
+        .gte("date", monthStart)
+        .lte("date", monthEnd);
+
+      // Filter dates for current month only
+      const datesInMonth = selectedDates.filter(
+        (d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth)
+      );
+
+      // Insert new schedules
+      if (datesInMonth.length > 0) {
+        const schedules = datesInMonth.map((date) => ({
+          class_id: selectedClass.id,
+          date: format(date, "yyyy-MM-dd"),
+          start_time: startTime,
+          end_time: endTime,
+          created_by: user!.id,
+        }));
+
+        const { error } = await supabase.from("class_schedule").insert(schedules);
+        if (error) throw error;
+      }
+
       toast({
-        title: "Erro",
-        description: error.message || "Erro ao salvar turma",
-        variant: "destructive",
+        title: "Agenda atualizada!",
+        description: `${datesInMonth.length} dia(s) agendado(s) para ${format(currentMonth, "MMMM yyyy", { locale: ptBR })}.`,
       });
+
+      setScheduleDialogOpen(false);
+      resetScheduleForm();
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Erro ao salvar agenda", variant: "destructive" });
     } finally {
       setFormLoading(false);
     }
@@ -263,20 +341,12 @@ export default function Classes() {
 
       if (error) throw error;
 
-      toast({
-        title: "Aluno matriculado!",
-        description: "Aluno adicionado à turma com sucesso.",
-      });
-
+      toast({ title: "Aluno matriculado!", description: "Aluno adicionado à turma." });
       setEnrollDialogOpen(false);
       setSelectedStudentId("");
       queryClient.invalidateQueries({ queryKey: ["classes"] });
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao matricular aluno",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
       setFormLoading(false);
     }
@@ -286,26 +356,16 @@ export default function Classes() {
     if (!selectedClass) return;
 
     try {
-      const { error } = await supabase
+      await supabase
         .from("class_students")
         .delete()
         .eq("class_id", selectedClass.id)
         .eq("student_id", studentUserId);
 
-      if (error) throw error;
-
-      toast({
-        title: "Aluno removido",
-        description: "Aluno removido da turma.",
-      });
-
+      toast({ title: "Aluno removido", description: "Aluno removido da turma." });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao remover aluno",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     }
   };
 
@@ -315,52 +375,40 @@ export default function Classes() {
     setFormLoading(true);
 
     try {
-      // First remove all enrollments
-      await supabase
-        .from("class_students")
-        .delete()
-        .eq("class_id", selectedClass.id);
-
-      // Then delete the class
-      const { error } = await supabase
-        .from("classes")
-        .delete()
-        .eq("id", selectedClass.id);
+      await supabase.from("class_students").delete().eq("class_id", selectedClass.id);
+      await supabase.from("class_schedule").delete().eq("class_id", selectedClass.id);
+      const { error } = await supabase.from("classes").delete().eq("id", selectedClass.id);
 
       if (error) throw error;
 
-      toast({
-        title: "Turma excluída",
-        description: `${selectedClass.name} foi excluída.`,
-      });
-
+      toast({ title: "Turma excluída", description: `${selectedClass.name} foi excluída.` });
       setDeleteDialogOpen(false);
       setSelectedClass(null);
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao excluir turma",
-        variant: "destructive",
-      });
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
       setFormLoading(false);
     }
   };
 
+  const getUpcomingDates = (schedules: ClassSchedule[] | undefined) => {
+    if (!schedules) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return schedules
+      .filter((s) => new Date(s.date) >= today && !s.is_cancelled)
+      .slice(0, 3);
+  };
+
   if (authLoading || isLoading) {
-    return (
-      <DashboardLayout>
-        <LoadingSpinner />
-      </DashboardLayout>
-    );
+    return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
   }
 
   return (
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <PageHeader title="Turmas" description="Gerencie as turmas do dojo" />
+        <PageHeader title="Turmas" description="Gerencie as turmas e seus horários" />
         {canManageStudents && (
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
@@ -379,49 +427,18 @@ export default function Classes() {
               <form onSubmit={handleCreateOrUpdateClass} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome da turma *</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ex: Turma Iniciante"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="schedule">Horário *</Label>
-                  <Input
-                    id="schedule"
-                    value={schedule}
-                    onChange={(e) => setSchedule(e.target.value)}
-                    placeholder="Ex: Segunda e Quarta, 19h-20h"
-                    required
-                  />
+                  <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Turma Iniciante" required />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maxStudents">Máximo de alunos</Label>
-                  <Input
-                    id="maxStudents"
-                    type="number"
-                    min="1"
-                    value={maxStudents}
-                    onChange={(e) => setMaxStudents(e.target.value)}
-                    placeholder="Deixe vazio para sem limite"
-                  />
+                  <Input id="maxStudents" type="number" min="1" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} placeholder="Sem limite" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description">Descrição</Label>
-                  <Textarea
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Descrição opcional da turma"
-                    rows={3}
-                  />
+                  <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição opcional" rows={3} />
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>
-                    Cancelar
-                  </Button>
+                  <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
                   <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={formLoading}>
                     {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                     {editMode ? "Salvar" : "Criar"}
@@ -435,159 +452,200 @@ export default function Classes() {
 
       {classes && classes.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {classes.map((cls) => (
-            <Card key={cls.id} className={`${!cls.is_active ? "opacity-60" : ""}`}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <GraduationCap className="h-5 w-5 text-accent" />
-                      {cls.name}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      {cls.sensei?.name ? `Sensei: ${cls.sensei.name}` : ""}
-                    </CardDescription>
-                  </div>
-                  <Badge variant={cls.is_active ? "default" : "secondary"}>
-                    {cls.is_active ? "Ativa" : "Inativa"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  {cls.schedule}
-                </div>
-
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  {cls.studentCount} aluno{cls.studentCount !== 1 ? "s" : ""}
-                  {cls.max_students && ` / ${cls.max_students} vagas`}
-                </div>
-
-                {cls.description && (
-                  <p className="text-sm text-muted-foreground">{cls.description}</p>
-                )}
-
-                {/* Enrolled Students List */}
-                {cls.students && cls.students.length > 0 && (
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Alunos matriculados:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {cls.students.slice(0, 5).map((student) => (
-                        <Badge key={student.id} variant="outline" className="text-xs">
-                          {student.name?.split(" ")[0]}
-                          {canManageStudents && (
-                            <button
-                              onClick={() => {
-                                setSelectedClass(cls);
-                                handleRemoveStudent(student.user_id);
-                              }}
-                              className="ml-1 hover:text-destructive"
-                            >
-                              <UserMinus className="h-3 w-3" />
-                            </button>
-                          )}
-                        </Badge>
-                      ))}
-                      {cls.students.length > 5 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{cls.students.length - 5}
-                        </Badge>
-                      )}
+          {classes.map((cls) => {
+            const upcomingDates = getUpcomingDates(cls.schedules);
+            return (
+              <Card key={cls.id} className={`${!cls.is_active ? "opacity-60" : ""}`}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <GraduationCap className="h-5 w-5 text-accent" />
+                        {cls.name}
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {cls.sensei?.name ? `Sensei: ${cls.sensei.name}` : ""}
+                      </CardDescription>
                     </div>
+                    <Badge variant={cls.is_active ? "default" : "secondary"}>
+                      {cls.is_active ? "Ativa" : "Inativa"}
+                    </Badge>
                   </div>
-                )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Upcoming Schedule */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <CalendarDays className="h-4 w-4 text-accent" />
+                      Próximas aulas
+                    </div>
+                    {upcomingDates.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {upcomingDates.map((schedule) => (
+                          <Badge key={schedule.id} variant="outline" className="text-xs">
+                            {format(new Date(schedule.date + "T00:00:00"), "dd/MM")} - {schedule.start_time.slice(0, 5)}
+                          </Badge>
+                        ))}
+                        {(cls.schedules?.length || 0) > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{(cls.schedules?.length || 0) - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">Nenhuma aula agendada</p>
+                    )}
+                  </div>
 
-                {/* Actions */}
-                {canManageStudents && (
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => {
-                        setSelectedClass(cls);
-                        setEnrollDialogOpen(true);
-                      }}
-                    >
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      Matricular
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => openEditDialog(cls)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        setSelectedClass(cls);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Users className="h-4 w-4" />
+                    {cls.studentCount} aluno{cls.studentCount !== 1 ? "s" : ""}
+                    {cls.max_students && ` / ${cls.max_students} vagas`}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+
+                  {cls.description && <p className="text-sm text-muted-foreground">{cls.description}</p>}
+
+                  {/* Students */}
+                  {cls.students && cls.students.length > 0 && (
+                    <div className="pt-2 border-t border-border">
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Alunos:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {cls.students.slice(0, 5).map((student) => (
+                          <Badge key={student.id} variant="outline" className="text-xs">
+                            {student.name?.split(" ")[0]}
+                            {canManageStudents && (
+                              <button onClick={() => { setSelectedClass(cls); handleRemoveStudent(student.user_id); }} className="ml-1 hover:text-destructive">
+                                <UserMinus className="h-3 w-3" />
+                              </button>
+                            )}
+                          </Badge>
+                        ))}
+                        {cls.students.length > 5 && <Badge variant="outline" className="text-xs">+{cls.students.length - 5}</Badge>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {canManageStudents && (
+                    <div className="flex flex-wrap gap-2 pt-2">
+                      <Button size="sm" variant="outline" onClick={() => openScheduleDialog(cls)}>
+                        <CalendarDays className="h-4 w-4 mr-1" />
+                        Agendar
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedClass(cls); setEnrollDialogOpen(true); }}>
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Matricular
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => openEditDialog(cls)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => { setSelectedClass(cls); setDeleteDialogOpen(true); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card>
           <CardContent className="py-12 text-center">
             <GraduationCap className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
             <p className="text-muted-foreground">Nenhuma turma cadastrada ainda.</p>
-            {canManageStudents && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Clique em "Nova Turma" para criar a primeira.
-              </p>
-            )}
+            {canManageStudents && <p className="text-sm text-muted-foreground mt-1">Clique em "Nova Turma" para criar.</p>}
           </CardContent>
         </Card>
       )}
 
-      {/* Enroll Student Dialog */}
+      {/* Schedule Dialog */}
+      <Dialog open={scheduleDialogOpen} onOpenChange={(open) => { setScheduleDialogOpen(open); if (!open) resetScheduleForm(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Agendar Aulas - {selectedClass?.name}</DialogTitle>
+            <DialogDescription>
+              Selecione os dias do mês e defina o horário das aulas
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Horário de início</Label>
+                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Horário de término</Label>
+                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <Calendar
+                mode="multiple"
+                selected={selectedDates}
+                onSelect={(dates) => setSelectedDates(dates || [])}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                locale={ptBR}
+                className="rounded-md border"
+              />
+            </div>
+
+            <div className="text-sm text-muted-foreground text-center">
+              {selectedDates.filter((d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth)).length} dia(s) selecionado(s) em {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+            </div>
+
+            {selectedDates.length > 0 && (
+              <div className="flex flex-wrap gap-1 max-h-24 overflow-auto">
+                {selectedDates
+                  .filter((d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth))
+                  .sort((a, b) => a.getTime() - b.getTime())
+                  .map((date) => (
+                    <Badge key={date.toISOString()} variant="secondary" className="text-xs">
+                      {format(date, "dd/MM")}
+                      <button onClick={() => handleDateSelect(date)} className="ml-1 hover:text-destructive">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => { setScheduleDialogOpen(false); resetScheduleForm(); }}>Cancelar</Button>
+              <Button className="bg-accent hover:bg-accent/90" onClick={handleSaveSchedule} disabled={formLoading}>
+                {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Salvar Agenda
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enroll Dialog */}
       <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Matricular Aluno</DialogTitle>
-            <DialogDescription>
-              Selecione um aluno para matricular em {selectedClass?.name}
-            </DialogDescription>
+            <DialogDescription>Selecione um aluno para {selectedClass?.name}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Aluno</Label>
-              <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um aluno" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableStudents && availableStudents.length > 0 ? (
-                    availableStudents.map((student) => (
-                      <SelectItem key={student.id} value={student.user_id}>
-                        {student.name}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <div className="p-2 text-sm text-muted-foreground text-center">
-                      Nenhum aluno disponível
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-accent hover:bg-accent/90"
-                onClick={handleEnrollStudent}
-                disabled={!selectedStudentId || formLoading}
-              >
+            <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
+              <SelectTrigger><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
+              <SelectContent>
+                {availableStudents && availableStudents.length > 0 ? (
+                  availableStudents.map((student) => (
+                    <SelectItem key={student.id} value={student.user_id}>{student.name}</SelectItem>
+                  ))
+                ) : (
+                  <div className="p-2 text-sm text-muted-foreground text-center">Nenhum aluno disponível</div>
+                )}
+              </SelectContent>
+            </Select>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>Cancelar</Button>
+              <Button className="bg-accent hover:bg-accent/90" onClick={handleEnrollStudent} disabled={!selectedStudentId || formLoading}>
                 {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Matricular
               </Button>
@@ -596,23 +654,16 @@ export default function Classes() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Turma</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir a turma "{selectedClass?.name}"? 
-              Esta ação não pode ser desfeita e todos os alunos serão desmatriculados.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Tem certeza que deseja excluir "{selectedClass?.name}"? Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={formLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteClass}
-              className="bg-destructive hover:bg-destructive/90"
-              disabled={formLoading}
-            >
+            <AlertDialogAction onClick={handleDeleteClass} className="bg-destructive hover:bg-destructive/90" disabled={formLoading}>
               {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Excluir
             </AlertDialogAction>

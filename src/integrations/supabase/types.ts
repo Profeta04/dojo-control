@@ -55,6 +55,50 @@ export type Database = {
           },
         ]
       }
+      class_schedule: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string
+          date: string
+          end_time: string
+          id: string
+          is_cancelled: boolean | null
+          notes: string | null
+          start_time: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by: string
+          date: string
+          end_time: string
+          id?: string
+          is_cancelled?: boolean | null
+          notes?: string | null
+          start_time: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string
+          date?: string
+          end_time?: string
+          id?: string
+          is_cancelled?: boolean | null
+          notes?: string | null
+          start_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_schedule_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_students: {
         Row: {
           class_id: string
