@@ -45,7 +45,9 @@ import {
   AlertTriangle,
   Receipt,
   Users,
-  Bell
+  Bell,
+  FileImage,
+  ExternalLink
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
@@ -598,6 +600,7 @@ export default function PaymentsPage() {
                   <TableHead>Vencimento</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Comprovante</TableHead>
                   {canManageStudents && <TableHead className="text-right">Ações</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -628,6 +631,28 @@ export default function PaymentsPage() {
                           <StatusIcon className="h-3 w-3" />
                           {PAYMENT_STATUS_LABELS[payment.status]}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {payment.receipt_url ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            asChild
+                            className="gap-1 text-primary"
+                          >
+                            <a 
+                              href={payment.receipt_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <FileImage className="h-4 w-4" />
+                              Ver
+                              <ExternalLink className="h-3 w-3" />
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
                       </TableCell>
                       {canManageStudents && (
                         <TableCell className="text-right">
