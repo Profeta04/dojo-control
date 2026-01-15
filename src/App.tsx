@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Senseis from "./pages/Senseis";
 import Classes from "./pages/Classes";
+import Schedule from "./pages/Schedule";
 import Attendance from "./pages/Attendance";
 import Graduations from "./pages/Graduations";
 import Payments from "./pages/Payments";
@@ -32,7 +33,7 @@ const App = () => (
             <Route path="/students" element={<Students />} />
             <Route path="/senseis" element={<Senseis />} />
             <Route path="/classes" element={<Classes />} />
-            <Route path="/schedule" element={<Dashboard />} />
+            <Route path="/schedule" element={<Schedule />} />
             <Route path="/attendance" element={<Attendance />} />
             <Route path="/payments" element={<Payments />} />
             <Route path="/mensalidade" element={<StudentPayments />} />
