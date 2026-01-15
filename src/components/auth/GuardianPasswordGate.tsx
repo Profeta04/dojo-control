@@ -44,7 +44,20 @@ export function GuardianPasswordGate({
         body: { guardianEmail, password },
       });
 
-      if (error || !data?.success) {
+      // Handle edge function errors
+      if (error) {
+        console.error("Edge function error:", error);
+        toast({
+          title: "Senha incorreta",
+          description: "A senha do responsável está incorreta. Por favor, tente novamente.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Check if verification was successful
+      if (!data?.success) {
         toast({
           title: "Senha incorreta",
           description: data?.error || "A senha do responsável está incorreta.",
@@ -64,11 +77,18 @@ export function GuardianPasswordGate({
       });
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Verification error:", error);
+      
+      // Parse error message if it's a FunctionsHttpError
+      let errorMessage = "Ocorreu um erro ao verificar a senha.";
+      if (error?.message?.includes("401")) {
+        errorMessage = "Senha incorreta. Por favor, tente novamente.";
+      }
+      
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao verificar a senha.",
+        title: "Erro de verificação",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
