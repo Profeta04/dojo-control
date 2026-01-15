@@ -1,1 +1,4 @@
 project_id = "yrrpdarpmuwpcrzxkorx"
+
+[functions.verify-guardian-password]
+verify_jwt = false
