@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -44,8 +45,6 @@ import { PaymentStatus, PAYMENT_STATUS_LABELS } from "@/lib/constants";
 
 type Payment = Tables<"payments">;
 
-const PIX_KEY = "etorevasconcelos36@gmail.com";
-
 const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | "destructive"; icon: typeof CheckCircle2 }> = {
   pago: { variant: "default", icon: CheckCircle2 },
   pendente: { variant: "secondary", icon: Clock },
@@ -54,6 +53,7 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 
 export default function StudentPaymentsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { settings } = useDojoSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +62,8 @@ export default function StudentPaymentsPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [uploading, setUploading] = useState(false);
+  
+  const pixKey = settings.pix_key || "Chave Pix não configurada";
 
   // Fetch student's payments
   const { data: payments, isLoading: paymentsLoading } = useQuery({
@@ -82,8 +84,17 @@ export default function StudentPaymentsPage() {
   });
 
   const handleCopyPix = async () => {
+    if (!settings.pix_key) {
+      toast({
+        title: "Chave Pix não configurada",
+        description: "Entre em contato com a administração do dojo.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      await navigator.clipboard.writeText(PIX_KEY);
+      await navigator.clipboard.writeText(settings.pix_key);
       setCopied(true);
       toast({
         title: "Chave Pix copiada!",
@@ -244,7 +255,7 @@ export default function StudentPaymentsPage() {
           <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
             <Mail className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             <code className="flex-1 text-sm font-mono break-all">
-              {PIX_KEY}
+              {pixKey}
             </code>
             <Button
               variant={copied ? "default" : "outline"}

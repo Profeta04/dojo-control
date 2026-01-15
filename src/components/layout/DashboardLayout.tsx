@@ -1,6 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -46,6 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, roles, signOut, isAdmin, isSensei } = useAuth();
+  const { settings } = useDojoSettings();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -67,7 +69,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <span className="text-xl">🥋</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg text-sidebar-foreground">Dojo Manager</h1>
+            <h1 className="font-bold text-lg text-sidebar-foreground">{settings.dojo_name}</h1>
             <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
               <span className="text-lg">🥋</span>
             </div>
-            <span className="font-bold text-sidebar-foreground">Dojo Manager</span>
+            <span className="font-bold text-sidebar-foreground">{settings.dojo_name}</span>
           </div>
           <div className="flex items-center gap-2">
             <NotificationBell />
