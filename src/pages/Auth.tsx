@@ -184,9 +184,9 @@ export default function Auth() {
           <TabsContent value="signup">
             <form onSubmit={handleSignup}>
               <CardHeader>
-                <CardTitle>Criar conta</CardTitle>
+                <CardTitle>Cadastro de Aluno</CardTitle>
                 <CardDescription>
-                  Cadastre-se para participar do dojo
+                  Preencha seus dados para se cadastrar como aluno do dojo
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
