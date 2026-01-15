@@ -155,6 +155,31 @@ export default function StudentPaymentsPage() {
 
       if (updateError) throw updateError;
 
+      // Get student profile for notification
+      const { data: studentProfile } = await supabase
+        .from("profiles")
+        .select("name")
+        .eq("user_id", user.id)
+        .single();
+
+      // Notify admins and senseis
+      const { data: adminSenseiRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["admin", "sensei"]);
+
+      if (adminSenseiRoles && adminSenseiRoles.length > 0) {
+        const notifications = adminSenseiRoles.map((role) => ({
+          user_id: role.user_id,
+          title: "📎 Novo Comprovante Recebido",
+          message: `${studentProfile?.name || "Um aluno"} enviou um comprovante de pagamento referente a ${formatMonth(selectedPayment.reference_month)}.`,
+          type: "payment",
+          related_id: selectedPayment.id,
+        }));
+
+        await supabase.from("notifications").insert(notifications);
+      }
+
       toast({
         title: "Comprovante enviado!",
         description: "Seu comprovante foi enviado e está aguardando verificação.",
