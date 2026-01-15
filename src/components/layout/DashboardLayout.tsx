@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   UserCog,
+  Settings,
 } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -38,6 +39,7 @@ const navItems: NavItem[] = [
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, roles: ["admin", "sensei"] },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, roles: ["student"] },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" /> },
+  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, roles: ["admin"] },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
