@@ -44,7 +44,8 @@ import {
   Clock, 
   AlertTriangle,
   Receipt,
-  Users
+  Users,
+  Bell
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
@@ -76,6 +77,7 @@ export default function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<PaymentWithStudent | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [batchLoading, setBatchLoading] = useState(false);
+  const [notifyLoading, setNotifyLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
 
   // Form state
@@ -386,6 +388,70 @@ export default function PaymentsPage() {
     }
   };
 
+  const handleSendNotifications = async () => {
+    if (!user) return;
+    
+    setNotifyLoading(true);
+
+    try {
+      // Get pending and overdue payments
+      const paymentsToNotify = payments?.filter(
+        (p) => p.status === "pendente" || p.status === "atrasado"
+      );
+
+      if (!paymentsToNotify || paymentsToNotify.length === 0) {
+        toast({
+          title: "Nenhum pagamento pendente",
+          description: "Não há pagamentos pendentes ou atrasados para notificar.",
+        });
+        return;
+      }
+
+      // Group by student to avoid duplicate notifications
+      const studentPayments = new Map<string, PaymentWithStudent[]>();
+      paymentsToNotify.forEach((p) => {
+        const existing = studentPayments.get(p.student_id) || [];
+        existing.push(p);
+        studentPayments.set(p.student_id, existing);
+      });
+
+      const notifications = Array.from(studentPayments.entries()).map(
+        ([studentId, studentPaymentsList]) => {
+          const isOverdue = studentPaymentsList.some((p) => p.status === "atrasado");
+          const totalAmount = studentPaymentsList.reduce((acc, p) => acc + p.amount, 0);
+          const monthsList = studentPaymentsList
+            .map((p) => formatMonth(p.reference_month))
+            .join(", ");
+
+          return {
+            user_id: studentId,
+            title: isOverdue ? "⚠️ Pagamento em Atraso" : "💳 Lembrete de Pagamento",
+            message: `Você possui ${studentPaymentsList.length} pagamento(s) pendente(s) referente(s) a ${monthsList}. Valor total: ${formatCurrency(totalAmount)}`,
+            type: isOverdue ? "warning" : "payment",
+            related_id: studentPaymentsList[0].id,
+          };
+        }
+      );
+
+      const { error } = await supabase.from("notifications").insert(notifications);
+
+      if (error) throw error;
+
+      toast({
+        title: "Notificações enviadas!",
+        description: `${notifications.length} aluno(s) foram notificados sobre pagamentos pendentes.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao enviar notificações",
+        variant: "destructive",
+      });
+    } finally {
+      setNotifyLoading(false);
+    }
+  };
+
   const openEditDialog = (payment: PaymentWithStudent) => {
     setSelectedPayment(payment);
     setEditDialogOpen(true);
@@ -425,7 +491,19 @@ export default function PaymentsPage() {
         <PageHeader title="Pagamentos" description="Controle de mensalidades dos alunos" />
         
         {canManageStudents && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              variant="outline" 
+              onClick={handleSendNotifications}
+              disabled={notifyLoading || (stats.pendente + stats.atrasado) === 0}
+            >
+              {notifyLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Bell className="h-4 w-4 mr-2" />
+              )}
+              Enviar Cobranças
+            </Button>
             <Button variant="outline" onClick={() => setBatchDialogOpen(true)}>
               <Users className="h-4 w-4 mr-2" />
               Gerar em Lote

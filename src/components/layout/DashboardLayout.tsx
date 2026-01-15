@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,13 @@ import {
   ClipboardCheck,
   CreditCard,
   Trophy,
-  Settings,
   LogOut,
   Menu,
   X,
   UserCog,
 } from "lucide-react";
-import { useState } from "react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 interface NavItem {
   title: string;
@@ -144,14 +143,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             <span className="font-bold text-sidebar-foreground">Dojo Manager</span>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-sidebar-foreground"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-sidebar-foreground"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -175,7 +177,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen">
-        <div className="p-4 lg:p-8">{children}</div>
+        {/* Desktop notification bell */}
+        <div className="hidden lg:flex justify-end p-4 pb-0">
+          <NotificationBell />
+        </div>
+        <div className="p-4 lg:px-8 lg:pt-2 lg:pb-8">{children}</div>
       </main>
     </div>
   );
