@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
+import { ExportReportButton } from "@/components/dashboard/ExportReportButton";
 import { AlertCircle } from "lucide-react";
 
 export default function Dashboard() {
@@ -29,10 +30,13 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <PageHeader
-        title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
-        description="Bem-vindo ao sistema de gestão do dojo"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <PageHeader
+          title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
+          description="Bem-vindo ao sistema de gestão do dojo"
+        />
+        {canManageStudents && <ExportReportButton />}
+      </div>
 
       {/* Pending Approval Warning */}
       {isPending && (
