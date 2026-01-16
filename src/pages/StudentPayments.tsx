@@ -36,9 +36,9 @@ import {
   Mail,
   Upload,
   Loader2,
-  FileImage,
-  ExternalLink
+  FileImage
 } from "lucide-react";
+import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -180,15 +180,10 @@ export default function StudentPaymentsPage() {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("payment-receipts")
-        .getPublicUrl(fileName);
-
-      // Update payment with receipt URL
+      // Store just the file path (not a public URL) for signed URL generation
       const { error: updateError } = await supabase
         .from("payments")
-        .update({ receipt_url: urlData.publicUrl })
+        .update({ receipt_url: fileName })
         .eq("id", selectedPayment.id);
 
       if (updateError) throw updateError;
@@ -387,21 +382,7 @@ export default function StudentPaymentsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {payment.receipt_url ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                          >
-                            <a 
-                              href={payment.receipt_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="gap-1"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              Ver
-                            </a>
-                          </Button>
+                          <ReceiptViewButton receiptUrl={payment.receipt_url} />
                         ) : payment.status !== "pago" ? (
                           <Button
                             variant="outline"

@@ -47,9 +47,9 @@ import {
   Receipt,
   Users,
   Bell,
-  FileImage,
-  ExternalLink
+  FileImage
 } from "lucide-react";
+import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -640,22 +640,10 @@ export default function PaymentsPage() {
                       </TableCell>
                       <TableCell>
                         {payment.receipt_url ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="gap-1 text-primary"
-                          >
-                            <a 
-                              href={payment.receipt_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                            >
-                              <FileImage className="h-4 w-4" />
-                              Ver
-                              <ExternalLink className="h-3 w-3" />
-                            </a>
-                          </Button>
+                          <ReceiptViewButton 
+                            receiptUrl={payment.receipt_url} 
+                            className="text-primary"
+                          />
                         ) : (
                           <span className="text-sm text-muted-foreground">-</span>
                         )}
