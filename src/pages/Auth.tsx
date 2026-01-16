@@ -12,6 +12,13 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { differenceInYears, parse, isValid } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -67,6 +74,11 @@ export default function Auth() {
   const [guardianPassword, setGuardianPassword] = useState("");
   const [guardianConfirmPassword, setGuardianConfirmPassword] = useState("");
 
+  // Forgot password
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+
   const isMinor = useMemo(() => {
     if (!signupBirthDate) return false;
     const age = calculateAge(signupBirthDate);
@@ -88,6 +100,43 @@ export default function Auth() {
       setGuardianConfirmPassword("");
     }
   }, [isMinor]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotPasswordEmail) {
+      toast({
+        title: "Erro",
+        description: "Por favor, insira seu email",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+
+    setForgotPasswordLoading(false);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao enviar o email de recuperação. Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Email enviado!",
+      description: "Verifique sua caixa de entrada para redefinir sua senha.",
+    });
+    setForgotPasswordOpen(false);
+    setForgotPasswordEmail("");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -336,6 +385,14 @@ export default function Auth() {
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Entrar
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-muted-foreground"
+                  onClick={() => setForgotPasswordOpen(true)}
+                >
+                  Esqueci minha senha
+                </Button>
               </CardContent>
             </form>
           </TabsContent>
@@ -490,6 +547,46 @@ export default function Auth() {
           </TabsContent>
         </Tabs>
       </Card>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Recuperar Senha</DialogTitle>
+            <DialogDescription>
+              Insira seu email para receber um link de recuperação de senha.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={forgotPasswordEmail}
+                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setForgotPasswordOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={forgotPasswordLoading}>
+                {forgotPasswordLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Enviar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
