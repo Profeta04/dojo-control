@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useDojoContext } from "./useDojoContext";
 
 interface DojoTheme {
   color_primary: string;
@@ -22,17 +23,22 @@ const DEFAULT_THEME: DojoTheme = {
 };
 
 export function useDojoTheme() {
-  const { profile, user } = useAuth();
+  const { user } = useAuth();
+  const { currentDojoId } = useDojoContext();
+
+  const dojoId = currentDojoId;
 
   const { data: theme, isLoading } = useQuery({
-    queryKey: ["dojo-theme", profile?.dojo_id],
+    queryKey: ["dojo-theme", dojoId],
     queryFn: async () => {
-      if (!profile?.dojo_id) return DEFAULT_THEME;
+      if (!dojoId) return DEFAULT_THEME;
 
       const { data, error } = await supabase
         .from("dojos")
-        .select("color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted")
-        .eq("id", profile.dojo_id)
+        .select(
+          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted"
+        )
+        .eq("id", dojoId)
         .single();
 
       if (error || !data) return DEFAULT_THEME;
@@ -75,3 +81,4 @@ export function useDojoTheme() {
 
   return { theme: theme || DEFAULT_THEME, isLoading };
 }
+

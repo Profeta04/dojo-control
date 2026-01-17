@@ -2,11 +2,19 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Palette, Loader2, RotateCcw } from "lucide-react";
 
 interface ColorPickerProps {
@@ -28,15 +36,39 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
       const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
       const m = lNorm - c / 2;
 
-      let r = 0, g = 0, b = 0;
-      if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
-      else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
-      else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
-      else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
-      else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
-      else { r = c; g = 0; b = x; }
+      let r = 0,
+        g = 0,
+        b = 0;
+      if (h >= 0 && h < 60) {
+        r = c;
+        g = x;
+        b = 0;
+      } else if (h >= 60 && h < 120) {
+        r = x;
+        g = c;
+        b = 0;
+      } else if (h >= 120 && h < 180) {
+        r = 0;
+        g = c;
+        b = x;
+      } else if (h >= 180 && h < 240) {
+        r = 0;
+        g = x;
+        b = c;
+      } else if (h >= 240 && h < 300) {
+        r = x;
+        g = 0;
+        b = c;
+      } else {
+        r = c;
+        g = 0;
+        b = x;
+      }
 
-      const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, "0");
+      const toHex = (n: number) =>
+        Math.round((n + m) * 255)
+          .toString(16)
+          .padStart(2, "0");
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     } catch {
       return "#000000";
@@ -55,16 +87,23 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
 
       const max = Math.max(r, g, b);
       const min = Math.min(r, g, b);
-      let h = 0, s = 0;
+      let h = 0,
+        s = 0;
       const l = (max + min) / 2;
 
       if (max !== min) {
         const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         switch (max) {
-          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-          case g: h = ((b - r) / d + 2) / 6; break;
-          case b: h = ((r - g) / d + 4) / 6; break;
+          case r:
+            h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+            break;
+          case g:
+            h = ((b - r) / d + 2) / 6;
+            break;
+          case b:
+            h = ((r - g) / d + 4) / 6;
+            break;
         }
       }
 
@@ -91,9 +130,7 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
           className="font-mono text-sm"
         />
       </div>
-      {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
-      )}
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
     </div>
   );
 }
@@ -108,21 +145,35 @@ const DEFAULT_COLORS = {
 };
 
 export function DojoThemeSettings() {
-  const { profile } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
+
+  const dojoId = currentDojoId ?? (userDojos.length === 1 ? userDojos[0].id : null);
+  const dojoName = dojoId ? userDojos.find((d) => d.id === dojoId)?.name : undefined;
+
   const [colors, setColors] = useState(DEFAULT_COLORS);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Fetch current dojo colors
+  // Safety: ensure a single-dojo user always has a dojo selected
+  useEffect(() => {
+    if (!currentDojoId && userDojos.length === 1) {
+      setCurrentDojoId(userDojos[0].id);
+    }
+  }, [currentDojoId, userDojos, setCurrentDojoId]);
+
+  // Fetch current dojo colors (based on selected dojo)
   useEffect(() => {
     const fetchColors = async () => {
-      if (!profile?.dojo_id) return;
+      if (!dojoId) return;
 
       const { data } = await supabase
         .from("dojos")
-        .select("color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted")
-        .eq("id", profile.dojo_id)
+        .select(
+          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted"
+        )
+        .eq("id", dojoId)
         .single();
 
       if (data) {
@@ -134,16 +185,20 @@ export function DojoThemeSettings() {
           color_accent: data.color_accent || DEFAULT_COLORS.color_accent,
           color_muted: data.color_muted || DEFAULT_COLORS.color_muted,
         });
+        setHasChanges(false);
       }
     };
 
     fetchColors();
-  }, [profile?.dojo_id]);
+  }, [dojoId]);
 
   const updateColorsMutation = useMutation({
     mutationFn: async () => {
-      if (!profile?.dojo_id) {
-        throw new Error("Você precisa estar vinculado a um dojo para alterar as cores");
+      if (!user) {
+        throw new Error("Você precisa estar logado para alterar as cores");
+      }
+      if (!dojoId) {
+        throw new Error("Selecione um dojo para alterar as cores");
       }
 
       const { error } = await supabase
@@ -156,7 +211,7 @@ export function DojoThemeSettings() {
           color_accent: colors.color_accent,
           color_muted: colors.color_muted,
         })
-        .eq("id", profile.dojo_id);
+        .eq("id", dojoId);
 
       if (error) throw error;
     },
@@ -166,7 +221,11 @@ export function DojoThemeSettings() {
       setHasChanges(false);
     },
     onError: (error: any) => {
-      toast({ title: "Erro ao atualizar cores", description: error.message, variant: "destructive" });
+      toast({
+        title: "Erro ao atualizar cores",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -180,7 +239,7 @@ export function DojoThemeSettings() {
     setHasChanges(true);
   };
 
-  if (!profile?.dojo_id) {
+  if (isLoadingDojos) {
     return (
       <Card>
         <CardHeader>
@@ -190,9 +249,57 @@ export function DojoThemeSettings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">
-            Você precisa estar vinculado a um dojo para personalizar as cores do tema.
-          </p>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Carregando dojos...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!dojoId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" aria-hidden="true" />
+            Personalização de Cores
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {userDojos.length > 0 ? (
+            <>
+              <p className="text-muted-foreground">
+                Selecione um dojo para personalizar as cores do tema.
+              </p>
+              <div className="space-y-2">
+                <Label>Dojo</Label>
+                <Select
+                  value={undefined}
+                  onValueChange={(value) => setCurrentDojoId(value)}
+                >
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder="Selecione o dojo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userDojos.map((dojo) => (
+                      <SelectItem key={dojo.id} value={dojo.id}>
+                        {dojo.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Dica: para editar o tema, escolha um dojo específico (não "Todos").
+                </p>
+              </div>
+            </>
+          ) : (
+            <p className="text-muted-foreground">
+              Nenhum dojo ativo disponível para sua conta.
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -200,14 +307,16 @@ export function DojoThemeSettings() {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-start justify-between">
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle className="flex items-center gap-2">
             <Palette className="h-5 w-5" aria-hidden="true" />
             Personalização de Cores
           </CardTitle>
           <CardDescription>
-            Customize as cores do tema para refletir a identidade visual do seu dojo
+            {dojoName
+              ? `Personalize o tema do dojo: ${dojoName}`
+              : "Customize as cores do tema para refletir a identidade visual do seu dojo"}
           </CardDescription>
         </div>
         <div className="flex gap-2">
@@ -220,7 +329,9 @@ export function DojoThemeSettings() {
             onClick={() => updateColorsMutation.mutate()}
             disabled={!hasChanges || updateColorsMutation.isPending}
           >
-            {updateColorsMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+            {updateColorsMutation.isPending && (
+              <Loader2 className="h-4 w-4 mr-1 animate-spin" aria-hidden="true" />
+            )}
             Salvar
           </Button>
         </div>
@@ -266,17 +377,20 @@ export function DojoThemeSettings() {
         </div>
 
         {/* Preview */}
-        <div className="mt-6 p-4 rounded-lg border" style={{
-          backgroundColor: `hsl(${colors.color_background})`,
-          color: `hsl(${colors.color_foreground})`,
-        }}>
+        <div
+          className="mt-6 p-4 rounded-lg border"
+          style={{
+            backgroundColor: `hsl(${colors.color_background})`,
+            color: `hsl(${colors.color_foreground})`,
+          }}
+        >
           <h4 className="font-semibold mb-2">Pré-visualização</h4>
           <div className="flex flex-wrap gap-2">
             <button
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
                 backgroundColor: `hsl(${colors.color_primary})`,
-                color: "white",
+                color: "hsl(0 0% 100%)",
               }}
             >
               Botão Primário
@@ -294,7 +408,7 @@ export function DojoThemeSettings() {
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
                 backgroundColor: `hsl(${colors.color_accent})`,
-                color: "white",
+                color: "hsl(0 0% 100%)",
               }}
             >
               Botão Destaque
@@ -305,3 +419,4 @@ export function DojoThemeSettings() {
     </Card>
   );
 }
+
