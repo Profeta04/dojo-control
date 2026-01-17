@@ -480,6 +480,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_guardian_of: {
+        Args: { _guardian_id: string; _profile_user_id: string }
+        Returns: boolean
+      }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
