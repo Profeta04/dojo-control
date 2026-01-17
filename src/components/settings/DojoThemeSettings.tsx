@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Palette, Loader2, RotateCcw } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Palette, Loader2, RotateCcw, Moon, Sun } from "lucide-react";
 
 interface ColorPickerProps {
   label: string;
@@ -135,7 +136,7 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
   );
 }
 
-const DEFAULT_COLORS = {
+const DEFAULT_LIGHT_COLORS = {
   color_primary: "0 0% 8%",
   color_secondary: "40 10% 92%",
   color_background: "40 20% 97%",
@@ -144,6 +145,18 @@ const DEFAULT_COLORS = {
   color_muted: "40 10% 92%",
   color_primary_foreground: "0 0% 98%",
   color_secondary_foreground: "0 0% 10%",
+  color_accent_foreground: "0 0% 100%",
+};
+
+const DEFAULT_DARK_COLORS = {
+  color_primary: "0 0% 98%",
+  color_secondary: "0 0% 20%",
+  color_background: "0 0% 7%",
+  color_foreground: "0 0% 98%",
+  color_accent: "4 85% 50%",
+  color_muted: "0 0% 15%",
+  color_primary_foreground: "0 0% 10%",
+  color_secondary_foreground: "0 0% 98%",
   color_accent_foreground: "0 0% 100%",
 };
 
@@ -156,8 +169,11 @@ export function DojoThemeSettings() {
   const dojoId = currentDojoId ?? (userDojos.length === 1 ? userDojos[0].id : null);
   const dojoName = dojoId ? userDojos.find((d) => d.id === dojoId)?.name : undefined;
 
-  const [colors, setColors] = useState(DEFAULT_COLORS);
+  const [darkMode, setDarkMode] = useState(false);
+  const [colors, setColors] = useState(DEFAULT_LIGHT_COLORS);
   const [hasChanges, setHasChanges] = useState(false);
+
+  const getDefaultColors = (isDark: boolean) => isDark ? DEFAULT_DARK_COLORS : DEFAULT_LIGHT_COLORS;
 
   // Safety: ensure a single-dojo user always has a dojo selected
   useEffect(() => {
@@ -174,22 +190,25 @@ export function DojoThemeSettings() {
       const { data } = await supabase
         .from("dojos")
         .select(
-          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted, color_primary_foreground, color_secondary_foreground, color_accent_foreground"
+          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted, color_primary_foreground, color_secondary_foreground, color_accent_foreground, dark_mode"
         )
         .eq("id", dojoId)
         .single();
 
       if (data) {
+        const isDark = data.dark_mode ?? false;
+        const defaults = getDefaultColors(isDark);
+        setDarkMode(isDark);
         setColors({
-          color_primary: data.color_primary || DEFAULT_COLORS.color_primary,
-          color_secondary: data.color_secondary || DEFAULT_COLORS.color_secondary,
-          color_background: data.color_background || DEFAULT_COLORS.color_background,
-          color_foreground: data.color_foreground || DEFAULT_COLORS.color_foreground,
-          color_accent: data.color_accent || DEFAULT_COLORS.color_accent,
-          color_muted: data.color_muted || DEFAULT_COLORS.color_muted,
-          color_primary_foreground: data.color_primary_foreground || DEFAULT_COLORS.color_primary_foreground,
-          color_secondary_foreground: data.color_secondary_foreground || DEFAULT_COLORS.color_secondary_foreground,
-          color_accent_foreground: data.color_accent_foreground || DEFAULT_COLORS.color_accent_foreground,
+          color_primary: data.color_primary || defaults.color_primary,
+          color_secondary: data.color_secondary || defaults.color_secondary,
+          color_background: data.color_background || defaults.color_background,
+          color_foreground: data.color_foreground || defaults.color_foreground,
+          color_accent: data.color_accent || defaults.color_accent,
+          color_muted: data.color_muted || defaults.color_muted,
+          color_primary_foreground: data.color_primary_foreground || defaults.color_primary_foreground,
+          color_secondary_foreground: data.color_secondary_foreground || defaults.color_secondary_foreground,
+          color_accent_foreground: data.color_accent_foreground || defaults.color_accent_foreground,
         });
         setHasChanges(false);
       }
@@ -219,19 +238,20 @@ export function DojoThemeSettings() {
           color_primary_foreground: colors.color_primary_foreground,
           color_secondary_foreground: colors.color_secondary_foreground,
           color_accent_foreground: colors.color_accent_foreground,
+          dark_mode: darkMode,
         })
         .eq("id", dojoId);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      toast({ title: "Cores atualizadas com sucesso!" });
+      toast({ title: "Tema atualizado com sucesso!" });
       queryClient.invalidateQueries({ queryKey: ["dojo-theme"] });
       setHasChanges(false);
     },
     onError: (error: any) => {
       toast({
-        title: "Erro ao atualizar cores",
+        title: "Erro ao atualizar tema",
         description: error.message,
         variant: "destructive",
       });
@@ -243,8 +263,14 @@ export function DojoThemeSettings() {
     setHasChanges(true);
   };
 
+  const handleDarkModeToggle = (enabled: boolean) => {
+    setDarkMode(enabled);
+    setColors(getDefaultColors(enabled));
+    setHasChanges(true);
+  };
+
   const handleReset = () => {
-    setColors(DEFAULT_COLORS);
+    setColors(getDefaultColors(darkMode));
     setHasChanges(true);
   };
 
@@ -346,6 +372,32 @@ export function DojoThemeSettings() {
         </div>
       </CardHeader>
       <CardContent>
+        {/* Dark Mode Toggle */}
+        <div className="mb-6 p-4 rounded-lg border bg-muted/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {darkMode ? (
+                <Moon className="h-5 w-5 text-primary" aria-hidden="true" />
+              ) : (
+                <Sun className="h-5 w-5 text-primary" aria-hidden="true" />
+              )}
+              <div>
+                <Label htmlFor="dark-mode-toggle" className="text-base font-medium">
+                  Modo Escuro
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Alterne entre tema claro e escuro para o dojo
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="dark-mode-toggle"
+              checked={darkMode}
+              onCheckedChange={handleDarkModeToggle}
+            />
+          </div>
+        </div>
+
         {/* Background & Text Colors */}
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-4">Cores de Fundo e Texto</h4>
