@@ -351,7 +351,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
       {/* Secondary Stats */}
       {canManageStudents && (
         <div className="grid gap-4 md:grid-cols-3">
-          <Link to="/attendance">
+          <Link to="/classes">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Registros de Presença</CardTitle>
@@ -377,7 +377,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
             </Card>
           </Link>
 
-          <Link to="/schedule">
+          <Link to="/classes">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Agenda</CardTitle>

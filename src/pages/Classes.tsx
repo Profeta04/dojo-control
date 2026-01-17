@@ -20,33 +20,33 @@ export default function Classes() {
       <PageHeader title="Turmas" description="Gerencie turmas, agenda e presenças" />
 
       <Tabs defaultValue="classes" className="mt-6">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="classes" className="gap-2">
-            <GraduationCap className="h-4 w-4" />
-            <span className="hidden sm:inline">Turmas</span>
+        <TabsList className={`grid w-full ${canManageStudents ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[400px]`}>
+          <TabsTrigger value="classes" className="gap-1.5 text-xs sm:text-sm">
+            <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Turmas</span>
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="gap-2">
-            <CalendarDays className="h-4 w-4" />
-            <span className="hidden sm:inline">Agenda</span>
+          <TabsTrigger value="schedule" className="gap-1.5 text-xs sm:text-sm">
+            <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span>Agenda</span>
           </TabsTrigger>
           {canManageStudents && (
-            <TabsTrigger value="attendance" className="gap-2">
-              <ClipboardCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Presenças</span>
+            <TabsTrigger value="attendance" className="gap-1.5 text-xs sm:text-sm">
+              <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Presenças</span>
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="classes" className="mt-6">
+        <TabsContent value="classes" className="mt-4 sm:mt-6">
           <ClassesTab />
         </TabsContent>
 
-        <TabsContent value="schedule" className="mt-6">
+        <TabsContent value="schedule" className="mt-4 sm:mt-6">
           <ScheduleTab />
         </TabsContent>
 
         {canManageStudents && (
-          <TabsContent value="attendance" className="mt-6">
+          <TabsContent value="attendance" className="mt-4 sm:mt-6">
             <AttendanceTab />
           </TabsContent>
         )}

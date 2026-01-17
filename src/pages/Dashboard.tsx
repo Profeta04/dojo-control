@@ -35,7 +35,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
         <PageHeader
           title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
           description="Bem-vindo ao sistema de gestão do dojo"

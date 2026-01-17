@@ -333,32 +333,32 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary mb-4">
-          <span className="text-4xl">🥋</span>
+      <div className="text-center mb-6 sm:mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary mb-3 sm:mb-4 shadow-lg">
+          <span className="text-3xl sm:text-4xl">🥋</span>
         </div>
-        <h1 className="text-3xl font-bold text-foreground">Dojo Manager</h1>
-        <p className="text-muted-foreground mt-2">Sistema de Gestão do Dojo de Judô</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
+        <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>
       </div>
 
       <Card className="w-full max-w-md border-border shadow-lg">
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Entrar</TabsTrigger>
-            <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-11">
+            <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
+            <TabsTrigger value="signup" className="text-sm">Cadastrar</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
             <form onSubmit={handleLogin}>
-              <CardHeader>
-                <CardTitle>Bem-vindo de volta</CardTitle>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl">Bem-vindo de volta</CardTitle>
                 <CardDescription>
                   Entre com suas credenciais para acessar o sistema
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pb-6">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
                   <Input
@@ -368,6 +368,7 @@ export default function Auth() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -379,16 +380,17 @@ export default function Auth() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
+                <Button type="submit" className="w-full h-10 bg-accent hover:bg-accent/90" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Entrar
                 </Button>
                 <Button
                   type="button"
                   variant="link"
-                  className="w-full text-muted-foreground"
+                  className="w-full text-muted-foreground text-sm"
                   onClick={() => setForgotPasswordOpen(true)}
                 >
                   Esqueci minha senha

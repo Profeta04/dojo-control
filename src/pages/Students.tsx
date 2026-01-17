@@ -239,70 +239,80 @@ export default function Students() {
   const rejectedStudents = students?.filter((s) => s.registration_status === "rejeitado") || [];
 
   const StudentTable = ({ data, showActions = false }: { data: Profile[]; showActions?: boolean }) => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nome</TableHead>
-          <TableHead>Email</TableHead>
-          <TableHead>Faixa</TableHead>
-          <TableHead>Status</TableHead>
-          {showActions && <TableHead className="text-right">Ações</TableHead>}
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((student) => (
-          <TableRow key={student.id}>
-            <TableCell className="font-medium">{student.name}</TableCell>
-            <TableCell>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <Mail className="h-3 w-3" />
-                {student.email}
-              </div>
-            </TableCell>
-            <TableCell>
-              {student.belt_grade ? (
-                <BeltBadge grade={student.belt_grade} />
-              ) : (
-                <span className="text-muted-foreground">Branca</span>
-              )}
-            </TableCell>
-            <TableCell>
-              <RegistrationStatusBadge status={student.registration_status || "pendente"} />
-            </TableCell>
-            {showActions && (
-              <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setActionType("approve");
-                    }}
-                  >
-                    <UserCheck className="h-4 w-4 mr-1" />
-                    Aprovar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setActionType("reject");
-                    }}
-                  >
-                    <UserX className="h-4 w-4 mr-1" />
-                    Rejeitar
-                  </Button>
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="min-w-[120px]">Nome</TableHead>
+            <TableHead className="hidden sm:table-cell">Email</TableHead>
+            <TableHead>Faixa</TableHead>
+            <TableHead className="hidden sm:table-cell">Status</TableHead>
+            {showActions && <TableHead className="text-right">Ações</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((student) => (
+            <TableRow key={student.id}>
+              <TableCell>
+                <div>
+                  <p className="font-medium">{student.name}</p>
+                  <p className="text-xs text-muted-foreground sm:hidden">{student.email}</p>
+                  <div className="sm:hidden mt-1">
+                    <RegistrationStatusBadge status={student.registration_status || "pendente"} />
+                  </div>
                 </div>
               </TableCell>
-            )}
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+              <TableCell className="hidden sm:table-cell">
+                <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                  <Mail className="h-3 w-3 flex-shrink-0" />
+                  <span className="truncate max-w-[180px]">{student.email}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                {student.belt_grade ? (
+                  <BeltBadge grade={student.belt_grade} size="sm" />
+                ) : (
+                  <span className="text-muted-foreground text-sm">Branca</span>
+                )}
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                <RegistrationStatusBadge status={student.registration_status || "pendente"} />
+              </TableCell>
+              {showActions && (
+                <TableCell className="text-right">
+                  <div className="flex justify-end gap-1 sm:gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 px-2 sm:px-3"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setActionType("approve");
+                      }}
+                    >
+                      <UserCheck className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Aprovar</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 sm:px-3"
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setActionType("reject");
+                      }}
+                    >
+                      <UserX className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Rejeitar</span>
+                    </Button>
+                  </div>
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 
   const EmptyState = ({ message }: { message: string }) => (
@@ -324,26 +334,30 @@ export default function Students() {
 
       <Tabs defaultValue="pending" className="mt-6">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="pending" className="gap-2">
-            <Clock className="h-4 w-4" />
-            Pendentes
+        <TabsTrigger value="pending" className="gap-1.5 text-xs sm:text-sm">
+            <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Pendentes</span>
+            <span className="sm:hidden">Pend.</span>
             {pendingStudents.length > 0 && (
-              <span className="ml-1 px-2 py-0.5 bg-warning/20 text-warning-foreground rounded-full text-xs">
+              <span className="ml-1 px-1.5 py-0.5 bg-warning/20 text-warning-foreground rounded-full text-xs">
                 {pendingStudents.length}
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="approved" className="gap-2">
-            <UserCheck className="h-4 w-4" />
-            Aprovados ({approvedStudents.length})
+          <TabsTrigger value="approved" className="gap-1.5 text-xs sm:text-sm">
+            <UserCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Aprovados ({approvedStudents.length})</span>
+            <span className="sm:hidden">Aprov. ({approvedStudents.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="rejected" className="gap-2">
-            <UserX className="h-4 w-4" />
-            Rejeitados ({rejectedStudents.length})
+          <TabsTrigger value="rejected" className="gap-1.5 text-xs sm:text-sm">
+            <UserX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Rejeitados ({rejectedStudents.length})</span>
+            <span className="sm:hidden">Rej. ({rejectedStudents.length})</span>
           </TabsTrigger>
-          <TabsTrigger value="guardians" className="gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            Responsáveis ({guardiansWithMinors?.length || 0})
+          <TabsTrigger value="guardians" className="gap-1.5 text-xs sm:text-sm">
+            <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Responsáveis ({guardiansWithMinors?.length || 0})</span>
+            <span className="sm:hidden">Resp. ({guardiansWithMinors?.length || 0})</span>
           </TabsTrigger>
         </TabsList>
 
@@ -413,63 +427,61 @@ export default function Students() {
               {isLoadingGuardians ? (
                 <LoadingSpinner />
               ) : guardiansWithMinors && guardiansWithMinors.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {guardiansWithMinors.map(({ guardian, minors }) => {
                     const isExpanded = expandedGuardians.has(guardian.id);
                     return (
-                      <Card key={guardian.id} className="border-border/50">
-                        <CardContent className="p-4">
-                          <div
-                            className="flex items-center justify-between cursor-pointer"
-                            onClick={() => toggleGuardianExpanded(guardian.id)}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                <ShieldCheck className="h-5 w-5 text-primary" />
-                              </div>
-                              <div>
-                                <p className="font-medium">{guardian.name}</p>
-                                <p className="text-sm text-muted-foreground">{guardian.email}</p>
-                              </div>
+                      <Card key={guardian.id} className="border-border/50 overflow-hidden">
+                        <div
+                          className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => toggleGuardianExpanded(guardian.id)}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                              <ShieldCheck className="h-5 w-5 text-primary" />
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm text-muted-foreground">
-                                {minors.length} dependente{minors.length !== 1 ? "s" : ""}
-                              </span>
-                              {isExpanded ? (
-                                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                              ) : (
-                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                              )}
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{guardian.name}</p>
+                              <p className="text-sm text-muted-foreground truncate">{guardian.email}</p>
                             </div>
                           </div>
-                          
-                          {isExpanded && (
-                            <div className="mt-4 pl-13 border-t pt-4">
-                              <p className="text-sm font-medium text-muted-foreground mb-3">Dependentes:</p>
-                              <div className="space-y-2">
-                                {minors.map((minor) => (
-                                  <div
-                                    key={minor.id}
-                                    className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <Users className="h-4 w-4 text-muted-foreground" />
-                                      <div>
-                                        <p className="font-medium text-sm">{minor.name}</p>
-                                        <p className="text-xs text-muted-foreground">{minor.email}</p>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      {minor.belt_grade && <BeltBadge grade={minor.belt_grade} />}
-                                      <RegistrationStatusBadge status={minor.registration_status || "pendente"} />
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                              {minors.length} dep.
+                            </span>
+                            {isExpanded ? (
+                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        
+                        {isExpanded && (
+                          <div className="px-4 pb-4 border-t bg-muted/20">
+                            <p className="text-xs font-medium text-muted-foreground py-3">Dependentes:</p>
+                            <div className="space-y-2">
+                              {minors.map((minor) => (
+                                <div
+                                  key={minor.id}
+                                  className="flex items-center justify-between p-3 bg-background rounded-lg border border-border/50"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-sm truncate">{minor.name}</p>
+                                      <p className="text-xs text-muted-foreground truncate">{minor.email}</p>
                                     </div>
                                   </div>
-                                ))}
-                              </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {minor.belt_grade && <BeltBadge grade={minor.belt_grade} size="sm" />}
+                                    <RegistrationStatusBadge status={minor.registration_status || "pendente"} />
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          )}
-                        </CardContent>
+                          </div>
+                        )}
                       </Card>
                     );
                   })}

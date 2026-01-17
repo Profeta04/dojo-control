@@ -136,20 +136,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
-              <span className="text-lg">🥋</span>
-            </div>
-            <span className="font-bold text-sidebar-foreground">{settings.dojo_name}</span>
-          </div>
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border h-14 px-4 flex items-center">
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent">
+              <span className="text-base">🥋</span>
+            </div>
+            <span className="font-semibold text-sm text-sidebar-foreground truncate max-w-[140px]">
+              {settings.dojo_name}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
             <NotificationBell />
             <Button
               variant="ghost"
               size="icon"
-              className="text-sidebar-foreground"
+              className="text-sidebar-foreground h-9 w-9"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -177,12 +179,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen">
-        {/* Desktop notification bell */}
-        <div className="hidden lg:flex justify-end p-4 pb-0">
+      <main className="lg:pl-64 pt-14 lg:pt-0 min-h-screen">
+        {/* Desktop header area */}
+        <div className="hidden lg:flex items-center justify-end h-14 px-8 border-b border-border/50">
           <NotificationBell />
         </div>
-        <div className="p-4 lg:px-8 lg:pt-2 lg:pb-8">{children}</div>
+        <div className="p-4 lg:px-8 lg:py-6">{children}</div>
       </main>
     </div>
   );
