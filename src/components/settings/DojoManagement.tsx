@@ -6,13 +6,37 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Plus, Edit, Trash2, Loader2, Users } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Building2, Plus, Edit, Trash2, Loader2, Users, CreditCard, MessageSquare } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
+
+interface DojoFormData {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  welcome_message: string;
+  monthly_fee: string;
+  payment_due_day: string;
+  pix_key: string;
+}
+
+const initialFormData: DojoFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  address: "",
+  welcome_message: "",
+  monthly_fee: "",
+  payment_due_day: "",
+  pix_key: "",
+};
 
 export function DojoManagement() {
   const { data: dojos, isLoading } = useDojos();
@@ -22,20 +46,19 @@ export function DojoManagement() {
   const [editingDojo, setEditingDojo] = useState<Dojo | null>(null);
   const [ownersDojoId, setOwnersDojoId] = useState<string | null>(null);
   const [senseisDojoId, setSenseisDojoId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-  });
+  const [formData, setFormData] = useState<DojoFormData>(initialFormData);
 
   const createDojoMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: DojoFormData) => {
       const { error } = await supabase.from("dojos").insert({
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
         address: data.address || null,
+        welcome_message: data.welcome_message || null,
+        monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
+        payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
+        pix_key: data.pix_key || null,
       });
       if (error) throw error;
     },
@@ -43,7 +66,7 @@ export function DojoManagement() {
       toast({ title: "Dojo criado com sucesso!" });
       queryClient.invalidateQueries({ queryKey: ["dojos"] });
       setIsCreateOpen(false);
-      setFormData({ name: "", email: "", phone: "", address: "" });
+      setFormData(initialFormData);
     },
     onError: (error: any) => {
       toast({ title: "Erro ao criar dojo", description: error.message, variant: "destructive" });
@@ -51,12 +74,16 @@ export function DojoManagement() {
   });
 
   const updateDojoMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: typeof formData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: DojoFormData }) => {
       const { error } = await supabase.from("dojos").update({
         name: data.name,
         email: data.email || null,
         phone: data.phone || null,
         address: data.address || null,
+        welcome_message: data.welcome_message || null,
+        monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
+        payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
+        pix_key: data.pix_key || null,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -103,9 +130,129 @@ export function DojoManagement() {
       email: dojo.email || "",
       phone: dojo.phone || "",
       address: dojo.address || "",
+      welcome_message: dojo.welcome_message || "",
+      monthly_fee: dojo.monthly_fee?.toString() || "",
+      payment_due_day: dojo.payment_due_day?.toString() || "",
+      pix_key: dojo.pix_key || "",
     });
     setEditingDojo(dojo);
   };
+
+  const DojoFormFields = ({ isEdit = false }: { isEdit?: boolean }) => (
+    <ScrollArea className="max-h-[70vh] pr-4">
+      <div className="space-y-6">
+        {/* Basic Info */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <Building2 className="h-4 w-4" />
+            Informações Básicas
+          </h4>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-name`}>Nome *</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-name`}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Nome do dojo"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-phone`}>Telefone</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-phone`}
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-email`}>Email</Label>
+            <Input
+              id={`${isEdit ? 'edit' : 'create'}-email`}
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="contato@dojo.com"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-address`}>Endereço</Label>
+            <Input
+              id={`${isEdit ? 'edit' : 'create'}-address`}
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              placeholder="Endereço completo"
+            />
+          </div>
+        </div>
+
+        {/* Welcome Message */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Mensagem de Boas-vindas
+          </h4>
+          <div className="space-y-2">
+            <Textarea
+              id={`${isEdit ? 'edit' : 'create'}-welcome`}
+              value={formData.welcome_message}
+              onChange={(e) => setFormData({ ...formData, welcome_message: e.target.value })}
+              placeholder="Mensagem exibida no dashboard para os usuários deste dojo"
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              Esta mensagem será exibida na página inicial do dashboard para os usuários deste dojo.
+            </p>
+          </div>
+        </div>
+
+        {/* Payment Settings */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            Configurações de Pagamento
+          </h4>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-fee`}>Mensalidade (R$)</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-fee`}
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.monthly_fee}
+                onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
+                placeholder="150.00"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-due`}>Dia Vencimento</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-due`}
+                type="number"
+                min="1"
+                max="28"
+                value={formData.payment_due_day}
+                onChange={(e) => setFormData({ ...formData, payment_due_day: e.target.value })}
+                placeholder="10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-pix`}>Chave Pix</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-pix`}
+                value={formData.pix_key}
+                onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
+                placeholder="email@exemplo.com"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  );
 
   if (isLoading) {
     return (
@@ -120,24 +267,27 @@ export function DojoManagement() {
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
               <Building2 className="h-5 w-5" aria-hidden="true" />
               Gerenciamento de Dojos
             </CardTitle>
             <CardDescription>
-              Gerencie os dojos cadastrados no sistema
+              Gerencie os dojos, mensagens e configurações de pagamento
             </CardDescription>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) setFormData(initialFormData);
+          }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm">
                 <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
                 Novo Dojo
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Criar Novo Dojo</DialogTitle>
                 <DialogDescription>
@@ -145,43 +295,7 @@ export function DojoManagement() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create-name">Nome *</Label>
-                  <Input
-                    id="create-name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Nome do dojo"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-email">Email</Label>
-                  <Input
-                    id="create-email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="contato@dojo.com"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-phone">Telefone</Label>
-                  <Input
-                    id="create-phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create-address">Endereço</Label>
-                  <Input
-                    id="create-address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="Endereço completo"
-                  />
-                </div>
+                <DojoFormFields />
                 <Button
                   onClick={handleCreate}
                   disabled={createDojoMutation.isPending}
@@ -200,77 +314,90 @@ export function DojoManagement() {
               Nenhum dojo cadastrado. Clique em "Novo Dojo" para começar.
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="hidden sm:table-cell">Email</TableHead>
-                  <TableHead className="hidden md:table-cell">Telefone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dojos.map((dojo) => (
-                  <TableRow key={dojo.id}>
-                    <TableCell className="font-medium">{dojo.name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{dojo.email || "-"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{dojo.phone || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={dojo.is_active ? "default" : "secondary"}>
-                        {dojo.is_active ? "Ativo" : "Inativo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setOwnersDojoId(dojo.id)}
-                          title="Gerenciar donos"
-                          aria-label="Gerenciar donos"
-                        >
-                          <Users className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setSenseisDojoId(dojo.id)}
-                          title="Gerenciar senseis"
-                          aria-label="Gerenciar senseis"
-                        >
-                          <Users className="h-4 w-4 text-accent" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEdit(dojo)}
-                          aria-label="Editar dojo"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteDojoMutation.mutate(dojo.id)}
-                          disabled={deleteDojoMutation.isPending}
-                          aria-label="Excluir dojo"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[150px]">Nome</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell">Mensalidade</TableHead>
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="text-right w-[160px]">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {dojos.map((dojo) => (
+                    <TableRow key={dojo.id}>
+                      <TableCell className="font-medium">{dojo.name}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">
+                        {dojo.email || "-"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {dojo.monthly_fee ? `R$ ${dojo.monthly_fee.toFixed(2)}` : "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={dojo.is_active ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {dojo.is_active ? "Ativo" : "Inativo"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setOwnersDojoId(dojo.id)}
+                            title="Gerenciar donos"
+                            aria-label="Gerenciar donos"
+                          >
+                            <Users className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setSenseisDojoId(dojo.id)}
+                            title="Gerenciar senseis"
+                            aria-label="Gerenciar senseis"
+                          >
+                            <Users className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openEdit(dojo)}
+                            aria-label="Editar dojo"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => deleteDojoMutation.mutate(dojo.id)}
+                            disabled={deleteDojoMutation.isPending}
+                            aria-label="Excluir dojo"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDojo} onOpenChange={(open) => !open && setEditingDojo(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Dojo</DialogTitle>
             <DialogDescription>
@@ -278,39 +405,7 @@ export function DojoManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Nome *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-phone">Telefone</Label>
-              <Input
-                id="edit-phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-address">Endereço</Label>
-              <Input
-                id="edit-address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </div>
+            <DojoFormFields isEdit />
             <Button
               onClick={handleUpdate}
               disabled={updateDojoMutation.isPending}
