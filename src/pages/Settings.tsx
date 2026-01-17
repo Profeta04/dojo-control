@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Building, CreditCard, MessageSquare, Save, Loader2, Building2, Palette } from "lucide-react";
+import { CreditCard, MessageSquare, Save, Loader2, Building2, Palette } from "lucide-react";
 import { DojoManagement } from "@/components/settings/DojoManagement";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
 
@@ -115,6 +115,16 @@ export default function Settings() {
     );
   }
 
+  // Determine default tab and column count based on role
+  const getTabConfig = () => {
+    if (isSuperAdmin) {
+      return { defaultTab: "dojos", columns: 4 };
+    }
+    return { defaultTab: "messages", columns: 3 };
+  };
+
+  const { defaultTab, columns } = getTabConfig();
+
   return (
     <DashboardLayout>
       <PageHeader
@@ -122,17 +132,17 @@ export default function Settings() {
         description="Personalize as configurações do sistema"
       />
 
-      <Tabs defaultValue={isSuperAdmin ? "dojos" : "general"} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1">
+      <Tabs defaultValue={defaultTab} className="space-y-6">
+        <TabsList className={`grid w-full gap-1 ${columns === 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
           {isSuperAdmin && (
             <TabsTrigger value="dojos" className="gap-1.5 text-xs sm:text-sm">
               <Building2 className="h-4 w-4" aria-hidden="true" />
               <span className="hidden sm:inline">Dojos</span>
             </TabsTrigger>
           )}
-          <TabsTrigger value="general" className="gap-1.5 text-xs sm:text-sm">
-            <Building className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Geral</span>
+          <TabsTrigger value="messages" className="gap-1.5 text-xs sm:text-sm">
+            <MessageSquare className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Mensagens</span>
           </TabsTrigger>
           <TabsTrigger value="theme" className="gap-1.5 text-xs sm:text-sm">
             <Palette className="h-4 w-4" aria-hidden="true" />
@@ -151,17 +161,17 @@ export default function Settings() {
           </TabsContent>
         )}
 
-        {/* General Settings */}
-        <TabsContent value="general" className="space-y-6">
+        {/* Messages Settings */}
+        <TabsContent value="messages" className="space-y-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Building className="h-5 w-5" aria-hidden="true" />
-                  Informações do Dojo
+                  <MessageSquare className="h-5 w-5" aria-hidden="true" />
+                  Mensagens do Sistema
                 </CardTitle>
                 <CardDescription>
-                  Configure as informações básicas do dojo exibidas no sistema
+                  Personalize as mensagens exibidas no sistema
                 </CardDescription>
               </div>
               <Button 
@@ -176,61 +186,6 @@ export default function Settings() {
                 )}
                 Salvar
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="dojo_name">Nome do Dojo</Label>
-                  <Input
-                    id="dojo_name"
-                    value={formData.dojo_name || ""}
-                    onChange={(e) => handleChange("dojo_name", e.target.value)}
-                    placeholder="Nome do dojo"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dojo_phone">Telefone</Label>
-                  <Input
-                    id="dojo_phone"
-                    value={formData.dojo_phone || ""}
-                    onChange={(e) => handleChange("dojo_phone", e.target.value)}
-                    placeholder="(00) 00000-0000"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dojo_email">Email de Contato</Label>
-                <Input
-                  id="dojo_email"
-                  type="email"
-                  value={formData.dojo_email || ""}
-                  onChange={(e) => handleChange("dojo_email", e.target.value)}
-                  placeholder="contato@dojo.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dojo_address">Endereço</Label>
-                <Textarea
-                  id="dojo_address"
-                  value={formData.dojo_address || ""}
-                  onChange={(e) => handleChange("dojo_address", e.target.value)}
-                  placeholder="Endereço completo do dojo"
-                  rows={2}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Messages */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5" aria-hidden="true" />
-                Mensagens do Sistema
-              </CardTitle>
-              <CardDescription>
-                Personalize as mensagens exibidas no sistema
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
