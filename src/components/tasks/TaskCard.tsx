@@ -4,7 +4,7 @@ import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2 } from "lucide-react
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { TaskWithAssignee, TaskStatus, TaskPriority } from "@/hooks/useTasks";
+import { TaskWithAssignee, TaskStatus, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { cn } from "@/lib/utils";
 
 interface TaskCardProps {
@@ -58,7 +58,19 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false 
               )}>
                 {task.title}
               </h4>
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                {task.category && CATEGORY_CONFIG[task.category] && (
+                  <Badge 
+                    variant="outline" 
+                    className={cn(
+                      CATEGORY_CONFIG[task.category].bgColor,
+                      CATEGORY_CONFIG[task.category].color,
+                      "border-0"
+                    )}
+                  >
+                    {CATEGORY_CONFIG[task.category].label}
+                  </Badge>
+                )}
                 <Badge variant="outline" className={priorityConfig[task.priority].className}>
                   {priorityConfig[task.priority].label}
                 </Badge>

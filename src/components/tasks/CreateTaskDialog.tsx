@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useTasks, TaskPriority } from "@/hooks/useTasks";
+import { useTasks, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,6 +19,7 @@ const taskSchema = z.object({
   assigned_to: z.string().min(1, "Selecione um aluno"),
   due_date: z.string().optional(),
   priority: z.enum(["baixa", "normal", "alta"]),
+  category: z.enum(["tecnica", "fisica", "administrativa", "outra"]),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -42,6 +43,7 @@ export function CreateTaskDialog() {
       assigned_to: "",
       due_date: "",
       priority: "normal",
+      category: "outra",
     },
   });
 
@@ -88,6 +90,7 @@ export function CreateTaskDialog() {
         assigned_to: data.assigned_to,
         due_date: data.due_date || undefined,
         priority: data.priority as TaskPriority,
+        category: data.category as TaskCategory,
       });
       toast.success("Tarefa criada com sucesso!");
       form.reset();
@@ -213,6 +216,31 @@ export function CreateTaskDialog() {
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoria</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(Object.keys(CATEGORY_CONFIG) as TaskCategory[]).map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {CATEGORY_CONFIG[cat].label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>

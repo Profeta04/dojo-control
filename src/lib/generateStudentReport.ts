@@ -32,8 +32,18 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
 
 const TASK_STATUS_LABELS: Record<string, string> = {
   pending: "Pendente",
+  pendente: "Pendente",
   in_progress: "Em Andamento",
   completed: "Concluída",
+  concluida: "Concluída",
+  cancelada: "Cancelada",
+};
+
+const TASK_CATEGORY_LABELS: Record<string, string> = {
+  tecnica: "Técnica",
+  fisica: "Física",
+  administrativa: "Administrativa",
+  outra: "Outra",
 };
 
 export interface StudentReportData {
@@ -73,6 +83,7 @@ export interface StudentReportData {
     description: string | null;
     status: string;
     priority: string;
+    category: string;
     due_date: string | null;
     completed_at: string | null;
   }>;
@@ -279,10 +290,11 @@ export function generateStudentReport(data: StudentReportData) {
     
     autoTable(doc, {
       startY: yPos,
-      head: [["Título", "Prioridade", "Status", "Prazo", "Conclusão"]],
+      head: [["Título", "Categoria", "Prioridade", "Status", "Prazo", "Conclusão"]],
       body: data.tasks.map(t => [
         t.title,
-        t.priority === "high" ? "Alta" : t.priority === "medium" ? "Média" : "Baixa",
+        TASK_CATEGORY_LABELS[t.category] || t.category || "Outra",
+        t.priority === "high" || t.priority === "alta" ? "Alta" : t.priority === "medium" || t.priority === "normal" ? "Normal" : "Baixa",
         TASK_STATUS_LABELS[t.status] || t.status,
         t.due_date ? format(new Date(t.due_date), "dd/MM/yyyy", { locale: ptBR }) : "-",
         t.completed_at ? format(new Date(t.completed_at), "dd/MM/yyyy", { locale: ptBR }) : "-"
