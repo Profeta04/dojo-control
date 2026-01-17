@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
+import { StudentReportDialog } from "@/components/students/StudentReportDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,12 +45,6 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Redirect if not authorized
-  if (!authLoading && !canManageStudents) {
-    navigate("/dashboard");
-    return null;
-  }
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
@@ -97,6 +92,12 @@ export default function Students() {
     },
     enabled: !!user && canManageStudents,
   });
+
+  // Redirect if not authorized (after all hooks)
+  if (!authLoading && !canManageStudents) {
+    navigate("/dashboard");
+    return null;
+  }
 
   const handleApprove = async () => {
     if (!selectedStudent) return;
@@ -259,10 +260,13 @@ export default function Students() {
 
   return (
     <DashboardLayout>
-      <PageHeader
-        title="Alunos"
-        description="Gerencie os alunos do dojo"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <PageHeader
+          title="Alunos"
+          description="Gerencie os alunos do dojo"
+        />
+        <StudentReportDialog />
+      </div>
 
       <Tabs defaultValue="pending" className="mt-6">
         <TabsList>
