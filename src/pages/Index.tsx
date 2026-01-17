@@ -60,7 +60,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-muted-foreground border-t border-border">
-        <p>© 2024 Dojo Manager - Sistema de Gestão de Judô</p>
+        <p>© {new Date().getFullYear()} Dojo Manager - Sistema de Gestão de Judô</p>
       </footer>
     </div>
   );
