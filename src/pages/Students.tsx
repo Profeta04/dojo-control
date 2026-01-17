@@ -49,15 +49,7 @@ export default function Students() {
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
     queryFn: async () => {
-      // First get all users with student role
-      const { data: studentRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "student");
-
-      const studentUserIds = studentRoles?.map((r) => r.user_id) || [];
-
-      // Also get all users with sensei role (to exclude them)
+      // Get all users with sensei role (to exclude them)
       const { data: senseiRoles } = await supabase
         .from("user_roles")
         .select("user_id")
@@ -73,15 +65,21 @@ export default function Students() {
 
       const adminUserIds = adminRoles?.map((r) => r.user_id) || [];
 
-      // Exclude senseis and admins
-      const excludeIds = [...senseiUserIds, ...adminUserIds];
+      // Get all guardians (users who have minors linked to them)
+      const { data: guardianProfiles } = await supabase
+        .from("profiles")
+        .select("guardian_user_id")
+        .not("guardian_user_id", "is", null);
 
-      // Get all profiles that are either:
-      // 1. Already have student role, or
-      // 2. Have no role yet (pending approval)
+      const guardianUserIds = [...new Set(guardianProfiles?.map((p) => p.guardian_user_id).filter(Boolean) || [])];
+
+      // Exclude senseis, admins, and guardians
+      const excludeIds = [...senseiUserIds, ...adminUserIds, ...guardianUserIds];
+
+      // Get all profiles that are students (not admins, senseis, or guardians)
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
 
-      // Exclude senseis and admins
+      // Exclude senseis, admins, and guardians
       if (excludeIds.length > 0) {
         query = query.not("user_id", "in", `(${excludeIds.join(",")})`);
       }
