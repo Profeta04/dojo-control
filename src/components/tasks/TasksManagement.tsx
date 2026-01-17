@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { useTasks } from "@/hooks/useTasks";
+import { useTasks, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { TaskCard } from "./TaskCard";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -18,16 +19,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 
 export function TasksManagement() {
   const { tasks, isLoading, updateTaskStatus, deleteTask } = useTasks();
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
 
-  const filteredTasks = tasks.filter(t =>
-    t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.assignee_name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTasks = tasks.filter(t => {
+    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.assignee_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || t.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   const pendingTasks = filteredTasks.filter(t => t.status === "pendente");
   const completedTasks = filteredTasks.filter(t => t.status === "concluida");
@@ -126,14 +131,40 @@ export function TasksManagement() {
         </Card>
       </div>
 
-      {/* Search */}
-      <div className="flex items-center gap-2">
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <Input
           placeholder="Buscar por título ou aluno..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
+        
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Badge
+            variant={categoryFilter === "all" ? "default" : "outline"}
+            className="cursor-pointer"
+            onClick={() => setCategoryFilter("all")}
+          >
+            Todas
+          </Badge>
+          {(Object.keys(CATEGORY_CONFIG) as TaskCategory[]).map((cat) => (
+            <Badge
+              key={cat}
+              variant="outline"
+              className={cn(
+                "cursor-pointer transition-colors",
+                categoryFilter === cat 
+                  ? cn(CATEGORY_CONFIG[cat].bgColor, CATEGORY_CONFIG[cat].color, "border-0")
+                  : "hover:bg-muted"
+              )}
+              onClick={() => setCategoryFilter(cat)}
+            >
+              {CATEGORY_CONFIG[cat].label}
+            </Badge>
+          ))}
+        </div>
       </div>
 
       {/* Tasks List */}

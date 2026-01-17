@@ -94,7 +94,7 @@ export function StudentReportDialog() {
       // Fetch tasks
       const { data: tasks } = await supabase
         .from("tasks")
-        .select("title, description, status, priority, due_date, completed_at")
+        .select("title, description, status, priority, category, due_date, completed_at")
         .eq("assigned_to", selectedStudentId)
         .order("created_at", { ascending: false });
 

@@ -5,6 +5,14 @@ import { useEffect } from "react";
 
 export type TaskStatus = "pendente" | "concluida" | "cancelada";
 export type TaskPriority = "baixa" | "normal" | "alta";
+export type TaskCategory = "tecnica" | "fisica" | "administrativa" | "outra";
+
+export const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; bgColor: string }> = {
+  tecnica: { label: "Técnica", color: "text-blue-700", bgColor: "bg-blue-100" },
+  fisica: { label: "Física", color: "text-green-700", bgColor: "bg-green-100" },
+  administrativa: { label: "Administrativa", color: "text-purple-700", bgColor: "bg-purple-100" },
+  outra: { label: "Outra", color: "text-gray-700", bgColor: "bg-gray-100" },
+};
 
 export interface Task {
   id: string;
@@ -15,6 +23,7 @@ export interface Task {
   due_date: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  category: TaskCategory;
   completed_at: string | null;
   created_at: string;
   updated_at: string;
@@ -107,6 +116,7 @@ export function useTasks() {
       assigned_to: string;
       due_date?: string;
       priority?: TaskPriority;
+      category?: TaskCategory;
     }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
@@ -119,6 +129,7 @@ export function useTasks() {
           assigned_by: user.id,
           due_date: taskData.due_date || null,
           priority: taskData.priority || "normal",
+          category: taskData.category || "outra",
         })
         .select()
         .single();
