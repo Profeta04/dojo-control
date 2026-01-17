@@ -142,6 +142,9 @@ const DEFAULT_COLORS = {
   color_foreground: "0 0% 10%",
   color_accent: "4 85% 50%",
   color_muted: "40 10% 92%",
+  color_primary_foreground: "0 0% 98%",
+  color_secondary_foreground: "0 0% 10%",
+  color_accent_foreground: "0 0% 100%",
 };
 
 export function DojoThemeSettings() {
@@ -171,7 +174,7 @@ export function DojoThemeSettings() {
       const { data } = await supabase
         .from("dojos")
         .select(
-          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted"
+          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted, color_primary_foreground, color_secondary_foreground, color_accent_foreground"
         )
         .eq("id", dojoId)
         .single();
@@ -184,6 +187,9 @@ export function DojoThemeSettings() {
           color_foreground: data.color_foreground || DEFAULT_COLORS.color_foreground,
           color_accent: data.color_accent || DEFAULT_COLORS.color_accent,
           color_muted: data.color_muted || DEFAULT_COLORS.color_muted,
+          color_primary_foreground: data.color_primary_foreground || DEFAULT_COLORS.color_primary_foreground,
+          color_secondary_foreground: data.color_secondary_foreground || DEFAULT_COLORS.color_secondary_foreground,
+          color_accent_foreground: data.color_accent_foreground || DEFAULT_COLORS.color_accent_foreground,
         });
         setHasChanges(false);
       }
@@ -210,6 +216,9 @@ export function DojoThemeSettings() {
           color_foreground: colors.color_foreground,
           color_accent: colors.color_accent,
           color_muted: colors.color_muted,
+          color_primary_foreground: colors.color_primary_foreground,
+          color_secondary_foreground: colors.color_secondary_foreground,
+          color_accent_foreground: colors.color_accent_foreground,
         })
         .eq("id", dojoId);
 
@@ -337,48 +346,77 @@ export function DojoThemeSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <ColorPicker
-            label="Cor Primária"
-            value={colors.color_primary}
-            onChange={(v) => handleColorChange("color_primary", v)}
-            description="Usada em botões principais e destaques"
-          />
-          <ColorPicker
-            label="Cor Secundária"
-            value={colors.color_secondary}
-            onChange={(v) => handleColorChange("color_secondary", v)}
-            description="Usada em elementos de suporte"
-          />
-          <ColorPicker
-            label="Cor de Fundo"
-            value={colors.color_background}
-            onChange={(v) => handleColorChange("color_background", v)}
-            description="Fundo geral das páginas"
-          />
-          <ColorPicker
-            label="Cor do Texto"
-            value={colors.color_foreground}
-            onChange={(v) => handleColorChange("color_foreground", v)}
-            description="Cor principal dos textos"
-          />
-          <ColorPicker
-            label="Cor de Destaque"
-            value={colors.color_accent}
-            onChange={(v) => handleColorChange("color_accent", v)}
-            description="Usada em links e ações"
-          />
-          <ColorPicker
-            label="Cor Suave"
-            value={colors.color_muted}
-            onChange={(v) => handleColorChange("color_muted", v)}
-            description="Usada em fundos suaves"
-          />
+        {/* Background & Text Colors */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-4">Cores de Fundo e Texto</h4>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorPicker
+              label="Cor de Fundo"
+              value={colors.color_background}
+              onChange={(v) => handleColorChange("color_background", v)}
+              description="Fundo geral das páginas"
+            />
+            <ColorPicker
+              label="Cor do Texto"
+              value={colors.color_foreground}
+              onChange={(v) => handleColorChange("color_foreground", v)}
+              description="Cor principal dos textos"
+            />
+            <ColorPicker
+              label="Cor Suave"
+              value={colors.color_muted}
+              onChange={(v) => handleColorChange("color_muted", v)}
+              description="Usada em fundos suaves"
+            />
+          </div>
+        </div>
+
+        {/* Button Colors */}
+        <div className="mb-6">
+          <h4 className="text-sm font-medium mb-4">Cores dos Botões</h4>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <ColorPicker
+              label="Botão Primário (Fundo)"
+              value={colors.color_primary}
+              onChange={(v) => handleColorChange("color_primary", v)}
+              description="Cor de fundo do botão principal"
+            />
+            <ColorPicker
+              label="Botão Primário (Texto)"
+              value={colors.color_primary_foreground}
+              onChange={(v) => handleColorChange("color_primary_foreground", v)}
+              description="Cor do texto do botão principal"
+            />
+            <ColorPicker
+              label="Botão Secundário (Fundo)"
+              value={colors.color_secondary}
+              onChange={(v) => handleColorChange("color_secondary", v)}
+              description="Cor de fundo do botão secundário"
+            />
+            <ColorPicker
+              label="Botão Secundário (Texto)"
+              value={colors.color_secondary_foreground}
+              onChange={(v) => handleColorChange("color_secondary_foreground", v)}
+              description="Cor do texto do botão secundário"
+            />
+            <ColorPicker
+              label="Botão Destaque (Fundo)"
+              value={colors.color_accent}
+              onChange={(v) => handleColorChange("color_accent", v)}
+              description="Cor de fundo do botão de destaque"
+            />
+            <ColorPicker
+              label="Botão Destaque (Texto)"
+              value={colors.color_accent_foreground}
+              onChange={(v) => handleColorChange("color_accent_foreground", v)}
+              description="Cor do texto do botão de destaque"
+            />
+          </div>
         </div>
 
         {/* Preview */}
         <div
-          className="mt-6 p-4 rounded-lg border"
+          className="p-4 rounded-lg border"
           style={{
             backgroundColor: `hsl(${colors.color_background})`,
             color: `hsl(${colors.color_foreground})`,
@@ -390,7 +428,7 @@ export function DojoThemeSettings() {
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
                 backgroundColor: `hsl(${colors.color_primary})`,
-                color: "hsl(0 0% 100%)",
+                color: `hsl(${colors.color_primary_foreground})`,
               }}
             >
               Botão Primário
@@ -399,7 +437,7 @@ export function DojoThemeSettings() {
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
                 backgroundColor: `hsl(${colors.color_secondary})`,
-                color: `hsl(${colors.color_foreground})`,
+                color: `hsl(${colors.color_secondary_foreground})`,
               }}
             >
               Botão Secundário
@@ -408,7 +446,7 @@ export function DojoThemeSettings() {
               className="px-4 py-2 rounded-md text-sm font-medium"
               style={{
                 backgroundColor: `hsl(${colors.color_accent})`,
-                color: "hsl(0 0% 100%)",
+                color: `hsl(${colors.color_accent_foreground})`,
               }}
             >
               Botão Destaque

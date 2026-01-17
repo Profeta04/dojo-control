@@ -11,6 +11,9 @@ interface DojoTheme {
   color_foreground: string;
   color_accent: string;
   color_muted: string;
+  color_primary_foreground: string;
+  color_secondary_foreground: string;
+  color_accent_foreground: string;
 }
 
 const DEFAULT_THEME: DojoTheme = {
@@ -20,6 +23,9 @@ const DEFAULT_THEME: DojoTheme = {
   color_foreground: "0 0% 10%",
   color_accent: "4 85% 50%",
   color_muted: "40 10% 92%",
+  color_primary_foreground: "0 0% 98%",
+  color_secondary_foreground: "0 0% 10%",
+  color_accent_foreground: "0 0% 100%",
 };
 
 export function useDojoTheme() {
@@ -36,7 +42,7 @@ export function useDojoTheme() {
       const { data, error } = await supabase
         .from("dojos")
         .select(
-          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted"
+          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted, color_primary_foreground, color_secondary_foreground, color_accent_foreground"
         )
         .eq("id", dojoId)
         .single();
@@ -50,6 +56,9 @@ export function useDojoTheme() {
         color_foreground: data.color_foreground || DEFAULT_THEME.color_foreground,
         color_accent: data.color_accent || DEFAULT_THEME.color_accent,
         color_muted: data.color_muted || DEFAULT_THEME.color_muted,
+        color_primary_foreground: data.color_primary_foreground || DEFAULT_THEME.color_primary_foreground,
+        color_secondary_foreground: data.color_secondary_foreground || DEFAULT_THEME.color_secondary_foreground,
+        color_accent_foreground: data.color_accent_foreground || DEFAULT_THEME.color_accent_foreground,
       } as DojoTheme;
     },
     enabled: !!user,
@@ -73,9 +82,9 @@ export function useDojoTheme() {
     root.style.setProperty("--card-foreground", currentTheme.color_foreground);
     root.style.setProperty("--popover", currentTheme.color_background);
     root.style.setProperty("--popover-foreground", currentTheme.color_foreground);
-    root.style.setProperty("--primary-foreground", "0 0% 98%");
-    root.style.setProperty("--secondary-foreground", currentTheme.color_foreground);
-    root.style.setProperty("--accent-foreground", "0 0% 100%");
+    root.style.setProperty("--primary-foreground", currentTheme.color_primary_foreground);
+    root.style.setProperty("--secondary-foreground", currentTheme.color_secondary_foreground);
+    root.style.setProperty("--accent-foreground", currentTheme.color_accent_foreground);
     root.style.setProperty("--muted-foreground", "0 0% 45%");
   }, [theme]);
 

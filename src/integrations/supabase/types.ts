@@ -237,11 +237,14 @@ export type Database = {
         Row: {
           address: string | null
           color_accent: string | null
+          color_accent_foreground: string | null
           color_background: string | null
           color_foreground: string | null
           color_muted: string | null
           color_primary: string | null
+          color_primary_foreground: string | null
           color_secondary: string | null
+          color_secondary_foreground: string | null
           created_at: string
           email: string | null
           id: string
@@ -258,11 +261,14 @@ export type Database = {
         Insert: {
           address?: string | null
           color_accent?: string | null
+          color_accent_foreground?: string | null
           color_background?: string | null
           color_foreground?: string | null
           color_muted?: string | null
           color_primary?: string | null
+          color_primary_foreground?: string | null
           color_secondary?: string | null
+          color_secondary_foreground?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -279,11 +285,14 @@ export type Database = {
         Update: {
           address?: string | null
           color_accent?: string | null
+          color_accent_foreground?: string | null
           color_background?: string | null
           color_foreground?: string | null
           color_muted?: string | null
           color_primary?: string | null
+          color_primary_foreground?: string | null
           color_secondary?: string | null
+          color_secondary_foreground?: string | null
           created_at?: string
           email?: string | null
           id?: string
