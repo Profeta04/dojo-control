@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -17,9 +18,17 @@ import {
   X,
   UserCog,
   Settings,
+  Building,
 } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface NavItem {
   title: string;
@@ -44,7 +53,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { profile, roles, signOut, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
+  const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const showDojoSelector = userDojos.length > 1 && (isAdmin || isSensei);
 
   const handleSignOut = async () => {
     await signOut();
@@ -205,7 +217,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main id="main-content" className="lg:pl-64 pt-14 lg:pt-0 min-h-screen" tabIndex={-1}>
         {/* Desktop header area */}
-        <div className="hidden lg:flex items-center justify-end h-14 px-8 border-b border-border/50" role="banner">
+        <div className="hidden lg:flex items-center justify-between h-14 px-8 border-b border-border/50" role="banner">
+          {/* Dojo Selector */}
+          {showDojoSelector && !isLoadingDojos && (
+            <div className="flex items-center gap-2">
+              <Building className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={currentDojoId || "all"}
+                onValueChange={(value) => setCurrentDojoId(value === "all" ? null : value)}
+              >
+                <SelectTrigger className="w-[180px] h-8 text-sm">
+                  <SelectValue placeholder="Selecione o dojo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os dojos</SelectItem>
+                  {userDojos.map((dojo) => (
+                    <SelectItem key={dojo.id} value={dojo.id}>
+                      {dojo.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
         <div className="p-4 lg:px-8 lg:py-6">{children}</div>
