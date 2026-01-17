@@ -1,12 +1,14 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +16,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 import { 
   CalendarDays, 
   Clock, 
@@ -22,7 +35,9 @@ import {
   GraduationCap,
   ChevronLeft,
   ChevronRight,
-  XCircle
+  XCircle,
+  Loader2,
+  Undo2
 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
@@ -35,23 +50,29 @@ type Class = Tables<"classes">;
 interface ScheduleWithClass extends ClassSchedule {
   className: string;
   senseiName: string;
+  classId: string;
 }
 
 export function ScheduleTab() {
-  const { user } = useAuth();
+  const { user, canManageStudents } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithClass | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch classes
-  const { data: classes } = useQuery({
-    queryKey: ["classes-schedule"],
+  // Fetch ALL classes (not just active) to show schedule correctly
+  const { data: classes, isLoading: classesLoading } = useQuery({
+    queryKey: ["classes-all"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("classes")
-        .select("*")
-        .eq("is_active", true);
+        .select("*");
 
       if (error) throw error;
       return data as Class[];
@@ -59,21 +80,33 @@ export function ScheduleTab() {
     enabled: !!user,
   });
 
-  // Fetch senseis profiles
-  const { data: senseiProfiles } = useQuery({
-    queryKey: ["senseis-profiles"],
+  // Fetch senseis profiles - get ALL profiles that are senseis
+  const { data: senseiProfiles, isLoading: senseiLoading } = useQuery({
+    queryKey: ["senseis-profiles-all"],
     queryFn: async () => {
+      // First get all sensei user_ids
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "sensei");
 
-      if (!roles || roles.length === 0) return [];
+      // Also get admin user_ids (they can also be senseis of classes)
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+
+      const allUserIds = [
+        ...(roles?.map(r => r.user_id) || []),
+        ...(adminRoles?.map(r => r.user_id) || [])
+      ];
+
+      if (allUserIds.length === 0) return [];
 
       const { data, error } = await supabase
         .from("profiles")
         .select("user_id, name")
-        .in("user_id", roles.map(r => r.user_id));
+        .in("user_id", allUserIds);
 
       if (error) throw error;
       return data;
@@ -81,7 +114,7 @@ export function ScheduleTab() {
     enabled: !!user,
   });
 
-  // Fetch schedules for current month
+  // Fetch schedules for current month - only depends on user
   const { data: schedules, isLoading: schedulesLoading } = useQuery({
     queryKey: ["class-schedules", format(currentMonth, "yyyy-MM")],
     queryFn: async () => {
@@ -97,31 +130,36 @@ export function ScheduleTab() {
         .order("start_time");
 
       if (error) throw error;
-
-      const enriched: ScheduleWithClass[] = (data || []).map((schedule) => {
-        const classInfo = classes?.find((c) => c.id === schedule.class_id);
-        const sensei = senseiProfiles?.find((s) => s.user_id === classInfo?.sensei_id);
-
-        return {
-          ...schedule,
-          className: classInfo?.name || "Turma",
-          senseiName: sensei?.name || "Sensei",
-        };
-      });
-
-      return enriched;
+      return data || [];
     },
-    enabled: !!user && !!classes,
+    enabled: !!user,
   });
 
+  // Enrich schedules with class and sensei info
+  const enrichedSchedules = useMemo(() => {
+    if (!schedules) return [];
+    
+    return schedules.map((schedule) => {
+      const classInfo = classes?.find((c) => c.id === schedule.class_id);
+      const sensei = senseiProfiles?.find((s) => s.user_id === classInfo?.sensei_id);
+
+      return {
+        ...schedule,
+        className: classInfo?.name || "Turma",
+        senseiName: sensei?.name || "Sensei",
+        classId: schedule.class_id,
+      } as ScheduleWithClass;
+    });
+  }, [schedules, classes, senseiProfiles]);
+
   const getSchedulesForDate = (date: Date) => {
-    return schedules?.filter((s) => isSameDay(new Date(s.date), date)) || [];
+    return enrichedSchedules.filter((s) => isSameDay(new Date(s.date + "T00:00:00"), date));
   };
 
   const datesWithSchedules = useMemo(() => {
-    if (!schedules) return [];
-    return schedules.map((s) => new Date(s.date));
-  }, [schedules]);
+    if (!enrichedSchedules) return [];
+    return enrichedSchedules.map((s) => new Date(s.date + "T00:00:00"));
+  }, [enrichedSchedules]);
 
   const selectedDateSchedules = getSchedulesForDate(selectedDate);
 
@@ -138,11 +176,112 @@ export function ScheduleTab() {
     setDetailDialogOpen(true);
   };
 
+  const openCancelDialog = (schedule: ScheduleWithClass) => {
+    setSelectedSchedule(schedule);
+    setCancelReason("");
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelClass = async () => {
+    if (!selectedSchedule || !user) return;
+
+    setFormLoading(true);
+
+    try {
+      // Update the schedule to cancelled
+      const { error: updateError } = await supabase
+        .from("class_schedule")
+        .update({ 
+          is_cancelled: true, 
+          notes: cancelReason || "Aula cancelada" 
+        })
+        .eq("id", selectedSchedule.id);
+
+      if (updateError) throw updateError;
+
+      // Get all students enrolled in this class
+      const { data: enrollments } = await supabase
+        .from("class_students")
+        .select("student_id")
+        .eq("class_id", selectedSchedule.classId);
+
+      // Create notifications for all enrolled students
+      if (enrollments && enrollments.length > 0) {
+        const notifications = enrollments.map((enrollment) => ({
+          user_id: enrollment.student_id,
+          title: "Aula Cancelada",
+          message: `A aula de ${selectedSchedule.className} do dia ${format(new Date(selectedSchedule.date + "T00:00:00"), "dd/MM/yyyy")} às ${selectedSchedule.start_time.slice(0, 5)} foi cancelada.${cancelReason ? ` Motivo: ${cancelReason}` : ""}`,
+          type: "schedule",
+          related_id: selectedSchedule.id,
+        }));
+
+        const { error: notifError } = await supabase
+          .from("notifications")
+          .insert(notifications);
+
+        if (notifError) {
+          console.error("Error creating notifications:", notifError);
+        }
+      }
+
+      toast({
+        title: "Aula cancelada",
+        description: `A aula foi cancelada e ${enrollments?.length || 0} aluno(s) foram notificados.`,
+      });
+
+      setCancelDialogOpen(false);
+      setDetailDialogOpen(false);
+      setCancelReason("");
+      queryClient.invalidateQueries({ queryKey: ["class-schedules"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao cancelar aula",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleRestoreClass = async (schedule: ScheduleWithClass) => {
+    if (!user) return;
+
+    setFormLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("class_schedule")
+        .update({ is_cancelled: false, notes: null })
+        .eq("id", schedule.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Aula restaurada",
+        description: "A aula foi reativada com sucesso.",
+      });
+
+      setDetailDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["class-schedules"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao restaurar aula",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   const formatTime = (time: string) => {
     return time.slice(0, 5);
   };
 
-  if (schedulesLoading) {
+  const isLoading = classesLoading || senseiLoading || schedulesLoading;
+
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -278,10 +417,10 @@ export function ScheduleTab() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {schedules && schedules.filter(s => new Date(s.date) >= new Date() && !s.is_cancelled).length > 0 ? (
+          {enrichedSchedules && enrichedSchedules.filter(s => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled).length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {schedules
-                .filter((s) => new Date(s.date) >= new Date() && !s.is_cancelled)
+              {enrichedSchedules
+                .filter((s) => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled)
                 .slice(0, 6)
                 .map((schedule) => (
                   <div
@@ -291,7 +430,7 @@ export function ScheduleTab() {
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Badge variant="outline">
-                        {format(new Date(schedule.date), "dd/MM", { locale: ptBR })}
+                        {format(new Date(schedule.date + "T00:00:00"), "dd/MM", { locale: ptBR })}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
                         {formatTime(schedule.start_time)}
@@ -319,7 +458,7 @@ export function ScheduleTab() {
               {selectedSchedule?.className}
             </DialogTitle>
             <DialogDescription>
-              {selectedSchedule && format(new Date(selectedSchedule.date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              {selectedSchedule && format(new Date(selectedSchedule.date + "T00:00:00"), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </DialogDescription>
           </DialogHeader>
 
@@ -364,10 +503,78 @@ export function ScheduleTab() {
                   <p className="text-sm">{selectedSchedule.notes}</p>
                 </div>
               )}
+
+              {/* Cancel/Restore actions for managers */}
+              {canManageStudents && (
+                <div className="pt-4 border-t flex gap-2">
+                  {selectedSchedule.is_cancelled ? (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleRestoreClass(selectedSchedule)}
+                      disabled={formLoading}
+                    >
+                      {formLoading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Undo2 className="h-4 w-4 mr-2" />
+                      )}
+                      Restaurar Aula
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => openCancelDialog(selectedSchedule)}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancelar Aula
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Aula</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja cancelar a aula de {selectedSchedule?.className} do dia{" "}
+              {selectedSchedule && format(new Date(selectedSchedule.date + "T00:00:00"), "dd/MM/yyyy")}?
+              <br /><br />
+              Todos os alunos matriculados serão notificados automaticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-2">
+            <Label htmlFor="cancelReason">Motivo (opcional)</Label>
+            <Textarea
+              id="cancelReason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="Ex: Sensei indisponível, feriado, etc."
+              rows={2}
+            />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={formLoading}>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelClass}
+              className="bg-destructive hover:bg-destructive/90"
+              disabled={formLoading}
+            >
+              {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
