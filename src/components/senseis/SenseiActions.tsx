@@ -36,9 +36,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { MoreHorizontal, Pencil, Trash2, UserMinus, Loader2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, UserMinus, Loader2, Building2 } from "lucide-react";
 import { BELT_LABELS } from "@/lib/constants";
 import { Database } from "@/integrations/supabase/types";
+import { SenseiDojoDialog } from "./SenseiDojoDialog";
 
 type BeltGradeEnum = Database["public"]["Enums"]["belt_grade"];
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -54,6 +55,7 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [removeRoleDialogOpen, setRemoveRoleDialogOpen] = useState(false);
+  const [dojoDialogOpen, setDojoDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   // Edit form state
@@ -193,6 +195,10 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
             <Pencil className="h-4 w-4 mr-2" />
             Editar dados
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDojoDialogOpen(true)}>
+            <Building2 className="h-4 w-4 mr-2" />
+            Vincular a Dojos
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setRemoveRoleDialogOpen(true)}>
             <UserMinus className="h-4 w-4 mr-2" />
             Remover cargo de Sensei
@@ -328,6 +334,14 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dojo Link Dialog */}
+      <SenseiDojoDialog
+        open={dojoDialogOpen}
+        onOpenChange={setDojoDialogOpen}
+        senseiUserId={sensei.user_id}
+        senseiName={sensei.name}
+      />
     </>
   );
 }
