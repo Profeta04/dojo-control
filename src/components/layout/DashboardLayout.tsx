@@ -73,17 +73,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Logo */}
       <div className="p-6">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent" aria-hidden="true">
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20" aria-hidden="true">
             <span className="text-xl">🥋</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg text-sidebar-foreground">{settings.dojo_name}</h1>
-            <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
+            <h1 className="font-bold text-lg text-primary-foreground">{settings.dojo_name}</h1>
+            <p className="text-xs text-primary-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
       </div>
 
-      <Separator className="bg-sidebar-border" aria-hidden="true" />
+      <Separator className="bg-primary-foreground/20" aria-hidden="true" />
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
@@ -94,10 +94,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar-background",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
                 location.pathname === item.href
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
               )}
               aria-current={location.pathname === item.href ? "page" : undefined}
             >
@@ -108,30 +108,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </nav>
       </ScrollArea>
 
-      <Separator className="bg-sidebar-border" aria-hidden="true" />
+      <Separator className="bg-primary-foreground/20" aria-hidden="true" />
 
       {/* User Info */}
       <div className="p-4" role="region" aria-label="Informações do usuário">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex-shrink-0">
             <div 
-              className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
               aria-hidden="true"
             >
-              <span className="text-sidebar-foreground font-medium">
+              <span className="text-primary-foreground font-medium">
                 {profile?.name?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-sidebar-foreground truncate">
+            <p className="text-sm font-medium text-primary-foreground truncate">
               {profile?.name || "Usuário"}
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
                 <BeltBadge grade={profile.belt_grade} size="sm" />
               )}
-              <span className="text-xs text-sidebar-foreground/60">
+              <span className="text-xs text-primary-foreground/60">
                 {isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
@@ -163,15 +163,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Header */}
       <header 
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border h-14 px-4 flex items-center"
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary border-b border-primary/20 h-14 px-4 flex items-center"
         role="banner"
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-accent" aria-hidden="true">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20" aria-hidden="true">
               <span className="text-base">🥋</span>
             </div>
-            <span className="font-semibold text-sm text-sidebar-foreground truncate max-w-[140px]">
+            <span className="font-semibold text-sm text-primary-foreground truncate max-w-[140px]">
               {settings.dojo_name}
             </span>
           </div>
@@ -180,7 +180,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-sidebar-foreground h-9 w-9 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              className="text-primary-foreground hover:bg-primary-foreground/20 h-9 w-9 focus-visible:ring-2 focus-visible:ring-primary-foreground"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-expanded={sidebarOpen}
               aria-controls="mobile-sidebar"
@@ -205,7 +205,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside
         id="mobile-sidebar"
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-64 bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
         role="navigation"
