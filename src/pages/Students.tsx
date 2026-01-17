@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -31,7 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 
 type Profile = Tables<"profiles">;
@@ -44,6 +45,7 @@ interface GuardianWithMinors {
 export default function Students() {
   const navigate = useNavigate();
   const { user, canManageStudents, loading: authLoading } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -53,7 +55,7 @@ export default function Students() {
   const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
 
   const { data: students, isLoading } = useQuery({
-    queryKey: ["students"],
+    queryKey: ["students", currentDojoId],
     queryFn: async () => {
       // Get all users with sensei role (to exclude them)
       const { data: senseiRoles } = await supabase
@@ -88,6 +90,11 @@ export default function Students() {
       // Exclude senseis, admins, and guardians
       if (excludeIds.length > 0) {
         query = query.not("user_id", "in", `(${excludeIds.join(",")})`);
+      }
+
+      // Filter by dojo if selected
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
       }
 
       const { data: profiles } = await query;

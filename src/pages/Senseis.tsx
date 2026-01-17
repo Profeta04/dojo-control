@@ -67,8 +67,9 @@ export default function Senseis() {
   const [beltGrade, setBeltGrade] = useState<string>("");
   const [password, setPassword] = useState("");
 
+// Fetch senseis with their linked dojos
   const { data: senseis, isLoading } = useQuery({
-    queryKey: ["senseis"],
+    queryKey: ["senseis-with-dojos"],
     queryFn: async () => {
       // Get all users with sensei role
       const { data: senseiRoles } = await supabase
@@ -86,7 +87,32 @@ export default function Senseis() {
         .in("user_id", userIds)
         .order("name");
 
-      return profiles || [];
+      if (!profiles) return [];
+
+      // Fetch dojo links for all senseis
+      const { data: dojoLinks } = await supabase
+        .from("dojo_senseis")
+        .select("user_id, dojo_id, dojos(id, name)")
+        .in("user_id", userIds);
+
+      // Create a map of user_id to their dojos
+      const dojosByUser: Record<string, { id: string; name: string }[]> = {};
+      for (const link of dojoLinks || []) {
+        if (!dojosByUser[link.user_id]) {
+          dojosByUser[link.user_id] = [];
+        }
+        if (link.dojos) {
+          dojosByUser[link.user_id].push({
+            id: (link.dojos as { id: string; name: string }).id,
+            name: (link.dojos as { id: string; name: string }).name,
+          });
+        }
+      }
+
+      return profiles.map((profile) => ({
+        ...profile,
+        linkedDojos: dojosByUser[profile.user_id] || [],
+      }));
     },
     enabled: !!user && isAdmin,
   });
@@ -307,6 +333,7 @@ export default function Senseis() {
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
+                  <TableHead>Dojos</TableHead>
                   <TableHead>Graduação</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12">Ações</TableHead>
@@ -330,6 +357,22 @@ export default function Senseis() {
                         </div>
                       ) : (
                         <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {sensei.linkedDojos && sensei.linkedDojos.length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {sensei.linkedDojos.map((dojo: { id: string; name: string }) => (
+                            <span
+                              key={dojo.id}
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
+                            >
+                              {dojo.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">Nenhum dojo</span>
                       )}
                     </TableCell>
                     <TableCell>

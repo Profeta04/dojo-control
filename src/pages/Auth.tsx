@@ -1,17 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar, UserPlus } from "lucide-react";
+import { Loader2, Calendar, UserPlus, Building, User } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { differenceInYears, parse, isValid } from "date-fns";
+import { findBestMatch } from "@/lib/fuzzyMatch";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -67,6 +73,10 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupBirthDate, setSignupBirthDate] = useState("");
+  const [signupDojoName, setSignupDojoName] = useState("");
+  const [signupSenseiName, setSignupSenseiName] = useState("");
+  const [matchedDojo, setMatchedDojo] = useState<{ id: string; name: string; score: number } | null>(null);
+  const [matchedSensei, setMatchedSensei] = useState<{ id: string; name: string; score: number } | null>(null);
   
   // Guardian form
   const [addGuardian, setAddGuardian] = useState(false);
@@ -84,6 +94,76 @@ export default function Auth() {
     const age = calculateAge(signupBirthDate);
     return age !== null && age < 18;
   }, [signupBirthDate]);
+
+  // Fetch dojos for matching
+  const { data: dojos = [] } = useQuery({
+    queryKey: ["dojos-for-signup"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch senseis for matching (filtered by matched dojo if available)
+  const { data: senseis = [] } = useQuery({
+    queryKey: ["senseis-for-signup", matchedDojo?.id],
+    queryFn: async () => {
+      // Get sensei user ids
+      const { data: senseiRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "sensei");
+
+      if (!senseiRoles || senseiRoles.length === 0) return [];
+
+      let senseiUserIds = senseiRoles.map((r) => r.user_id);
+
+      // If a dojo is matched, filter to senseis linked to that dojo
+      if (matchedDojo?.id) {
+        const { data: dojoSenseis } = await supabase
+          .from("dojo_senseis")
+          .select("user_id")
+          .eq("dojo_id", matchedDojo.id);
+
+        if (dojoSenseis && dojoSenseis.length > 0) {
+          const dojoSenseiIds = dojoSenseis.map((ds) => ds.user_id);
+          senseiUserIds = senseiUserIds.filter((id) => dojoSenseiIds.includes(id));
+        }
+      }
+
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", senseiUserIds);
+
+      return (profiles || []).map((p) => ({ id: p.user_id, name: p.name }));
+    },
+  });
+
+  // Match dojo name as user types
+  useEffect(() => {
+    if (signupDojoName.trim().length >= 2) {
+      const match = findBestMatch(signupDojoName, dojos);
+      setMatchedDojo(match);
+    } else {
+      setMatchedDojo(null);
+    }
+  }, [signupDojoName, dojos]);
+
+  // Match sensei name as user types
+  useEffect(() => {
+    if (signupSenseiName.trim().length >= 2) {
+      const match = findBestMatch(signupSenseiName, senseis);
+      setMatchedSensei(match);
+    } else {
+      setMatchedSensei(null);
+    }
+  }, [signupSenseiName, senseis]);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -170,6 +250,26 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate dojo name is required
+    if (!signupDojoName.trim()) {
+      toast({
+        title: "Erro de validação",
+        description: "O nome do dojo é obrigatório",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if we found a matching dojo
+    if (!matchedDojo) {
+      toast({
+        title: "Dojo não encontrado",
+        description: "Não foi possível encontrar um dojo com esse nome. Verifique a ortografia.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Validate student data
     const studentResult = signupSchema.safeParse({
@@ -278,7 +378,7 @@ export default function Auth() {
         return;
       }
 
-      // Update student profile with birth_date and guardian info
+      // Update student profile with birth_date, guardian info, and dojo
       if (studentData.user) {
         const { error: updateError } = await supabase
           .from("profiles")
@@ -286,6 +386,7 @@ export default function Auth() {
             birth_date: signupBirthDate,
             guardian_user_id: guardianUserId,
             guardian_email: isMinor && addGuardian ? guardianEmail : null,
+            dojo_id: matchedDojo?.id || null,
           })
           .eq("user_id", studentData.user.id);
 
@@ -307,6 +408,10 @@ export default function Auth() {
       setSignupPassword("");
       setSignupConfirmPassword("");
       setSignupBirthDate("");
+      setSignupDojoName("");
+      setSignupSenseiName("");
+      setMatchedDojo(null);
+      setMatchedSensei(null);
       setGuardianEmail("");
       setGuardianPassword("");
       setGuardianConfirmPassword("");
@@ -408,6 +513,63 @@ export default function Auth() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Dojo Name Field */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-dojo" className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Nome do Dojo *
+                  </Label>
+                  <Input
+                    id="signup-dojo"
+                    type="text"
+                    placeholder="Digite o nome do seu dojo"
+                    value={signupDojoName}
+                    onChange={(e) => setSignupDojoName(e.target.value)}
+                    required
+                  />
+                  {signupDojoName.trim().length >= 2 && (
+                    matchedDojo ? (
+                      <Alert className="py-2 bg-green-500/10 border-green-500/30">
+                        <AlertDescription className="text-xs text-green-700 dark:text-green-400">
+                          ✓ Dojo encontrado: <strong>{matchedDojo.name}</strong>
+                          {matchedDojo.score < 1 && matchedDojo.name.toLowerCase() !== signupDojoName.toLowerCase() && (
+                            <span className="text-muted-foreground ml-1">(correspondência aproximada)</span>
+                          )}
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <Alert className="py-2 bg-yellow-500/10 border-yellow-500/30">
+                        <AlertDescription className="text-xs text-yellow-700 dark:text-yellow-400">
+                          ⚠ Nenhum dojo encontrado com esse nome
+                        </AlertDescription>
+                      </Alert>
+                    )
+                  )}
+                </div>
+
+                {/* Sensei Name Field (Optional) */}
+                <div className="space-y-2">
+                  <Label htmlFor="signup-sensei" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Nome do Sensei <span className="text-muted-foreground text-xs">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="signup-sensei"
+                    type="text"
+                    placeholder="Digite o nome do seu sensei"
+                    value={signupSenseiName}
+                    onChange={(e) => setSignupSenseiName(e.target.value)}
+                    disabled={!matchedDojo}
+                  />
+                  {signupSenseiName.trim().length >= 2 && matchedSensei && (
+                    <Alert className="py-2 bg-green-500/10 border-green-500/30">
+                      <AlertDescription className="text-xs text-green-700 dark:text-green-400">
+                        ✓ Sensei encontrado: <strong>{matchedSensei.name}</strong>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Nome completo</Label>
                   <Input
