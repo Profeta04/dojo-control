@@ -48,6 +48,8 @@ export const BELT_COLORS: Record<BeltGrade, string> = {
 };
 
 export const ROLE_LABELS: Record<AppRole, string> = {
+  super_admin: "Super Admin",
+  dono: "Dono",
   admin: "Administrador",
   sensei: "Sensei",
   student: "Aluno",
