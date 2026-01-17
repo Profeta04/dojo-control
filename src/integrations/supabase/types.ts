@@ -246,6 +246,7 @@ export type Database = {
           color_secondary: string | null
           color_secondary_foreground: string | null
           created_at: string
+          dark_mode: boolean | null
           email: string | null
           id: string
           is_active: boolean | null
@@ -270,6 +271,7 @@ export type Database = {
           color_secondary?: string | null
           color_secondary_foreground?: string | null
           created_at?: string
+          dark_mode?: boolean | null
           email?: string | null
           id?: string
           is_active?: boolean | null
@@ -294,6 +296,7 @@ export type Database = {
           color_secondary?: string | null
           color_secondary_foreground?: string | null
           created_at?: string
+          dark_mode?: boolean | null
           email?: string | null
           id?: string
           is_active?: boolean | null
