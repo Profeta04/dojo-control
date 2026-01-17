@@ -220,14 +220,14 @@ export default function Senseis() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <PageHeader
           title="Senseis"
           description="Gerencie os senseis do dojo"
         />
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-accent hover:bg-accent/90">
+            <Button size="sm" className="bg-accent hover:bg-accent/90 self-start sm:self-auto">
               <Plus className="h-4 w-4 mr-2" />
               Cadastrar Sensei
             </Button>
@@ -319,79 +319,94 @@ export default function Senseis() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <UserCog className="h-5 w-5" />
             Lista de Senseis
           </CardTitle>
         </CardHeader>
         <CardContent>
           {senseis && senseis.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Dojos</TableHead>
-                  <TableHead>Graduação</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-12">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {senseis.map((sensei) => (
-                  <TableRow key={sensei.id}>
-                    <TableCell className="font-medium">{sensei.name}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {sensei.email}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {sensei.phone ? (
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          {sensei.phone}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {sensei.linkedDojos && sensei.linkedDojos.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {sensei.linkedDojos.map((dojo: { id: string; name: string }) => (
-                            <span
-                              key={dojo.id}
-                              className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary"
-                            >
-                              {dojo.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">Nenhum dojo</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {sensei.belt_grade ? (
-                        <BeltBadge grade={sensei.belt_grade} />
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <RegistrationStatusBadge status={sensei.registration_status || "pendente"} />
-                    </TableCell>
-                    <TableCell>
-                      <SenseiActions sensei={sensei} />
-                    </TableCell>
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[140px]">Nome</TableHead>
+                    <TableHead className="hidden md:table-cell">Email</TableHead>
+                    <TableHead className="hidden lg:table-cell">Telefone</TableHead>
+                    <TableHead className="hidden sm:table-cell">Dojos</TableHead>
+                    <TableHead>Faixa</TableHead>
+                    <TableHead className="hidden sm:table-cell">Status</TableHead>
+                    <TableHead className="w-12">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {senseis.map((sensei) => (
+                    <TableRow key={sensei.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{sensei.name}</p>
+                          <p className="text-xs text-muted-foreground md:hidden truncate max-w-[150px]">
+                            {sensei.email}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate max-w-[180px]">{sensei.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        {sensei.phone ? (
+                          <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                            <Phone className="h-3 w-3 flex-shrink-0" />
+                            {sensei.phone}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        {sensei.linkedDojos && sensei.linkedDojos.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-w-[150px]">
+                            {sensei.linkedDojos.slice(0, 2).map((dojo: { id: string; name: string }) => (
+                              <span
+                                key={dojo.id}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary truncate max-w-[70px]"
+                                title={dojo.name}
+                              >
+                                {dojo.name}
+                              </span>
+                            ))}
+                            {sensei.linkedDojos.length > 2 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{sensei.linkedDojos.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">Nenhum</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {sensei.belt_grade ? (
+                          <BeltBadge grade={sensei.belt_grade} size="sm" />
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <RegistrationStatusBadge status={sensei.registration_status || "pendente"} />
+                      </TableCell>
+                      <TableCell>
+                        <SenseiActions sensei={sensei} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
               <UserCog className="h-12 w-12 mx-auto mb-4 opacity-50" />

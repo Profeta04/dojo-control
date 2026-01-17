@@ -211,43 +211,41 @@ export default function GraduationsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <PageHeader title="Graduações" description="Registro de promoções de faixa" />
-      </div>
+      <PageHeader title="Graduações" description="Registro de promoções de faixa" />
 
       {/* Students for Promotion */}
       {canManageStudents && (
-        <section className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+        <section className="mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
             <Award className="h-5 w-5 text-accent" />
             Promover Aluno
           </h2>
           
           {students && students.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               {students.map((student) => {
                 const nextBelts = getNextBelts(student.belt_grade);
                 const canPromote = nextBelts.length > 0;
 
                 return (
                   <Card key={student.id}>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 p-4">
                       <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-base flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            {student.name}
+                        <div className="min-w-0">
+                          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                            <User className="h-4 w-4 flex-shrink-0" />
+                            <span className="truncate">{student.name}</span>
                           </CardTitle>
-                          <CardDescription className="mt-1">
+                          <CardDescription className="mt-1 text-xs">
                             Faixa atual
                           </CardDescription>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 p-4 pt-0">
                       <div className="flex items-center gap-2">
                         {student.belt_grade ? (
-                          <BeltBadge grade={student.belt_grade} size="md" showLabel />
+                          <BeltBadge grade={student.belt_grade} size="sm" showLabel />
                         ) : (
                           <span className="text-sm text-muted-foreground">Sem faixa</span>
                         )}
@@ -256,13 +254,14 @@ export default function GraduationsPage() {
                       {canPromote ? (
                         <Button
                           className="w-full"
+                          size="sm"
                           onClick={() => openPromotionDialog(student)}
                         >
                           <Plus className="h-4 w-4 mr-2" />
                           Promover
                         </Button>
                       ) : (
-                        <Badge variant="secondary" className="w-full justify-center py-2">
+                        <Badge variant="secondary" className="w-full justify-center py-2 text-xs">
                           Faixa máxima atingida
                         </Badge>
                       )}
@@ -275,7 +274,7 @@ export default function GraduationsPage() {
             <Card className="text-center py-8">
               <CardContent>
                 <User className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">Nenhum aluno aprovado encontrado.</p>
+                <p className="text-muted-foreground text-sm">Nenhum aluno aprovado encontrado.</p>
               </CardContent>
             </Card>
           )}
@@ -284,7 +283,7 @@ export default function GraduationsPage() {
 
       {/* Graduation History */}
       <section>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
           <History className="h-5 w-5 text-accent" />
           Histórico de Graduações
         </h2>
@@ -292,57 +291,66 @@ export default function GraduationsPage() {
         {graduationHistory && graduationHistory.length > 0 ? (
           <Card>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Promoção</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Promovido por</TableHead>
-                    <TableHead>Notas</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {graduationHistory.map((graduation) => (
-                    <TableRow key={graduation.id}>
-                      <TableCell className="font-medium">
-                        {graduation.studentName}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {graduation.previous_belt ? (
-                            <BeltBadge grade={graduation.previous_belt} size="sm" />
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[120px]">Aluno</TableHead>
+                      <TableHead className="min-w-[140px]">Promoção</TableHead>
+                      <TableHead className="hidden sm:table-cell">Data</TableHead>
+                      <TableHead className="hidden md:table-cell">Promovido por</TableHead>
+                      <TableHead className="hidden lg:table-cell">Notas</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {graduationHistory.map((graduation) => (
+                      <TableRow key={graduation.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-sm">{graduation.studentName}</p>
+                            <p className="text-xs text-muted-foreground sm:hidden">
+                              {format(new Date(graduation.graduation_date), "dd/MM/yyyy", { locale: ptBR })}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {graduation.previous_belt ? (
+                              <BeltBadge grade={graduation.previous_belt} size="sm" />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                            <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                            <BeltBadge grade={graduation.new_belt} size="sm" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell text-sm">
+                          {format(new Date(graduation.graduation_date), "dd/MM/yyyy", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm">
+                          {graduation.promotedByName}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {graduation.notes ? (
+                            <span className="text-sm text-muted-foreground line-clamp-1">
+                              {graduation.notes}
+                            </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">—</span>
                           )}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          <BeltBadge grade={graduation.new_belt} size="sm" />
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(graduation.graduation_date), "dd/MM/yyyy", { locale: ptBR })}
-                      </TableCell>
-                      <TableCell>{graduation.promotedByName}</TableCell>
-                      <TableCell>
-                        {graduation.notes ? (
-                          <span className="text-sm text-muted-foreground line-clamp-1">
-                            {graduation.notes}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         ) : (
           <Card className="text-center py-8">
             <CardContent>
               <History className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">Nenhuma graduação registrada ainda.</p>
+              <p className="text-muted-foreground text-sm">Nenhuma graduação registrada ainda.</p>
             </CardContent>
           </Card>
         )}

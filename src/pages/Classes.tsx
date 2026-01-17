@@ -19,34 +19,34 @@ export default function Classes() {
     <DashboardLayout>
       <PageHeader title="Turmas" description="Gerencie turmas, agenda e presenças" />
 
-      <Tabs defaultValue="classes" className="mt-6">
-        <TabsList className={`grid w-full ${canManageStudents ? 'grid-cols-3' : 'grid-cols-2'} lg:w-[400px]`}>
+      <Tabs defaultValue="classes" className="mt-4 sm:mt-6">
+        <TabsList className={`w-full ${canManageStudents ? 'grid grid-cols-3' : 'grid grid-cols-2'} max-w-sm`}>
           <TabsTrigger value="classes" className="gap-1.5 text-xs sm:text-sm">
             <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Turmas</span>
+            <span className="hidden xs:inline">Turmas</span>
           </TabsTrigger>
           <TabsTrigger value="schedule" className="gap-1.5 text-xs sm:text-sm">
             <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span>Agenda</span>
+            <span className="hidden xs:inline">Agenda</span>
           </TabsTrigger>
           {canManageStudents && (
             <TabsTrigger value="attendance" className="gap-1.5 text-xs sm:text-sm">
               <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span>Presenças</span>
+              <span className="hidden xs:inline">Presenças</span>
             </TabsTrigger>
           )}
         </TabsList>
 
-        <TabsContent value="classes" className="mt-4 sm:mt-6">
+        <TabsContent value="classes" className="mt-4">
           <ClassesTab />
         </TabsContent>
 
-        <TabsContent value="schedule" className="mt-4 sm:mt-6">
+        <TabsContent value="schedule" className="mt-4">
           <ScheduleTab />
         </TabsContent>
 
         {canManageStudents && (
-          <TabsContent value="attendance" className="mt-4 sm:mt-6">
+          <TabsContent value="attendance" className="mt-4">
             <AttendanceTab />
           </TabsContent>
         )}

@@ -35,12 +35,14 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
-        <PageHeader
-          title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
-          description="Bem-vindo ao sistema de gestão do dojo"
-        />
-        {canManageStudents && <ExportReportButton />}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <PageHeader
+            title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
+            description="Bem-vindo ao sistema de gestão do dojo"
+          />
+          {canManageStudents && <ExportReportButton />}
+        </div>
       </div>
 
       {/* Pending Approval Warning */}
@@ -67,7 +69,7 @@ export default function Dashboard() {
       <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
 
       {/* Tasks Section */}
-      <div className="mt-8">
+      <div className="mt-6">
         {isStudent && !canManageStudents ? (
           <StudentTasksDashboard />
         ) : canManageStudents ? (
@@ -76,9 +78,9 @@ export default function Dashboard() {
       </div>
 
       {!isPending && (
-        <div className="mt-8 p-6 bg-card rounded-lg border border-border">
-          <h2 className="text-lg font-semibold mb-2">🎯 Próximos passos</h2>
-          <p className="text-muted-foreground">
+        <div className="mt-6 p-4 sm:p-6 bg-card rounded-lg border border-border">
+          <h2 className="text-base sm:text-lg font-semibold mb-2">🎯 Próximos passos</h2>
+          <p className="text-sm text-muted-foreground">
             {canManageStudents 
               ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
               : "Explore o menu para ver suas turmas, agenda e histórico de graduações."}

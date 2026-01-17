@@ -491,13 +491,14 @@ export default function PaymentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="flex flex-col gap-4 mb-6">
         <PageHeader title="Pagamentos" description="Controle de mensalidades dos alunos" />
         
         {canManageStudents && (
           <div className="flex gap-2 flex-wrap">
             <Button 
               variant="outline" 
+              size="sm"
               onClick={handleSendNotifications}
               disabled={notifyLoading || (stats.pendente + stats.atrasado) === 0}
             >
@@ -506,15 +507,15 @@ export default function PaymentsPage() {
               ) : (
                 <Bell className="h-4 w-4 mr-2" />
               )}
-              Enviar Cobranças
+              <span className="hidden sm:inline">Enviar</span> Cobranças
             </Button>
-            <Button variant="outline" onClick={() => setBatchDialogOpen(true)}>
+            <Button variant="outline" size="sm" onClick={() => setBatchDialogOpen(true)}>
               <Users className="h-4 w-4 mr-2" />
-              Gerar em Lote
+              <span className="hidden sm:inline">Gerar em</span> Lote
             </Button>
-            <Button onClick={() => setCreateDialogOpen(true)}>
+            <Button size="sm" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
-              Novo Pagamento
+              <span className="hidden sm:inline">Novo</span> Pagamento
             </Button>
           </div>
         )}
@@ -526,35 +527,35 @@ export default function PaymentsPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4 mb-6">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 mb-6">
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription>Total de Registros</CardDescription>
-            <CardTitle className="text-2xl">{stats.total}</CardTitle>
+          <CardHeader className="pb-2 p-4">
+            <CardDescription className="text-xs">Total</CardDescription>
+            <CardTitle className="text-xl sm:text-2xl">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
+          <CardHeader className="pb-2 p-4">
+            <CardDescription className="flex items-center gap-1 text-xs">
               <Clock className="h-3 w-3" /> Pendentes
             </CardDescription>
-            <CardTitle className="text-2xl text-muted-foreground">{stats.pendente}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-muted-foreground">{stats.pendente}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
+          <CardHeader className="pb-2 p-4">
+            <CardDescription className="flex items-center gap-1 text-xs">
               <AlertTriangle className="h-3 w-3" /> Atrasados
             </CardDescription>
-            <CardTitle className="text-2xl text-destructive">{stats.atrasado}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-destructive">{stats.atrasado}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
+          <CardHeader className="pb-2 p-4">
+            <CardDescription className="flex items-center gap-1 text-xs">
               <CheckCircle2 className="h-3 w-3" /> Pagos
             </CardDescription>
-            <CardTitle className="text-2xl text-green-600">{stats.pago}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-green-600">{stats.pago}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -578,15 +579,15 @@ export default function PaymentsPage() {
 
       {/* Payments Table */}
       <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
               <Receipt className="h-5 w-5" />
               Histórico de Pagamentos
             </CardTitle>
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus | "all")}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filtrar por status" />
+              <SelectTrigger className="w-full sm:w-[150px] h-9">
+                <SelectValue placeholder="Filtrar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
@@ -599,76 +600,81 @@ export default function PaymentsPage() {
         </CardHeader>
         <CardContent className="p-0">
           {filteredPayments && filteredPayments.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Aluno</TableHead>
-                  <TableHead>Referência</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Comprovante</TableHead>
-                  {canManageStudents && <TableHead className="text-right">Ações</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPayments.map((payment) => {
-                  const statusStyle = STATUS_STYLES[payment.status];
-                  const StatusIcon = statusStyle.icon;
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[120px]">Aluno</TableHead>
+                    <TableHead className="hidden sm:table-cell">Referência</TableHead>
+                    <TableHead className="hidden md:table-cell">Vencimento</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="hidden lg:table-cell">Comprov.</TableHead>
+                    {canManageStudents && <TableHead className="w-[80px]">Ações</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayments.map((payment) => {
+                    const statusStyle = STATUS_STYLES[payment.status];
+                    const StatusIcon = statusStyle.icon;
 
-                  return (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          {payment.studentName}
-                        </div>
-                      </TableCell>
-                      <TableCell className="capitalize">
-                        {formatMonth(payment.reference_month)}
-                      </TableCell>
-                      <TableCell>
-                        {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {formatCurrency(payment.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusStyle.variant} className="gap-1">
-                          <StatusIcon className="h-3 w-3" />
-                          {PAYMENT_STATUS_LABELS[payment.status]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {payment.receipt_url ? (
-                          <ReceiptViewButton 
-                            receiptUrl={payment.receipt_url} 
-                            className="text-primary"
-                          />
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      {canManageStudents && (
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditDialog(payment)}
-                          >
-                            Gerenciar
-                          </Button>
+                    return (
+                      <TableRow key={payment.id}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-sm truncate max-w-[120px]">{payment.studentName}</p>
+                            <p className="text-xs text-muted-foreground sm:hidden">
+                              {formatMonth(payment.reference_month)}
+                            </p>
+                          </div>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell className="hidden sm:table-cell capitalize text-sm">
+                          {formatMonth(payment.reference_month)}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm">
+                          {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                        </TableCell>
+                        <TableCell className="font-medium text-sm">
+                          {formatCurrency(payment.amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={statusStyle.variant} className="gap-1 text-xs">
+                            <StatusIcon className="h-3 w-3" />
+                            <span className="hidden sm:inline">{PAYMENT_STATUS_LABELS[payment.status]}</span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {payment.receipt_url ? (
+                            <ReceiptViewButton 
+                              receiptUrl={payment.receipt_url} 
+                              className="text-primary"
+                            />
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        {canManageStudents && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => openEditDialog(payment)}
+                            >
+                              Editar
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="text-center py-12">
               <Receipt className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 {statusFilter === "all"
                   ? "Nenhum pagamento registrado."
                   : `Nenhum pagamento ${PAYMENT_STATUS_LABELS[statusFilter].toLowerCase()}.`}

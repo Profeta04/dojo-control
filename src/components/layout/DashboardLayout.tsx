@@ -217,7 +217,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main id="main-content" className="lg:pl-64 pt-14 lg:pt-0 min-h-screen" tabIndex={-1}>
         {/* Desktop header area */}
-        <div className="hidden lg:flex items-center justify-between h-14 px-8 border-b border-border/50" role="banner">
+        <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
           {/* Dojo Selector */}
           {showDojoSelector && !isLoadingDojos && (
             <div className="flex items-center gap-2">
@@ -226,7 +226,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 value={currentDojoId || "all"}
                 onValueChange={(value) => setCurrentDojoId(value === "all" ? null : value)}
               >
-                <SelectTrigger className="w-[180px] h-8 text-sm">
+                <SelectTrigger className="w-[160px] h-8 text-sm">
                   <SelectValue placeholder="Selecione o dojo" />
                 </SelectTrigger>
                 <SelectContent>
@@ -243,7 +243,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
-        <div className="p-4 lg:px-8 lg:py-6">{children}</div>
+        <div className="p-4 lg:p-6">{children}</div>
       </main>
     </div>
   );
