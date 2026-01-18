@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary text-outlined",
                 location.pathname === item.href
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
@@ -151,20 +151,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
               aria-hidden="true"
             >
-              <span className="text-primary-foreground font-medium">
+              <span className="text-primary-foreground font-medium text-outlined">
                 {profile?.name?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-primary-foreground truncate">
+            <p className="text-sm font-medium text-primary-foreground truncate text-outlined">
               {profile?.name || "Usuário"}
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
                 <BeltBadge grade={profile.belt_grade} size="sm" />
               )}
-              <span className="text-xs text-primary-foreground/60">
+              <span className="text-xs text-primary-foreground/60 text-outlined">
                 {isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
@@ -172,7 +172,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground"
+          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground text-outlined"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
