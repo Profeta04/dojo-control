@@ -144,7 +144,7 @@ export function DojoManagement() {
     setEditingDojo(dojo);
   };
 
-  const DojoFormFields = ({ isEdit = false }: { isEdit?: boolean }) => (
+  const renderFormFields = (isEdit = false) => (
     <ScrollArea className="max-h-[70vh] pr-4">
       <div className="space-y-6">
         {/* Logo Upload */}
@@ -176,6 +176,7 @@ export function DojoManagement() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Nome do dojo"
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -185,6 +186,7 @@ export function DojoManagement() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="(00) 00000-0000"
+                className="h-10"
               />
             </div>
           </div>
@@ -196,6 +198,7 @@ export function DojoManagement() {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="contato@dojo.com"
+              className="h-10"
             />
           </div>
           <div className="space-y-2">
@@ -205,6 +208,7 @@ export function DojoManagement() {
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Endereço completo"
+              className="h-10"
             />
           </div>
         </div>
@@ -246,6 +250,7 @@ export function DojoManagement() {
                 value={formData.monthly_fee}
                 onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
                 placeholder="150.00"
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -258,6 +263,7 @@ export function DojoManagement() {
                 value={formData.payment_due_day}
                 onChange={(e) => setFormData({ ...formData, payment_due_day: e.target.value })}
                 placeholder="10"
+                className="h-10"
               />
             </div>
             <div className="space-y-2">
@@ -267,6 +273,7 @@ export function DojoManagement() {
                 value={formData.pix_key}
                 onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
                 placeholder="email@exemplo.com"
+                className="h-10"
               />
             </div>
           </div>
@@ -316,7 +323,7 @@ export function DojoManagement() {
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-4">
-                <DojoFormFields />
+                {renderFormFields(false)}
                 <Button
                   onClick={handleCreate}
                   disabled={createDojoMutation.isPending}
@@ -426,7 +433,7 @@ export function DojoManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <DojoFormFields isEdit />
+            {renderFormFields(true)}
             <Button
               onClick={handleUpdate}
               disabled={updateDojoMutation.isPending}

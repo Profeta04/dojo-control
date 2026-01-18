@@ -13,7 +13,6 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { differenceInYears, parse, isValid } from "date-fns";
-import { findBestMatch, findAllMatches } from "@/lib/fuzzyMatch";
 import {
   Dialog,
   DialogContent,
@@ -22,9 +21,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Alert,
-  AlertDescription,
-} from "@/components/ui/alert";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -73,12 +75,8 @@ export default function Auth() {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupBirthDate, setSignupBirthDate] = useState("");
-  const [signupDojoName, setSignupDojoName] = useState("");
-  const [signupSenseiName, setSignupSenseiName] = useState("");
-  const [matchedDojo, setMatchedDojo] = useState<{ id: string; name: string; score: number } | null>(null);
-  const [matchedSensei, setMatchedSensei] = useState<{ id: string; name: string; score: number } | null>(null);
-  const [dojoSuggestions, setDojoSuggestions] = useState<{ id: string; name: string; score: number }[]>([]);
-  const [showDojoSuggestions, setShowDojoSuggestions] = useState(false);
+  const [selectedDojoId, setSelectedDojoId] = useState("");
+  const [selectedSenseiId, setSelectedSenseiId] = useState("");
   
   // Guardian form
   const [addGuardian, setAddGuardian] = useState(false);
@@ -97,7 +95,7 @@ export default function Auth() {
     return age !== null && age < 18;
   }, [signupBirthDate]);
 
-  // Fetch dojos for matching
+  // Fetch dojos
   const { data: dojos = [] } = useQuery({
     queryKey: ["dojos-for-signup"],
     queryFn: async () => {
@@ -111,32 +109,21 @@ export default function Auth() {
     },
   });
 
-  // Fetch senseis for matching (filtered by matched dojo if available)
+  // Fetch senseis for the selected dojo
   const { data: senseis = [] } = useQuery({
-    queryKey: ["senseis-for-signup", matchedDojo?.id],
+    queryKey: ["senseis-for-signup", selectedDojoId],
     queryFn: async () => {
-      // Get sensei user ids
-      const { data: senseiRoles } = await supabase
-        .from("user_roles")
+      if (!selectedDojoId) return [];
+      
+      // Get sensei user ids linked to this dojo
+      const { data: dojoSenseis } = await supabase
+        .from("dojo_senseis")
         .select("user_id")
-        .eq("role", "sensei");
+        .eq("dojo_id", selectedDojoId);
 
-      if (!senseiRoles || senseiRoles.length === 0) return [];
+      if (!dojoSenseis || dojoSenseis.length === 0) return [];
 
-      let senseiUserIds = senseiRoles.map((r) => r.user_id);
-
-      // If a dojo is matched, filter to senseis linked to that dojo
-      if (matchedDojo?.id) {
-        const { data: dojoSenseis } = await supabase
-          .from("dojo_senseis")
-          .select("user_id")
-          .eq("dojo_id", matchedDojo.id);
-
-        if (dojoSenseis && dojoSenseis.length > 0) {
-          const dojoSenseiIds = dojoSenseis.map((ds) => ds.user_id);
-          senseiUserIds = senseiUserIds.filter((id) => dojoSenseiIds.includes(id));
-        }
-      }
+      const senseiUserIds = dojoSenseis.map((ds) => ds.user_id);
 
       const { data: profiles } = await supabase
         .from("profiles")
@@ -145,41 +132,13 @@ export default function Auth() {
 
       return (profiles || []).map((p) => ({ id: p.user_id, name: p.name }));
     },
+    enabled: !!selectedDojoId,
   });
 
-  // Match dojo name as user types and get suggestions
+  // Reset sensei when dojo changes
   useEffect(() => {
-    if (signupDojoName.trim().length >= 1) {
-      const match = findBestMatch(signupDojoName, dojos);
-      setMatchedDojo(match);
-      
-      // Get all matching suggestions
-      const suggestions = findAllMatches(signupDojoName, dojos, 0.15);
-      setDojoSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
-      setShowDojoSuggestions(suggestions.length > 0 && !match);
-    } else {
-      setMatchedDojo(null);
-      setDojoSuggestions([]);
-      setShowDojoSuggestions(false);
-    }
-  }, [signupDojoName, dojos]);
-
-  // Select a dojo from suggestions
-  const handleSelectDojo = (dojo: { id: string; name: string }) => {
-    setSignupDojoName(dojo.name);
-    setMatchedDojo({ ...dojo, score: 1 });
-    setShowDojoSuggestions(false);
-  };
-
-  // Match sensei name as user types
-  useEffect(() => {
-    if (signupSenseiName.trim().length >= 2) {
-      const match = findBestMatch(signupSenseiName, senseis);
-      setMatchedSensei(match);
-    } else {
-      setMatchedSensei(null);
-    }
-  }, [signupSenseiName, senseis]);
+    setSelectedSenseiId("");
+  }, [selectedDojoId]);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -267,21 +226,11 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate dojo name is required
-    if (!signupDojoName.trim()) {
+    // Validate dojo selection
+    if (!selectedDojoId) {
       toast({
         title: "Erro de validação",
-        description: "O nome do dojo é obrigatório",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if we found a matching dojo
-    if (!matchedDojo) {
-      toast({
-        title: "Dojo não encontrado",
-        description: "Não foi possível encontrar um dojo com esse nome. Verifique a ortografia.",
+        description: "Selecione o dojo",
         variant: "destructive",
       });
       return;
@@ -402,7 +351,7 @@ export default function Auth() {
             birth_date: signupBirthDate,
             guardian_user_id: guardianUserId,
             guardian_email: isMinor && addGuardian ? guardianEmail : null,
-            dojo_id: matchedDojo?.id || null,
+            dojo_id: selectedDojoId || null,
           })
           .eq("user_id", studentData.user.id);
 
@@ -424,10 +373,8 @@ export default function Auth() {
       setSignupPassword("");
       setSignupConfirmPassword("");
       setSignupBirthDate("");
-      setSignupDojoName("");
-      setSignupSenseiName("");
-      setMatchedDojo(null);
-      setMatchedSensei(null);
+      setSelectedDojoId("");
+      setSelectedSenseiId("");
       setGuardianEmail("");
       setGuardianPassword("");
       setGuardianConfirmPassword("");
@@ -529,96 +476,53 @@ export default function Auth() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Dojo Name Field */}
+                {/* Dojo Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="signup-dojo" className="flex items-center gap-2">
                     <Building className="h-4 w-4" />
-                    Nome do Dojo *
+                    Dojo *
                   </Label>
-                  <div className="relative">
-                    <Input
-                      id="signup-dojo"
-                      type="text"
-                      placeholder="Digite o nome do seu dojo"
-                      value={signupDojoName}
-                      onChange={(e) => setSignupDojoName(e.target.value)}
-                      onFocus={() => {
-                        if (dojos.length > 0 && !matchedDojo) {
-                          setDojoSuggestions(dojos.slice(0, 5).map(d => ({ ...d, score: 1 })));
-                          setShowDojoSuggestions(true);
-                        }
-                      }}
-                      onBlur={() => {
-                        // Delay to allow click on suggestion
-                        setTimeout(() => setShowDojoSuggestions(false), 200);
-                      }}
-                      required
-                    />
-                    {/* Suggestions dropdown */}
-                    {showDojoSuggestions && dojoSuggestions.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-auto">
-                        {dojoSuggestions.map((dojo) => (
-                          <button
-                            key={dojo.id}
-                            type="button"
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2"
-                            onClick={() => handleSelectDojo(dojo)}
-                          >
-                            <Building className="h-3 w-3 text-muted-foreground" />
+                  <Select value={selectedDojoId} onValueChange={setSelectedDojoId}>
+                    <SelectTrigger id="signup-dojo" className="h-10">
+                      <SelectValue placeholder="Selecione seu dojo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dojos.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          Nenhum dojo disponível
+                        </SelectItem>
+                      ) : (
+                        dojos.map((dojo) => (
+                          <SelectItem key={dojo.id} value={dojo.id}>
                             {dojo.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {signupDojoName.trim().length >= 1 && (
-                    matchedDojo ? (
-                      <Alert className="py-2 bg-green-500/10 border-green-500/30">
-                        <AlertDescription className="text-xs text-green-700 dark:text-green-400">
-                          ✓ Dojo encontrado: <strong>{matchedDojo.name}</strong>
-                          {matchedDojo.score < 1 && matchedDojo.name.toLowerCase() !== signupDojoName.toLowerCase() && (
-                            <span className="text-muted-foreground ml-1">(correspondência aproximada)</span>
-                          )}
-                        </AlertDescription>
-                      </Alert>
-                    ) : dojos.length === 0 ? (
-                      <Alert className="py-2 bg-yellow-500/10 border-yellow-500/30">
-                        <AlertDescription className="text-xs text-yellow-700 dark:text-yellow-400">
-                          ⚠ Nenhum dojo cadastrado no sistema
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <Alert className="py-2 bg-yellow-500/10 border-yellow-500/30">
-                        <AlertDescription className="text-xs text-yellow-700 dark:text-yellow-400">
-                          ⚠ Nenhum dojo encontrado. Clique no campo para ver as opções disponíveis.
-                        </AlertDescription>
-                      </Alert>
-                    )
-                  )}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Sensei Name Field (Optional) */}
-                <div className="space-y-2">
-                  <Label htmlFor="signup-sensei" className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Nome do Sensei <span className="text-muted-foreground text-xs">(opcional)</span>
-                  </Label>
-                  <Input
-                    id="signup-sensei"
-                    type="text"
-                    placeholder="Digite o nome do seu sensei"
-                    value={signupSenseiName}
-                    onChange={(e) => setSignupSenseiName(e.target.value)}
-                    disabled={!matchedDojo}
-                  />
-                  {signupSenseiName.trim().length >= 2 && matchedSensei && (
-                    <Alert className="py-2 bg-green-500/10 border-green-500/30">
-                      <AlertDescription className="text-xs text-green-700 dark:text-green-400">
-                        ✓ Sensei encontrado: <strong>{matchedSensei.name}</strong>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                </div>
+                {/* Sensei Selection (Optional) */}
+                {selectedDojoId && senseis.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-sensei" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Sensei <span className="text-muted-foreground text-xs">(opcional)</span>
+                    </Label>
+                    <Select value={selectedSenseiId} onValueChange={setSelectedSenseiId}>
+                      <SelectTrigger id="signup-sensei" className="h-10">
+                        <SelectValue placeholder="Selecione seu sensei" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {senseis.map((sensei) => (
+                          <SelectItem key={sensei.id} value={sensei.id}>
+                            {sensei.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-name">Nome completo</Label>
@@ -629,6 +533,7 @@ export default function Auth() {
                     value={signupName}
                     onChange={(e) => setSignupName(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
                 
@@ -642,7 +547,7 @@ export default function Auth() {
                       onChange={(e) => setSignupBirthDate(e.target.value)}
                       max={new Date().toISOString().split('T')[0]}
                       required
-                      className="pr-10"
+                      className="pr-10 h-10"
                     />
                     <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                   </div>
@@ -663,6 +568,7 @@ export default function Auth() {
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -674,6 +580,7 @@ export default function Auth() {
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
                 <div className="space-y-2">
@@ -685,6 +592,7 @@ export default function Auth() {
                     value={signupConfirmPassword}
                     onChange={(e) => setSignupConfirmPassword(e.target.value)}
                     required
+                    className="h-10"
                   />
                 </div>
 
@@ -718,6 +626,7 @@ export default function Auth() {
                             value={guardianEmail}
                             onChange={(e) => setGuardianEmail(e.target.value)}
                             required={addGuardian}
+                            className="h-10"
                           />
                         </div>
                         
@@ -730,6 +639,7 @@ export default function Auth() {
                             value={guardianPassword}
                             onChange={(e) => setGuardianPassword(e.target.value)}
                             required={addGuardian}
+                            className="h-10"
                           />
                         </div>
                         
@@ -742,6 +652,7 @@ export default function Auth() {
                             value={guardianConfirmPassword}
                             onChange={(e) => setGuardianConfirmPassword(e.target.value)}
                             required={addGuardian}
+                            className="h-10"
                           />
                         </div>
                       </>
@@ -749,7 +660,7 @@ export default function Auth() {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90" disabled={loading}>
+                <Button type="submit" className="w-full h-10 bg-accent hover:bg-accent/90" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Cadastrar
                 </Button>
@@ -781,6 +692,7 @@ export default function Auth() {
                 value={forgotPasswordEmail}
                 onChange={(e) => setForgotPasswordEmail(e.target.value)}
                 required
+                className="h-10"
               />
             </div>
             <div className="flex gap-2 justify-end">
