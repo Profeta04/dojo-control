@@ -1,17 +1,49 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useTasks, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { TaskCard } from "./TaskCard";
+import { TaskQuizCard } from "./TaskQuizCard";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, CheckCircle2, Clock, Trophy, Filter } from "lucide-react";
+import { ClipboardList, CheckCircle2, Clock, Trophy, Filter, BookOpen } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+interface TaskTemplate {
+  id: string;
+  title: string;
+  options: string[] | null;
+  correct_option: number | null;
+}
+
 export function StudentTasksDashboard() {
   const { tasks, isLoading, updateTaskStatus } = useTasks();
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
+
+  // Fetch task templates to get quiz options
+  const { data: templates = [] } = useQuery({
+    queryKey: ["task-templates-options"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_templates")
+        .select("id, title, options, correct_option")
+        .not("options", "is", null);
+      
+      if (error) throw error;
+      return data as TaskTemplate[];
+    },
+  });
+
+  // Create a map of task title to quiz options
+  const templateOptionsMap = templates.reduce((acc, t) => {
+    if (t.options && t.correct_option !== null) {
+      acc[t.title] = { options: t.options, correctOption: t.correct_option };
+    }
+    return acc;
+  }, {} as Record<string, { options: string[]; correctOption: number }>);
 
   const filteredTasks = tasks.filter(t => 
     categoryFilter === "all" || t.category === categoryFilter
@@ -22,6 +54,11 @@ export function StudentTasksDashboard() {
   const overdueTasks = pendingTasks.filter(t => 
     t.due_date && new Date(t.due_date) < new Date()
   );
+
+  // Separate quiz tasks from regular tasks
+  const quizTasks = pendingTasks.filter(t => templateOptionsMap[t.title]);
+  const regularPendingTasks = pendingTasks.filter(t => !templateOptionsMap[t.title]);
+
 
   const handleStatusChange = async (taskId: string, status: "pendente" | "concluida" | "cancelada") => {
     try {
@@ -108,7 +145,7 @@ export function StudentTasksDashboard() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="pending" className="mt-4 space-y-3" role="tabpanel" aria-label="Lista de tarefas pendentes">
+            <TabsContent value="pending" className="mt-4 space-y-4" role="tabpanel" aria-label="Lista de tarefas pendentes">
               {pendingTasks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground" role="status" aria-live="polite">
                   <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" aria-hidden="true" />
@@ -116,16 +153,53 @@ export function StudentTasksDashboard() {
                   <p className="text-sm">Continue assim! 🥋</p>
                 </div>
               ) : (
-                <ul className="space-y-3" aria-label="Tarefas pendentes">
-                  {pendingTasks.map(task => (
-                    <li key={task.id}>
-                      <TaskCard
-                        task={task}
-                        onStatusChange={handleStatusChange}
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  {/* Quiz Tasks Section */}
+                  {quizTasks.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+                        <BookOpen className="h-4 w-4" />
+                        <span>Questões Teóricas ({quizTasks.length})</span>
+                      </div>
+                      <ul className="space-y-3" aria-label="Questões teóricas">
+                        {quizTasks.map(task => {
+                          const quizData = templateOptionsMap[task.title];
+                          return (
+                            <li key={task.id}>
+                              <TaskQuizCard
+                                task={task}
+                                options={quizData.options}
+                                correctOption={quizData.correctOption}
+                              />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Regular Tasks Section */}
+                  {regularPendingTasks.length > 0 && (
+                    <div className="space-y-3">
+                      {quizTasks.length > 0 && (
+                        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-4">
+                          <ClipboardList className="h-4 w-4" />
+                          <span>Tarefas Práticas ({regularPendingTasks.length})</span>
+                        </div>
+                      )}
+                      <ul className="space-y-3" aria-label="Tarefas práticas">
+                        {regularPendingTasks.map(task => (
+                          <li key={task.id}>
+                            <TaskCard
+                              task={task}
+                              onStatusChange={handleStatusChange}
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
 

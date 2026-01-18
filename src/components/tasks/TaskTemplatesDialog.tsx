@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, BookOpen, Dumbbell, FileText, MoreHorizontal, Plus } from "lucide-react";
+import { Search, BookOpen, Dumbbell, FileText, MoreHorizontal, Plus, HelpCircle } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 
 interface TaskTemplate {
@@ -30,6 +30,8 @@ interface TaskTemplate {
   belt_level: string;
   martial_art: string;
   difficulty: string;
+  options: string[] | null;
+  correct_option: number | null;
 }
 
 interface TaskTemplatesDialogProps {
@@ -217,11 +219,17 @@ export function TaskTemplatesDialog({ open, onOpenChange, onSelectTemplate }: Ta
                             <CategoryIcon className="h-4 w-4" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <h4 className="font-medium text-sm truncate">{template.title}</h4>
                               <Badge variant="secondary" className={`text-xs ${difficultyConfig.color}`}>
                                 {difficultyConfig.label}
                               </Badge>
+                              {template.options && template.options.length > 0 && (
+                                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700 border-blue-300">
+                                  <HelpCircle className="h-3 w-3 mr-1" />
+                                  Quiz
+                                </Badge>
+                              )}
                             </div>
                             {template.description && (
                               <p className="text-xs text-muted-foreground line-clamp-2">

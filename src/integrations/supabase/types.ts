@@ -571,33 +571,39 @@ export type Database = {
         Row: {
           belt_level: string
           category: string
+          correct_option: number | null
           created_at: string
           description: string | null
           difficulty: string
           id: string
           martial_art: string
+          options: Json | null
           title: string
           updated_at: string
         }
         Insert: {
           belt_level: string
           category?: string
+          correct_option?: number | null
           created_at?: string
           description?: string | null
           difficulty?: string
           id?: string
           martial_art?: string
+          options?: Json | null
           title: string
           updated_at?: string
         }
         Update: {
           belt_level?: string
           category?: string
+          correct_option?: number | null
           created_at?: string
           description?: string | null
           difficulty?: string
           id?: string
           martial_art?: string
+          options?: Json | null
           title?: string
           updated_at?: string
         }

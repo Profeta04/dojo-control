@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTasks, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { TaskCard } from "./TaskCard";
 import { CreateTaskDialog } from "./CreateTaskDialog";
+import { AutoAssignTasksDialog } from "./AutoAssignTasksDialog";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +78,10 @@ export function TasksManagement() {
             Crie e acompanhe tarefas para os alunos
           </p>
         </div>
-        <CreateTaskDialog />
+        <div className="flex gap-2 flex-wrap">
+          <AutoAssignTasksDialog />
+          <CreateTaskDialog />
+        </div>
       </div>
 
       {/* Stats Cards */}
