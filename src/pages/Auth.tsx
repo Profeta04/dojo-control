@@ -13,7 +13,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { differenceInYears, parse, isValid } from "date-fns";
-import { findBestMatch } from "@/lib/fuzzyMatch";
+import { findBestMatch, findAllMatches } from "@/lib/fuzzyMatch";
 import {
   Dialog,
   DialogContent,
@@ -77,6 +77,8 @@ export default function Auth() {
   const [signupSenseiName, setSignupSenseiName] = useState("");
   const [matchedDojo, setMatchedDojo] = useState<{ id: string; name: string; score: number } | null>(null);
   const [matchedSensei, setMatchedSensei] = useState<{ id: string; name: string; score: number } | null>(null);
+  const [dojoSuggestions, setDojoSuggestions] = useState<{ id: string; name: string; score: number }[]>([]);
+  const [showDojoSuggestions, setShowDojoSuggestions] = useState(false);
   
   // Guardian form
   const [addGuardian, setAddGuardian] = useState(false);
@@ -145,15 +147,29 @@ export default function Auth() {
     },
   });
 
-  // Match dojo name as user types
+  // Match dojo name as user types and get suggestions
   useEffect(() => {
-    if (signupDojoName.trim().length >= 2) {
+    if (signupDojoName.trim().length >= 1) {
       const match = findBestMatch(signupDojoName, dojos);
       setMatchedDojo(match);
+      
+      // Get all matching suggestions
+      const suggestions = findAllMatches(signupDojoName, dojos, 0.15);
+      setDojoSuggestions(suggestions.slice(0, 5)); // Limit to 5 suggestions
+      setShowDojoSuggestions(suggestions.length > 0 && !match);
     } else {
       setMatchedDojo(null);
+      setDojoSuggestions([]);
+      setShowDojoSuggestions(false);
     }
   }, [signupDojoName, dojos]);
+
+  // Select a dojo from suggestions
+  const handleSelectDojo = (dojo: { id: string; name: string }) => {
+    setSignupDojoName(dojo.name);
+    setMatchedDojo({ ...dojo, score: 1 });
+    setShowDojoSuggestions(false);
+  };
 
   // Match sensei name as user types
   useEffect(() => {
@@ -519,15 +535,43 @@ export default function Auth() {
                     <Building className="h-4 w-4" />
                     Nome do Dojo *
                   </Label>
-                  <Input
-                    id="signup-dojo"
-                    type="text"
-                    placeholder="Digite o nome do seu dojo"
-                    value={signupDojoName}
-                    onChange={(e) => setSignupDojoName(e.target.value)}
-                    required
-                  />
-                  {signupDojoName.trim().length >= 2 && (
+                  <div className="relative">
+                    <Input
+                      id="signup-dojo"
+                      type="text"
+                      placeholder="Digite o nome do seu dojo"
+                      value={signupDojoName}
+                      onChange={(e) => setSignupDojoName(e.target.value)}
+                      onFocus={() => {
+                        if (dojos.length > 0 && !matchedDojo) {
+                          setDojoSuggestions(dojos.slice(0, 5).map(d => ({ ...d, score: 1 })));
+                          setShowDojoSuggestions(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay to allow click on suggestion
+                        setTimeout(() => setShowDojoSuggestions(false), 200);
+                      }}
+                      required
+                    />
+                    {/* Suggestions dropdown */}
+                    {showDojoSuggestions && dojoSuggestions.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-40 overflow-auto">
+                        {dojoSuggestions.map((dojo) => (
+                          <button
+                            key={dojo.id}
+                            type="button"
+                            className="w-full px-3 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center gap-2"
+                            onClick={() => handleSelectDojo(dojo)}
+                          >
+                            <Building className="h-3 w-3 text-muted-foreground" />
+                            {dojo.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {signupDojoName.trim().length >= 1 && (
                     matchedDojo ? (
                       <Alert className="py-2 bg-green-500/10 border-green-500/30">
                         <AlertDescription className="text-xs text-green-700 dark:text-green-400">
@@ -537,10 +581,16 @@ export default function Auth() {
                           )}
                         </AlertDescription>
                       </Alert>
+                    ) : dojos.length === 0 ? (
+                      <Alert className="py-2 bg-yellow-500/10 border-yellow-500/30">
+                        <AlertDescription className="text-xs text-yellow-700 dark:text-yellow-400">
+                          ⚠ Nenhum dojo cadastrado no sistema
+                        </AlertDescription>
+                      </Alert>
                     ) : (
                       <Alert className="py-2 bg-yellow-500/10 border-yellow-500/30">
                         <AlertDescription className="text-xs text-yellow-700 dark:text-yellow-400">
-                          ⚠ Nenhum dojo encontrado com esse nome
+                          ⚠ Nenhum dojo encontrado. Clique no campo para ver as opções disponíveis.
                         </AlertDescription>
                       </Alert>
                     )
