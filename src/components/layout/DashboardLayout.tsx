@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           <div>
-            <h1 className="font-bold text-lg text-primary-foreground text-outlined">{settings.dojo_name}</h1>
+            <h1 className="font-bold text-lg text-primary-foreground">{settings.dojo_name}</h1>
             <p className="text-xs text-primary-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary text-outlined",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
                 location.pathname === item.href
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
@@ -151,20 +151,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
               aria-hidden="true"
             >
-              <span className="text-primary-foreground font-medium text-outlined">
+              <span className="text-primary-foreground font-medium">
                 {profile?.name?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-primary-foreground truncate text-outlined">
+            <p className="text-sm font-medium text-primary-foreground truncate">
               {profile?.name || "Usuário"}
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
                 <BeltBadge grade={profile.belt_grade} size="sm" />
               )}
-              <span className="text-xs text-primary-foreground/60 text-outlined">
+              <span className="text-xs text-primary-foreground/60">
                 {isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
@@ -172,7 +172,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground text-outlined"
+          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
@@ -212,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <span className="text-base">🥋</span>
               </div>
             )}
-            <span className="font-semibold text-sm text-primary-foreground text-outlined truncate max-w-[140px]">
+            <span className="font-semibold text-sm text-primary-foreground truncate max-w-[140px]">
               {settings.dojo_name}
             </span>
           </div>

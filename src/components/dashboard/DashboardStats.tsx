@@ -158,11 +158,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           <Link to="/students">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Alunos Ativos</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Alunos Ativos</CardTitle>
                 <Users className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-outlined">{stats?.totalStudents}</div>
+                <div className="text-2xl font-bold">{stats?.totalStudents}</div>
                 <p className="text-xs text-muted-foreground mt-1">matriculados</p>
               </CardContent>
             </Card>
@@ -173,11 +173,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           <Link to="/senseis">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Senseis</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Senseis</CardTitle>
                 <UserCog className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-outlined">{stats?.totalSenseis}</div>
+                <div className="text-2xl font-bold">{stats?.totalSenseis}</div>
                 <p className="text-xs text-muted-foreground mt-1">instrutores</p>
               </CardContent>
             </Card>
@@ -187,11 +187,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         <Link to="/classes">
           <Card className="hover:border-accent/50 transition-colors cursor-pointer">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Turmas Ativas</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Turmas Ativas</CardTitle>
               <GraduationCap className="h-4 w-4 text-accent" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-outlined">{stats?.activeClasses}</div>
+              <div className="text-2xl font-bold">{stats?.activeClasses}</div>
               <p className="text-xs text-muted-foreground mt-1">em funcionamento</p>
             </CardContent>
           </Card>
@@ -202,11 +202,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
             <Link to="/students">
               <Card className="hover:border-warning/50 transition-colors cursor-pointer">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Aprovações Pendentes</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Aprovações Pendentes</CardTitle>
                   <Clock className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-outlined">{stats?.pendingApprovals}</div>
+                  <div className="text-2xl font-bold">{stats?.pendingApprovals}</div>
                   {(stats?.pendingApprovals || 0) > 0 && (
                     <p className="text-xs text-warning mt-1">Aguardando revisão</p>
                   )}
@@ -231,7 +231,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
             <CardContent>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <div className="text-2xl font-bold text-outlined">{stats?.attendanceRate}%</div>
+                  <div className="text-2xl font-bold">{stats?.attendanceRate}%</div>
                   <p className="text-xs text-muted-foreground">taxa de presença</p>
                 </div>
                 <div className="h-16 w-16">
@@ -354,11 +354,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           <Link to="/classes">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Registros de Presença</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Registros de Presença</CardTitle>
                 <CalendarDays className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-outlined">{stats?.totalAttendance}</div>
+                <div className="text-2xl font-bold">{stats?.totalAttendance}</div>
                 <p className="text-xs text-muted-foreground mt-1">neste mês</p>
               </CardContent>
             </Card>
@@ -367,11 +367,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           <Link to="/graduations">
             <Card className="hover:border-gold/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Graduações Recentes</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Graduações Recentes</CardTitle>
                 <TrendingUp className="h-4 w-4 text-gold" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-outlined">{stats?.recentGraduations}</div>
+                <div className="text-2xl font-bold">{stats?.recentGraduations}</div>
                 <p className="text-xs text-muted-foreground mt-1">últimos 3 meses</p>
               </CardContent>
             </Card>
@@ -380,11 +380,11 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           <Link to="/classes">
             <Card className="hover:border-accent/50 transition-colors cursor-pointer">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground text-outlined">Agenda</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Agenda</CardTitle>
                 <CalendarCheck className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-outlined">{stats?.activeClasses}</div>
+                <div className="text-2xl font-bold">{stats?.activeClasses}</div>
                 <p className="text-xs text-muted-foreground mt-1">turmas programadas</p>
               </CardContent>
             </Card>

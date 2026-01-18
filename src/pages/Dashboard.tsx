@@ -79,7 +79,7 @@ export default function Dashboard() {
 
       {!isPending && (
         <div className="mt-6 p-4 sm:p-6 bg-card rounded-lg border border-border">
-          <h2 className="text-base sm:text-lg font-semibold mb-2 text-outlined">🎯 Próximos passos</h2>
+          <h2 className="text-base sm:text-lg font-semibold mb-2">🎯 Próximos passos</h2>
           <p className="text-sm text-muted-foreground">
             {canManageStudents 
               ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
