@@ -11,6 +11,7 @@ import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
 import { TasksManagement } from "@/components/tasks/TasksManagement";
 import { PendingApprovalScreen } from "@/components/auth/PendingApprovalScreen";
+import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -36,6 +37,8 @@ export default function Dashboard() {
     return <PendingApprovalScreen />;
   }
 
+  const isStudentOnly = isStudent && !canManageStudents;
+
   return (
     <DashboardLayout>
       <div className="flex flex-col gap-4 mb-6">
@@ -48,6 +51,13 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Student Profile Card - Shows for students only */}
+      {isStudentOnly && (
+        <div className="mb-6">
+          <StudentProfileCard />
+        </div>
+      )}
+
       {/* Guardian Dashboard - Shows if user has linked minors */}
       {hasMinors && (
         <div className="mb-6">
@@ -55,12 +65,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Dashboard Stats Component */}
-      <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+      {/* Dashboard Stats Component - Only for admins/senseis */}
+      {canManageStudents && (
+        <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+      )}
 
       {/* Tasks Section */}
       <div className="mt-6">
-        {isStudent && !canManageStudents ? (
+        {isStudentOnly ? (
           <StudentTasksDashboard />
         ) : canManageStudents ? (
           <TasksManagement />
@@ -72,7 +84,7 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">
           {canManageStudents 
             ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
-            : "Explore o menu para ver suas turmas, agenda e histórico de graduações."}
+            : "Acompanhe suas tarefas e evolução no judô."}
         </p>
       </div>
     </DashboardLayout>
