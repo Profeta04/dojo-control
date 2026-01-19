@@ -45,7 +45,7 @@ const navItems: NavItem[] = [
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" /> },
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, roles: ["admin", "sensei"] },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, roles: ["student"] },
-  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" /> },
+  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, roles: ["admin", "sensei"] },
   { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, roles: ["admin", "sensei"] },
 ];
 
