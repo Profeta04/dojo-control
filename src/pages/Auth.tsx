@@ -99,13 +99,9 @@ export default function Auth() {
   const { data: dojos = [] } = useQuery({
     queryKey: ["dojos-for-signup"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("dojos")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
+      const { data, error } = await supabase.rpc("get_active_dojos_public");
       if (error) throw error;
-      return data;
+      return data as { id: string; name: string }[];
     },
   });
 

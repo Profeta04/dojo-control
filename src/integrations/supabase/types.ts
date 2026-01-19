@@ -687,6 +687,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_active_dojos_public: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_user_dojos: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
