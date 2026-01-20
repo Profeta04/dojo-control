@@ -37,39 +37,16 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
       const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
       const m = lNorm - c / 2;
 
-      let r = 0,
-        g = 0,
-        b = 0;
-      if (h >= 0 && h < 60) {
-        r = c;
-        g = x;
-        b = 0;
-      } else if (h >= 60 && h < 120) {
-        r = x;
-        g = c;
-        b = 0;
-      } else if (h >= 120 && h < 180) {
-        r = 0;
-        g = c;
-        b = x;
-      } else if (h >= 180 && h < 240) {
-        r = 0;
-        g = x;
-        b = c;
-      } else if (h >= 240 && h < 300) {
-        r = x;
-        g = 0;
-        b = c;
-      } else {
-        r = c;
-        g = 0;
-        b = x;
-      }
+      let r = 0, g = 0, b = 0;
+      if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+      else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+      else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+      else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+      else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+      else { r = c; g = 0; b = x; }
 
       const toHex = (n: number) =>
-        Math.round((n + m) * 255)
-          .toString(16)
-          .padStart(2, "0");
+        Math.round((n + m) * 255).toString(16).padStart(2, "0");
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
     } catch {
       return "#000000";
@@ -88,23 +65,16 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
 
       const max = Math.max(r, g, b);
       const min = Math.min(r, g, b);
-      let h = 0,
-        s = 0;
+      let h = 0, s = 0;
       const l = (max + min) / 2;
 
       if (max !== min) {
         const d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
         switch (max) {
-          case r:
-            h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-            break;
-          case g:
-            h = ((b - r) / d + 2) / 6;
-            break;
-          case b:
-            h = ((r - g) / d + 4) / 6;
-            break;
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
         }
       }
 
@@ -137,27 +107,15 @@ function ColorPicker({ label, value, onChange, description }: ColorPickerProps) 
 }
 
 const DEFAULT_LIGHT_COLORS = {
-  color_primary: "0 0% 8%",
-  color_secondary: "40 10% 92%",
-  color_background: "40 20% 97%",
-  color_foreground: "0 0% 10%",
-  color_accent: "4 85% 50%",
-  color_muted: "40 10% 92%",
-  color_primary_foreground: "0 0% 98%",
-  color_secondary_foreground: "0 0% 10%",
-  color_accent_foreground: "0 0% 100%",
+  color_primary: "220 15% 20%",
+  color_secondary: "220 10% 92%",
+  color_tertiary: "4 85% 50%",
 };
 
 const DEFAULT_DARK_COLORS = {
-  color_primary: "0 0% 98%",
-  color_secondary: "0 0% 20%",
-  color_background: "0 0% 7%",
-  color_foreground: "0 0% 98%",
-  color_accent: "4 85% 50%",
-  color_muted: "0 0% 15%",
-  color_primary_foreground: "0 0% 10%",
-  color_secondary_foreground: "0 0% 98%",
-  color_accent_foreground: "0 0% 100%",
+  color_primary: "220 15% 95%",
+  color_secondary: "220 10% 18%",
+  color_tertiary: "4 85% 55%",
 };
 
 export function DojoThemeSettings() {
@@ -189,9 +147,7 @@ export function DojoThemeSettings() {
 
       const { data } = await supabase
         .from("dojos")
-        .select(
-          "color_primary, color_secondary, color_background, color_foreground, color_accent, color_muted, color_primary_foreground, color_secondary_foreground, color_accent_foreground, dark_mode"
-        )
+        .select("color_primary, color_secondary, color_accent, dark_mode")
         .eq("id", dojoId)
         .single();
 
@@ -202,13 +158,7 @@ export function DojoThemeSettings() {
         setColors({
           color_primary: data.color_primary || defaults.color_primary,
           color_secondary: data.color_secondary || defaults.color_secondary,
-          color_background: data.color_background || defaults.color_background,
-          color_foreground: data.color_foreground || defaults.color_foreground,
-          color_accent: data.color_accent || defaults.color_accent,
-          color_muted: data.color_muted || defaults.color_muted,
-          color_primary_foreground: data.color_primary_foreground || defaults.color_primary_foreground,
-          color_secondary_foreground: data.color_secondary_foreground || defaults.color_secondary_foreground,
-          color_accent_foreground: data.color_accent_foreground || defaults.color_accent_foreground,
+          color_tertiary: data.color_accent || defaults.color_tertiary,
         });
         setHasChanges(false);
       }
@@ -219,25 +169,15 @@ export function DojoThemeSettings() {
 
   const updateColorsMutation = useMutation({
     mutationFn: async () => {
-      if (!user) {
-        throw new Error("Você precisa estar logado para alterar as cores");
-      }
-      if (!dojoId) {
-        throw new Error("Selecione um dojo para alterar as cores");
-      }
+      if (!user) throw new Error("Você precisa estar logado para alterar as cores");
+      if (!dojoId) throw new Error("Selecione um dojo para alterar as cores");
 
       const { error } = await supabase
         .from("dojos")
         .update({
           color_primary: colors.color_primary,
           color_secondary: colors.color_secondary,
-          color_background: colors.color_background,
-          color_foreground: colors.color_foreground,
-          color_accent: colors.color_accent,
-          color_muted: colors.color_muted,
-          color_primary_foreground: colors.color_primary_foreground,
-          color_secondary_foreground: colors.color_secondary_foreground,
-          color_accent_foreground: colors.color_accent_foreground,
+          color_accent: colors.color_tertiary,
           dark_mode: darkMode,
         })
         .eq("id", dojoId);
@@ -325,9 +265,6 @@ export function DojoThemeSettings() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Dica: para editar o tema, escolha um dojo específico (não "Todos").
-                </p>
               </div>
             </>
           ) : (
@@ -351,7 +288,7 @@ export function DojoThemeSettings() {
           <CardDescription>
             {dojoName
               ? `Personalize o tema do dojo: ${dojoName}`
-              : "Customize as cores do tema para refletir a identidade visual do seu dojo"}
+              : "Customize as 3 cores principais do tema"}
           </CardDescription>
         </div>
         <div className="flex gap-2">
@@ -377,16 +314,16 @@ export function DojoThemeSettings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {darkMode ? (
-                <Moon className="h-5 w-5 text-primary" aria-hidden="true" />
+                <Moon className="h-5 w-5 text-accent" aria-hidden="true" />
               ) : (
-                <Sun className="h-5 w-5 text-primary" aria-hidden="true" />
+                <Sun className="h-5 w-5 text-accent" aria-hidden="true" />
               )}
               <div>
                 <Label htmlFor="dark-mode-toggle" className="text-base font-medium">
                   Modo Escuro
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Alterne entre tema claro e escuro para o dojo
+                  Alterne entre tema claro e escuro
                 </p>
               </div>
             </div>
@@ -398,70 +335,27 @@ export function DojoThemeSettings() {
           </div>
         </div>
 
-        {/* Background & Text Colors */}
+        {/* 3 Color Pickers */}
         <div className="mb-6">
-          <h4 className="text-sm font-medium mb-4">Cores de Fundo e Texto</h4>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <h4 className="text-sm font-medium mb-4">Cores do Tema</h4>
+          <div className="grid gap-6 sm:grid-cols-3">
             <ColorPicker
-              label="Cor de Fundo"
-              value={colors.color_background}
-              onChange={(v) => handleColorChange("color_background", v)}
-              description="Fundo geral das páginas"
-            />
-            <ColorPicker
-              label="Cor do Texto"
-              value={colors.color_foreground}
-              onChange={(v) => handleColorChange("color_foreground", v)}
-              description="Cor principal dos textos"
-            />
-            <ColorPicker
-              label="Cor Suave"
-              value={colors.color_muted}
-              onChange={(v) => handleColorChange("color_muted", v)}
-              description="Usada em fundos suaves"
-            />
-          </div>
-        </div>
-
-        {/* Button Colors */}
-        <div className="mb-6">
-          <h4 className="text-sm font-medium mb-4">Cores dos Botões</h4>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <ColorPicker
-              label="Botão Primário (Fundo)"
+              label="Cor Primária"
               value={colors.color_primary}
               onChange={(v) => handleColorChange("color_primary", v)}
-              description="Cor de fundo do botão principal"
+              description="Barra lateral e botões principais"
             />
             <ColorPicker
-              label="Botão Primário (Texto)"
-              value={colors.color_primary_foreground}
-              onChange={(v) => handleColorChange("color_primary_foreground", v)}
-              description="Cor do texto do botão principal"
-            />
-            <ColorPicker
-              label="Botão Secundário (Fundo)"
+              label="Cor Secundária"
               value={colors.color_secondary}
               onChange={(v) => handleColorChange("color_secondary", v)}
-              description="Cor de fundo do botão secundário"
+              description="Fundos de elementos secundários"
             />
             <ColorPicker
-              label="Botão Secundário (Texto)"
-              value={colors.color_secondary_foreground}
-              onChange={(v) => handleColorChange("color_secondary_foreground", v)}
-              description="Cor do texto do botão secundário"
-            />
-            <ColorPicker
-              label="Botão Destaque (Fundo)"
-              value={colors.color_accent}
-              onChange={(v) => handleColorChange("color_accent", v)}
-              description="Cor de fundo do botão de destaque"
-            />
-            <ColorPicker
-              label="Botão Destaque (Texto)"
-              value={colors.color_accent_foreground}
-              onChange={(v) => handleColorChange("color_accent_foreground", v)}
-              description="Cor do texto do botão de destaque"
+              label="Cor de Destaque"
+              value={colors.color_tertiary}
+              onChange={(v) => handleColorChange("color_tertiary", v)}
+              description="Links, ícones e destaques"
             />
           </div>
         </div>
@@ -470,43 +364,53 @@ export function DojoThemeSettings() {
         <div
           className="p-4 rounded-lg border"
           style={{
-            backgroundColor: `hsl(${colors.color_background})`,
-            color: `hsl(${colors.color_foreground})`,
+            backgroundColor: darkMode ? "hsl(220 15% 8%)" : "hsl(220 15% 98%)",
+            color: darkMode ? "hsl(220 10% 95%)" : "hsl(220 15% 10%)",
           }}
         >
-          <h4 className="font-semibold mb-2">Pré-visualização</h4>
-          <div className="flex flex-wrap gap-2">
+          <h4 className="font-semibold mb-3">Pré-visualização</h4>
+          <div className="flex flex-wrap gap-3">
             <button
-              className="px-4 py-2 rounded-md text-sm font-medium"
+              className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
                 backgroundColor: `hsl(${colors.color_primary})`,
-                color: `hsl(${colors.color_primary_foreground})`,
+                color: darkMode ? "hsl(220 15% 8%)" : "hsl(0 0% 98%)",
               }}
             >
               Botão Primário
             </button>
             <button
-              className="px-4 py-2 rounded-md text-sm font-medium"
+              className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
                 backgroundColor: `hsl(${colors.color_secondary})`,
-                color: `hsl(${colors.color_secondary_foreground})`,
+                color: darkMode ? "hsl(220 10% 90%)" : "hsl(220 15% 15%)",
               }}
             >
               Botão Secundário
             </button>
             <button
-              className="px-4 py-2 rounded-md text-sm font-medium"
+              className="px-4 py-2 rounded-md text-sm font-medium transition-colors"
               style={{
-                backgroundColor: `hsl(${colors.color_accent})`,
-                color: `hsl(${colors.color_accent_foreground})`,
+                backgroundColor: `hsl(${colors.color_tertiary})`,
+                color: "hsl(0 0% 100%)",
               }}
             >
               Botão Destaque
             </button>
+          </div>
+          <div className="mt-4 flex gap-2 items-center">
+            <span
+              className="text-sm font-medium"
+              style={{ color: `hsl(${colors.color_tertiary})` }}
+            >
+              Link de exemplo
+            </span>
+            <span className="text-sm" style={{ color: darkMode ? "hsl(220 10% 60%)" : "hsl(220 10% 40%)" }}>
+              Texto secundário
+            </span>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 }
-
