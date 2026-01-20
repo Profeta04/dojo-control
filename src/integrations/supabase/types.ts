@@ -14,7 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      task_templates: {
+        Row: {
+          belt_level: string
+          category: string
+          correct_option: number | null
+          created_at: string
+          description: string | null
+          difficulty: string
+          id: string
+          martial_art: string
+          options: Json | null
+          title: string
+          video_url: string | null
+        }
+        Insert: {
+          belt_level: string
+          category?: string
+          correct_option?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          martial_art: string
+          options?: Json | null
+          title: string
+          video_url?: string | null
+        }
+        Update: {
+          belt_level?: string
+          category?: string
+          correct_option?: number | null
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          martial_art?: string
+          options?: Json | null
+          title?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_by: string
+          assigned_to: string
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_by: string
+          assigned_to: string
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_by?: string
+          assigned_to?: string
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
