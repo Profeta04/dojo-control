@@ -97,21 +97,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const NavContent = () => (
     <>
       {/* Logo */}
-      <div className="p-6">
+      <div className="p-4 lg:p-6 safe-area-inset-top">
         <div className="flex items-center gap-3">
           {logoUrl ? (
             <img 
               src={logoUrl} 
               alt={`Logo ${settings.dojo_name}`}
-              className="w-10 h-10 rounded-lg object-cover"
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
             />
           ) : (
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20" aria-hidden="true">
+            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20 flex-shrink-0" aria-hidden="true">
               <span className="text-xl">🥋</span>
             </div>
           )}
-          <div>
-            <h1 className="font-bold text-lg text-primary-foreground">{settings.dojo_name}</h1>
+          <div className="min-w-0">
+            <h1 className="font-bold text-base lg:text-lg text-primary-foreground truncate">{settings.dojo_name}</h1>
             <p className="text-xs text-primary-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
@@ -120,23 +120,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Separator className="bg-primary-foreground/20" aria-hidden="true" />
 
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-1" aria-label="Menu principal">
+      <ScrollArea className="flex-1 px-2 lg:px-3 py-3 lg:py-4">
+        <nav className="space-y-0.5 lg:space-y-1" aria-label="Menu principal">
           {filteredNavItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
+                "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors touch-target no-select",
+                "focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
+                "active:scale-[0.98] active:bg-primary-foreground/25",
                 location.pathname === item.href
                   ? "bg-primary-foreground/20 text-primary-foreground"
                   : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
               )}
               aria-current={location.pathname === item.href ? "page" : undefined}
             >
-              <span aria-hidden="true">{item.icon}</span>
-              {item.title}
+              <span aria-hidden="true" className="flex-shrink-0">{item.icon}</span>
+              <span className="truncate">{item.title}</span>
             </Link>
           ))}
         </nav>
@@ -145,8 +147,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <Separator className="bg-primary-foreground/20" aria-hidden="true" />
 
       {/* User Info */}
-      <div className="p-4" role="region" aria-label="Informações do usuário">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="p-3 lg:p-4 safe-area-inset-bottom" role="region" aria-label="Informações do usuário">
+        <div className="flex items-center gap-3 mb-3 lg:mb-4">
           <div className="flex-shrink-0">
             <div 
               className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
@@ -173,7 +175,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 focus-visible:ring-2 focus-visible:ring-primary-foreground"
+          className="w-full justify-start h-11 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary-foreground"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
@@ -197,32 +199,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Header */}
       <header 
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary border-b border-primary/20 h-14 px-4 flex items-center"
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary border-b border-primary/20 safe-area-inset-top"
         role="banner"
       >
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2">
+        <div className="h-14 px-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             {logoUrl ? (
               <img 
                 src={logoUrl} 
                 alt={`Logo ${settings.dojo_name}`}
-                className="w-8 h-8 rounded-lg object-cover"
+                className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
               />
             ) : (
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20" aria-hidden="true">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20 flex-shrink-0" aria-hidden="true">
                 <span className="text-base">🥋</span>
               </div>
             )}
-            <span className="font-semibold text-sm text-primary-foreground truncate max-w-[140px]">
+            <span className="font-semibold text-sm text-primary-foreground truncate">
               {settings.dojo_name}
             </span>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 flex-shrink-0">
             <NotificationBell />
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary-foreground hover:bg-primary-foreground/20 h-9 w-9 focus-visible:ring-2 focus-visible:ring-primary-foreground"
+              className="text-primary-foreground hover:bg-primary-foreground/20 active:bg-primary-foreground/30 h-10 w-10 touch-target focus-visible:ring-2 focus-visible:ring-primary-foreground"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-expanded={sidebarOpen}
               aria-controls="mobile-sidebar"
@@ -247,7 +249,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside
         id="mobile-sidebar"
         className={cn(
-          "fixed top-0 left-0 z-50 h-full w-64 bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 lg:translate-x-0",
+          "fixed top-0 left-0 z-50 h-full w-[280px] lg:w-64 bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 ease-out lg:translate-x-0",
+          "will-change-transform",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
         role="navigation"
@@ -257,7 +260,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main id="main-content" className="lg:pl-64 pt-14 lg:pt-0 min-h-screen" tabIndex={-1}>
+      <main id="main-content" className="lg:pl-64 min-h-screen" tabIndex={-1}>
+        {/* Mobile spacer for fixed header */}
+        <div className="h-14 lg:hidden safe-area-inset-top" />
+        
         {/* Desktop header area */}
         <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
           {/* Dojo Selector */}
@@ -285,7 +291,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
-        <div className="p-4 lg:p-6">{children}</div>
+        <div className="p-3 sm:p-4 lg:p-6 safe-area-inset-bottom">{children}</div>
       </main>
     </div>
   );
