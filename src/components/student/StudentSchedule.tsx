@@ -540,62 +540,6 @@ export function StudentSchedule() {
         </Card>
       </div>
 
-      {/* My Classes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Minhas Turmas
-          </CardTitle>
-          <CardDescription>Turmas em que você está matriculado</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {myClasses && myClasses.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {myClasses.map((classItem) => {
-                const { days, time } = parseSchedule(classItem.schedule);
-                
-                return (
-                  <div
-                    key={classItem.id}
-                    className="p-4 rounded-lg border bg-card hover:border-accent/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-accent" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{classItem.name}</p>
-                        {classItem.sensei_name && (
-                          <p className="text-xs text-muted-foreground">Sensei {classItem.sensei_name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>{days}</span>
-                      </div>
-                      {time && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{time}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Você ainda não está matriculado em nenhuma turma.</p>
-              <p className="text-sm">Entre em contato com seu sensei para se matricular.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Attendance History with Justify Option */}
       <Card>
