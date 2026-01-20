@@ -114,7 +114,7 @@ export function SenseiDojoDialog({
             dojosToAdd.map((dojoId) => ({
               sensei_id: senseiUserId,
               dojo_id: dojoId,
-            })) as any
+            }))
           );
 
         if (insertError) throw insertError;

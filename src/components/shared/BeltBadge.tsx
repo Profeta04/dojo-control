@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { BeltGrade, BELT_LABELS, BELT_COLORS } from "@/lib/constants";
 
 interface BeltBadgeProps {
-  grade: BeltGrade;
+  grade: BeltGrade | string;
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
 }
@@ -14,6 +14,10 @@ export function BeltBadge({ grade, size = "md", showLabel = false }: BeltBadgePr
     lg: "h-5 w-20",
   };
 
+  // Validate if the grade is a valid BeltGrade
+  const validGrade = grade as BeltGrade;
+  const beltColor = BELT_COLORS[validGrade] || "bg-muted";
+  const beltLabel = BELT_LABELS[validGrade] || grade;
   const textClass = grade.startsWith("preta") ? "text-white" : "";
 
   return (
@@ -22,12 +26,12 @@ export function BeltBadge({ grade, size = "md", showLabel = false }: BeltBadgePr
         className={cn(
           "rounded-sm belt-shadow",
           sizeClasses[size],
-          BELT_COLORS[grade]
+          beltColor
         )}
-        title={BELT_LABELS[grade]}
+        title={beltLabel}
       />
       {showLabel && (
-        <span className="text-sm text-muted-foreground">{BELT_LABELS[grade]}</span>
+        <span className="text-sm text-muted-foreground">{beltLabel}</span>
       )}
     </div>
   );

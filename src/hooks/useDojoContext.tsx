@@ -35,14 +35,14 @@ export function DojoProvider({ children }: { children: ReactNode }) {
           .order("name");
 
         if (error) throw error;
-        return (data as any) as Dojo[];
+        return data as Dojo[];
       }
 
       // For other users, get dojos they're linked to via dojo_senseis or dojo_owners
       const { data: dojoIds } = await supabase
-        .rpc("get_user_dojos" as any, { _user_id: user.id });
+        .rpc("get_user_dojos", { _user_id: user.id });
 
-      if (!dojoIds || (dojoIds as any[]).length === 0) {
+      if (!dojoIds || dojoIds.length === 0) {
         // Fall back to user's profile dojo_id
         const { data: profile } = await supabase
           .from("profiles")
@@ -50,27 +50,28 @@ export function DojoProvider({ children }: { children: ReactNode }) {
           .eq("user_id", user.id)
           .single();
 
-        if ((profile as any)?.dojo_id) {
+        if (profile?.dojo_id) {
           const { data: dojo } = await supabase
             .from("dojos")
             .select("*")
-            .eq("id", (profile as any).dojo_id)
+            .eq("id", profile.dojo_id)
             .single();
           
-          return dojo ? [(dojo as any) as Dojo] : [];
+          return dojo ? [dojo as Dojo] : [];
         }
         return [];
       }
 
+      const dojoIdsList = dojoIds.map((d: Dojo) => d.id);
       const { data: dojos, error } = await supabase
         .from("dojos")
         .select("*")
-        .in("id", dojoIds as any)
+        .in("id", dojoIdsList)
         .eq("is_active", true)
         .order("name");
 
       if (error) throw error;
-      return (dojos as any) as Dojo[];
+      return dojos as Dojo[];
     },
     enabled: !!user,
   });

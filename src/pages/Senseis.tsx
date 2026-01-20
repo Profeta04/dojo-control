@@ -91,10 +91,10 @@ export default function Senseis() {
       if (!profiles) return [];
 
       // Fetch dojo links for all senseis
-      const { data: dojoLinks } = await (supabase
+      const { data: dojoLinks } = await supabase
         .from("dojo_senseis")
         .select("sensei_id, dojo_id, dojos(id, name)")
-        .in("sensei_id", userIds) as any);
+        .in("sensei_id", userIds);
 
       // Create a map of user_id to their dojos
       const dojosByUser: Record<string, { id: string; name: string }[]> = {};
@@ -393,13 +393,13 @@ export default function Senseis() {
                       </TableCell>
                       <TableCell>
                         {sensei.belt_grade ? (
-                          <BeltBadge grade={sensei.belt_grade as any} size="sm" />
+                          <BeltBadge grade={sensei.belt_grade} size="sm" />
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <RegistrationStatusBadge status={(sensei.registration_status || "pendente") as any} />
+                        <RegistrationStatusBadge status={sensei.registration_status || "pendente"} />
                       </TableCell>
                       <TableCell>
                         <SenseiActions sensei={sensei} />

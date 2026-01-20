@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building2, Plus, Edit, Trash2, Loader2, Users, CreditCard, MessageSquare, Image as ImageIcon } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
@@ -22,10 +22,7 @@ interface DojoFormData {
   email: string;
   phone: string;
   address: string;
-  welcome_message: string;
-  monthly_fee: string;
-  payment_due_day: string;
-  pix_key: string;
+  description: string;
   logo_url: string;
 }
 
@@ -34,10 +31,7 @@ const initialFormData: DojoFormData = {
   email: "",
   phone: "",
   address: "",
-  welcome_message: "",
-  monthly_fee: "",
-  payment_due_day: "",
-  pix_key: "",
+  description: "",
   logo_url: "",
 };
 
@@ -58,10 +52,7 @@ export function DojoManagement() {
         email: data.email || null,
         phone: data.phone || null,
         address: data.address || null,
-        welcome_message: data.welcome_message || null,
-        monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
-        payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
-        pix_key: data.pix_key || null,
+        description: data.description || null,
         logo_url: data.logo_url || null,
       });
       if (error) throw error;
@@ -84,10 +75,7 @@ export function DojoManagement() {
         email: data.email || null,
         phone: data.phone || null,
         address: data.address || null,
-        welcome_message: data.welcome_message || null,
-        monthly_fee: data.monthly_fee ? parseFloat(data.monthly_fee) : null,
-        payment_due_day: data.payment_due_day ? parseInt(data.payment_due_day) : null,
-        pix_key: data.pix_key || null,
+        description: data.description || null,
         logo_url: data.logo_url || null,
       }).eq("id", id);
       if (error) throw error;
@@ -135,10 +123,7 @@ export function DojoManagement() {
       email: dojo.email || "",
       phone: dojo.phone || "",
       address: dojo.address || "",
-      welcome_message: dojo.welcome_message || "",
-      monthly_fee: dojo.monthly_fee?.toString() || "",
-      payment_due_day: dojo.payment_due_day?.toString() || "",
-      pix_key: dojo.pix_key || "",
+      description: dojo.description || "",
       logo_url: dojo.logo_url || "",
     });
     setEditingDojo(dojo);
@@ -213,69 +198,17 @@ export function DojoManagement() {
           </div>
         </div>
 
-        {/* Welcome Message */}
+        {/* Description */}
         <div className="space-y-4">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Mensagem de Boas-vindas
-          </h4>
           <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-description`}>Descrição</Label>
             <Textarea
-              id={`${isEdit ? 'edit' : 'create'}-welcome`}
-              value={formData.welcome_message}
-              onChange={(e) => setFormData({ ...formData, welcome_message: e.target.value })}
-              placeholder="Mensagem exibida no dashboard para os usuários deste dojo"
+              id={`${isEdit ? 'edit' : 'create'}-description`}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Descrição do dojo"
               rows={3}
             />
-            <p className="text-xs text-muted-foreground">
-              Esta mensagem será exibida na página inicial do dashboard para os usuários deste dojo.
-            </p>
-          </div>
-        </div>
-
-        {/* Payment Settings */}
-        <div className="space-y-4">
-          <h4 className="text-sm font-medium flex items-center gap-2">
-            <CreditCard className="h-4 w-4" />
-            Configurações de Pagamento
-          </h4>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-fee`}>Mensalidade (R$)</Label>
-              <Input
-                id={`${isEdit ? 'edit' : 'create'}-fee`}
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.monthly_fee}
-                onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
-                placeholder="150.00"
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-due`}>Dia Vencimento</Label>
-              <Input
-                id={`${isEdit ? 'edit' : 'create'}-due`}
-                type="number"
-                min="1"
-                max="28"
-                value={formData.payment_due_day}
-                onChange={(e) => setFormData({ ...formData, payment_due_day: e.target.value })}
-                placeholder="10"
-                className="h-10"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-pix`}>Chave Pix</Label>
-              <Input
-                id={`${isEdit ? 'edit' : 'create'}-pix`}
-                value={formData.pix_key}
-                onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
-                placeholder="email@exemplo.com"
-                className="h-10"
-              />
-            </div>
           </div>
         </div>
       </div>
@@ -302,7 +235,7 @@ export function DojoManagement() {
               Gerenciamento de Dojos
             </CardTitle>
             <CardDescription>
-              Gerencie os dojos, mensagens e configurações de pagamento
+              Gerencie os dojos e suas configurações
             </CardDescription>
           </div>
           <Dialog open={isCreateOpen} onOpenChange={(open) => {
@@ -348,7 +281,7 @@ export function DojoManagement() {
                   <TableRow>
                     <TableHead className="min-w-[150px]">Nome</TableHead>
                     <TableHead className="hidden md:table-cell">Email</TableHead>
-                    <TableHead className="hidden lg:table-cell">Mensalidade</TableHead>
+                    <TableHead className="hidden lg:table-cell">Telefone</TableHead>
                     <TableHead className="w-[80px]">Status</TableHead>
                     <TableHead className="text-right w-[160px]">Ações</TableHead>
                   </TableRow>
@@ -360,8 +293,8 @@ export function DojoManagement() {
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {dojo.email || "-"}
                       </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                        {dojo.monthly_fee ? `R$ ${dojo.monthly_fee.toFixed(2)}` : "-"}
+                      <TableCell className="hidden lg:table-cell text-muted-foreground">
+                        {dojo.phone || "-"}
                       </TableCell>
                       <TableCell>
                         <Badge 

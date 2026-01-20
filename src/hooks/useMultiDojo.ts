@@ -8,20 +8,15 @@ export interface Dojo {
   phone: string | null;
   email: string | null;
   address: string | null;
+  description: string | null;
   logo_url: string | null;
   color_primary: string | null;
   color_secondary: string | null;
-  color_background: string | null;
-  color_foreground: string | null;
   color_accent: string | null;
-  color_muted: string | null;
-  monthly_fee: number | null;
-  payment_due_day: number | null;
-  pix_key: string | null;
-  welcome_message: string | null;
+  dark_mode: boolean | null;
   is_active: boolean | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface DojoOwner {
@@ -40,7 +35,7 @@ export interface DojoSensei {
 
 export function useDojos() {
   const { user, roles } = useAuth();
-  const isSuperAdmin = roles.includes("super_admin" as any);
+  const isSuperAdmin = roles.includes("super_admin");
 
   return useQuery({
     queryKey: ["dojos", user?.id],
@@ -51,7 +46,7 @@ export function useDojos() {
         .order("name");
 
       if (error) throw error;
-      return (data as any) as Dojo[];
+      return data as Dojo[];
     },
     enabled: !!user && isSuperAdmin,
   });
@@ -95,10 +90,10 @@ export function useDojoSenseis(dojoId?: string) {
 
 export function useIsSuperAdmin() {
   const { roles } = useAuth();
-  return roles.includes("super_admin" as any);
+  return roles.includes("super_admin");
 }
 
 export function useIsDono() {
   const { roles } = useAuth();
-  return roles.includes("dono" as any);
+  return roles.includes("dono");
 }

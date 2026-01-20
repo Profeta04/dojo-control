@@ -266,7 +266,7 @@ export default function Students() {
                   <p className="font-medium">{student.name}</p>
                   <p className="text-xs text-muted-foreground sm:hidden">{student.email}</p>
                   <div className="sm:hidden mt-1">
-                    <RegistrationStatusBadge status={(student.registration_status || "pendente") as any} />
+                    <RegistrationStatusBadge status={student.registration_status || "pendente"} />
                   </div>
                 </div>
               </TableCell>
@@ -278,13 +278,13 @@ export default function Students() {
               </TableCell>
               <TableCell>
                 {student.belt_grade ? (
-                  <BeltBadge grade={student.belt_grade as any} size="sm" />
+                  <BeltBadge grade={student.belt_grade} size="sm" />
                 ) : (
                   <span className="text-muted-foreground text-sm">Branca</span>
                 )}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
-                <RegistrationStatusBadge status={(student.registration_status || "pendente") as any} />
+                <RegistrationStatusBadge status={student.registration_status || "pendente"} />
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">

@@ -169,14 +169,14 @@ export default function GraduationsPage() {
 
     try {
       // Insert graduation history
-      const { error: historyError } = await (supabase.from("graduation_history").insert({
+      const { error: historyError } = await supabase.from("graduation_history").insert({
         student_id: selectedStudent.user_id,
         from_belt: selectedStudent.belt_grade,
         to_belt: newBelt,
         approved_by: user.id,
         notes: notes || null,
         graduation_date: new Date().toISOString().split('T')[0],
-      } as any) as any);
+      });
 
       if (historyError) throw historyError;
 
@@ -248,7 +248,7 @@ export default function GraduationsPage() {
                     <CardContent className="space-y-3 p-4 pt-0">
                       <div className="flex items-center gap-2">
                         {student.belt_grade ? (
-                          <BeltBadge grade={student.belt_grade as any} size="sm" showLabel />
+                          <BeltBadge grade={student.belt_grade} size="sm" showLabel />
                         ) : (
                           <span className="text-sm text-muted-foreground">Sem faixa</span>
                         )}
@@ -319,12 +319,12 @@ export default function GraduationsPage() {
                         <TableCell>
                           <div className="flex items-center gap-1">
                             {graduation.from_belt ? (
-                              <BeltBadge grade={graduation.from_belt as any} size="sm" />
+                              <BeltBadge grade={graduation.from_belt} size="sm" />
                             ) : (
                               <span className="text-xs text-muted-foreground">—</span>
                             )}
                             <ChevronRight className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                            <BeltBadge grade={graduation.to_belt as any} size="sm" />
+                            <BeltBadge grade={graduation.to_belt} size="sm" />
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-sm">
@@ -375,7 +375,7 @@ export default function GraduationsPage() {
               <Label className="text-sm text-muted-foreground">Faixa Atual</Label>
               <div className="mt-1">
                 {selectedStudent?.belt_grade ? (
-                  <BeltBadge grade={selectedStudent.belt_grade as any} size="md" showLabel />
+                  <BeltBadge grade={selectedStudent.belt_grade} size="md" showLabel />
                 ) : (
                   <span className="text-sm">Sem faixa</span>
                 )}
@@ -409,7 +409,7 @@ export default function GraduationsPage() {
                 <Label className="text-sm text-muted-foreground">Promoção</Label>
                 <div className="flex items-center gap-2 mt-1">
                   {selectedStudent?.belt_grade ? (
-                    <BeltBadge grade={selectedStudent.belt_grade as any} size="sm" />
+                    <BeltBadge grade={selectedStudent.belt_grade} size="sm" />
                   ) : (
                     <span className="text-xs">—</span>
                   )}

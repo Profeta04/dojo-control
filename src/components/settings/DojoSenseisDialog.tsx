@@ -79,7 +79,7 @@ export function DojoSenseisDialog({ dojoId, onClose }: Props) {
       const { error: senseiError } = await supabase.from("dojo_senseis").insert({
         dojo_id: dojoId!,
         sensei_id: profile.user_id,
-      } as any);
+      });
 
       if (senseiError) {
         if (senseiError.code === "23505") {
