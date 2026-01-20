@@ -95,8 +95,8 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
               <CardTitle>{minor.name}</CardTitle>
               <CardDescription>{minor.email}</CardDescription>
               <div className="flex gap-2 mt-2">
-                {minor.belt_grade && <BeltBadge grade={minor.belt_grade} />}
-                {minor.registration_status && <RegistrationStatusBadge status={minor.registration_status} />}
+                {minor.belt_grade && <BeltBadge grade={minor.belt_grade as any} />}
+                {minor.registration_status && <RegistrationStatusBadge status={minor.registration_status as any} />}
               </div>
             </div>
           </div>
@@ -188,14 +188,14 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                       <div className="flex items-center gap-3">
                         <GraduationCap className="h-5 w-5 text-primary" />
                         <div>
-                          <div className="flex items-center gap-2">
-                            {graduation.previous_belt && (
+                        <div className="flex items-center gap-2">
+                            {graduation.from_belt && (
                               <>
-                                <BeltBadge grade={graduation.previous_belt} />
+                                <BeltBadge grade={graduation.from_belt as any} />
                                 <span className="text-muted-foreground">→</span>
                               </>
                             )}
-                            <BeltBadge grade={graduation.new_belt} />
+                            <BeltBadge grade={graduation.to_belt as any} />
                           </div>
                           {graduation.notes && (
                             <p className="text-sm text-muted-foreground mt-1">

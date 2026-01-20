@@ -182,7 +182,7 @@ export function ExportReportButton() {
           
           reportData.classesList = classes.map(c => ({
             name: c.name,
-            schedule: c.schedule,
+            schedule: typeof c.schedule === 'string' ? c.schedule : JSON.stringify(c.schedule) || '',
             sensei: senseiMap.get(c.sensei_id) || "Não definido",
             studentCount: classStudentCounts.get(c.id) || 0,
           }));
