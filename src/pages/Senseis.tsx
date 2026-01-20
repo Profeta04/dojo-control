@@ -91,19 +91,19 @@ export default function Senseis() {
       if (!profiles) return [];
 
       // Fetch dojo links for all senseis
-      const { data: dojoLinks } = await supabase
+      const { data: dojoLinks } = await (supabase
         .from("dojo_senseis")
-        .select("user_id, dojo_id, dojos(id, name)")
-        .in("user_id", userIds);
+        .select("sensei_id, dojo_id, dojos(id, name)")
+        .in("sensei_id", userIds) as any);
 
       // Create a map of user_id to their dojos
       const dojosByUser: Record<string, { id: string; name: string }[]> = {};
       for (const link of dojoLinks || []) {
-        if (!dojosByUser[link.user_id]) {
-          dojosByUser[link.user_id] = [];
+        if (!dojosByUser[link.sensei_id]) {
+          dojosByUser[link.sensei_id] = [];
         }
         if (link.dojos) {
-          dojosByUser[link.user_id].push({
+          dojosByUser[link.sensei_id].push({
             id: (link.dojos as { id: string; name: string }).id,
             name: (link.dojos as { id: string; name: string }).name,
           });
@@ -344,7 +344,7 @@ export default function Senseis() {
                 </TableHeader>
                 <TableBody>
                   {senseis.map((sensei) => (
-                    <TableRow key={sensei.id}>
+                    <TableRow key={sensei.user_id}>
                       <TableCell>
                         <div>
                           <p className="font-medium">{sensei.name}</p>
@@ -393,13 +393,13 @@ export default function Senseis() {
                       </TableCell>
                       <TableCell>
                         {sensei.belt_grade ? (
-                          <BeltBadge grade={sensei.belt_grade} size="sm" />
+                          <BeltBadge grade={sensei.belt_grade as any} size="sm" />
                         ) : (
                           <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <RegistrationStatusBadge status={sensei.registration_status || "pendente"} />
+                        <RegistrationStatusBadge status={(sensei.registration_status || "pendente") as any} />
                       </TableCell>
                       <TableCell>
                         <SenseiActions sensei={sensei} />

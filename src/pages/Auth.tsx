@@ -114,12 +114,12 @@ export default function Auth() {
       // Get sensei user ids linked to this dojo
       const { data: dojoSenseis } = await supabase
         .from("dojo_senseis")
-        .select("user_id")
+        .select("sensei_id")
         .eq("dojo_id", selectedDojoId);
 
       if (!dojoSenseis || dojoSenseis.length === 0) return [];
 
-      const senseiUserIds = dojoSenseis.map((ds) => ds.user_id);
+      const senseiUserIds = dojoSenseis.map((ds) => ds.sensei_id);
 
       const { data: profiles } = await supabase
         .from("profiles")

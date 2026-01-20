@@ -163,7 +163,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
-                <BeltBadge grade={profile.belt_grade} size="sm" />
+                <BeltBadge grade={profile.belt_grade as any} size="sm" />
               )}
               <span className="text-xs text-primary-foreground/60">
                 {isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}

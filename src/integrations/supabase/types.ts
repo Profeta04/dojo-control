@@ -282,7 +282,11 @@ export type Database = {
       dojos: {
         Row: {
           address: string | null
+          color_accent: string | null
+          color_primary: string | null
+          color_secondary: string | null
           created_at: string | null
+          dark_mode: boolean | null
           description: string | null
           email: string | null
           id: string
@@ -294,7 +298,11 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          color_accent?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
           created_at?: string | null
+          dark_mode?: boolean | null
           description?: string | null
           email?: string | null
           id?: string
@@ -306,7 +314,11 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          color_accent?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
           created_at?: string | null
+          dark_mode?: boolean | null
           description?: string | null
           email?: string | null
           id?: string
@@ -431,7 +443,9 @@ export type Database = {
           description: string | null
           due_date: string
           id: string
+          notes: string | null
           paid_date: string | null
+          receipt_url: string | null
           reference_month: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
           student_id: string
@@ -443,7 +457,9 @@ export type Database = {
           description?: string | null
           due_date: string
           id?: string
+          notes?: string | null
           paid_date?: string | null
+          receipt_url?: string | null
           reference_month?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           student_id: string
@@ -455,7 +471,9 @@ export type Database = {
           description?: string | null
           due_date?: string
           id?: string
+          notes?: string | null
           paid_date?: string | null
+          receipt_url?: string | null
           reference_month?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
           student_id?: string
@@ -473,11 +491,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           avatar_url: string | null
           belt_grade: string | null
           birth_date: string | null
           created_at: string | null
+          dojo_id: string | null
           email: string | null
+          guardian_email: string | null
           guardian_user_id: string | null
           name: string
           phone: string | null
@@ -486,11 +508,15 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           belt_grade?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dojo_id?: string | null
           email?: string | null
+          guardian_email?: string | null
           guardian_user_id?: string | null
           name: string
           phone?: string | null
@@ -499,17 +525,53 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           avatar_url?: string | null
           belt_grade?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dojo_id?: string | null
           email?: string | null
+          guardian_email?: string | null
           guardian_user_id?: string | null
           name?: string
           phone?: string | null
           registration_status?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      settings: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: string | null
         }
         Relationships: []
       }
@@ -633,11 +695,22 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_active_dojos_public: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_user_dojos: {
         Args: { _user_id: string }
         Returns: {
           address: string | null
+          color_accent: string | null
+          color_primary: string | null
+          color_secondary: string | null
           created_at: string | null
+          dark_mode: boolean | null
           description: string | null
           email: string | null
           id: string

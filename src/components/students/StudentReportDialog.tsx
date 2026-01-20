@@ -33,7 +33,7 @@ export function StudentReportDialog() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, user_id, name, email")
+        .select("user_id, name, email")
         .eq("registration_status", "aprovado")
         .order("name");
 
@@ -68,7 +68,7 @@ export function StudentReportDialog() {
       // Fetch graduations
       const { data: graduations } = await supabase
         .from("graduation_history")
-        .select("previous_belt, new_belt, graduation_date, notes")
+        .select("from_belt, to_belt, graduation_date, notes")
         .eq("student_id", selectedStudentId)
         .order("graduation_date", { ascending: false });
 
@@ -107,7 +107,12 @@ export function StudentReportDialog() {
           birth_date: profile.birth_date,
           created_at: profile.created_at,
         },
-        graduations: graduations || [],
+        graduations: (graduations || []).map((g: any) => ({
+          previous_belt: g.from_belt,
+          new_belt: g.to_belt,
+          graduation_date: g.graduation_date,
+          notes: g.notes,
+        })),
         attendance: (attendance || []).map((a: any) => ({
           date: a.date,
           class_name: a.classes?.name || "Turma não identificada",

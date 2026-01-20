@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 
-type Profile = Tables<"profiles">;
+type Profile = Tables<"profiles"> | any;
 
 interface GuardianWithMinors {
   guardian: Profile;
@@ -59,34 +59,34 @@ export default function Students() {
     queryKey: ["students", currentDojoId],
     queryFn: async () => {
       // Get all users with sensei role (to exclude them)
-      const { data: senseiRoles } = await supabase
+      const { data: senseiRoles } = await (supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "sensei");
+        .eq("role", "sensei") as any);
 
-      const senseiUserIds = senseiRoles?.map((r) => r.user_id) || [];
+      const senseiUserIds = senseiRoles?.map((r: any) => r.user_id) || [];
 
       // Get all users with admin role (to exclude them)
-      const { data: adminRoles } = await supabase
+      const { data: adminRoles } = await (supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "admin");
+        .eq("role", "admin") as any);
 
-      const adminUserIds = adminRoles?.map((r) => r.user_id) || [];
+      const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
 
       // Get all guardians (users who have minors linked to them)
-      const { data: guardianProfiles } = await supabase
+      const { data: guardianProfiles } = await (supabase
         .from("profiles")
         .select("guardian_user_id")
-        .not("guardian_user_id", "is", null);
+        .not("guardian_user_id", "is", null) as any);
 
-      const guardianUserIds = [...new Set(guardianProfiles?.map((p) => p.guardian_user_id).filter(Boolean) || [])];
+      const guardianUserIds = [...new Set((guardianProfiles || []).map((p: any) => p.guardian_user_id).filter(Boolean) || [])];
 
       // Exclude senseis, admins, and guardians
-      const excludeIds = [...senseiUserIds, ...adminUserIds, ...guardianUserIds];
+      const excludeIds = [...senseiUserIds, ...adminUserIds, ...guardianUserIds] as string[];
 
       // Get all profiles that are students (not admins, senseis, or guardians)
-      let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
+      let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }) as any;
 
       // Exclude senseis, admins, and guardians
       if (excludeIds.length > 0) {
@@ -110,21 +110,21 @@ export default function Students() {
     queryKey: ["guardians-with-minors"],
     queryFn: async () => {
       // Get all profiles that have a guardian (minors)
-      const { data: minorProfiles } = await supabase
+      const { data: minorProfiles } = await (supabase
         .from("profiles")
         .select("*")
-        .not("guardian_user_id", "is", null);
+        .not("guardian_user_id", "is", null) as any);
 
       if (!minorProfiles || minorProfiles.length === 0) return [];
 
       // Get unique guardian user IDs
-      const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
+      const guardianUserIds = [...new Set(minorProfiles.map((p: any) => p.guardian_user_id).filter(Boolean))] as string[];
 
       // Fetch guardian profiles
-      const { data: guardianProfiles } = await supabase
+      const { data: guardianProfiles } = await (supabase
         .from("profiles")
         .select("*")
-        .in("user_id", guardianUserIds);
+        .in("user_id", guardianUserIds) as any);
 
       if (!guardianProfiles) return [];
 
@@ -155,14 +155,14 @@ export default function Students() {
 
     try {
       // Update profile status
-      await supabase
+      await (supabase
         .from("profiles")
         .update({
           registration_status: "aprovado",
           approved_at: new Date().toISOString(),
           approved_by: user!.id,
-        })
-        .eq("id", selectedStudent.id);
+        } as any)
+        .eq("user_id", selectedStudent.user_id) as any);
 
       // Assign student role
       await supabase.rpc("assign_user_role", {
@@ -200,7 +200,7 @@ export default function Students() {
         .update({
           registration_status: "rejeitado",
         })
-        .eq("id", selectedStudent.id);
+        .eq("user_id", selectedStudent.user_id);
 
       toast({
         title: "Cadastro rejeitado",
@@ -260,13 +260,13 @@ export default function Students() {
         </TableHeader>
         <TableBody>
           {data.map((student) => (
-            <TableRow key={student.id}>
+            <TableRow key={student.user_id}>
               <TableCell>
                 <div>
                   <p className="font-medium">{student.name}</p>
                   <p className="text-xs text-muted-foreground sm:hidden">{student.email}</p>
                   <div className="sm:hidden mt-1">
-                    <RegistrationStatusBadge status={student.registration_status || "pendente"} />
+                    <RegistrationStatusBadge status={(student.registration_status || "pendente") as any} />
                   </div>
                 </div>
               </TableCell>
@@ -278,13 +278,13 @@ export default function Students() {
               </TableCell>
               <TableCell>
                 {student.belt_grade ? (
-                  <BeltBadge grade={student.belt_grade} size="sm" />
+                  <BeltBadge grade={student.belt_grade as any} size="sm" />
                 ) : (
                   <span className="text-muted-foreground text-sm">Branca</span>
                 )}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
-                <RegistrationStatusBadge status={student.registration_status || "pendente"} />
+                <RegistrationStatusBadge status={(student.registration_status || "pendente") as any} />
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">
@@ -438,12 +438,12 @@ export default function Students() {
               ) : guardiansWithMinors && guardiansWithMinors.length > 0 ? (
                 <div className="space-y-3">
                   {guardiansWithMinors.map(({ guardian, minors }) => {
-                    const isExpanded = expandedGuardians.has(guardian.id);
+                    const isExpanded = expandedGuardians.has(guardian.user_id);
                     return (
-                      <Card key={guardian.id} className="border-border/50 overflow-hidden">
+                      <Card key={guardian.user_id} className="border-border/50 overflow-hidden">
                         <div
                           className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => toggleGuardianExpanded(guardian.id)}
+                          onClick={() => toggleGuardianExpanded(guardian.user_id)}
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -472,7 +472,7 @@ export default function Students() {
                             <div className="space-y-2">
                               {minors.map((minor) => (
                                 <div
-                                  key={minor.id}
+                                  key={minor.user_id}
                                   className="flex items-center justify-between p-3 bg-background rounded-lg border border-border/50"
                                 >
                                   <div className="flex items-center gap-2 min-w-0">
@@ -483,8 +483,8 @@ export default function Students() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2 flex-shrink-0">
-                                    {minor.belt_grade && <BeltBadge grade={minor.belt_grade} size="sm" />}
-                                    <RegistrationStatusBadge status={minor.registration_status || "pendente"} />
+                                    {minor.belt_grade && <BeltBadge grade={minor.belt_grade as any} size="sm" />}
+                                    <RegistrationStatusBadge status={(minor.registration_status || "pendente") as any} />
                                   </div>
                                 </div>
                               ))}

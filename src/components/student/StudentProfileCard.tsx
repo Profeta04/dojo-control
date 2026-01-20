@@ -85,7 +85,7 @@ export function StudentProfileCard() {
               {profile.name?.charAt(0).toUpperCase() || "?"}
             </div>
             {profile.belt_grade && (
-              <BeltBadge grade={profile.belt_grade} size="lg" />
+              <BeltBadge grade={profile.belt_grade as any} size="lg" />
             )}
           </div>
 

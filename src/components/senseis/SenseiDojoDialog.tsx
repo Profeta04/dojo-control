@@ -125,7 +125,7 @@ export function SenseiDojoDialog({
         const { error: deleteError } = await supabase
           .from("dojo_senseis")
           .delete()
-          .eq("user_id", senseiUserId)
+          .eq("sensei_id", senseiUserId)
           .in("dojo_id", dojosToRemove);
 
         if (deleteError) throw deleteError;
