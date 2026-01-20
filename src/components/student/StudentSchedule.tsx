@@ -1,14 +1,26 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar, Clock, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, MessageSquare, Bell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -25,6 +37,7 @@ interface AttendanceRecord {
   date: string;
   present: boolean;
   class_name: string;
+  notes?: string;
 }
 
 interface ScheduledClass {
@@ -38,8 +51,14 @@ interface ScheduledClass {
 
 export function StudentSchedule() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [justifyDialogOpen, setJustifyDialogOpen] = useState(false);
+  const [selectedAbsence, setSelectedAbsence] = useState<AttendanceRecord | null>(null);
+  const [justification, setJustification] = useState("");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // Fetch student's classes
   const { data: myClasses, isLoading: loadingClasses } = useQuery({
@@ -136,7 +155,8 @@ export function StudentSchedule() {
           id,
           date,
           present,
-          class_id
+          class_id,
+          notes
         `)
         .eq("student_id", user.id)
         .order("date", { ascending: false })
@@ -144,7 +164,6 @@ export function StudentSchedule() {
 
       if (error) throw error;
 
-      // Get class names
       const classIds = [...new Set(data?.map(a => a.class_id) || [])];
       let classNames: Record<string, string> = {};
       
@@ -165,9 +184,39 @@ export function StudentSchedule() {
         date: a.date,
         present: a.present,
         class_name: classNames[a.class_id] || "Treino",
+        notes: a.notes,
       })) as AttendanceRecord[];
     },
     enabled: !!user?.id,
+  });
+
+  // Mutation to submit justification
+  const submitJustificationMutation = useMutation({
+    mutationFn: async ({ attendanceId, notes }: { attendanceId: string; notes: string }) => {
+      const { error } = await supabase
+        .from("attendance")
+        .update({ notes })
+        .eq("id", attendanceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Justificativa enviada",
+        description: "Sua justificativa foi registrada e será analisada pelo sensei.",
+      });
+      setJustifyDialogOpen(false);
+      setJustification("");
+      setSelectedAbsence(null);
+      queryClient.invalidateQueries({ queryKey: ["student-attendance-history"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao enviar justificativa",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Compute attendance stats
@@ -215,6 +264,15 @@ export function StudentSchedule() {
     );
   }, [attendanceHistory, selectedDate]);
 
+  // Get upcoming classes for today
+  const upcomingToday = useMemo(() => {
+    if (!scheduledClasses) return [];
+    const today = new Date();
+    return scheduledClasses.filter(s => 
+      isSameDay(new Date(s.date + "T00:00:00"), today) && !s.is_cancelled
+    );
+  }, [scheduledClasses]);
+
   const parseSchedule = (schedule: string) => {
     const parts = schedule.split(" - ");
     return { days: parts[0] || schedule, time: parts[1] || "" };
@@ -222,21 +280,58 @@ export function StudentSchedule() {
 
   const formatTime = (time: string) => time.slice(0, 5);
 
+  const openJustifyDialog = (absence: AttendanceRecord) => {
+    setSelectedAbsence(absence);
+    setJustification(absence.notes || "");
+    setJustifyDialogOpen(true);
+  };
+
+  const handleSubmitJustification = () => {
+    if (!selectedAbsence || !justification.trim()) return;
+    submitJustificationMutation.mutate({
+      attendanceId: selectedAbsence.id,
+      notes: justification.trim(),
+    });
+  };
+
   const isLoading = loadingClasses || loadingSchedule || loadingAttendance;
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Skeleton className="h-[400px]" />
-          <Skeleton className="h-[400px]" />
+        <div className="grid gap-4 sm:grid-cols-4">
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-24" />)}
         </div>
+        <Skeleton className="h-[450px]" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Today's Training Alert */}
+      {upcomingToday.length > 0 && (
+        <Card className="border-accent/50 bg-accent/5">
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <Bell className="h-6 w-6 text-accent" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">🥋 Você tem treino hoje!</h3>
+                <div className="mt-2 space-y-1">
+                  {upcomingToday.map(s => (
+                    <p key={s.id} className="text-sm">
+                      <span className="font-medium">{s.class_name}</span> às {formatTime(s.start_time)}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -296,6 +391,7 @@ export function StudentSchedule() {
         </Card>
       </div>
 
+      {/* Calendar Section - Now at the top */}
       <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
         {/* Calendar */}
         <Card>
@@ -373,14 +469,10 @@ export function StudentSchedule() {
             <ScrollArea className="h-[350px]">
               {selectedDateSchedules.length > 0 || selectedDateAttendance.length > 0 ? (
                 <div className="divide-y">
-                  {/* Scheduled classes for this day */}
                   {selectedDateSchedules.map((schedule) => (
                     <div
                       key={schedule.id}
-                      className={cn(
-                        "p-4",
-                        schedule.is_cancelled && "opacity-60"
-                      )}
+                      className={cn("p-4", schedule.is_cancelled && "opacity-60")}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -390,9 +482,7 @@ export function StudentSchedule() {
                           </div>
                           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>
-                              {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
-                            </span>
+                            <span>{formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}</span>
                           </div>
                         </div>
                         {schedule.is_cancelled ? (
@@ -404,7 +494,6 @@ export function StudentSchedule() {
                     </div>
                   ))}
                   
-                  {/* Attendance for this day */}
                   {selectedDateAttendance.map((attendance) => (
                     <div key={attendance.id} className="p-4">
                       <div className="flex items-center justify-between gap-2">
@@ -416,10 +505,27 @@ export function StudentSchedule() {
                           )}
                           <span className="font-medium">{attendance.class_name}</span>
                         </div>
-                        <Badge variant={attendance.present ? "default" : "destructive"}>
-                          {attendance.present ? "Presente" : "Falta"}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {!attendance.present && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => openJustifyDialog(attendance)}
+                            >
+                              <MessageSquare className="h-4 w-4 mr-1" />
+                              {attendance.notes ? "Ver" : "Justificar"}
+                            </Button>
+                          )}
+                          <Badge variant={attendance.present ? "default" : "destructive"}>
+                            {attendance.present ? "Presente" : "Falta"}
+                          </Badge>
+                        </div>
                       </div>
+                      {attendance.notes && (
+                        <p className="text-xs text-muted-foreground mt-2 pl-6">
+                          Justificativa: {attendance.notes}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -491,14 +597,14 @@ export function StudentSchedule() {
         </CardContent>
       </Card>
 
-      {/* Attendance History */}
+      {/* Attendance History with Justify Option */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5" />
             Histórico de Presenças
           </CardTitle>
-          <CardDescription>Últimos 50 registros de presença</CardDescription>
+          <CardDescription>Últimos 50 registros - clique em "Justificar" para enviar uma justificativa de falta</CardDescription>
         </CardHeader>
         <CardContent>
           {attendanceHistory && attendanceHistory.length > 0 ? (
@@ -523,11 +629,28 @@ export function StudentSchedule() {
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(record.date + "T00:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR })}
                       </p>
+                      {record.notes && (
+                        <p className="text-xs text-accent mt-1">
+                          📝 {record.notes}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <Badge variant={record.present ? "default" : "destructive"}>
-                    {record.present ? "Presente" : "Falta"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    {!record.present && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openJustifyDialog(record)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-1" />
+                        {record.notes ? "Editar" : "Justificar"}
+                      </Button>
+                    )}
+                    <Badge variant={record.present ? "default" : "destructive"}>
+                      {record.present ? "Presente" : "Falta"}
+                    </Badge>
+                  </div>
                 </div>
               ))}
             </div>
@@ -539,6 +662,50 @@ export function StudentSchedule() {
           )}
         </CardContent>
       </Card>
+
+      {/* Justify Absence Dialog */}
+      <Dialog open={justifyDialogOpen} onOpenChange={setJustifyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Justificar Falta</DialogTitle>
+            <DialogDescription>
+              {selectedAbsence && (
+                <>
+                  Turma: {selectedAbsence.class_name} - {format(new Date(selectedAbsence.date + "T00:00:00"), "dd/MM/yyyy")}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="justification">Motivo da falta</Label>
+              <Textarea
+                id="justification"
+                value={justification}
+                onChange={(e) => setJustification(e.target.value)}
+                placeholder="Explique o motivo da sua ausência (ex: consulta médica, compromisso familiar, etc.)"
+                rows={4}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Sua justificativa será enviada ao sensei responsável para análise.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setJustifyDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSubmitJustification}
+              disabled={!justification.trim() || submitJustificationMutation.isPending}
+            >
+              {submitJustificationMutation.isPending ? "Enviando..." : "Enviar Justificativa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
