@@ -61,12 +61,12 @@ Deno.serve(async (req) => {
       console.error("Error creating profile:", profileError);
     }
 
-    // Assign super_admin role
+    // Assign admin role
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
         user_id: userId,
-        role: "super_admin",
+        role: "admin",
       });
 
     if (roleError) {

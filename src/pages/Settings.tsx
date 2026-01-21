@@ -11,11 +11,11 @@ import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
 
 export default function Settings() {
   const navigate = useNavigate();
-  const { isAdmin, isSuperAdmin, isDono, isSensei, loading: authLoading } = useAuth();
+  const { isAdmin, isDono, isSensei, loading: authLoading } = useAuth();
 
   // Admin has full access, Sensei can only access theme
-  const canAccessSettings = isAdmin || isSuperAdmin || isDono || isSensei;
-  const canManageDojos = isSuperAdmin || isAdmin;
+  const canAccessSettings = isAdmin || isDono || isSensei;
+  const canManageDojos = isAdmin;
 
   // Redirect if not authorized
   if (!authLoading && !canAccessSettings) {
@@ -32,7 +32,7 @@ export default function Settings() {
   }
 
   // Sensei can only see theme settings
-  if (isSensei && !isAdmin && !isSuperAdmin && !isDono) {
+  if (isSensei && !isAdmin && !isDono) {
     return (
       <RequireApproval>
       <DashboardLayout>

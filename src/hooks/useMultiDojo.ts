@@ -34,8 +34,7 @@ export interface DojoSensei {
 }
 
 export function useDojos() {
-  const { user, roles } = useAuth();
-  const isSuperAdmin = roles.includes("super_admin");
+  const { user, isAdmin } = useAuth();
 
   return useQuery({
     queryKey: ["dojos", user?.id],
@@ -48,7 +47,7 @@ export function useDojos() {
       if (error) throw error;
       return data as Dojo[];
     },
-    enabled: !!user && isSuperAdmin,
+    enabled: !!user && isAdmin,
   });
 }
 
@@ -88,9 +87,9 @@ export function useDojoSenseis(dojoId?: string) {
   });
 }
 
-export function useIsSuperAdmin() {
-  const { roles } = useAuth();
-  return roles.includes("super_admin");
+export function useIsAdmin() {
+  const { isAdmin } = useAuth();
+  return isAdmin;
 }
 
 export function useIsDono() {

@@ -15,7 +15,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  isSuperAdmin: boolean;
   isDono: boolean;
   isAdmin: boolean;
   isSensei: boolean;
@@ -128,12 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
   };
 
-  const isSuperAdmin = roles.includes("super_admin" as AppRole);
   const isDono = roles.includes("dono" as AppRole);
   const isAdmin = roles.includes("admin");
   const isSensei = roles.includes("sensei");
   const isStudent = roles.includes("student");
-  const canManageStudents = isSuperAdmin || isDono || isAdmin || isSensei;
+  const canManageStudents = isDono || isAdmin || isSensei;
   const isApproved = profile?.registration_status === "aprovado";
   const isPending = profile?.registration_status === "pendente";
 
@@ -148,7 +146,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signOut,
-        isSuperAdmin,
         isDono,
         isAdmin,
         isSensei,

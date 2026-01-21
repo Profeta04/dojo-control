@@ -35,7 +35,7 @@ interface NavItem {
   title: string;
   href: string;
   icon: ReactNode;
-  adminOnly?: boolean; // Shows for super_admin, dono, admin, sensei
+  adminOnly?: boolean; // Shows for dono, admin, sensei
   studentOnly?: boolean; // Shows only for students
 }
 
@@ -54,7 +54,7 @@ const navItems: NavItem[] = [
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, canManageStudents, isStudent, isSuperAdmin, isDono, isAdmin, isSensei } = useAuth();
+  const { profile, signOut, canManageStudents, isStudent, isDono, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const { getSignedUrl } = useSignedUrl();
@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const filteredNavItems = navItems.filter((item) => {
     // Dashboard is always visible
     if (!item.adminOnly && !item.studentOnly) return true;
-    // Admin-only items for super_admin, dono, admin, sensei
+    // Admin-only items for dono, admin, sensei
     if (item.adminOnly && canManageStudents) return true;
     // Student-only items
     if (item.studentOnly && isStudent && !canManageStudents) return true;
@@ -174,7 +174,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <BeltBadge grade={profile.belt_grade as any} size="sm" />
               )}
               <span className="text-xs text-primary-foreground/60">
-                {isSuperAdmin ? "Super Admin" : isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
+                {isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
           </div>

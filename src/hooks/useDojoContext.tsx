@@ -16,7 +16,7 @@ interface DojoContextType {
 const DojoContext = createContext<DojoContextType | undefined>(undefined);
 
 export function DojoProvider({ children }: { children: ReactNode }) {
-  const { user, isAdmin, isSuperAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [currentDojoId, setCurrentDojoId] = useState<string | null>(null);
   const [filterByDojo, setFilterByDojo] = useState(true);
 
@@ -26,8 +26,8 @@ export function DojoProvider({ children }: { children: ReactNode }) {
     queryFn: async () => {
       if (!user) return [];
 
-      // Super admins and admins can see all dojos
-      if (isSuperAdmin || isAdmin) {
+      // Admins can see all dojos
+      if (isAdmin) {
         const { data, error } = await supabase
           .from("dojos")
           .select("*")
