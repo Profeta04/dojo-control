@@ -312,7 +312,6 @@ export function ClassesTab() {
           date: format(date, "yyyy-MM-dd"),
           start_time: startTime,
           end_time: endTime,
-          created_by: user!.id,
         }));
 
         const { error } = await supabase.from("class_schedule").insert(schedules);

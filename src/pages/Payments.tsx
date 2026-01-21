@@ -214,7 +214,6 @@ export default function PaymentsPage() {
         due_date: formData.due_date,
         amount: parseFloat(formData.amount),
         notes: formData.notes || null,
-        registered_by: user.id,
         status: "pendente",
       });
 
@@ -291,7 +290,6 @@ export default function PaymentsPage() {
         due_date: batchFormData.due_date,
         amount: parseFloat(batchFormData.amount),
         notes: batchFormData.notes || null,
-        registered_by: user.id,
         status: "pendente" as const,
       }));
 

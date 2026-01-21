@@ -220,7 +220,7 @@ export function AutoAssignTasksDialog() {
           Aplicar por Faixa
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh]">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Wand2 className="h-5 w-5" />
@@ -231,9 +231,9 @@ export function AutoAssignTasksDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-4">
           <Select value={selectedMartialArt} onValueChange={setSelectedMartialArt}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -241,24 +241,26 @@ export function AutoAssignTasksDialog() {
               <SelectItem value="jiu-jitsu">Jiu-Jitsu</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={selectAllStudents}>
-            <Users className="h-4 w-4 mr-2" />
-            Selecionar Todos
-          </Button>
-          <Button variant="outline" size="sm" onClick={autoSelectTemplates} disabled={selectedStudents.size === 0}>
-            <Wand2 className="h-4 w-4 mr-2" />
-            Auto-Selecionar Tarefas
-          </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={selectAllStudents} className="flex-1 sm:flex-none">
+              <Users className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Selecionar Todos</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={autoSelectTemplates} disabled={selectedStudents.size === 0} className="flex-1 sm:flex-none">
+              <Wand2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Auto-Selecionar</span>
+            </Button>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
           {/* Students Column */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <div className="border rounded-lg p-3 sm:p-4 flex flex-col min-h-0">
+            <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
               <Users className="h-4 w-4" />
-              Alunos ({selectedStudents.size} selecionados)
+              Alunos ({selectedStudents.size})
             </h3>
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[200px] sm:h-[300px] flex-1">
               {loadingStudents ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : (
@@ -293,12 +295,12 @@ export function AutoAssignTasksDialog() {
           </div>
 
           {/* Templates Column */}
-          <div className="border rounded-lg p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
+          <div className="border rounded-lg p-3 sm:p-4 flex flex-col min-h-0">
+            <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
               <BookOpen className="h-4 w-4" />
-              Tarefas ({selectedTemplates.size} selecionadas)
+              Tarefas ({selectedTemplates.size})
             </h3>
-            <ScrollArea className="h-[300px]">
+            <ScrollArea className="h-[200px] sm:h-[300px] flex-1">
               {loadingTemplates ? (
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               ) : (
