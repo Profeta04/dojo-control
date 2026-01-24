@@ -17,6 +17,7 @@ interface TaskTemplate {
   title: string;
   options: string[] | null;
   correct_option: number | null;
+  video_url: string | null;
 }
 
 export function StudentTasksDashboard() {
@@ -29,21 +30,22 @@ export function StudentTasksDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_templates")
-        .select("id, title, options, correct_option")
-        .not("options", "is", null);
+        .select("id, title, options, correct_option, video_url");
       
       if (error) throw error;
       return data as TaskTemplate[];
     },
   });
 
-  // Create a map of task title to quiz options
-  const templateOptionsMap = templates.reduce((acc, t) => {
-    if (t.options && t.correct_option !== null) {
-      acc[t.title] = { options: t.options, correctOption: t.correct_option };
-    }
+  // Create a map of task title to quiz options and video URL
+  const templateDataMap = templates.reduce((acc, t) => {
+    acc[t.title] = { 
+      options: t.options, 
+      correctOption: t.correct_option,
+      videoUrl: t.video_url 
+    };
     return acc;
-  }, {} as Record<string, { options: string[]; correctOption: number }>);
+  }, {} as Record<string, { options: string[] | null; correctOption: number | null; videoUrl: string | null }>);
 
   const filteredTasks = tasks.filter(t => 
     categoryFilter === "all" || t.category === categoryFilter
@@ -56,8 +58,14 @@ export function StudentTasksDashboard() {
   );
 
   // Separate quiz tasks from regular tasks
-  const quizTasks = pendingTasks.filter(t => templateOptionsMap[t.title]);
-  const regularPendingTasks = pendingTasks.filter(t => !templateOptionsMap[t.title]);
+  const quizTasks = pendingTasks.filter(t => {
+    const data = templateDataMap[t.title];
+    return data && data.options && data.correctOption !== null;
+  });
+  const regularPendingTasks = pendingTasks.filter(t => {
+    const data = templateDataMap[t.title];
+    return !data || !data.options || data.correctOption === null;
+  });
 
 
   const handleStatusChange = async (taskId: string, status: "pendente" | "concluida" | "cancelada") => {
@@ -157,19 +165,20 @@ export function StudentTasksDashboard() {
                   {/* Quiz Tasks Section */}
                   {quizTasks.length > 0 && (
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-medium text-blue-600">
+                      <div className="flex items-center gap-2 text-sm font-medium text-primary">
                         <BookOpen className="h-4 w-4" />
                         <span>Questões Teóricas ({quizTasks.length})</span>
                       </div>
                       <ul className="space-y-3" aria-label="Questões teóricas">
                         {quizTasks.map(task => {
-                          const quizData = templateOptionsMap[task.title];
+                          const quizData = templateDataMap[task.title];
                           return (
                             <li key={task.id}>
                               <TaskQuizCard
                                 task={task}
-                                options={quizData.options}
-                                correctOption={quizData.correctOption}
+                                options={quizData.options!}
+                                correctOption={quizData.correctOption!}
+                                videoUrl={quizData.videoUrl || undefined}
                               />
                             </li>
                           );
@@ -188,14 +197,18 @@ export function StudentTasksDashboard() {
                         </div>
                       )}
                       <ul className="space-y-3" aria-label="Tarefas práticas">
-                        {regularPendingTasks.map(task => (
-                          <li key={task.id}>
-                            <TaskCard
-                              task={task}
-                              onStatusChange={handleStatusChange}
-                            />
-                          </li>
-                        ))}
+                        {regularPendingTasks.map(task => {
+                          const taskData = templateDataMap[task.title];
+                          return (
+                            <li key={task.id}>
+                              <TaskCard
+                                task={task}
+                                onStatusChange={handleStatusChange}
+                                videoUrl={taskData?.videoUrl || undefined}
+                              />
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   )}
@@ -211,14 +224,18 @@ export function StudentTasksDashboard() {
                 </div>
               ) : (
                 <ul className="space-y-3" aria-label="Tarefas concluídas">
-                  {completedTasks.map(task => (
-                    <li key={task.id}>
-                      <TaskCard
-                        task={task}
-                        onStatusChange={handleStatusChange}
-                      />
-                    </li>
-                  ))}
+                  {completedTasks.map(task => {
+                    const taskData = templateDataMap[task.title];
+                    return (
+                      <li key={task.id}>
+                        <TaskCard
+                          task={task}
+                          onStatusChange={handleStatusChange}
+                          videoUrl={taskData?.videoUrl || undefined}
+                        />
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </TabsContent>

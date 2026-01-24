@@ -1,6 +1,6 @@
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2 } from "lucide-react";
+import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Youtube } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ interface TaskCardProps {
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onDelete?: (taskId: string) => void;
   showAssignee?: boolean;
+  videoUrl?: string;
 }
 
 const priorityConfig: Record<TaskPriority, { label: string; className: string }> = {
@@ -20,7 +21,7 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
   alta: { label: "Alta", className: "bg-destructive/10 text-destructive" },
 };
 
-export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false }: TaskCardProps) {
+export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, videoUrl }: TaskCardProps) {
   const isCompleted = task.status === "concluida";
   const isCancelled = task.status === "cancelada";
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isCompleted && !isCancelled;
@@ -106,6 +107,18 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false 
               )}>
                 {task.description}
               </p>
+            )}
+
+            {videoUrl && (
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 mt-2 text-sm text-destructive hover:text-destructive/80 font-medium transition-colors"
+              >
+                <Youtube className="h-4 w-4" />
+                Assistir vídeo de apoio
+              </a>
             )}
 
             <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground" role="contentinfo">
