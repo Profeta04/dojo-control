@@ -22,7 +22,10 @@ import {
   RotateCcw,
   Scale,
   Medal,
-  LucideIcon
+  LucideIcon,
+  Briefcase,
+  MoreHorizontal,
+  Swords
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -205,6 +208,58 @@ export function StudentTasksDashboard() {
     return !data || !data.options || data.correctOption === null;
   });
 
+  // Category icons for practical tasks
+  const CATEGORY_ICONS: Record<TaskCategory, LucideIcon> = {
+    tecnica: Swords,
+    fisica: Dumbbell,
+    administrativa: Briefcase,
+    outra: MoreHorizontal,
+  };
+
+  // Group regular pending tasks by category
+  const groupedRegularPendingTasks = useMemo((): GroupedTasks[] => {
+    const groups: Record<string, TaskWithAssignee[]> = {};
+    
+    regularPendingTasks.forEach((task) => {
+      const cat = task.category as TaskCategory;
+      if (!groups[cat]) {
+        groups[cat] = [];
+      }
+      groups[cat].push(task);
+    });
+
+    return (Object.keys(CATEGORY_CONFIG) as TaskCategory[])
+      .filter(cat => groups[cat] && groups[cat].length > 0)
+      .map(cat => ({
+        groupId: `practical-${cat}`,
+        label: CATEGORY_CONFIG[cat].label,
+        icon: CATEGORY_ICONS[cat],
+        tasks: groups[cat].sort((a, b) => a.title.localeCompare(b.title)),
+      }));
+  }, [regularPendingTasks]);
+
+  // Group regular completed tasks by category
+  const groupedRegularCompletedTasks = useMemo((): GroupedTasks[] => {
+    const groups: Record<string, TaskWithAssignee[]> = {};
+    
+    regularCompletedTasks.forEach((task) => {
+      const cat = task.category as TaskCategory;
+      if (!groups[cat]) {
+        groups[cat] = [];
+      }
+      groups[cat].push(task);
+    });
+
+    return (Object.keys(CATEGORY_CONFIG) as TaskCategory[])
+      .filter(cat => groups[cat] && groups[cat].length > 0)
+      .map(cat => ({
+        groupId: `practical-completed-${cat}`,
+        label: CATEGORY_CONFIG[cat].label,
+        icon: CATEGORY_ICONS[cat],
+        tasks: groups[cat].sort((a, b) => a.title.localeCompare(b.title)),
+      }));
+  }, [regularCompletedTasks]);
+
   const toggleGroup = (groupId: string) => {
     setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
   };
@@ -222,7 +277,7 @@ export function StudentTasksDashboard() {
     return <LoadingSpinner />;
   }
 
-  const renderGroupedTasks = (groups: GroupedTasks[], prefix: string, showCompleted = false) => (
+  const renderGroupedTasks = (groups: GroupedTasks[], prefix: string, showCompleted = false, isPractical = false) => (
     <div className="space-y-3">
       {groups.map((group, groupIndex) => {
         const isOpen = openGroups[`${prefix}-${group.groupId}`] ?? false;
@@ -255,7 +310,7 @@ export function StudentTasksDashboard() {
             <CollapsibleContent className="mt-2">
               <ul className="space-y-3 pl-2 border-l-2 border-muted ml-4">
                 {group.tasks.map((task, taskIndex) => {
-                  const quizData = templateDataMap[task.title];
+                  const taskData = templateDataMap[task.title];
                   const taskNumber = globalStartIndex + taskIndex + 1;
                   
                   return (
@@ -263,18 +318,18 @@ export function StudentTasksDashboard() {
                       <div className="absolute -left-6 top-4 w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
                         <span className="text-[10px] font-bold text-primary">{taskNumber}</span>
                       </div>
-                      {showCompleted ? (
+                      {showCompleted || isPractical ? (
                         <TaskCard
                           task={task}
                           onStatusChange={handleStatusChange}
-                          videoUrl={quizData?.videoUrl || undefined}
+                          videoUrl={taskData?.videoUrl || undefined}
                         />
                       ) : (
                         <TaskQuizCard
                           task={task}
-                          options={quizData.options!}
-                          correctOption={quizData.correctOption!}
-                          videoUrl={quizData.videoUrl || undefined}
+                          options={taskData.options!}
+                          correctOption={taskData.correctOption!}
+                          videoUrl={taskData.videoUrl || undefined}
                         />
                       )}
                     </li>
@@ -380,8 +435,8 @@ export function StudentTasksDashboard() {
                     </div>
                   )}
 
-                  {/* Regular Tasks Section */}
-                  {regularPendingTasks.length > 0 && (
+                  {/* Regular Tasks Section - Grouped by Category */}
+                  {groupedRegularPendingTasks.length > 0 && (
                     <div className="space-y-3">
                       {groupedQuizTasks.length > 0 && (
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-4">
@@ -389,25 +444,7 @@ export function StudentTasksDashboard() {
                           <span>Tarefas Práticas ({regularPendingTasks.length})</span>
                         </div>
                       )}
-                      <ul className="space-y-3" aria-label="Tarefas práticas">
-                        {regularPendingTasks.map((task, index) => {
-                          const taskData = templateDataMap[task.title];
-                          return (
-                            <li key={task.id} className="relative">
-                              <div className="absolute -left-1 top-4 w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-muted-foreground">{index + 1}</span>
-                              </div>
-                              <div className="ml-6">
-                                <TaskCard
-                                  task={task}
-                                  onStatusChange={handleStatusChange}
-                                  videoUrl={taskData?.videoUrl || undefined}
-                                />
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      {renderGroupedTasks(groupedRegularPendingTasks, "practical", false, true)}
                     </div>
                   )}
                 </>
@@ -433,8 +470,8 @@ export function StudentTasksDashboard() {
                     </div>
                   )}
 
-                  {/* Regular Completed Tasks */}
-                  {regularCompletedTasks.length > 0 && (
+                  {/* Regular Completed Tasks - Grouped by Category */}
+                  {groupedRegularCompletedTasks.length > 0 && (
                     <div className="space-y-3">
                       {groupedCompletedQuizTasks.length > 0 && (
                         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-4">
@@ -442,25 +479,7 @@ export function StudentTasksDashboard() {
                           <span>Tarefas Práticas Concluídas ({regularCompletedTasks.length})</span>
                         </div>
                       )}
-                      <ul className="space-y-3" aria-label="Tarefas práticas concluídas">
-                        {regularCompletedTasks.map((task, index) => {
-                          const taskData = templateDataMap[task.title];
-                          return (
-                            <li key={task.id} className="relative">
-                              <div className="absolute -left-1 top-4 w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                                <span className="text-[10px] font-bold text-muted-foreground">{index + 1}</span>
-                              </div>
-                              <div className="ml-6">
-                                <TaskCard
-                                  task={task}
-                                  onStatusChange={handleStatusChange}
-                                  videoUrl={taskData?.videoUrl || undefined}
-                                />
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
+                      {renderGroupedTasks(groupedRegularCompletedTasks, "practical-completed", true, true)}
                     </div>
                   )}
                 </>
