@@ -5,7 +5,25 @@ import { useTasks, TaskCategory, CATEGORY_CONFIG, TaskWithAssignee } from "@/hoo
 import { TaskCard } from "./TaskCard";
 import { TaskQuizCard } from "./TaskQuizCard";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, CheckCircle2, Clock, Trophy, Filter, BookOpen, ChevronDown, ChevronRight, Dumbbell } from "lucide-react";
+import { 
+  ClipboardList, 
+  CheckCircle2, 
+  Clock, 
+  Trophy, 
+  Filter, 
+  BookOpen, 
+  ChevronDown, 
+  ChevronRight, 
+  Dumbbell,
+  Scroll,
+  Home,
+  Target,
+  User,
+  RotateCcw,
+  Scale,
+  Medal,
+  LucideIcon
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -21,48 +39,48 @@ interface TaskTemplate {
   video_url: string | null;
 }
 
-// Define the thematic groups for white belt quizzes
-const THEMATIC_GROUPS = [
+// Define the thematic groups for quizzes with Lucide icons
+const THEMATIC_GROUPS: { id: string; label: string; icon: LucideIcon; keywords: string[] }[] = [
   {
     id: "historia",
     label: "História do Judô",
-    icon: "📜",
+    icon: Scroll,
     keywords: ["Judô", "Jigoro", "criou", "criado", "Kodokan", "nasceu", "veio", "significa Judô"],
   },
   {
     id: "vocabulario",
     label: "Vocabulário do Dojo",
-    icon: "🏛️",
+    icon: Home,
     keywords: ["Dojô", "Judogi", "Obi", "Sensei", "Tatame"],
   },
   {
     id: "comandos",
     label: "Comandos e Papéis",
-    icon: "🎯",
+    icon: Target,
     keywords: ["Tori", "Uke", "Rei", "Hajime", "Matte", "Randori"],
   },
   {
     id: "posturas",
     label: "Posturas e Pegadas",
-    icon: "🧍",
+    icon: User,
     keywords: ["Shizen-tai", "Jigo-tai", "Kumi-kata"],
   },
   {
     id: "ukemi",
     label: "Quedas (Ukemi)",
-    icon: "🔄",
+    icon: RotateCcw,
     keywords: ["Ukemi", "Mae Ukemi", "Ushiro Ukemi", "Yoko Ukemi", "Zenpo Kaiten", "quedas"],
   },
   {
     id: "principios",
     label: "Princípios do Judô",
-    icon: "⚖️",
+    icon: Scale,
     keywords: ["Jita Kyoei", "Seiryoku Zenyo"],
   },
   {
     id: "olimpico",
     label: "Judô Olímpico",
-    icon: "🏅",
+    icon: Medal,
     keywords: ["olímpico", "primeira faixa"],
   },
 ];
@@ -79,7 +97,7 @@ function getThematicGroup(title: string): string {
 interface GroupedTasks {
   groupId: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   tasks: TaskWithAssignee[];
 }
 
@@ -221,7 +239,7 @@ export function StudentTasksDashboard() {
             <CollapsibleTrigger className="w-full">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{group.icon}</span>
+                  <group.icon className="h-4 w-4 text-primary" />
                   <span className="font-medium text-sm">{group.label}</span>
                   <Badge variant="secondary" className="text-xs">
                     {group.tasks.length}
