@@ -225,7 +225,7 @@ export function StudentTasksDashboard() {
   const renderGroupedTasks = (groups: GroupedTasks[], prefix: string, showCompleted = false) => (
     <div className="space-y-3">
       {groups.map((group, groupIndex) => {
-        const isOpen = openGroups[`${prefix}-${group.groupId}`] ?? true;
+        const isOpen = openGroups[`${prefix}-${group.groupId}`] ?? false;
         const globalStartIndex = groups
           .slice(0, groupIndex)
           .reduce((sum, g) => sum + g.tasks.length, 0);
