@@ -60,7 +60,7 @@ const classSchema = z.object({
 });
 
 export function ClassesTab() {
-  const { user, canManageStudents } = useAuth();
+  const { user, canManageStudents, isDono, isAdmin, isSensei } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -86,13 +86,19 @@ export function ClassesTab() {
 
   // Fetch classes with details
   const { data: classes, isLoading } = useQuery({
-    queryKey: ["classes"],
+    queryKey: ["classes", user?.id, isSensei, isDono, isAdmin],
     queryFn: async () => {
-      const { data: classesData, error } = await supabase
+      let query = supabase
         .from("classes")
         .select("*")
         .order("name");
 
+      // Senseis only see their own classes
+      if (isSensei && !isDono && !isAdmin) {
+        query = query.eq("sensei_id", user!.id);
+      }
+
+      const { data: classesData, error } = await query;
       if (error) throw error;
       if (!classesData) return [];
 
