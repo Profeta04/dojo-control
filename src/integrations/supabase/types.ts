@@ -698,6 +698,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      class_in_dojo: {
+        Args: { _class_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_active_dojos_public: {
         Args: never
         Returns: {
@@ -706,6 +710,10 @@ export type Database = {
         }[]
       }
       get_sensei_dojo_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_student_class_ids: {
+        Args: { _student_id: string }
+        Returns: string[]
+      }
       get_user_dojo_id: { Args: { _user_id: string }; Returns: string }
       get_user_dojos: {
         Args: { _user_id: string }
@@ -738,6 +746,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_enrolled_in_class: {
+        Args: { _class_id: string; _student_id: string }
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
