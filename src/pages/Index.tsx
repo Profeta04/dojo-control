@@ -11,7 +11,7 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 text-center safe-area-inset">
-        <img src={dojoLogo} alt="Dojo Manager" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6" />
+        <img src={dojoLogo} alt="Dojo Manager" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6 border border-foreground rounded-full" />
         
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4 tracking-tight">
           Dojo Manager
