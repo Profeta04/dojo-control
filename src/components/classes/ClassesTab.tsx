@@ -40,7 +40,7 @@ import { Plus, GraduationCap, Users, Clock, UserPlus, UserMinus, Loader2, Edit, 
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { format, isSameDay, startOfMonth, endOfMonth } from "date-fns";
+import { format, isSameDay, startOfMonth, endOfMonth, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 type Class = Tables<"classes">;
@@ -699,7 +699,10 @@ export function ClassesTab() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{student.name}</p>
-                          <p className="text-xs text-muted-foreground">{student.belt_grade ? `Faixa ${student.belt_grade}` : "Sem faixa"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {student.belt_grade ? `Faixa ${student.belt_grade}` : "Sem faixa"}
+                            {student.birth_date && ` · ${differenceInYears(new Date(), new Date(student.birth_date))} anos`}
+                          </p>
                         </div>
                         {student.belt_grade && (
                           <BeltBadge grade={student.belt_grade as any} size="sm" />
