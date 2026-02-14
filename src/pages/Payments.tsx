@@ -398,12 +398,16 @@ export default function PaymentsPage() {
     setFormLoading(true);
 
     try {
-      const updates: Partial<Payment> = {
+      const updates: any = {
         status: newStatus,
       };
 
       if (newStatus === "pago") {
         updates.paid_date = format(new Date(), "yyyy-MM-dd");
+        // Auto-approve receipt if one exists
+        if (selectedPayment.receipt_url && selectedPayment.receipt_status !== "aprovado") {
+          updates.receipt_status = "aprovado";
+        }
       } else {
         updates.paid_date = null;
       }
