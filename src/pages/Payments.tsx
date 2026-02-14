@@ -27,15 +27,15 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { 
   CreditCard, Plus, Loader2, DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Receipt, Users, Bell, QrCode, Save, User
+  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
 import { Tables } from "@/integrations/supabase/types";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PaymentStatus, PAYMENT_STATUS_LABELS, ReceiptStatus } from "@/lib/constants";
+import { PaymentStatus, PAYMENT_STATUS_LABELS, ReceiptStatus, PaymentCategory, PAYMENT_CATEGORY_LABELS } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type Payment = Tables<"payments">;
@@ -43,6 +43,7 @@ type Class = Tables<"classes">;
 
 interface PaymentWithStudent extends Payment {
   studentName: string;
+  studentBlocked?: boolean;
 }
 
 const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | "destructive"; icon: typeof CheckCircle2 }> = {
@@ -70,12 +71,16 @@ export default function PaymentsPage() {
   const [pixSaving, setPixSaving] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // Fetch current dojo's PIX key
+  // Fetch current dojo's data (PIX key + late fee settings)
   const { data: currentDojo } = useQuery({
-    queryKey: ["dojo-pix", currentDojoId],
+    queryKey: ["dojo-details", currentDojoId],
     queryFn: async () => {
       if (!currentDojoId) return null;
-      const { data, error } = await supabase.from("dojos").select("id, name, pix_key").eq("id", currentDojoId).single();
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("id, name, pix_key, late_fee_percent, daily_interest_percent, grace_days")
+        .eq("id", currentDojoId)
+        .single();
       if (error) return null;
       return data;
     },
@@ -93,7 +98,7 @@ export default function PaymentsPage() {
       const { error } = await supabase.from("dojos").update({ pix_key: pixKeyInput || null }).eq("id", currentDojoId);
       if (error) throw error;
       toast({ title: "Chave Pix salva com sucesso!" });
-      queryClient.invalidateQueries({ queryKey: ["dojo-pix", currentDojoId] });
+      queryClient.invalidateQueries({ queryKey: ["dojo-details", currentDojoId] });
     } catch (error: any) {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
@@ -103,17 +108,22 @@ export default function PaymentsPage() {
 
   const [formData, setFormData] = useState({
     student_id: "",
+    category: "mensalidade" as PaymentCategory,
     reference_month: format(new Date(), "yyyy-MM"),
     due_date: format(new Date(), "yyyy-MM-dd"),
     amount: "",
+    description: "",
     notes: "",
   });
 
   const [batchFormData, setBatchFormData] = useState({
+    target: "class" as "class" | "all",
     class_id: "",
+    category: "mensalidade" as PaymentCategory,
     reference_month: format(new Date(), "yyyy-MM"),
     due_date: format(new Date(), "yyyy-MM-dd"),
     amount: "",
+    description: "",
     notes: "",
   });
 
@@ -148,26 +158,43 @@ export default function PaymentsPage() {
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["payments", currentDojoId],
     queryFn: async () => {
-      let studentQuery = supabase.from("profiles").select("user_id").eq("registration_status", "aprovado");
+      let studentQuery = supabase.from("profiles").select("user_id, name, is_blocked").eq("registration_status", "aprovado");
       if (currentDojoId) studentQuery = studentQuery.eq("dojo_id", currentDojoId);
       const { data: dojoStudents, error: studentsError } = await studentQuery;
       if (studentsError) throw studentsError;
-      const dojoStudentIds = dojoStudents?.map((s) => s.user_id) || [];
-      if (dojoStudentIds.length === 0) return [];
+      if (!dojoStudents || dojoStudents.length === 0) return [];
+      const dojoStudentIds = dojoStudents.map((s) => s.user_id);
+      const studentMap = new Map(dojoStudents.map((s) => [s.user_id, s]));
       const { data, error } = await supabase.from("payments").select("*").in("student_id", dojoStudentIds).order("due_date", { ascending: false });
       if (error) throw error;
-      const enriched: PaymentWithStudent[] = await Promise.all(
-        (data || []).map(async (p) => {
-          const { data: studentProfile } = await supabase.from("profiles").select("name").eq("user_id", p.student_id).single();
-          return { ...p, studentName: studentProfile?.name || "Desconhecido" };
-        })
-      );
+      const enriched: PaymentWithStudent[] = (data || []).map((p) => {
+        const student = studentMap.get(p.student_id);
+        return {
+          ...p,
+          studentName: student?.name || "Desconhecido",
+          studentBlocked: (student as any)?.is_blocked || false,
+        };
+      });
       return enriched;
     },
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   const getPaymentStatus = (p: Payment): PaymentStatus => (p.status as PaymentStatus) || "pendente";
+
+  // Calculate late fee for a payment
+  const calculateLateFee = (payment: Payment): { fee: number; interest: number; total: number; daysLate: number } => {
+    if (!currentDojo || getPaymentStatus(payment) !== "atrasado") return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
+    const dueDate = parseISO(payment.due_date);
+    const today = new Date();
+    const daysLate = Math.max(0, differenceInDays(today, dueDate) - ((currentDojo as any).grace_days || 0));
+    if (daysLate <= 0) return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
+    const feePercent = (currentDojo as any).late_fee_percent || 0;
+    const interestPercent = (currentDojo as any).daily_interest_percent || 0;
+    const fee = payment.amount * (feePercent / 100);
+    const interest = payment.amount * (interestPercent / 100) * daysLate;
+    return { fee, interest, total: payment.amount + fee + interest, daysLate };
+  };
 
   const filteredPayments = payments?.filter((p) => {
     const status = getPaymentStatus(p);
@@ -194,8 +221,8 @@ export default function PaymentsPage() {
     { key: "pago" as const, label: "Pagamentos Confirmados", subtitle: "Pagamentos recebidos com sucesso", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/30", headerBg: "bg-gradient-to-r from-success/10 via-success/5 to-transparent" },
   ];
 
-  const resetForm = () => setFormData({ student_id: "", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", notes: "" });
-  const resetBatchForm = () => setBatchFormData({ class_id: "", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", notes: "" });
+  const resetForm = () => setFormData({ student_id: "", category: "mensalidade", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", description: "", notes: "" });
+  const resetBatchForm = () => setBatchFormData({ target: "class", class_id: "", category: "mensalidade", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", description: "", notes: "" });
 
   const handleCreatePayment = async () => {
     if (!formData.student_id || !formData.amount || !user) return;
@@ -203,14 +230,16 @@ export default function PaymentsPage() {
     try {
       const { error } = await supabase.from("payments").insert({
         student_id: formData.student_id,
+        category: formData.category,
         reference_month: formData.reference_month + "-01",
         due_date: formData.due_date,
         amount: parseFloat(formData.amount),
+        description: formData.description || null,
         notes: formData.notes || null,
         status: "pendente",
       });
       if (error) throw error;
-      toast({ title: "Pagamento registrado!", description: "O pagamento foi criado com sucesso." });
+      toast({ title: "Pagamento registrado!", description: `${PAYMENT_CATEGORY_LABELS[formData.category]} criado com sucesso.` });
       setCreateDialogOpen(false);
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["payments"] });
@@ -222,37 +251,63 @@ export default function PaymentsPage() {
   };
 
   const handleBatchCreate = async () => {
-    if (!batchFormData.class_id || !batchFormData.amount || !user) return;
+    if (!batchFormData.amount || !user) return;
+    if (batchFormData.target === "class" && !batchFormData.class_id) return;
     setBatchLoading(true);
     try {
-      const { data: enrollments, error: enrollmentError } = await supabase.from("class_students").select("student_id").eq("class_id", batchFormData.class_id);
-      if (enrollmentError) throw enrollmentError;
-      if (!enrollments || enrollments.length === 0) {
-        toast({ title: "Nenhum aluno encontrado", description: "Esta turma não possui alunos matriculados.", variant: "destructive" });
+      let targetStudentIds: string[] = [];
+
+      if (batchFormData.target === "all") {
+        // All students in the dojo
+        targetStudentIds = students?.map((s) => s.user_id) || [];
+      } else {
+        // Students from a specific class
+        const { data: enrollments, error: enrollmentError } = await supabase.from("class_students").select("student_id").eq("class_id", batchFormData.class_id);
+        if (enrollmentError) throw enrollmentError;
+        targetStudentIds = enrollments?.map((e) => e.student_id) || [];
+      }
+
+      if (targetStudentIds.length === 0) {
+        toast({ title: "Nenhum aluno encontrado", description: "Nenhum aluno elegível para criação de pagamento.", variant: "destructive" });
+        setBatchLoading(false);
         return;
       }
-      const studentIds = enrollments.map((e) => e.student_id);
-      const { data: existingPayments, error: existingError } = await supabase.from("payments").select("student_id").in("student_id", studentIds).eq("reference_month", batchFormData.reference_month + "-01");
-      if (existingError) throw existingError;
-      const existingStudentIds = new Set(existingPayments?.map((p) => p.student_id) || []);
-      const newStudentIds = studentIds.filter((id) => !existingStudentIds.has(id));
-      if (newStudentIds.length === 0) {
-        toast({ title: "Pagamentos já existem", description: "Todos os alunos desta turma já possuem pagamento para este mês.", variant: "destructive" });
-        return;
+
+      // For mensalidade category, skip students who already have one for this month
+      let newStudentIds = targetStudentIds;
+      if (batchFormData.category === "mensalidade") {
+        const { data: existingPayments, error: existingError } = await supabase
+          .from("payments")
+          .select("student_id")
+          .in("student_id", targetStudentIds)
+          .eq("reference_month", batchFormData.reference_month + "-01")
+          .eq("category", "mensalidade");
+        if (existingError) throw existingError;
+        const existingStudentIds = new Set(existingPayments?.map((p) => p.student_id) || []);
+        newStudentIds = targetStudentIds.filter((id) => !existingStudentIds.has(id));
+        if (newStudentIds.length === 0) {
+          toast({ title: "Pagamentos já existem", description: "Todos os alunos já possuem mensalidade para este mês.", variant: "destructive" });
+          setBatchLoading(false);
+          return;
+        }
       }
+
       const paymentsToInsert = newStudentIds.map((studentId) => ({
         student_id: studentId,
+        category: batchFormData.category,
         reference_month: batchFormData.reference_month + "-01",
         due_date: batchFormData.due_date,
         amount: parseFloat(batchFormData.amount),
+        description: batchFormData.description || null,
         notes: batchFormData.notes || null,
         status: "pendente" as const,
       }));
       const { error } = await supabase.from("payments").insert(paymentsToInsert);
       if (error) throw error;
+      const skipped = targetStudentIds.length - newStudentIds.length;
       toast({
         title: "Pagamentos gerados!",
-        description: `${newStudentIds.length} pagamento(s) criado(s)${existingStudentIds.size > 0 ? `. ${existingStudentIds.size} já possuíam pagamento.` : "."}`,
+        description: `${newStudentIds.length} pagamento(s) criado(s)${skipped > 0 ? `. ${skipped} já possuíam mensalidade.` : "."}`,
       });
       setBatchDialogOpen(false);
       resetBatchForm();
@@ -279,6 +334,19 @@ export default function PaymentsPage() {
       }
       const { error } = await supabase.from("payments").update(updates).eq("id", selectedPayment.id);
       if (error) throw error;
+
+      // If marking as atrasado, send notification
+      if (newStatus === "atrasado") {
+        const lateFeeInfo = calculateLateFee({ ...selectedPayment, status: "atrasado" });
+        await supabase.from("notifications").insert({
+          user_id: selectedPayment.student_id,
+          title: "⚠️ Pagamento em Atraso",
+          message: `Seu pagamento de ${formatCurrency(selectedPayment.amount)} está atrasado.${lateFeeInfo.fee > 0 || lateFeeInfo.interest > 0 ? ` Multa/juros: ${formatCurrency(lateFeeInfo.fee + lateFeeInfo.interest)}. Total: ${formatCurrency(lateFeeInfo.total)}.` : ""}`,
+          type: "warning",
+          related_id: selectedPayment.id,
+        });
+      }
+
       toast({ title: "Status atualizado!", description: `Pagamento marcado como ${PAYMENT_STATUS_LABELS[newStatus]}.` });
       setEditDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["payments"] });
@@ -300,6 +368,43 @@ export default function PaymentsPage() {
       queryClient.invalidateQueries({ queryKey: ["payments"] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Erro ao excluir pagamento", variant: "destructive" });
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    if (!selectedPayment) return;
+    setFormLoading(true);
+    try {
+      const newBlocked = !selectedPayment.studentBlocked;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ 
+          is_blocked: newBlocked,
+          blocked_reason: newBlocked ? "Pagamento em atraso" : null,
+        })
+        .eq("user_id", selectedPayment.student_id);
+      if (error) throw error;
+
+      // Notify student
+      await supabase.from("notifications").insert({
+        user_id: selectedPayment.student_id,
+        title: newBlocked ? "🚫 Acesso Bloqueado" : "✅ Acesso Liberado",
+        message: newBlocked
+          ? "Seu acesso foi bloqueado devido a pagamento(s) em atraso. Regularize sua situação para continuar."
+          : "Seu acesso foi liberado. Obrigado por regularizar seu pagamento!",
+        type: newBlocked ? "warning" : "info",
+      });
+
+      toast({
+        title: newBlocked ? "Aluno bloqueado" : "Aluno desbloqueado",
+        description: newBlocked ? `${selectedPayment.studentName} foi bloqueado e notificado.` : `${selectedPayment.studentName} foi desbloqueado.`,
+      });
+      setEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     } finally {
       setFormLoading(false);
     }
@@ -351,7 +456,6 @@ export default function PaymentsPage() {
         updates.status = "pago";
         updates.paid_date = format(new Date(), "yyyy-MM-dd");
       }
-      // Include rejection reason in notes if rejecting
       if (newReceiptStatus === "rejeitado" && rejectionReason.trim()) {
         updates.notes = selectedPayment.notes 
           ? `${selectedPayment.notes}\n[Comprovante rejeitado: ${rejectionReason.trim()}]`
@@ -392,7 +496,8 @@ export default function PaymentsPage() {
 
   const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
-  const formatMonth = (monthStr: string) => {
+  const formatMonth = (monthStr: string | null) => {
+    if (!monthStr) return "—";
     const [year, month] = monthStr.split("-");
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return format(date, "MMMM 'de' yyyy", { locale: ptBR });
@@ -415,7 +520,7 @@ export default function PaymentsPage() {
     <RequireApproval>
     <DashboardLayout>
       <div className="flex flex-col gap-4 mb-6">
-        <PageHeader title="Pagamentos" description="Controle de mensalidades dos alunos" />
+        <PageHeader title="Pagamentos" description="Controle financeiro do dojo" />
         
         {canManageStudents && (
           <div className="flex gap-2 flex-wrap">
@@ -555,6 +660,7 @@ export default function PaymentsPage() {
                         <TableHeader>
                           <TableRow className="bg-muted/20">
                             <TableHead className="min-w-[140px]">Aluno</TableHead>
+                            <TableHead className="hidden lg:table-cell">Categoria</TableHead>
                             <TableHead className="hidden sm:table-cell">Referência</TableHead>
                             <TableHead className="hidden md:table-cell">Vencimento</TableHead>
                             <TableHead>Valor</TableHead>
@@ -563,9 +669,10 @@ export default function PaymentsPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {sectionPayments.map((payment, index) => {
+                          {sectionPayments.map((payment) => {
                             const status = getPaymentStatus(payment);
-                            const statusStyle = STATUS_STYLES[status];
+                            const category = (payment as any).category as PaymentCategory | undefined;
+                            const lateFee = section.key === "atrasado" ? calculateLateFee(payment) : null;
 
                             return (
                               <TableRow 
@@ -574,8 +681,13 @@ export default function PaymentsPage() {
                               >
                                 <TableCell>
                                   <div className="flex items-center gap-2.5">
-                                    <div className={`w-8 h-8 rounded-full ${section.bgColor} flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110`}>
+                                    <div className={`w-8 h-8 rounded-full ${section.bgColor} flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110 relative`}>
                                       <User className={`h-4 w-4 ${section.color}`} />
+                                      {payment.studentBlocked && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive flex items-center justify-center">
+                                          <ShieldAlert className="h-2.5 w-2.5 text-destructive-foreground" />
+                                        </div>
+                                      )}
                                     </div>
                                     <div>
                                       <p className="font-medium text-sm truncate max-w-[140px]">{payment.studentName}</p>
@@ -585,14 +697,27 @@ export default function PaymentsPage() {
                                     </div>
                                   </div>
                                 </TableCell>
+                                <TableCell className="hidden lg:table-cell">
+                                  <Badge variant="outline" className="text-xs gap-1">
+                                    <Tag className="h-3 w-3" />
+                                    {PAYMENT_CATEGORY_LABELS[category || "mensalidade"]}
+                                  </Badge>
+                                </TableCell>
                                 <TableCell className="hidden sm:table-cell capitalize text-sm">
                                   {formatMonth(payment.reference_month)}
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
                                   {format(parseISO(payment.due_date), "dd/MM/yyyy")}
                                 </TableCell>
-                                <TableCell className="font-semibold text-sm">
-                                  {formatCurrency(payment.amount)}
+                                <TableCell>
+                                  <div>
+                                    <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
+                                    {lateFee && lateFee.daysLate > 0 && (
+                                      <p className="text-xs text-destructive font-medium">
+                                        +{formatCurrency(lateFee.fee + lateFee.interest)}
+                                      </p>
+                                    )}
+                                  </div>
                                 </TableCell>
                                 <TableCell>
                                   {payment.receipt_url ? (
@@ -644,8 +769,11 @@ export default function PaymentsPage() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Novo Pagamento</DialogTitle>
-            <DialogDescription>Registrar uma nova mensalidade para um aluno</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Novo Pagamento
+            </DialogTitle>
+            <DialogDescription>Criar um pagamento individual para um aluno</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -655,6 +783,17 @@ export default function PaymentsPage() {
                 <SelectContent>
                   {students?.map((student) => (
                     <SelectItem key={student.user_id} value={student.user_id}>{student.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as PaymentCategory })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PAYMENT_CATEGORY_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -674,8 +813,12 @@ export default function PaymentsPage() {
               <Input id="amount" type="number" step="0.01" min="0" placeholder="150.00" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="description">Descrição (opcional)</Label>
+              <Input id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Ex: Kimono azul, Taxa de graduação..." />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="notes">Observações (opcional)</Label>
-              <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Desconto aplicado, taxa extra, etc." rows={2} />
+              <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Informações adicionais" rows={2} />
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancelar</Button>
@@ -692,15 +835,38 @@ export default function PaymentsPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><Users className="h-5 w-5" /> Gerar Pagamentos em Lote</DialogTitle>
-            <DialogDescription>Criar pagamentos para todos os alunos de uma turma</DialogDescription>
+            <DialogDescription>Criar pagamentos para múltiplos alunos de uma vez</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="batch_class">Turma</Label>
-              <Select value={batchFormData.class_id} onValueChange={(v) => setBatchFormData({ ...batchFormData, class_id: v })}>
-                <SelectTrigger id="batch_class"><SelectValue placeholder="Selecionar turma" /></SelectTrigger>
+              <Label>Destino</Label>
+              <Select value={batchFormData.target} onValueChange={(v) => setBatchFormData({ ...batchFormData, target: v as "class" | "all" })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {classes?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  <SelectItem value="class">Uma turma específica</SelectItem>
+                  <SelectItem value="all">Todos os alunos do dojo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {batchFormData.target === "class" && (
+              <div className="space-y-2">
+                <Label htmlFor="batch_class">Turma</Label>
+                <Select value={batchFormData.class_id} onValueChange={(v) => setBatchFormData({ ...batchFormData, class_id: v })}>
+                  <SelectTrigger id="batch_class"><SelectValue placeholder="Selecionar turma" /></SelectTrigger>
+                  <SelectContent>
+                    {classes?.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <Select value={batchFormData.category} onValueChange={(v) => setBatchFormData({ ...batchFormData, category: v as PaymentCategory })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(PAYMENT_CATEGORY_LABELS).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -719,15 +885,21 @@ export default function PaymentsPage() {
               <Input type="number" step="0.01" min="0" placeholder="150.00" value={batchFormData.amount} onChange={(e) => setBatchFormData({ ...batchFormData, amount: e.target.value })} />
             </div>
             <div className="space-y-2">
+              <Label>Descrição (opcional)</Label>
+              <Input value={batchFormData.description} onChange={(e) => setBatchFormData({ ...batchFormData, description: e.target.value })} placeholder="Ex: Mensalidade Março 2026" />
+            </div>
+            <div className="space-y-2">
               <Label>Observações (opcional)</Label>
               <Textarea value={batchFormData.notes} onChange={(e) => setBatchFormData({ ...batchFormData, notes: e.target.value })} placeholder="Aplicado a todos os pagamentos gerados" rows={2} />
             </div>
-            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
-              <p className="text-xs text-muted-foreground">💡 Alunos que já possuem pagamento para o mês selecionado serão ignorados.</p>
-            </div>
+            {batchFormData.category === "mensalidade" && (
+              <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
+                <p className="text-xs text-muted-foreground">💡 Para mensalidades, alunos que já possuem pagamento para o mês serão ignorados.</p>
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => { setBatchDialogOpen(false); resetBatchForm(); }}>Cancelar</Button>
-              <Button onClick={handleBatchCreate} disabled={!batchFormData.class_id || !batchFormData.amount || batchLoading}>
+              <Button onClick={handleBatchCreate} disabled={(batchFormData.target === "class" && !batchFormData.class_id) || !batchFormData.amount || batchLoading}>
                 {batchLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Gerando...</> : <><Users className="mr-2 h-4 w-4" /> Gerar Pagamentos</>}
               </Button>
             </div>
@@ -763,10 +935,19 @@ export default function PaymentsPage() {
                   <p className="font-semibold">{format(parseISO(selectedPayment.due_date), "dd/MM/yyyy")}</p>
                 </div>
                 <div>
-                  <Label className="text-xs text-muted-foreground">Status Atual</Label>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
                   <div className="mt-1">
                     <Badge variant={STATUS_STYLES[getPaymentStatus(selectedPayment)].variant}>
                       {PAYMENT_STATUS_LABELS[getPaymentStatus(selectedPayment)]}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Categoria</Label>
+                  <div className="mt-1">
+                    <Badge variant="outline" className="gap-1">
+                      <Tag className="h-3 w-3" />
+                      {PAYMENT_CATEGORY_LABELS[((selectedPayment as any).category as PaymentCategory) || "mensalidade"]}
                     </Badge>
                   </div>
                 </div>
@@ -777,6 +958,30 @@ export default function PaymentsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Late Fee Info */}
+              {getPaymentStatus(selectedPayment) === "atrasado" && (() => {
+                const lateFee = calculateLateFee(selectedPayment);
+                return lateFee.daysLate > 0 ? (
+                  <div className="p-4 bg-destructive/5 border border-destructive/20 rounded-xl space-y-2">
+                    <Label className="text-xs text-destructive font-medium">Multa e Juros ({lateFee.daysLate} dia(s) de atraso)</Label>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Multa</p>
+                        <p className="font-semibold text-destructive">{formatCurrency(lateFee.fee)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Juros</p>
+                        <p className="font-semibold text-destructive">{formatCurrency(lateFee.interest)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total</p>
+                        <p className="font-bold text-destructive">{formatCurrency(lateFee.total)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Receipt Section */}
               {selectedPayment.receipt_url && (
@@ -789,7 +994,6 @@ export default function PaymentsPage() {
                   
                   {selectedPayment.receipt_status !== "aprovado" && (
                     <div className="space-y-3 pt-3 border-t border-primary/10">
-                      {/* Rejection reason field */}
                       <div className="space-y-1.5">
                         <Label className="text-xs text-muted-foreground">Motivo da rejeição (opcional)</Label>
                         <Textarea
@@ -866,6 +1070,29 @@ export default function PaymentsPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Block/Unblock Student */}
+              {getPaymentStatus(selectedPayment) === "atrasado" && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Acesso do Aluno</Label>
+                  <Button
+                    variant={selectedPayment.studentBlocked ? "default" : "destructive"}
+                    size="sm"
+                    onClick={handleToggleBlock}
+                    disabled={formLoading}
+                    className={`w-full ${selectedPayment.studentBlocked ? "bg-success hover:bg-success/90 text-success-foreground" : ""}`}
+                  >
+                    {selectedPayment.studentBlocked ? (
+                      <><ShieldCheck className="h-4 w-4 mr-2" /> Desbloquear Aluno</>
+                    ) : (
+                      <><ShieldAlert className="h-4 w-4 mr-2" /> Bloquear Aluno (Inadimplente)</>
+                    )}
+                  </Button>
+                  {selectedPayment.studentBlocked && (
+                    <p className="text-xs text-muted-foreground text-center">O aluno está bloqueado e vê uma tela restrita.</p>
+                  )}
+                </div>
+              )}
 
               {/* Delete */}
               <div className="pt-4 border-t">

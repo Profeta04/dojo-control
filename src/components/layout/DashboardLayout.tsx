@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { BlockedStudentScreen } from "@/components/auth/BlockedStudentScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -464,7 +465,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
-        <div className="p-3 sm:p-4 lg:p-6 safe-area-inset-bottom">{children}</div>
+        <div className="p-3 sm:p-4 lg:p-6 safe-area-inset-bottom">
+          {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
+            <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
+          ) : (
+            children
+          )}
+        </div>
       </main>
 
       {/* Belt Edit Dialog for Senseis */}
