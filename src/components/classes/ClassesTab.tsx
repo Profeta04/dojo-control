@@ -176,11 +176,18 @@ export function ClassesTab() {
 
       if (filteredStudentUserIds.length === 0) return [];
 
-      const { data: profiles } = await supabase
+      let profilesQuery = supabase
         .from("profiles")
         .select("*")
         .in("user_id", filteredStudentUserIds)
         .eq("registration_status", "aprovado");
+
+      // Senseis can only enroll students from their dojo
+      if (isSensei && !isDono && !isAdmin && selectedClass.dojo_id) {
+        profilesQuery = profilesQuery.eq("dojo_id", selectedClass.dojo_id);
+      }
+
+      const { data: profiles } = await profilesQuery;
 
       if (!profiles) return [];
 
