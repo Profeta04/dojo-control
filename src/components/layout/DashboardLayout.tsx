@@ -21,9 +21,13 @@ import {
   UserCog,
   Settings,
   Building,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Select,
   SelectContent,
@@ -62,11 +66,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  
+  // Dark mode state derived from current dojo
+  const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
+  const isDarkMode = currentDojo?.dark_mode ?? false;
+  
+  const toggleDarkMode = async () => {
+    if (!currentDojo) return;
+    const newValue = !isDarkMode;
+    // Optimistic update
+    await supabase
+      .from("dojos")
+      .update({ dark_mode: newValue })
+      .eq("id", currentDojo.id);
+    // Invalidate dojo queries to refresh theme
+    queryClient.invalidateQueries({ queryKey: ["dojo-theme"] });
+    queryClient.invalidateQueries({ queryKey: ["user-dojos"] });
+  };
   
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
   
-  // Get current dojo logo
-  const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   
   useEffect(() => {
     const loadLogoUrl = async () => {
@@ -119,13 +139,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <img src={dojoLogo} alt="Dojo Manager" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
           )}
           <div className="min-w-0">
-            <h1 className="font-bold text-base lg:text-lg text-primary-foreground truncate">{settings.dojo_name}</h1>
-            <p className="text-xs text-primary-foreground/60">Sistema de Gestão</p>
+            <h1 className="font-bold text-base lg:text-lg text-sidebar-foreground truncate">{settings.dojo_name}</h1>
+            <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
       </div>
 
-      <Separator className="bg-primary-foreground/20" aria-hidden="true" />
+      <Separator className="bg-sidebar-border" aria-hidden="true" />
 
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 lg:px-3 py-3 lg:py-4">
@@ -137,11 +157,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               onClick={() => setSidebarOpen(false)}
               className={cn(
                 "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors touch-target no-select",
-                "focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
-                "active:scale-[0.98] active:bg-primary-foreground/25",
+                "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
+                "active:scale-[0.98] active:bg-sidebar-accent",
                 location.pathname === item.href
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
               )}
               aria-current={location.pathname === item.href ? "page" : undefined}
             >
@@ -152,30 +172,52 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </nav>
       </ScrollArea>
 
-      <Separator className="bg-primary-foreground/20" aria-hidden="true" />
+      {/* Dark Mode Toggle */}
+      {currentDojo && (canManageStudents || isDono || isAdmin) && (
+        <div className="px-3 lg:px-4 py-2">
+          <button
+            onClick={toggleDarkMode}
+            className={cn(
+              "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+              "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+              "active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            )}
+            aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
+          >
+            {isDarkMode ? (
+              <Sun className="h-5 w-5 flex-shrink-0" />
+            ) : (
+              <Moon className="h-5 w-5 flex-shrink-0" />
+            )}
+            <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
+          </button>
+        </div>
+      )}
+
+      <Separator className="bg-sidebar-border" aria-hidden="true" />
 
       {/* User Info */}
       <div className="p-3 lg:p-4 safe-area-inset-bottom" role="region" aria-label="Informações do usuário">
         <div className="flex items-center gap-3 mb-3 lg:mb-4">
           <div className="flex-shrink-0">
             <div 
-              className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center"
+              className="w-10 h-10 rounded-full bg-sidebar-accent flex items-center justify-center"
               aria-hidden="true"
             >
-              <span className="text-primary-foreground font-medium">
+              <span className="text-sidebar-accent-foreground font-medium">
                 {profile?.name?.charAt(0).toUpperCase() || "U"}
               </span>
             </div>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-primary-foreground truncate">
+            <p className="text-sm font-medium text-sidebar-foreground truncate">
               {profile?.name || "Usuário"}
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
                 <BeltBadge grade={profile.belt_grade as any} size="sm" />
               )}
-              <span className="text-xs text-primary-foreground/60">
+              <span className="text-xs text-sidebar-foreground/60">
                 {isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
               </span>
             </div>
@@ -183,7 +225,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start h-11 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary-foreground"
+          className="w-full justify-start h-11 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
@@ -207,7 +249,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Mobile Header */}
       <header 
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-primary border-b border-primary/20 safe-area-inset-top"
+        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top"
         role="banner"
       >
         <div className="h-14 px-3 flex items-center justify-between">
@@ -221,7 +263,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             ) : (
               <img src={dojoLogo} alt="Dojo Manager" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
             )}
-            <span className="font-semibold text-sm text-primary-foreground truncate">
+            <span className="font-semibold text-sm text-sidebar-foreground truncate">
               {settings.dojo_name}
             </span>
           </div>
@@ -230,7 +272,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <Button
               variant="ghost"
               size="icon"
-              className="text-primary-foreground hover:bg-primary-foreground/20 active:bg-primary-foreground/30 h-10 w-10 touch-target focus-visible:ring-2 focus-visible:ring-primary-foreground"
+              className="text-sidebar-foreground hover:bg-sidebar-accent active:bg-sidebar-accent h-10 w-10 touch-target focus-visible:ring-2 focus-visible:ring-sidebar-ring"
               onClick={() => setSidebarOpen(!sidebarOpen)}
               aria-expanded={sidebarOpen}
               aria-controls="mobile-sidebar"
@@ -253,7 +295,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Desktop Sidebar - Always visible on lg+ */}
       <aside
-        className="hidden lg:flex fixed top-0 left-0 z-40 h-full w-64 bg-primary border-r border-primary/20 flex-col"
+        className="hidden lg:flex fixed top-0 left-0 z-40 h-full w-64 bg-sidebar border-r border-sidebar-border flex-col"
         role="navigation"
         aria-label="Menu lateral desktop"
       >
@@ -264,7 +306,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <aside
         id="mobile-sidebar"
         className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-[280px] bg-primary border-r border-primary/20 flex flex-col transition-transform duration-300 ease-out",
+          "lg:hidden fixed top-0 left-0 z-50 h-full w-[280px] bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out",
           "will-change-transform",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
