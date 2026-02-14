@@ -78,6 +78,7 @@ export default function Auth() {
   const [signupBirthDate, setSignupBirthDate] = useState("");
   const [selectedDojoId, setSelectedDojoId] = useState("");
   const [selectedSenseiId, setSelectedSenseiId] = useState("");
+  const [dojoLogoUrl, setDojoLogoUrl] = useState<string | null>(null);
   
   // Guardian form
   const [addGuardian, setAddGuardian] = useState(false);
@@ -143,6 +144,40 @@ export default function Auth() {
   useEffect(() => {
     setSelectedSenseiId("");
   }, [selectedDojoId]);
+
+  // Fetch dojo logo when dojo is selected
+  useEffect(() => {
+    const fetchDojoLogo = async () => {
+      if (!selectedDojoId) {
+        setDojoLogoUrl(null);
+        return;
+      }
+      const dojo = dojos.find((d) => d.id === selectedDojoId);
+      if (!dojo) {
+        setDojoLogoUrl(null);
+        return;
+      }
+      // Fetch logo_url from dojos table
+      const { data } = await supabase
+        .from("dojos")
+        .select("logo_url")
+        .eq("id", selectedDojoId)
+        .single();
+      if (data?.logo_url) {
+        if (data.logo_url.startsWith("http")) {
+          setDojoLogoUrl(data.logo_url);
+        } else {
+          const { data: signedData } = await supabase.storage
+            .from("dojo-logos")
+            .createSignedUrl(data.logo_url, 3600);
+          setDojoLogoUrl(signedData?.signedUrl || null);
+        }
+      } else {
+        setDojoLogoUrl(null);
+      }
+    };
+    fetchDojoLogo();
+  }, [selectedDojoId, dojos]);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -408,7 +443,11 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
-        <img src={dojoLogo} alt="Dojo Manager" className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full mx-auto" />
+        <img
+          src={dojoLogoUrl || dojoLogo}
+          alt={dojoLogoUrl ? "Logo do Dojo" : "Dojo Manager"}
+          className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full mx-auto object-cover"
+        />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>
       </div>
