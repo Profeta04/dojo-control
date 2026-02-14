@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -11,6 +11,67 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ============================================================
+    // AUTHENTICATION: Verify the caller is an authenticated admin
+    // ============================================================
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: missing token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseAuth = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: invalid token" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const callerUserId = claimsData.claims.sub;
+
+    // Check if caller is admin or dono using service role to bypass RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: callerRoles, error: rolesError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", callerUserId);
+
+    if (rolesError) {
+      console.error("Error checking caller roles:", rolesError);
+      return new Response(
+        JSON.stringify({ error: "Failed to verify permissions" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const callerRoleNames = callerRoles?.map((r) => r.role) || [];
+    const isAuthorized = callerRoleNames.some((r) => ["admin", "dono"].includes(r));
+
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: only admins can create admin users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ============================================================
+    // BUSINESS LOGIC: Create the admin user
+    // ============================================================
     const { email, password, name } = await req.json();
 
     if (!email || !password || !name) {
@@ -20,14 +81,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create admin client with service role key
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
-
-    console.log(`Creating admin user: ${email}`);
+    console.log(`Admin ${callerUserId} creating admin user: ${email}`);
 
     // Create user using admin API
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -76,10 +130,10 @@ Deno.serve(async (req) => {
     console.log(`Admin user created successfully: ${email}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         message: `Admin user ${email} created successfully`,
-        user_id: userId 
+        user_id: userId,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
