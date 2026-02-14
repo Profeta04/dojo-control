@@ -18,6 +18,8 @@ import Graduations from "./pages/Graduations";
 import Payments from "./pages/Payments";
 import StudentPayments from "./pages/StudentPayments";
 import Settings from "./pages/Settings";
+import StudentProfile from "./pages/StudentProfile";
+import StudentTasks from "./pages/StudentTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ const App = () => (
                 <Route path="/mensalidade" element={<StudentPayments />} />
                 <Route path="/graduations" element={<Graduations />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/perfil" element={<StudentProfile />} />
+                <Route path="/tarefas" element={<StudentTasks />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
