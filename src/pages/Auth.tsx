@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar, UserPlus, Building, User } from "lucide-react";
+import { Loader2, Calendar, UserPlus, Building, User, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -83,6 +83,13 @@ export default function Auth() {
   const [guardianEmail, setGuardianEmail] = useState("");
   const [guardianPassword, setGuardianPassword] = useState("");
   const [guardianConfirmPassword, setGuardianConfirmPassword] = useState("");
+
+  // Show password toggles
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupConfirmPassword, setShowSignupConfirmPassword] = useState(false);
+  const [showGuardianPassword, setShowGuardianPassword] = useState(false);
+  const [showGuardianConfirmPassword, setShowGuardianConfirmPassword] = useState(false);
 
   // Forgot password
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
@@ -437,15 +444,25 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="h-10"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      required
+                      className="h-10 pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <Button type="submit" className="w-full h-10 bg-accent hover:bg-accent/90" disabled={loading}>
                   {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
@@ -569,27 +586,47 @@ export default function Auth() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    required
-                    className="h-10"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      type={showSignupPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      required
+                      className="h-10 pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    >
+                      {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-confirm-password">Confirmar senha</Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={signupConfirmPassword}
-                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                    required
-                    className="h-10"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="signup-confirm-password"
+                      type={showSignupConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={signupConfirmPassword}
+                      onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                      required
+                      className="h-10 pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowSignupConfirmPassword(!showSignupConfirmPassword)}
+                    >
+                      {showSignupConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Guardian section for minors */}
@@ -628,28 +665,48 @@ export default function Auth() {
                         
                         <div className="space-y-2">
                           <Label htmlFor="guardian-password">Senha do responsável</Label>
-                          <Input
-                            id="guardian-password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={guardianPassword}
-                            onChange={(e) => setGuardianPassword(e.target.value)}
-                            required={addGuardian}
-                            className="h-10"
-                          />
+                          <div className="relative">
+                            <Input
+                              id="guardian-password"
+                              type={showGuardianPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              value={guardianPassword}
+                              onChange={(e) => setGuardianPassword(e.target.value)}
+                              required={addGuardian}
+                              className="h-10 pr-10"
+                            />
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowGuardianPassword(!showGuardianPassword)}
+                            >
+                              {showGuardianPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                         
                         <div className="space-y-2">
                           <Label htmlFor="guardian-confirm-password">Confirmar senha do responsável</Label>
-                          <Input
-                            id="guardian-confirm-password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={guardianConfirmPassword}
-                            onChange={(e) => setGuardianConfirmPassword(e.target.value)}
-                            required={addGuardian}
-                            className="h-10"
-                          />
+                          <div className="relative">
+                            <Input
+                              id="guardian-confirm-password"
+                              type={showGuardianConfirmPassword ? "text" : "password"}
+                              placeholder="••••••••"
+                              value={guardianConfirmPassword}
+                              onChange={(e) => setGuardianConfirmPassword(e.target.value)}
+                              required={addGuardian}
+                              className="h-10 pr-10"
+                            />
+                            <button
+                              type="button"
+                              tabIndex={-1}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              onClick={() => setShowGuardianConfirmPassword(!showGuardianConfirmPassword)}
+                            >
+                              {showGuardianConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
+                          </div>
                         </div>
                       </>
                     )}
