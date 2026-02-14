@@ -27,7 +27,7 @@ export const BELT_LABELS: Record<BeltGrade, string> = {
 };
 
 export const BELT_COLORS: Record<BeltGrade, string> = {
-  branca: "bg-white border-2 border-foreground/20",
+  branca: "bg-white border-2 border-foreground/40",
   cinza: "bg-belt-cinza",
   azul: "bg-belt-azul",
   amarela: "bg-belt-amarela",
