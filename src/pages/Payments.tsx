@@ -167,8 +167,11 @@ export default function PaymentsPage() {
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
+  const getPaymentStatus = (p: Payment): PaymentStatus => (p.status as PaymentStatus) || "pendente";
+
   const filteredPayments = payments?.filter((p) => {
-    const statusMatch = statusFilter === "all" ? true : p.status === statusFilter;
+    const status = getPaymentStatus(p);
+    const statusMatch = statusFilter === "all" ? true : status === statusFilter;
     const receiptMatch = receiptFilter === "all" ? true 
       : receiptFilter === "pendente_verificacao" ? p.receipt_status === "pendente_verificacao"
       : receiptFilter === "com_comprovante" ? !!p.receipt_url
@@ -176,6 +179,20 @@ export default function PaymentsPage() {
       : true;
     return statusMatch && receiptMatch;
   });
+
+  const groupedPayments = {
+    pendente_verificacao: filteredPayments?.filter((p) => p.receipt_status === "pendente_verificacao") || [],
+    atrasado: filteredPayments?.filter((p) => getPaymentStatus(p) === "atrasado" && p.receipt_status !== "pendente_verificacao") || [],
+    pendente: filteredPayments?.filter((p) => getPaymentStatus(p) === "pendente" && p.receipt_status !== "pendente_verificacao") || [],
+    pago: filteredPayments?.filter((p) => getPaymentStatus(p) === "pago" && p.receipt_status !== "pendente_verificacao") || [],
+  };
+
+  const SECTION_CONFIG = [
+    { key: "pendente_verificacao" as const, label: "📎 Comprovantes Pendentes de Verificação", icon: Receipt, color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20" },
+    { key: "atrasado" as const, label: "Atrasados", icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/20" },
+    { key: "pendente" as const, label: "Pendentes", icon: Clock, color: "text-warning-foreground", bgColor: "bg-warning/10", borderColor: "border-warning/20" },
+    { key: "pago" as const, label: "Pagos", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/20" },
+  ];
 
   const resetForm = () => setFormData({ student_id: "", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", notes: "" });
   const resetBatchForm = () => setBatchFormData({ class_id: "", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", notes: "" });
@@ -292,7 +309,7 @@ export default function PaymentsPage() {
     if (!user) return;
     setNotifyLoading(true);
     try {
-      const paymentsToNotify = payments?.filter((p) => p.status === "pendente" || p.status === "atrasado");
+      const paymentsToNotify = payments?.filter((p) => getPaymentStatus(p) === "pendente" || getPaymentStatus(p) === "atrasado");
       if (!paymentsToNotify || paymentsToNotify.length === 0) {
         toast({ title: "Nenhum pagamento pendente", description: "Não há pagamentos pendentes ou atrasados para notificar." });
         return;
@@ -385,8 +402,8 @@ export default function PaymentsPage() {
     total: payments?.length || 0,
     pendente: payments?.filter((p) => p.status === "pendente").length || 0,
     atrasado: payments?.filter((p) => p.status === "atrasado").length || 0,
-    pago: payments?.filter((p) => p.status === "pago").length || 0,
-    totalPendente: payments?.filter((p) => p.status === "pendente" || p.status === "atrasado").reduce((acc, p) => acc + p.amount, 0) || 0,
+    pago: payments?.filter((p) => getPaymentStatus(p) === "pago").length || 0,
+    totalPendente: payments?.filter((p) => getPaymentStatus(p) === "pendente" || getPaymentStatus(p) === "atrasado").reduce((acc, p) => acc + p.amount, 0) || 0,
     pendingReceipts: payments?.filter((p) => p.receipt_status === "pendente_verificacao").length || 0,
   };
 
@@ -470,119 +487,139 @@ export default function PaymentsPage() {
         </Card>
       )}
 
-      {/* Payments Table */}
-      <Card className="shadow-sm animate-fade-in" style={{ animationDelay: "200ms" }}>
-        <CardHeader className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-              <Receipt className="h-5 w-5" />
-              Histórico de Pagamentos
-            </CardTitle>
-            <div className="flex gap-2 flex-wrap">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus | "all")}>
-                <SelectTrigger className="w-[130px] h-9">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pendente">Pendentes</SelectItem>
-                  <SelectItem value="atrasado">Atrasados</SelectItem>
-                  <SelectItem value="pago">Pagos</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={receiptFilter} onValueChange={setReceiptFilter}>
-                <SelectTrigger className="w-[160px] h-9">
-                  <SelectValue placeholder="Comprovante" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pendente_verificacao">📎 Pendentes verif.</SelectItem>
-                  <SelectItem value="com_comprovante">Com comprovante</SelectItem>
-                  <SelectItem value="sem_comprovante">Sem comprovante</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {filteredPayments && filteredPayments.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="min-w-[140px]">Aluno</TableHead>
-                    <TableHead className="hidden sm:table-cell">Referência</TableHead>
-                    <TableHead className="hidden md:table-cell">Vencimento</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Comprov.</TableHead>
-                    {canManageStudents && <TableHead className="w-[80px]">Ações</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredPayments.map((payment, index) => {
-                    const statusStyle = STATUS_STYLES[payment.status];
-                    const StatusIcon = statusStyle.icon;
+      {/* Filters */}
+      <div className="flex gap-2 flex-wrap mb-4 animate-fade-in" style={{ animationDelay: "200ms" }}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus | "all")}>
+          <SelectTrigger className="w-[130px] h-9">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="pendente">Pendentes</SelectItem>
+            <SelectItem value="atrasado">Atrasados</SelectItem>
+            <SelectItem value="pago">Pagos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={receiptFilter} onValueChange={setReceiptFilter}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Comprovante" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="pendente_verificacao">📎 Pendentes verif.</SelectItem>
+            <SelectItem value="com_comprovante">Com comprovante</SelectItem>
+            <SelectItem value="sem_comprovante">Sem comprovante</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-                    return (
-                      <TableRow 
-                        key={payment.id}
-                        className="hover:bg-muted/30 transition-colors animate-fade-in"
-                        style={{ animationDelay: `${index * 30}ms` }}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <User className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm truncate max-w-[120px]">{payment.studentName}</p>
-                              <p className="text-xs text-muted-foreground sm:hidden">
+      {/* Sectioned Payments */}
+      {filteredPayments && filteredPayments.length > 0 ? (
+        <div className="space-y-6">
+          {SECTION_CONFIG.map((section, sectionIdx) => {
+            const sectionPayments = groupedPayments[section.key];
+            if (sectionPayments.length === 0) return null;
+            const SectionIcon = section.icon;
+
+            return (
+              <Card key={section.key} className={`shadow-sm animate-fade-in border ${section.borderColor}`} style={{ animationDelay: `${sectionIdx * 100}ms` }}>
+                <CardHeader className="p-4 sm:p-5 pb-2">
+                  <CardTitle className={`flex items-center gap-2 text-sm sm:text-base font-semibold ${section.color}`}>
+                    <div className={`p-1.5 rounded-lg ${section.bgColor}`}>
+                      <SectionIcon className="h-4 w-4" />
+                    </div>
+                    {section.label}
+                    <Badge variant="secondary" className="ml-auto text-xs font-normal">
+                      {sectionPayments.length}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="min-w-[140px]">Aluno</TableHead>
+                          <TableHead className="hidden sm:table-cell">Referência</TableHead>
+                          <TableHead className="hidden md:table-cell">Vencimento</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Comprov.</TableHead>
+                          {canManageStudents && <TableHead className="w-[80px]">Ações</TableHead>}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sectionPayments.map((payment, index) => {
+                          const status = getPaymentStatus(payment);
+                          const statusStyle = STATUS_STYLES[status];
+                          const StatusIcon = statusStyle.icon;
+
+                          return (
+                            <TableRow 
+                              key={payment.id}
+                              className="hover:bg-muted/30 transition-colors animate-fade-in"
+                              style={{ animationDelay: `${index * 30}ms` }}
+                            >
+                              <TableCell>
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm truncate max-w-[120px]">{payment.studentName}</p>
+                                    <p className="text-xs text-muted-foreground sm:hidden">
+                                      {formatMonth(payment.reference_month)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell capitalize text-sm">
                                 {formatMonth(payment.reference_month)}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell capitalize text-sm">
-                          {formatMonth(payment.reference_month)}
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                        </TableCell>
-                        <TableCell className="font-semibold text-sm">
-                          {formatCurrency(payment.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={statusStyle.variant} className="gap-1 text-xs">
-                            <StatusIcon className="h-3 w-3" />
-                            <span className="hidden sm:inline">{PAYMENT_STATUS_LABELS[payment.status]}</span>
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {payment.receipt_url ? (
-                            <div className="flex items-center gap-1.5">
-                              <ReceiptViewButton receiptUrl={payment.receipt_url} className="text-primary" />
-                              <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        {canManageStudents && (
-                          <TableCell>
-                            <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-primary/10" onClick={() => openEditDialog(payment)}>
-                              Editar
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-16">
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                                {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                              </TableCell>
+                              <TableCell className="font-semibold text-sm">
+                                {formatCurrency(payment.amount)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={statusStyle.variant} className="gap-1 text-xs">
+                                  <StatusIcon className="h-3 w-3" />
+                                  <span className="hidden sm:inline">{PAYMENT_STATUS_LABELS[status]}</span>
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {payment.receipt_url ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <ReceiptViewButton receiptUrl={payment.receipt_url} className="text-primary" />
+                                    <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                              {canManageStudents && (
+                                <TableCell>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-primary/10" onClick={() => openEditDialog(payment)}>
+                                    Editar
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="shadow-sm animate-fade-in">
+          <CardContent className="py-16">
+            <div className="text-center">
               <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
                 <Receipt className="h-10 w-10 text-muted-foreground/50" />
               </div>
@@ -592,9 +629,9 @@ export default function PaymentsPage() {
                   : "Nenhum pagamento encontrado com esses filtros."}
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Create Payment Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
@@ -721,8 +758,8 @@ export default function PaymentsPage() {
                 <div>
                   <Label className="text-xs text-muted-foreground">Status Atual</Label>
                   <div className="mt-1">
-                    <Badge variant={STATUS_STYLES[selectedPayment.status].variant}>
-                      {PAYMENT_STATUS_LABELS[selectedPayment.status]}
+                    <Badge variant={STATUS_STYLES[getPaymentStatus(selectedPayment)].variant}>
+                      {PAYMENT_STATUS_LABELS[getPaymentStatus(selectedPayment)]}
                     </Badge>
                   </div>
                 </div>
@@ -793,29 +830,29 @@ export default function PaymentsPage() {
                 <Label className="text-sm font-medium">Alterar Status</Label>
                 <div className="grid grid-cols-3 gap-2">
                   <Button
-                    variant={selectedPayment.status === "pendente" ? "default" : "outline"}
+                    variant={getPaymentStatus(selectedPayment) === "pendente" ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleUpdateStatus("pendente")}
-                    disabled={formLoading || selectedPayment.status === "pendente"}
+                    disabled={formLoading || getPaymentStatus(selectedPayment) === "pendente"}
                   >
                     <Clock className="h-4 w-4 mr-1" />
                     Pendente
                   </Button>
                   <Button
-                    variant={selectedPayment.status === "pago" ? "default" : "outline"}
+                    variant={getPaymentStatus(selectedPayment) === "pago" ? "default" : "outline"}
                     size="sm"
                     onClick={() => handleUpdateStatus("pago")}
-                    disabled={formLoading || selectedPayment.status === "pago"}
-                    className={selectedPayment.status === "pago" ? "bg-success text-success-foreground" : "hover:bg-success/10 hover:text-success hover:border-success/30"}
+                    disabled={formLoading || getPaymentStatus(selectedPayment) === "pago"}
+                    className={getPaymentStatus(selectedPayment) === "pago" ? "bg-success text-success-foreground" : "hover:bg-success/10 hover:text-success hover:border-success/30"}
                   >
                     <CheckCircle2 className="h-4 w-4 mr-1" />
                     Pago
                   </Button>
                   <Button
-                    variant={selectedPayment.status === "atrasado" ? "destructive" : "outline"}
+                    variant={getPaymentStatus(selectedPayment) === "atrasado" ? "destructive" : "outline"}
                     size="sm"
                     onClick={() => handleUpdateStatus("atrasado")}
-                    disabled={formLoading || selectedPayment.status === "atrasado"}
+                    disabled={formLoading || getPaymentStatus(selectedPayment) === "atrasado"}
                   >
                     <AlertTriangle className="h-4 w-4 mr-1" />
                     Atrasado
