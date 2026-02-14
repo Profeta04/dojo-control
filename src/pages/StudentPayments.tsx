@@ -1,6 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -55,7 +54,6 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 
 export default function StudentPaymentsPage() {
   const { user, profile, loading: authLoading } = useAuth();
-  const { settings } = useDojoSettings();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,8 +63,24 @@ export default function StudentPaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [uploading, setUploading] = useState(false);
   const [guardianVerified, setGuardianVerified] = useState(false);
-  
-  const pixKey = settings.pix_key || "Chave Pix não configurada";
+
+  // Fetch PIX key from the student's dojo
+  const { data: dojoData } = useQuery({
+    queryKey: ["student-dojo-pix", profile?.dojo_id],
+    queryFn: async () => {
+      if (!profile?.dojo_id) return null;
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("pix_key, name")
+        .eq("id", profile.dojo_id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!profile?.dojo_id,
+  });
+
+  const pixKey = (dojoData as any)?.pix_key || "Chave Pix não configurada";
 
   // Check if user is a minor with a guardian
   const isMinorWithGuardian = useMemo(() => {
@@ -112,7 +126,7 @@ export default function StudentPaymentsPage() {
   });
 
   const handleCopyPix = async () => {
-    if (!settings.pix_key) {
+    if (!(dojoData as any)?.pix_key) {
       toast({
         title: "Chave Pix não configurada",
         description: "Entre em contato com a administração do dojo.",
@@ -122,7 +136,7 @@ export default function StudentPaymentsPage() {
     }
     
     try {
-      await navigator.clipboard.writeText(settings.pix_key);
+      await navigator.clipboard.writeText((dojoData as any).pix_key);
       setCopied(true);
       toast({
         title: "Chave Pix copiada!",
