@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -49,7 +49,9 @@ import {
   Receipt,
   Users,
   Bell,
-  FileImage
+  FileImage,
+  QrCode,
+  Save
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { Tables } from "@/integrations/supabase/types";
@@ -73,6 +75,7 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 
 export default function PaymentsPage() {
   const { user, canManageStudents, loading: authLoading } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -84,6 +87,47 @@ export default function PaymentsPage() {
   const [batchLoading, setBatchLoading] = useState(false);
   const [notifyLoading, setNotifyLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
+  const [pixKeyInput, setPixKeyInput] = useState("");
+  const [pixSaving, setPixSaving] = useState(false);
+
+  // Fetch current dojo's PIX key
+  const { data: currentDojo } = useQuery({
+    queryKey: ["dojo-pix", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return null;
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("id, name, pix_key")
+        .eq("id", currentDojoId)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!currentDojoId,
+  });
+
+  // Sync pixKeyInput with fetched value
+  useEffect(() => {
+    setPixKeyInput((currentDojo as any)?.pix_key || "");
+  }, [currentDojo]);
+
+  const handleSavePixKey = async () => {
+    if (!currentDojoId) return;
+    setPixSaving(true);
+    try {
+      const { error } = await supabase
+        .from("dojos")
+        .update({ pix_key: pixKeyInput || null })
+        .eq("id", currentDojoId);
+      if (error) throw error;
+      toast({ title: "Chave Pix salva com sucesso!" });
+      queryClient.invalidateQueries({ queryKey: ["dojo-pix", currentDojoId] });
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setPixSaving(false);
+    }
+  };
 
   // Form state
   const [formData, setFormData] = useState({
@@ -521,6 +565,45 @@ export default function PaymentsPage() {
         )}
       </div>
 
+      {/* PIX Key Configuration */}
+      {canManageStudents && currentDojoId && (
+        <Card className="mb-6 border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <QrCode className="h-5 w-5 text-primary" />
+              Chave Pix do Dojo
+            </CardTitle>
+            <CardDescription>
+              Configure a chave Pix que será exibida para os alunos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-2">
+              <Input
+                value={pixKeyInput}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPixKeyInput(e.target.value)}
+                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                className="flex-1"
+              />
+              <Button
+                onClick={handleSavePixKey}
+                disabled={pixSaving}
+                size="sm"
+              >
+                {pixSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-1" />
+                    Salvar
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Financial Dashboard Charts */}
       {canManageStudents && payments && payments.length > 0 && (
         <FinancialDashboard payments={payments} />
@@ -609,7 +692,7 @@ export default function PaymentsPage() {
                     <TableHead className="hidden md:table-cell">Vencimento</TableHead>
                     <TableHead>Valor</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="hidden lg:table-cell">Comprov.</TableHead>
+                    <TableHead>Comprov.</TableHead>
                     {canManageStudents && <TableHead className="w-[80px]">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -643,7 +726,7 @@ export default function PaymentsPage() {
                             <span className="hidden sm:inline">{PAYMENT_STATUS_LABELS[payment.status]}</span>
                           </Badge>
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">
+                        <TableCell>
                           {payment.receipt_url ? (
                             <ReceiptViewButton 
                               receiptUrl={payment.receipt_url} 
@@ -958,6 +1041,16 @@ export default function PaymentsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Receipt */}
+              {selectedPayment.receipt_url && (
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                  <Label className="text-xs text-muted-foreground">Comprovante</Label>
+                  <div className="mt-1">
+                    <ReceiptViewButton receiptUrl={selectedPayment.receipt_url} className="text-primary" />
+                  </div>
+                </div>
+              )}
 
               {selectedPayment.notes && (
                 <div className="p-3 bg-muted/30 rounded-lg">
