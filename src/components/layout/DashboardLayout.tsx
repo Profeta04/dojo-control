@@ -68,21 +68,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const queryClient = useQueryClient();
   
-  // Dark mode state derived from current dojo
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
-  const isDarkMode = currentDojo?.dark_mode ?? false;
+  
+  // Dark mode state derived from user profile
+  const isDarkMode = profile?.dark_mode ?? false;
   
   const toggleDarkMode = async () => {
-    if (!currentDojo) return;
+    if (!profile) return;
     const newValue = !isDarkMode;
-    // Optimistic update
     await supabase
-      .from("dojos")
+      .from("profiles")
       .update({ dark_mode: newValue })
-      .eq("id", currentDojo.id);
-    // Invalidate dojo queries to refresh theme
+      .eq("user_id", profile.user_id);
+    // Invalidate theme queries to refresh
+    queryClient.invalidateQueries({ queryKey: ["user-dark-mode"] });
     queryClient.invalidateQueries({ queryKey: ["dojo-theme"] });
-    queryClient.invalidateQueries({ queryKey: ["user-dojos"] });
   };
   
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </ScrollArea>
 
       {/* Dark Mode Toggle */}
-      {currentDojo && (
+      {profile && (
         <div className="px-3 lg:px-4 py-2">
           <button
             onClick={toggleDarkMode}

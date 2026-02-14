@@ -159,20 +159,42 @@ export function useDojoTheme() {
 
   const dojoId = currentDojoId;
 
-  const { data: theme, isLoading } = useQuery({
-    queryKey: ["dojo-theme", dojoId],
+  // Fetch user's dark mode preference from profile
+  const { data: userDarkMode } = useQuery({
+    queryKey: ["user-dark-mode", user?.id],
     queryFn: async () => {
-      if (!dojoId) return DEFAULT_THEME;
+      if (!user?.id) return false;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("dark_mode")
+        .eq("user_id", user.id)
+        .single();
+      if (error || !data) return false;
+      return data.dark_mode ?? false;
+    },
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: theme, isLoading } = useQuery({
+    queryKey: ["dojo-theme", dojoId, userDarkMode],
+    queryFn: async () => {
+      const isDarkMode = userDarkMode ?? false;
+
+      if (!dojoId) {
+        return { ...DEFAULT_THEME, dark_mode: isDarkMode };
+      }
 
       const { data, error } = await supabase
         .from("dojos")
-        .select("color_primary, color_secondary, color_accent, dark_mode")
+        .select("color_primary, color_secondary, color_accent")
         .eq("id", dojoId)
         .single();
 
-      if (error || !data) return DEFAULT_THEME;
+      if (error || !data) {
+        return { ...DEFAULT_THEME, dark_mode: isDarkMode };
+      }
 
-      const isDarkMode = data.dark_mode ?? false;
       const baseTheme = isDarkMode ? DARK_THEME : DEFAULT_THEME;
 
       return {

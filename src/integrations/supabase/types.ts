@@ -500,6 +500,7 @@ export type Database = {
           belt_grade: string | null
           birth_date: string | null
           created_at: string | null
+          dark_mode: boolean
           dojo_id: string | null
           email: string | null
           guardian_email: string | null
@@ -517,6 +518,7 @@ export type Database = {
           belt_grade?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dark_mode?: boolean
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
@@ -534,6 +536,7 @@ export type Database = {
           belt_grade?: string | null
           birth_date?: string | null
           created_at?: string | null
+          dark_mode?: boolean
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
