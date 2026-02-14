@@ -39,6 +39,7 @@ import {
   FileImage
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
+import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -195,10 +196,13 @@ export default function StudentPaymentsPage() {
 
       if (uploadError) throw uploadError;
 
-      // Store just the file path (not a public URL) for signed URL generation
+      // Store file path and set receipt status to pending verification
       const { error: updateError } = await supabase
         .from("payments")
-        .update({ receipt_url: fileName })
+        .update({ 
+          receipt_url: fileName,
+          receipt_status: "pendente_verificacao"
+        })
         .eq("id", selectedPayment.id);
 
       if (updateError) throw updateError;
@@ -397,20 +401,36 @@ export default function StudentPaymentsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {payment.receipt_url ? (
-                          <ReceiptViewButton receiptUrl={payment.receipt_url} />
-                        ) : payment.status !== "pago" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openUploadDialog(payment)}
-                          >
-                            <Upload className="h-4 w-4 mr-1" />
-                            Enviar
-                          </Button>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">-</span>
-                        )}
+                        <div className="flex flex-col items-end gap-1">
+                          {payment.receipt_url ? (
+                            <>
+                              <ReceiptStatusBadge status={payment.receipt_status as any} />
+                              <ReceiptViewButton receiptUrl={payment.receipt_url} />
+                              {payment.receipt_status === "rejeitado" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openUploadDialog(payment)}
+                                  className="text-xs animate-fade-in"
+                                >
+                                  <Upload className="h-3 w-3 mr-1" />
+                                  Reenviar
+                                </Button>
+                              )}
+                            </>
+                          ) : payment.status !== "pago" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openUploadDialog(payment)}
+                            >
+                              <Upload className="h-4 w-4 mr-1" />
+                              Enviar
+                            </Button>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

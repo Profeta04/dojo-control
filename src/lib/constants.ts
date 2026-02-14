@@ -66,3 +66,11 @@ export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, string> = {
   aprovado: "Aprovado",
   rejeitado: "Rejeitado",
 };
+
+export type ReceiptStatus = "pendente_verificacao" | "aprovado" | "rejeitado";
+
+export const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {
+  pendente_verificacao: "Em Verificação",
+  aprovado: "Aprovado",
+  rejeitado: "Rejeitado",
+};
