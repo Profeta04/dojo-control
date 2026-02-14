@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel,
 } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -27,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { 
   CreditCard, Plus, Loader2, DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag
+  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
@@ -787,14 +787,26 @@ export default function PaymentsPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v as PaymentCategory })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(PAYMENT_CATEGORY_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Recorrentes</SelectLabel>
+                    <SelectItem value="mensalidade">{PAYMENT_CATEGORY_LABELS.mensalidade}</SelectItem>
+                    <SelectItem value="matricula">{PAYMENT_CATEGORY_LABELS.matricula}</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Taxas e Materiais</SelectLabel>
+                    <SelectItem value="material">{PAYMENT_CATEGORY_LABELS.material}</SelectItem>
+                    <SelectItem value="taxa_exame">{PAYMENT_CATEGORY_LABELS.taxa_exame}</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Outros</SelectLabel>
+                    <SelectItem value="evento">{PAYMENT_CATEGORY_LABELS.evento}</SelectItem>
+                    <SelectItem value="outro">{PAYMENT_CATEGORY_LABELS.outro}</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -820,6 +832,37 @@ export default function PaymentsPage() {
               <Label htmlFor="notes">Observações (opcional)</Label>
               <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Informações adicionais" rows={2} />
             </div>
+            {/* Late Fee Info */}
+            {currentDojo && ((currentDojo as any).late_fee_percent > 0 || (currentDojo as any).daily_interest_percent > 0) && (
+              <div className="p-3 bg-muted/30 rounded-xl border border-border/50 space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Percent className="h-3.5 w-3.5" />
+                  Multa e Juros Programados
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Multa:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).late_fee_percent || 0}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Juros/dia:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).daily_interest_percent || 0}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Carência:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).grace_days || 0} dia(s)</span>
+                  </div>
+                </div>
+                {formData.amount && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <Info className="h-3 w-3 inline mr-1" />
+                    Após {(currentDojo as any).grace_days || 0} dia(s) de atraso: multa de{" "}
+                    <strong>{formatCurrency(parseFloat(formData.amount) * ((currentDojo as any).late_fee_percent || 0) / 100)}</strong>
+                    {" "}+ juros de <strong>{formatCurrency(parseFloat(formData.amount) * ((currentDojo as any).daily_interest_percent || 0) / 100)}</strong>/dia
+                  </p>
+                )}
+              </div>
+            )}
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancelar</Button>
               <Button onClick={handleCreatePayment} disabled={!formData.student_id || !formData.amount || formLoading}>
@@ -864,9 +907,21 @@ export default function PaymentsPage() {
               <Select value={batchFormData.category} onValueChange={(v) => setBatchFormData({ ...batchFormData, category: v as PaymentCategory })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {Object.entries(PAYMENT_CATEGORY_LABELS).map(([key, label]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel>Recorrentes</SelectLabel>
+                    <SelectItem value="mensalidade">{PAYMENT_CATEGORY_LABELS.mensalidade}</SelectItem>
+                    <SelectItem value="matricula">{PAYMENT_CATEGORY_LABELS.matricula}</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Taxas e Materiais</SelectLabel>
+                    <SelectItem value="material">{PAYMENT_CATEGORY_LABELS.material}</SelectItem>
+                    <SelectItem value="taxa_exame">{PAYMENT_CATEGORY_LABELS.taxa_exame}</SelectItem>
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel>Outros</SelectLabel>
+                    <SelectItem value="evento">{PAYMENT_CATEGORY_LABELS.evento}</SelectItem>
+                    <SelectItem value="outro">{PAYMENT_CATEGORY_LABELS.outro}</SelectItem>
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
@@ -895,6 +950,37 @@ export default function PaymentsPage() {
             {batchFormData.category === "mensalidade" && (
               <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
                 <p className="text-xs text-muted-foreground">💡 Para mensalidades, alunos que já possuem pagamento para o mês serão ignorados.</p>
+              </div>
+            )}
+            {/* Late Fee Info */}
+            {currentDojo && ((currentDojo as any).late_fee_percent > 0 || (currentDojo as any).daily_interest_percent > 0) && (
+              <div className="p-3 bg-muted/30 rounded-xl border border-border/50 space-y-1">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Percent className="h-3.5 w-3.5" />
+                  Multa e Juros Programados
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">Multa:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).late_fee_percent || 0}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Juros/dia:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).daily_interest_percent || 0}%</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Carência:</span>{" "}
+                    <span className="font-semibold">{(currentDojo as any).grace_days || 0} dia(s)</span>
+                  </div>
+                </div>
+                {batchFormData.amount && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    <Info className="h-3 w-3 inline mr-1" />
+                    Após {(currentDojo as any).grace_days || 0} dia(s) de atraso: multa de{" "}
+                    <strong>{formatCurrency(parseFloat(batchFormData.amount) * ((currentDojo as any).late_fee_percent || 0) / 100)}</strong>
+                    {" "}+ juros de <strong>{formatCurrency(parseFloat(batchFormData.amount) * ((currentDojo as any).daily_interest_percent || 0) / 100)}</strong>/dia
+                  </p>
+                )}
               </div>
             )}
             <div className="flex justify-end gap-2 pt-4">
