@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Youtube } from "lucide-react";
@@ -6,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithAssignee, TaskStatus, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { cn } from "@/lib/utils";
+import { fireConfetti } from "@/lib/confetti";
 
 interface TaskCardProps {
   task: TaskWithAssignee;
@@ -22,22 +24,33 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
 };
 
 export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, videoUrl }: TaskCardProps) {
+  const [isSliding, setIsSliding] = useState(false);
   const isCompleted = task.status === "concluida";
   const isCancelled = task.status === "cancelada";
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isCompleted && !isCancelled;
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
   const handleToggleComplete = () => {
-    onStatusChange(task.id, isCompleted ? "pendente" : "concluida");
+    if (!isCompleted) {
+      setIsSliding(true);
+      fireConfetti();
+      setTimeout(() => {
+        onStatusChange(task.id, "concluida");
+        setIsSliding(false);
+      }, 500);
+    } else {
+      onStatusChange(task.id, "pendente");
+    }
   };
 
   return (
     <Card 
       className={cn(
-        "transition-all duration-200 hover:shadow-md group overflow-hidden",
+        "transition-all duration-300 hover:shadow-md group overflow-hidden",
         isCompleted && "opacity-60",
         isCancelled && "opacity-40",
-        isOverdue && "border-destructive/30"
+        isOverdue && "border-destructive/30",
+        isSliding && "translate-x-4 opacity-0 scale-95"
       )}
       role="article"
       aria-label={`Tarefa: ${task.title}${isCompleted ? ", concluída" : ""}${isOverdue ? ", atrasada" : ""}`}
