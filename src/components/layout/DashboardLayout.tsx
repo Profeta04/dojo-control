@@ -8,6 +8,7 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -70,24 +71,42 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   
-  // Dark mode state derived from user profile
-  const isDarkMode = profile?.dark_mode ?? false;
+  // Dark mode from react-query (single source of truth, stays in sync)
+  const { data: isDarkMode = false } = useQuery({
+    queryKey: ["user-dark-mode", profile?.user_id],
+    queryFn: async () => {
+      if (!profile?.user_id) return false;
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("dark_mode")
+        .eq("user_id", profile.user_id)
+        .maybeSingle();
+      if (error || !data) return false;
+      return data.dark_mode ?? false;
+    },
+    enabled: !!profile?.user_id,
+    staleTime: 10 * 60 * 1000,
+  });
   
   const toggleDarkMode = async () => {
     if (!profile) return;
     const newValue = !isDarkMode;
+    
+    // Optimistic update
+    queryClient.setQueryData(["user-dark-mode", profile.user_id], newValue);
+    
     const { error } = await supabase
       .from("profiles")
       .update({ dark_mode: newValue })
       .eq("user_id", profile.user_id);
     
     if (error) {
-      console.error("[toggleDarkMode] Failed:", error.message, error.details, error.hint);
+      console.error("[toggleDarkMode] Failed:", error.message);
+      // Revert optimistic update
+      queryClient.setQueryData(["user-dark-mode", profile.user_id], isDarkMode);
       return;
     }
     
-    console.log("[toggleDarkMode] Success, new value:", newValue);
-    // Invalidate theme queries to refresh
     queryClient.invalidateQueries({ queryKey: ["user-dark-mode"] });
     queryClient.invalidateQueries({ queryKey: ["dojo-theme"] });
   };
