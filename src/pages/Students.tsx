@@ -107,13 +107,19 @@ export default function Students() {
 
   // Fetch guardians with their minors
   const { data: guardiansWithMinors, isLoading: isLoadingGuardians } = useQuery({
-    queryKey: ["guardians-with-minors"],
+    queryKey: ["guardians-with-minors", currentDojoId],
     queryFn: async () => {
       // Get all profiles that have a guardian (minors)
-      const { data: minorProfiles } = await (supabase
+      let minorQuery = supabase
         .from("profiles")
         .select("*")
-        .not("guardian_user_id", "is", null) as any);
+        .not("guardian_user_id", "is", null) as any;
+
+      if (currentDojoId) {
+        minorQuery = minorQuery.eq("dojo_id", currentDojoId);
+      }
+
+      const { data: minorProfiles } = await minorQuery;
 
       if (!minorProfiles || minorProfiles.length === 0) return [];
 
@@ -134,7 +140,7 @@ export default function Students() {
       for (const guardian of guardianProfiles) {
         guardiansMap.set(guardian.user_id, {
           guardian,
-          minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
+          minors: minorProfiles.filter((m: any) => m.guardian_user_id === guardian.user_id),
         });
       }
 
