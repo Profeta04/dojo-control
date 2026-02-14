@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react";
+import dojoLogo from "@/assets/dojo-manager-logo.png";
 
 const Index = () => {
   const { user } = useAuth();
@@ -10,9 +11,7 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 text-center safe-area-inset">
-        <div className="inline-flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-primary mb-4 sm:mb-6 shadow-lg">
-          <span className="text-4xl sm:text-5xl">🥋</span>
-        </div>
+        <img src={dojoLogo} alt="Dojo Manager" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6" />
         
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4 tracking-tight">
           Dojo Manager
