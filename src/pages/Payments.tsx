@@ -282,7 +282,7 @@ export default function PaymentsPage() {
     try {
       const { error } = await supabase.from("payments").insert({
         student_id: formData.student_id,
-        reference_month: formData.reference_month,
+        reference_month: formData.reference_month + "-01",
         due_date: formData.due_date,
         amount: parseFloat(formData.amount),
         notes: formData.notes || null,
@@ -358,7 +358,7 @@ export default function PaymentsPage() {
       // Create payments for students that don't have one yet
       const paymentsToInsert = newStudentIds.map((studentId) => ({
         student_id: studentId,
-        reference_month: batchFormData.reference_month,
+        reference_month: batchFormData.reference_month + "-01",
         due_date: batchFormData.due_date,
         amount: parseFloat(batchFormData.amount),
         notes: batchFormData.notes || null,
