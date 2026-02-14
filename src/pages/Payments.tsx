@@ -54,6 +54,7 @@ import {
   Save
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
+import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -588,6 +589,9 @@ export default function PaymentsPage() {
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Novo</span> Pagamento
             </Button>
+            {payments && payments.length > 0 && (
+              <ExportFinancialReportButton payments={payments} />
+            )}
           </div>
         )}
       </div>
