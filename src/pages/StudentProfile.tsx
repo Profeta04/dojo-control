@@ -5,6 +5,10 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { AttendanceStatsCard } from "@/components/student/AttendanceStatsCard";
+import { GraduationTimeline } from "@/components/student/GraduationTimeline";
+import { EditableContactCard } from "@/components/student/EditableContactCard";
+import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
+import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 
@@ -25,7 +29,20 @@ export default function StudentProfile() {
         />
         <div className="mt-6 space-y-6">
           <StudentProfileCard />
-          <AttendanceStatsCard />
+
+          {/* Two-column layout for smaller cards */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <AttendanceStatsCard />
+            <UpcomingTrainingsCard />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            <EditableContactCard />
+            <GuardianInfoCard />
+          </div>
+
+          <GraduationTimeline />
+
           {hasMinors && <GuardianDashboard />}
         </div>
       </DashboardLayout>
