@@ -47,7 +47,8 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
     setIsGenerating(true);
 
     try {
-      const refDate = new Date(selectedMonth + "-01");
+      const [refYear, refMonth] = selectedMonth.split("-").map(Number);
+      const refDate = new Date(refYear, refMonth - 1, 15); // mid-month to avoid timezone issues
       const refMonthLabel = format(refDate, "MMMM 'de' yyyy", { locale: ptBR });
       const currentDojo = userDojos.find((d) => d.id === currentDojoId) || userDojos[0];
       const dojoName = currentDojo?.name || "Dojo";
