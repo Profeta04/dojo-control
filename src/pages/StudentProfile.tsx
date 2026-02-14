@@ -6,7 +6,6 @@ import { RequireApproval } from "@/components/auth/RequireApproval";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { AttendanceStatsCard } from "@/components/student/AttendanceStatsCard";
 import { GraduationTimeline } from "@/components/student/GraduationTimeline";
-import { EditableContactCard } from "@/components/student/EditableContactCard";
 import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
@@ -37,11 +36,8 @@ export default function StudentProfile() {
           {/* 3. Attendance stats */}
           <AttendanceStatsCard />
 
-          {/* 4. Contact + Guardian side by side */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <EditableContactCard />
-            <GuardianInfoCard />
-          </div>
+          {/* 4. Guardian info */}
+          <GuardianInfoCard />
 
           {/* 5. Graduation history */}
           <GraduationTimeline />

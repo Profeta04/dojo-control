@@ -1,17 +1,27 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { Calendar, Award, Phone, Mail, Shield, ShieldOff } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Pencil, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { AvatarUpload } from "./AvatarUpload";
+import { toast } from "sonner";
 
 export function StudentProfileCard() {
   const { profile, user } = useAuth();
+  const queryClient = useQueryClient();
+  const [editingContact, setEditingContact] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [phone, setPhone] = useState(profile?.phone || "");
+  const [email, setEmail] = useState(profile?.email || "");
 
   const { data: graduationHistory, isLoading: loadingGraduations } = useQuery({
     queryKey: ["student-graduation-history", user?.id],
@@ -55,6 +65,30 @@ export function StudentProfileCard() {
 
   const lastGraduation = graduationHistory?.[0];
 
+  const handleSaveContact = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ phone, email })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["auth-profile"] });
+      setEditingContact(false);
+      toast.success("Dados atualizados!");
+    } catch (err: any) {
+      toast.error("Erro ao salvar: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelContact = () => {
+    setPhone(profile?.phone || "");
+    setEmail(profile?.email || "");
+    setEditingContact(false);
+  };
   if (!profile) {
     return (
       <Card>
@@ -108,23 +142,56 @@ export function StudentProfileCard() {
               <p className="text-sm text-muted-foreground">Judoca</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {profile.email && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="truncate">{profile.email}</span>
+            {profile.birth_date && (
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>{format(new Date(profile.birth_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+              </div>
+            )}
+
+            {/* Contact info - editable */}
+            <div className="pt-3 border-t border-border">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-muted-foreground">Contato</p>
+                {!editingContact && (
+                  <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setEditingContact(true)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" /> Editar
+                  </Button>
+                )}
+              </div>
+              {editingContact ? (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-email" className="text-xs flex items-center gap-1">
+                      <Mail className="h-3 w-3" /> Email
+                    </Label>
+                    <Input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="edit-phone" className="text-xs flex items-center gap-1">
+                      <Phone className="h-3 w-3" /> Telefone
+                    </Label>
+                    <Input id="edit-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-8 text-sm" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveContact} disabled={saving} size="sm" className="h-7">
+                      <Save className="h-3.5 w-3.5 mr-1" /> {saving ? "Salvando..." : "Salvar"}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-7" onClick={handleCancelContact}>
+                      <X className="h-3.5 w-3.5 mr-1" /> Cancelar
+                    </Button>
+                  </div>
                 </div>
-              )}
-              {profile.phone && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>{profile.phone}</span>
-                </div>
-              )}
-              {profile.birth_date && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{format(new Date(profile.birth_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="truncate">{profile.email || "Não informado"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span>{profile.phone || "Não informado"}</span>
+                  </div>
                 </div>
               )}
             </div>
