@@ -1,5 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FileDown, Loader2 } from "lucide-react";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { Tables } from "@/integrations/supabase/types";
@@ -16,19 +31,34 @@ interface ExportFinancialReportButtonProps {
 
 export function ExportFinancialReportButton({ payments }: ExportFinancialReportButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const { userDojos, currentDojoId } = useDojoContext();
+
+  // Generate last 12 months as options
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const date = subMonths(new Date(), i);
+    const value = format(date, "yyyy-MM");
+    const label = format(date, "MMMM yyyy", { locale: ptBR });
+    return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
+  });
 
   const handleExport = () => {
     setIsGenerating(true);
 
     try {
-      const now = new Date();
-      const currentMonth = format(now, "yyyy-MM");
-      const currentMonthLabel = format(now, "MMMM 'de' yyyy", { locale: ptBR });
+      const refDate = new Date(selectedMonth + "-01");
+      const refMonthLabel = format(refDate, "MMMM 'de' yyyy", { locale: ptBR });
       const currentDojo = userDojos.find((d) => d.id === currentDojoId) || userDojos[0];
       const dojoName = currentDojo?.name || "Dojo";
 
-      // Calculate totals
+      // Filter payments for selected month
+      const monthPayments = payments.filter((p) => {
+        if (!p.reference_month) return false;
+        return p.reference_month.substring(0, 7) === selectedMonth;
+      });
+
+      // Calculate totals (all payments, not just selected month)
       const totalRecebido = payments
         .filter((p) => p.status === "pago")
         .reduce((acc, p) => acc + p.amount, 0);
@@ -44,35 +74,35 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
           ? (payments.filter((p) => p.status === "atrasado").length / payments.length) * 100
           : 0;
 
-      // Monthly revenue (last 6 months)
+      // Monthly revenue (6 months ending at selected month)
       const monthlyRevenue = [];
       for (let i = 5; i >= 0; i--) {
-        const date = subMonths(now, i);
+        const date = subMonths(refDate, i);
         const monthStr = format(date, "yyyy-MM");
         const monthLabel = format(date, "MMM", { locale: ptBR });
 
-        const monthPayments = payments.filter((p) => {
+        const mPayments = payments.filter((p) => {
           if (!p.reference_month) return false;
           return p.reference_month.substring(0, 7) === monthStr;
         });
 
         monthlyRevenue.push({
           monthLabel,
-          recebido: monthPayments.filter((p) => p.status === "pago").reduce((a, p) => a + p.amount, 0),
-          pendente: monthPayments.filter((p) => p.status === "pendente").reduce((a, p) => a + p.amount, 0),
-          atrasado: monthPayments.filter((p) => p.status === "atrasado").reduce((a, p) => a + p.amount, 0),
+          recebido: mPayments.filter((p) => p.status === "pago").reduce((a, p) => a + p.amount, 0),
+          pendente: mPayments.filter((p) => p.status === "pendente").reduce((a, p) => a + p.amount, 0),
+          atrasado: mPayments.filter((p) => p.status === "atrasado").reduce((a, p) => a + p.amount, 0),
         });
       }
 
-      // Payment details sorted by due_date desc
-      const sortedPayments = [...payments].sort(
+      // Payment details for selected month only, sorted by due_date desc
+      const sortedPayments = [...monthPayments].sort(
         (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
       );
 
       const reportData: FinancialReportData = {
         dojoName,
-        referenceMonth: currentMonth,
-        referenceMonthLabel: currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1),
+        referenceMonth: selectedMonth,
+        referenceMonthLabel: refMonthLabel.charAt(0).toUpperCase() + refMonthLabel.slice(1),
         totalRecebido,
         totalPendente,
         totalAtrasado,
@@ -93,6 +123,7 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
 
       const fileName = generateFinancialReport(reportData);
       toast.success(`Relatório "${fileName}" gerado com sucesso!`);
+      setIsOpen(false);
     } catch (error) {
       console.error("Error generating financial report:", error);
       toast.error("Erro ao gerar relatório financeiro.");
@@ -102,13 +133,50 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
   };
 
   return (
-    <Button variant="outline" size="sm" onClick={handleExport} disabled={isGenerating}>
-      {isGenerating ? (
-        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-      ) : (
-        <FileDown className="h-4 w-4 mr-2" />
-      )}
-      <span className="hidden sm:inline">Relatório</span> PDF
-    </Button>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <FileDown className="h-4 w-4 mr-2" />
+          <span className="hidden sm:inline">Relatório</span> PDF
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Exportar Relatório Financeiro</DialogTitle>
+          <DialogDescription>
+            Selecione o mês de referência para o relatório em PDF.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="py-4">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {monthOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={handleExport} disabled={isGenerating}>
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <FileDown className="h-4 w-4 mr-2" />
+            )}
+            Gerar PDF
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
