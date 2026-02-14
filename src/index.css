@@ -116,6 +116,17 @@
     --sidebar-accent-foreground: 220 10% 90%;
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: var(--color-tertiary);
+
+    /* Belt colors - same in dark mode */
+    --belt-branca: 0 0% 100%;
+    --belt-cinza: 0 0% 60%;
+    --belt-azul: 210 80% 50%;
+    --belt-amarela: 50 100% 50%;
+    --belt-laranja: 30 100% 50%;
+    --belt-verde: 120 60% 40%;
+    --belt-roxa: 280 60% 50%;
+    --belt-marrom: 30 50% 30%;
+    --belt-preta: 0 0% 10%;
   }
 }
 
