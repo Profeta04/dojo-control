@@ -215,7 +215,7 @@ export default function PaymentsPage() {
         return;
       }
       const studentIds = enrollments.map((e) => e.student_id);
-      const { data: existingPayments, error: existingError } = await supabase.from("payments").select("student_id").in("student_id", studentIds).eq("reference_month", batchFormData.reference_month);
+      const { data: existingPayments, error: existingError } = await supabase.from("payments").select("student_id").in("student_id", studentIds).eq("reference_month", batchFormData.reference_month + "-01");
       if (existingError) throw existingError;
       const existingStudentIds = new Set(existingPayments?.map((p) => p.student_id) || []);
       const newStudentIds = studentIds.filter((id) => !existingStudentIds.has(id));
