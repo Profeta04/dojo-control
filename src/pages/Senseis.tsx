@@ -214,9 +214,9 @@ export default function Senseis() {
     );
   }
 
-  // Filter to only show black belts as options for senseis
-  const blackBelts = Object.entries(BELT_LABELS).filter(([key]) =>
-    key.startsWith("preta")
+  // Show marrom + black belts as options for senseis
+  const senseiBelts = Object.entries(BELT_LABELS).filter(([key]) =>
+    key === "marrom" || key.startsWith("preta")
   );
 
   return (
@@ -290,7 +290,7 @@ export default function Senseis() {
                     <SelectValue placeholder="Selecione a faixa" />
                   </SelectTrigger>
                   <SelectContent>
-                    {blackBelts.map(([value, label]) => (
+                    {senseiBelts.map(([value, label]) => (
                       <SelectItem key={value} value={value}>
                         {label}
                       </SelectItem>

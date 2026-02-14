@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useCallback } from "react";
 import dojoLogo from "@/assets/dojo-manager-logo.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +37,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+import { BELT_LABELS } from "@/lib/constants";
+import { Database } from "@/integrations/supabase/types";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loader2, Pencil } from "lucide-react";
+
+type BeltGradeEnum = Database["public"]["Enums"]["belt_grade"];
+
 interface NavItem {
   title: string;
   href: string;
@@ -67,7 +81,34 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [beltDialogOpen, setBeltDialogOpen] = useState(false);
+  const [selectedBelt, setSelectedBelt] = useState("");
+  const [beltLoading, setBeltLoading] = useState(false);
   const queryClient = useQueryClient();
+
+  // Belts available for senseis
+  const senseiBelts = Object.entries(BELT_LABELS).filter(([key]) =>
+    key === "marrom" || key.startsWith("preta")
+  );
+
+  const handleUpdateBelt = async () => {
+    if (!profile || !selectedBelt) return;
+    setBeltLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ belt_grade: selectedBelt as BeltGradeEnum })
+        .eq("user_id", profile.user_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["auth-profile"] });
+      queryClient.invalidateQueries({ queryKey: ["senseis"] });
+      setBeltDialogOpen(false);
+    } catch (e: any) {
+      console.error("Failed to update belt:", e.message);
+    } finally {
+      setBeltLoading(false);
+    }
+  };
   
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   
@@ -271,7 +312,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </p>
             <div className="flex items-center gap-2">
               {profile?.belt_grade && (
-                <BeltBadge grade={profile.belt_grade as any} size="sm" />
+                isSensei ? (
+                  <button
+                    onClick={() => { setSelectedBelt(profile.belt_grade || ""); setBeltDialogOpen(true); }}
+                    className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                    title="Alterar faixa"
+                  >
+                    <BeltBadge grade={profile.belt_grade as any} size="sm" />
+                    <Pencil className="h-3 w-3 text-sidebar-foreground/50" />
+                  </button>
+                ) : (
+                  <BeltBadge grade={profile.belt_grade as any} size="sm" />
+                )
               )}
               <span className="text-xs text-sidebar-foreground/60">
                 {isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno"}
@@ -406,6 +458,44 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <div className="p-3 sm:p-4 lg:p-6 safe-area-inset-bottom">{children}</div>
       </main>
+
+      {/* Belt Edit Dialog for Senseis */}
+      <Dialog open={beltDialogOpen} onOpenChange={setBeltDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterar Graduação</DialogTitle>
+            <DialogDescription>
+              Selecione sua nova graduação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Graduação</Label>
+              <Select value={selectedBelt} onValueChange={setSelectedBelt}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a faixa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {senseiBelts.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setBeltDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUpdateBelt} disabled={beltLoading || !selectedBelt}>
+                {beltLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
