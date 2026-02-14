@@ -1,0 +1,1 @@
+ALTER TABLE public.dojos DROP COLUMN dark_mode;

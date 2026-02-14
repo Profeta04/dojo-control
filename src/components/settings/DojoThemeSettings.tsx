@@ -15,8 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Palette, Loader2, RotateCcw, Moon, Sun } from "lucide-react";
+import { Palette, Loader2, RotateCcw } from "lucide-react";
 
 interface ColorPickerProps {
   label: string;
@@ -119,7 +118,7 @@ const DEFAULT_DARK_COLORS = {
 };
 
 export function DojoThemeSettings() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
@@ -127,7 +126,7 @@ export function DojoThemeSettings() {
   const dojoId = currentDojoId ?? (userDojos.length === 1 ? userDojos[0].id : null);
   const dojoName = dojoId ? userDojos.find((d) => d.id === dojoId)?.name : undefined;
 
-  const [darkMode, setDarkMode] = useState(false);
+  const darkMode = profile?.dark_mode ?? false;
   const [colors, setColors] = useState(DEFAULT_LIGHT_COLORS);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -147,14 +146,12 @@ export function DojoThemeSettings() {
 
       const { data } = await supabase
         .from("dojos")
-        .select("color_primary, color_secondary, color_accent, dark_mode")
+        .select("color_primary, color_secondary, color_accent")
         .eq("id", dojoId)
         .single();
 
       if (data) {
-        const isDark = data.dark_mode ?? false;
-        const defaults = getDefaultColors(isDark);
-        setDarkMode(isDark);
+        const defaults = getDefaultColors(darkMode);
         setColors({
           color_primary: data.color_primary || defaults.color_primary,
           color_secondary: data.color_secondary || defaults.color_secondary,
@@ -178,7 +175,6 @@ export function DojoThemeSettings() {
           color_primary: colors.color_primary,
           color_secondary: colors.color_secondary,
           color_accent: colors.color_tertiary,
-          dark_mode: darkMode,
         })
         .eq("id", dojoId);
 
@@ -203,11 +199,6 @@ export function DojoThemeSettings() {
     setHasChanges(true);
   };
 
-  const handleDarkModeToggle = (enabled: boolean) => {
-    setDarkMode(enabled);
-    setColors(getDefaultColors(enabled));
-    setHasChanges(true);
-  };
 
   const handleReset = () => {
     setColors(getDefaultColors(darkMode));
@@ -309,32 +300,6 @@ export function DojoThemeSettings() {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Dark Mode Toggle */}
-        <div className="mb-6 p-4 rounded-lg border bg-muted/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {darkMode ? (
-                <Moon className="h-5 w-5 text-accent" aria-hidden="true" />
-              ) : (
-                <Sun className="h-5 w-5 text-accent" aria-hidden="true" />
-              )}
-              <div>
-                <Label htmlFor="dark-mode-toggle" className="text-base font-medium">
-                  Modo Escuro
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Alterne entre tema claro e escuro
-                </p>
-              </div>
-            </div>
-            <Switch
-              id="dark-mode-toggle"
-              checked={darkMode}
-              onCheckedChange={handleDarkModeToggle}
-            />
-          </div>
-        </div>
-
         {/* 3 Color Pickers */}
         <div className="mb-6">
           <h4 className="text-sm font-medium mb-4">Cores do Tema</h4>
