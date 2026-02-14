@@ -8,6 +8,7 @@ import { CheckCircle2, XCircle, BookOpen, Loader2, Youtube, RotateCcw, Sparkles 
 import { cn } from "@/lib/utils";
 import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
 import { toast } from "sonner";
+import { fireConfetti } from "@/lib/confetti";
 
 interface TaskQuizCardProps {
   task: TaskWithAssignee;
@@ -20,6 +21,7 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [isSliding, setIsSliding] = useState(false);
   const { updateTaskStatus } = useTasks();
 
   const handleSubmit = () => {
@@ -32,8 +34,13 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
     setHasAnswered(true);
     
     if (correct) {
+      fireConfetti();
+      setIsSliding(true);
       toast.success("Resposta correta! 🎉");
-      updateTaskStatus.mutate({ taskId: task.id, status: "concluida" });
+      setTimeout(() => {
+        updateTaskStatus.mutate({ taskId: task.id, status: "concluida" });
+        setIsSliding(false);
+      }, 600);
     } else {
       toast.error("Resposta incorreta. Tente novamente!");
     }
@@ -47,9 +54,10 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
 
   return (
     <Card className={cn(
-      "transition-all duration-300 hover:shadow-md overflow-hidden",
+      "transition-all duration-500 hover:shadow-md overflow-hidden",
       hasAnswered && isCorrect && "ring-2 ring-success/40",
-      hasAnswered && !isCorrect && "ring-2 ring-destructive/40"
+      hasAnswered && !isCorrect && "ring-2 ring-destructive/40",
+      isSliding && "translate-x-4 opacity-0 scale-95"
     )}>
       {/* Accent bar */}
       <div className={cn(
