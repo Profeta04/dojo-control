@@ -186,11 +186,11 @@ export function StudentProfileCard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="truncate">{profile.email || "Não informado"}</span>
+                    <span className="truncate">{email || "Não informado"}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{profile.phone || "Não informado"}</span>
+                    <span>{phone || "Não informado"}</span>
                   </div>
                 </div>
               )}
