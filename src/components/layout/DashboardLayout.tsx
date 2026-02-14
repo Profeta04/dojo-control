@@ -208,8 +208,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                 "active:scale-[0.97]",
                 location.pathname === item.href
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-1"
+                  ? "bg-sidebar-primary/20 text-sidebar-primary shadow-sm border-l-2 border-sidebar-primary"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-primary hover:bg-sidebar-primary/10 hover:translate-x-1"
               )}
               style={{ animationDelay: `${index * 40}ms` }}
               aria-current={location.pathname === item.href ? "page" : undefined}
