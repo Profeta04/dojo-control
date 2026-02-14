@@ -22,7 +22,11 @@ export default function Dashboard() {
     if (!authLoading && !user) {
       navigate("/auth");
     }
-  }, [user, authLoading, navigate]);
+    // Students should not access dashboard, redirect to profile
+    if (!authLoading && user && isStudent && !canManageStudents) {
+      navigate("/perfil", { replace: true });
+    }
+  }, [user, authLoading, navigate, isStudent, canManageStudents]);
 
   if (authLoading) {
     return (

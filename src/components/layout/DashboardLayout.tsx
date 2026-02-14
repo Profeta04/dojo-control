@@ -24,6 +24,8 @@ import {
   Building,
   Sun,
   Moon,
+  User,
+  ClipboardList,
 } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
@@ -61,7 +63,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
+  { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, adminOnly: true },
+  { title: "Perfil", href: "/perfil", icon: <User className="h-5 w-5" />, studentOnly: true },
+  { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-5 w-5" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, adminOnly: true },
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" />, adminOnly: true },
@@ -183,7 +187,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const filteredNavItems = navItems.filter((item) => {
-    // Dashboard is always visible
+    // Items without any role flag are always visible
     if (!item.adminOnly && !item.ownerOnly && !item.studentOnly) return true;
     // Owner-only items for dono and admin only (not sensei)
     if (item.ownerOnly && (isDono || isAdmin)) return true;

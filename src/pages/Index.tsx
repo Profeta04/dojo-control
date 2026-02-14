@@ -5,7 +5,9 @@ import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react"
 import dojoLogo from "@/assets/dojo-manager-logo.png";
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, isStudent, canManageStudents } = useAuth();
+  const isStudentOnly = isStudent && !canManageStudents;
+  const homeLink = isStudentOnly ? "/perfil" : "/dashboard";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -24,8 +26,8 @@ const Index = () => {
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:w-auto">
           {user ? (
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 h-12 sm:h-11 text-base w-full sm:w-auto">
-              <Link to="/dashboard" className="flex items-center justify-center gap-2">
-                Acessar Dashboard
+              <Link to={homeLink} className="flex items-center justify-center gap-2">
+                {isStudentOnly ? "Acessar Perfil" : "Acessar Dashboard"}
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </Button>
