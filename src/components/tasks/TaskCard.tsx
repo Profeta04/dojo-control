@@ -34,33 +34,44 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
   return (
     <Card 
       className={cn(
-        "transition-all duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-ring",
+        "transition-all duration-200 hover:shadow-md group overflow-hidden",
         isCompleted && "opacity-60",
-        isCancelled && "opacity-40"
+        isCancelled && "opacity-40",
+        isOverdue && "border-destructive/30"
       )}
       role="article"
       aria-label={`Tarefa: ${task.title}${isCompleted ? ", concluída" : ""}${isOverdue ? ", atrasada" : ""}`}
     >
+      {/* Status accent bar */}
+      <div className={cn(
+        "h-0.5 w-full",
+        isCompleted ? "bg-success" : isOverdue ? "bg-destructive" : isDueToday ? "bg-warning" : "bg-primary/30"
+      )} />
+      
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           <button
             onClick={handleToggleComplete}
-            className="mt-0.5 flex-shrink-0 transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full"
+            className={cn(
+              "mt-0.5 flex-shrink-0 transition-all duration-200 rounded-full p-0.5",
+              "hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              isCompleted ? "text-success" : "text-muted-foreground hover:text-primary"
+            )}
             disabled={isCancelled}
             aria-label={isCompleted ? "Marcar como pendente" : "Marcar como concluída"}
             aria-pressed={isCompleted}
           >
             {isCompleted ? (
-              <CheckCircle2 className="h-5 w-5 text-green-500" aria-hidden="true" />
+              <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <Circle className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+              <Circle className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <h4 className={cn(
-                "font-medium text-foreground",
+                "font-medium text-sm text-foreground leading-tight",
                 isCompleted && "line-through text-muted-foreground"
               )}>
                 {task.title}
@@ -70,19 +81,18 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
                   <Badge 
                     variant="outline" 
                     className={cn(
+                      "text-[10px] px-1.5 py-0",
                       CATEGORY_CONFIG[task.category].bgColor,
                       CATEGORY_CONFIG[task.category].color,
                       "border-0"
                     )}
-                    aria-label={`Categoria: ${CATEGORY_CONFIG[task.category].label}`}
                   >
                     {CATEGORY_CONFIG[task.category].label}
                   </Badge>
                 )}
                 <Badge 
                   variant="outline" 
-                  className={priorityConfig[task.priority].className}
-                  aria-label={`Prioridade: ${priorityConfig[task.priority].label}`}
+                  className={cn("text-[10px] px-1.5 py-0", priorityConfig[task.priority].className)}
                 >
                   {priorityConfig[task.priority].label}
                 </Badge>
@@ -90,11 +100,11 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                     onClick={() => onDelete(task.id)}
                     aria-label={`Excluir tarefa: ${task.title}`}
                   >
-                    <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                   </Button>
                 )}
               </div>
@@ -102,7 +112,7 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
 
             {task.description && (
               <p className={cn(
-                "text-sm text-muted-foreground mt-1",
+                "text-xs text-muted-foreground mt-1 leading-relaxed",
                 isCompleted && "line-through"
               )}>
                 {task.description}
@@ -114,19 +124,20 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
                 href={videoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-2 text-sm text-destructive hover:text-destructive/80 font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 mt-2 text-xs text-destructive hover:text-destructive/80 font-medium transition-colors bg-destructive/5 px-2.5 py-1 rounded-md"
               >
-                <Youtube className="h-4 w-4" />
-                Assistir vídeo de apoio
+                <Youtube className="h-3.5 w-3.5" />
+                Assistir vídeo
               </a>
             )}
 
-            <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground" role="contentinfo">
+            <div className="flex items-center gap-3 mt-2.5 text-[11px] text-muted-foreground" role="contentinfo">
               {task.due_date && (
                 <span className={cn(
-                  "flex items-center gap-1",
-                  isOverdue && "text-destructive",
-                  isDueToday && !isCompleted && "text-warning"
+                  "flex items-center gap-1 px-2 py-0.5 rounded-full",
+                  isOverdue && "text-destructive bg-destructive/10",
+                  isDueToday && !isCompleted && "text-warning bg-warning/10",
+                  !isOverdue && !isDueToday && "bg-muted/50"
                 )}>
                   {isOverdue ? (
                     <AlertTriangle className="h-3 w-3" aria-hidden="true" />
@@ -136,20 +147,16 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
                   <time dateTime={task.due_date}>
                     {format(new Date(task.due_date), "dd/MM/yyyy", { locale: ptBR })}
                   </time>
-                  {isDueToday && <span aria-label="Vence hoje"> (Hoje)</span>}
+                  {isDueToday && <span> (Hoje)</span>}
                   {isOverdue && <span role="alert"> (Atrasada)</span>}
                 </span>
               )}
 
               {showAssignee && (
-                <span className="text-muted-foreground">
-                  Para: {task.assignee_name}
-                </span>
+                <span>Para: {task.assignee_name}</span>
               )}
 
-              <span className="text-muted-foreground">
-                Por: {task.assigner_name}
-              </span>
+              <span>Por: {task.assigner_name}</span>
             </div>
           </div>
         </div>
