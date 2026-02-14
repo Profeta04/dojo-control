@@ -94,8 +94,8 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
         });
       }
 
-      // Payment details for selected month only, sorted by due_date desc
-      const sortedPayments = [...monthPayments].sort(
+      // All payments sorted by due_date desc
+      const sortedPayments = [...payments].sort(
         (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
       );
 
