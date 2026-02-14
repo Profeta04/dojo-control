@@ -54,11 +54,12 @@ import {
   Save
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
+import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PaymentStatus, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import { PaymentStatus, PAYMENT_STATUS_LABELS, ReceiptStatus } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type Payment = Tables<"payments">;
@@ -469,7 +470,7 @@ export default function PaymentsPage() {
     setNotifyLoading(true);
 
     try {
-      // Get pending and overdue payments
+// ... keep existing code (notification logic)
       const paymentsToNotify = payments?.filter(
         (p) => p.status === "pendente" || p.status === "atrasado"
       );
@@ -482,7 +483,6 @@ export default function PaymentsPage() {
         return;
       }
 
-      // Group by student to avoid duplicate notifications
       const studentPayments = new Map<string, PaymentWithStudent[]>();
       paymentsToNotify.forEach((p) => {
         const existing = studentPayments.get(p.student_id) || [];
@@ -524,6 +524,65 @@ export default function PaymentsPage() {
       });
     } finally {
       setNotifyLoading(false);
+    }
+  };
+
+  const handleUpdateReceiptStatus = async (newReceiptStatus: ReceiptStatus) => {
+    if (!selectedPayment || !user) return;
+
+    setFormLoading(true);
+
+    try {
+      const updates: any = {
+        receipt_status: newReceiptStatus,
+      };
+
+      // If approving receipt, also mark payment as paid
+      if (newReceiptStatus === "aprovado") {
+        updates.status = "pago";
+        updates.paid_date = format(new Date(), "yyyy-MM-dd");
+      }
+
+      const { error } = await supabase
+        .from("payments")
+        .update(updates)
+        .eq("id", selectedPayment.id);
+
+      if (error) throw error;
+
+      // Notify the student
+      const statusLabel = newReceiptStatus === "aprovado" ? "aprovado ✅" : "rejeitado ❌";
+      const notification = {
+        user_id: selectedPayment.student_id,
+        title: newReceiptStatus === "aprovado" 
+          ? "✅ Comprovante Aprovado" 
+          : "❌ Comprovante Rejeitado",
+        message: newReceiptStatus === "aprovado"
+          ? `Seu comprovante de ${formatMonth(selectedPayment.reference_month)} foi verificado e aprovado. Pagamento confirmado!`
+          : `Seu comprovante de ${formatMonth(selectedPayment.reference_month)} foi rejeitado. Por favor, envie um novo comprovante válido.`,
+        type: "payment",
+        related_id: selectedPayment.id,
+      };
+
+      await supabase.from("notifications").insert(notification);
+
+      toast({
+        title: `Comprovante ${statusLabel}`,
+        description: newReceiptStatus === "aprovado" 
+          ? "O pagamento foi marcado como pago e o aluno foi notificado." 
+          : "O aluno foi notificado para enviar um novo comprovante.",
+      });
+
+      setEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao atualizar comprovante",
+        variant: "destructive",
+      });
+    } finally {
+      setFormLoading(false);
     }
   };
 
@@ -759,10 +818,13 @@ export default function PaymentsPage() {
                         </TableCell>
                         <TableCell>
                           {payment.receipt_url ? (
-                            <ReceiptViewButton 
-                              receiptUrl={payment.receipt_url} 
-                              className="text-primary"
-                            />
+                            <div className="flex items-center gap-1.5">
+                              <ReceiptViewButton 
+                                receiptUrl={payment.receipt_url} 
+                                className="text-primary"
+                              />
+                              <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
+                            </div>
                           ) : (
                             <span className="text-sm text-muted-foreground">-</span>
                           )}
@@ -1075,11 +1137,37 @@ export default function PaymentsPage() {
 
               {/* Receipt */}
               {selectedPayment.receipt_url && (
-                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                  <Label className="text-xs text-muted-foreground">Comprovante</Label>
-                  <div className="mt-1">
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Comprovante Enviado</Label>
+                    <ReceiptStatusBadge status={selectedPayment.receipt_status as ReceiptStatus} />
+                  </div>
+                  <div className="flex items-center gap-2">
                     <ReceiptViewButton receiptUrl={selectedPayment.receipt_url} className="text-primary" />
                   </div>
+                  {/* Approve / Reject buttons */}
+                  {selectedPayment.receipt_status !== "aprovado" && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-primary/10">
+                      <Button
+                        size="sm"
+                        onClick={() => handleUpdateReceiptStatus("aprovado")}
+                        disabled={formLoading}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-1" />
+                        Aprovar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleUpdateReceiptStatus("rejeitado")}
+                        disabled={formLoading}
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        Rejeitar
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
 

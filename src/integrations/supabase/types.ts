@@ -445,6 +445,7 @@ export type Database = {
           id: string
           notes: string | null
           paid_date: string | null
+          receipt_status: Database["public"]["Enums"]["receipt_status"] | null
           receipt_url: string | null
           reference_month: string | null
           status: Database["public"]["Enums"]["payment_status"] | null
@@ -459,6 +460,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_date?: string | null
+          receipt_status?: Database["public"]["Enums"]["receipt_status"] | null
           receipt_url?: string | null
           reference_month?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
@@ -473,6 +475,7 @@ export type Database = {
           id?: string
           notes?: string | null
           paid_date?: string | null
+          receipt_status?: Database["public"]["Enums"]["receipt_status"] | null
           receipt_url?: string | null
           reference_month?: string | null
           status?: Database["public"]["Enums"]["payment_status"] | null
@@ -785,6 +788,7 @@ export type Database = {
         | "preta_9dan"
         | "preta_10dan"
       payment_status: "pendente" | "pago" | "atrasado"
+      receipt_status: "pendente_verificacao" | "aprovado" | "rejeitado"
       registration_status: "pendente" | "aprovado" | "rejeitado"
     }
     CompositeTypes: {
@@ -935,6 +939,7 @@ export const Constants = {
         "preta_10dan",
       ],
       payment_status: ["pendente", "pago", "atrasado"],
+      receipt_status: ["pendente_verificacao", "aprovado", "rejeitado"],
       registration_status: ["pendente", "aprovado", "rejeitado"],
     },
   },
