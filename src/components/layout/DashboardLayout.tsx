@@ -76,10 +76,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const toggleDarkMode = async () => {
     if (!profile) return;
     const newValue = !isDarkMode;
-    await supabase
+    const { error } = await supabase
       .from("profiles")
       .update({ dark_mode: newValue })
       .eq("user_id", profile.user_id);
+    
+    if (error) {
+      console.error("[toggleDarkMode] Failed:", error.message, error.details, error.hint);
+      return;
+    }
+    
+    console.log("[toggleDarkMode] Success, new value:", newValue);
     // Invalidate theme queries to refresh
     queryClient.invalidateQueries({ queryKey: ["user-dark-mode"] });
     queryClient.invalidateQueries({ queryKey: ["dojo-theme"] });
