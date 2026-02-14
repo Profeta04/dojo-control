@@ -319,7 +319,7 @@ export function ScheduleTab() {
                 hasSchedule: datesWithSchedules,
               }}
               modifiersClassNames={{
-                hasSchedule: "bg-primary/20 font-bold text-primary",
+                hasSchedule: "bg-accent/30 font-bold text-accent-foreground ring-2 ring-accent/50",
               }}
               classNames={{
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
@@ -329,7 +329,7 @@ export function ScheduleTab() {
             {/* Legend */}
             <div className="flex items-center gap-4 mt-4 pt-4 border-t text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-primary/20" />
+                <div className="w-4 h-4 rounded bg-accent/30 ring-2 ring-accent/50" />
                 <span>Dia com aula</span>
               </div>
               <div className="flex items-center gap-2">
