@@ -25,55 +25,131 @@ const DARK_THEME: DojoTheme = {
   dark_mode: true,
 };
 
+// Parse HSL string "H S% L%" and return components
+function parseHSL(hsl: string): { h: number; s: number; l: number } | null {
+  const parts = hsl.trim().split(/\s+/);
+  if (parts.length < 3) return null;
+  return {
+    h: parseFloat(parts[0]),
+    s: parseFloat(parts[1].replace('%', '')),
+    l: parseFloat(parts[2].replace('%', '')),
+  };
+}
+
+// Invert lightness for dark mode: light colors become dark and vice versa
+function invertForDarkMode(hsl: string): string {
+  const parsed = parseHSL(hsl);
+  if (!parsed) return hsl;
+  // Invert lightness: 10% -> 90%, 20% -> 80%, 92% -> 8%
+  const invertedL = 100 - parsed.l;
+  return `${parsed.h} ${parsed.s}% ${invertedL}%`;
+}
+
+// Check if a color is "light" (lightness > 50%)
+function isLightColor(hsl: string): boolean {
+  const parsed = parseHSL(hsl);
+  if (!parsed) return false;
+  return parsed.l > 50;
+}
+
+// Ensure minimum lightness for readability
+function ensureMinLightness(hsl: string, minL: number): string {
+  const parsed = parseHSL(hsl);
+  if (!parsed) return hsl;
+  if (parsed.l < minL) {
+    return `${parsed.h} ${parsed.s}% ${minL}%`;
+  }
+  return hsl;
+}
+
+// Ensure maximum lightness for readability on light backgrounds
+function ensureMaxLightness(hsl: string, maxL: number): string {
+  const parsed = parseHSL(hsl);
+  if (!parsed) return hsl;
+  if (parsed.l > maxL) {
+    return `${parsed.h} ${parsed.s}% ${maxL}%`;
+  }
+  return hsl;
+}
+
 // Generate derived colors from the 3 main colors
 function generateDerivedColors(theme: DojoTheme) {
   const isDark = theme.dark_mode;
   
+  // For dark mode, we need to invert primary/secondary if they were designed for light mode
+  let effectivePrimary = theme.color_primary;
+  let effectiveSecondary = theme.color_secondary;
+  
+  if (isDark) {
+    // If primary is dark (designed for light mode text), invert it for dark mode
+    if (!isLightColor(effectivePrimary)) {
+      effectivePrimary = invertForDarkMode(effectivePrimary);
+    }
+    // If secondary is light (designed for light mode backgrounds), invert it
+    if (isLightColor(effectiveSecondary)) {
+      effectiveSecondary = invertForDarkMode(effectiveSecondary);
+    }
+    // Ensure primary text is bright enough to read on dark backgrounds
+    effectivePrimary = ensureMinLightness(effectivePrimary, 85);
+    // Ensure secondary backgrounds are dark enough
+    effectiveSecondary = ensureMaxLightness(effectiveSecondary, 20);
+  }
+  
+  // Accent: bump lightness slightly in dark mode for visibility
+  let effectiveAccent = theme.color_tertiary;
+  if (isDark) {
+    effectiveAccent = ensureMinLightness(effectiveAccent, 50);
+  }
+
   return {
     // Core
-    primary: theme.color_primary,
-    secondary: theme.color_secondary,
-    accent: theme.color_tertiary,
+    primary: effectivePrimary,
+    secondary: effectiveSecondary,
+    accent: effectiveAccent,
     
     // Background & foreground
     background: isDark ? "220 15% 8%" : "220 15% 98%",
-    foreground: isDark ? "220 10% 95%" : "220 15% 10%",
+    foreground: isDark ? "220 10% 93%" : "220 15% 10%",
     
     // Card
     card: isDark ? "220 15% 12%" : "0 0% 100%",
-    cardForeground: isDark ? "220 10% 95%" : "220 15% 10%",
+    cardForeground: isDark ? "220 10% 93%" : "220 15% 10%",
     
     // Popover
     popover: isDark ? "220 15% 12%" : "0 0% 100%",
-    popoverForeground: isDark ? "220 10% 95%" : "220 15% 10%",
+    popoverForeground: isDark ? "220 10% 93%" : "220 15% 10%",
     
     // Primary foreground (contrasting)
     primaryForeground: isDark ? "220 15% 8%" : "0 0% 98%",
     
     // Secondary foreground
-    secondaryForeground: isDark ? "220 10% 90%" : "220 15% 15%",
+    secondaryForeground: isDark ? "220 10% 88%" : "220 15% 15%",
     
     // Accent foreground (always white for visibility)
     accentForeground: "0 0% 100%",
     
     // Muted
     muted: isDark ? "220 10% 18%" : "220 10% 94%",
-    mutedForeground: isDark ? "220 10% 60%" : "220 10% 40%",
+    mutedForeground: isDark ? "220 10% 65%" : "220 10% 40%",
     
-    // Border & input
-    border: isDark ? "220 13% 22%" : "220 13% 88%",
-    input: isDark ? "220 13% 22%" : "220 13% 88%",
-    ring: theme.color_tertiary,
+    // Destructive
+    destructive: isDark ? "0 65% 55%" : "0 72% 51%",
+    destructiveForeground: "0 0% 98%",
     
-    // Sidebar
-    sidebarBackground: isDark ? "220 15% 5%" : theme.color_primary,
-    sidebarForeground: isDark ? "220 10% 90%" : "0 0% 95%",
-    sidebarPrimary: theme.color_tertiary,
+    // Border & input - slightly brighter in dark mode
+    border: isDark ? "220 13% 25%" : "220 13% 88%",
+    input: isDark ? "220 13% 25%" : "220 13% 88%",
+    ring: effectiveAccent,
+    
+    // Sidebar - ensure readable in dark mode
+    sidebarBackground: isDark ? "220 15% 6%" : theme.color_primary,
+    sidebarForeground: isDark ? "220 10% 88%" : "0 0% 95%",
+    sidebarPrimary: effectiveAccent,
     sidebarPrimaryForeground: "0 0% 100%",
-    sidebarAccent: isDark ? "220 15% 15%" : "220 15% 30%",
-    sidebarAccentForeground: isDark ? "220 10% 90%" : "0 0% 95%",
-    sidebarBorder: isDark ? "220 15% 18%" : "220 15% 30%",
-    sidebarRing: theme.color_tertiary,
+    sidebarAccent: isDark ? "220 15% 16%" : "220 15% 30%",
+    sidebarAccentForeground: isDark ? "220 10% 92%" : "0 0% 95%",
+    sidebarBorder: isDark ? "220 15% 20%" : "220 15% 30%",
+    sidebarRing: effectiveAccent,
   };
 }
 
