@@ -502,6 +502,7 @@ export type Database = {
           email: string | null
           guardian_email: string | null
           guardian_user_id: string | null
+          is_federated: boolean
           name: string
           phone: string | null
           registration_status: string | null
@@ -520,6 +521,7 @@ export type Database = {
           email?: string | null
           guardian_email?: string | null
           guardian_user_id?: string | null
+          is_federated?: boolean
           name: string
           phone?: string | null
           registration_status?: string | null
@@ -538,6 +540,7 @@ export type Database = {
           email?: string | null
           guardian_email?: string | null
           guardian_user_id?: string | null
+          is_federated?: boolean
           name?: string
           phone?: string | null
           registration_status?: string | null

@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { User, Calendar, Award, Phone, Mail } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { AvatarUpload } from "./AvatarUpload";
 
 export function StudentProfileCard() {
   const { profile, user } = useAuth();
@@ -58,7 +60,7 @@ export function StudentProfileCard() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
-            <Skeleton className="h-20 w-20 rounded-full" />
+            <Skeleton className="h-28 w-28 rounded-full" />
             <div className="space-y-2">
               <Skeleton className="h-6 w-40" />
               <Skeleton className="h-4 w-24" />
@@ -69,11 +71,12 @@ export function StudentProfileCard() {
     );
   }
 
+  const isFederated = (profile as any).is_federated ?? false;
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-primary/5 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <User className="h-5 w-5" />
           Meu Perfil
         </CardTitle>
       </CardHeader>
@@ -81,12 +84,21 @@ export function StudentProfileCard() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Avatar and Belt */}
           <div className="flex flex-col items-center gap-3">
-            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center text-3xl font-bold text-primary">
-              {profile.name?.charAt(0).toUpperCase() || "?"}
-            </div>
+            <AvatarUpload />
             {profile.belt_grade && (
               <BeltBadge grade={profile.belt_grade as any} size="lg" />
             )}
+            {/* Federated badge */}
+            <Badge 
+              variant={isFederated ? "default" : "secondary"} 
+              className="flex items-center gap-1"
+            >
+              {isFederated ? (
+                <><Shield className="h-3 w-3" /> Federado</>
+              ) : (
+                <><ShieldOff className="h-3 w-3" /> Não federado</>
+              )}
+            </Badge>
           </div>
 
           {/* Student Info */}
