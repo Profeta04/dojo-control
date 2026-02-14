@@ -147,9 +147,9 @@ export default function PaymentsPage() {
     notes: "",
   });
 
-  // Fetch approved students
+  // Fetch approved students (filtered by dojo)
   const { data: students, isLoading: studentsLoading } = useQuery({
-    queryKey: ["approved-students-payments"],
+    queryKey: ["approved-students-payments", currentDojoId],
     queryFn: async () => {
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
@@ -161,42 +161,69 @@ export default function PaymentsPage() {
 
       const studentIds = roleData.map((r) => r.user_id);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("profiles")
         .select("*")
         .in("user_id", studentIds)
         .eq("registration_status", "aprovado")
         .order("name");
 
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Profile[];
     },
     enabled: !!user,
   });
 
-  // Fetch active classes
+  // Fetch active classes (filtered by dojo)
   const { data: classes, isLoading: classesLoading } = useQuery({
-    queryKey: ["active-classes-payments"],
+    queryKey: ["active-classes-payments", currentDojoId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("classes")
         .select("*")
         .eq("is_active", true)
         .order("name");
 
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Class[];
     },
     enabled: !!user,
   });
 
-  // Fetch payments
+  // Fetch payments (filtered by dojo students)
   const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ["payments"],
+    queryKey: ["payments", currentDojoId],
     queryFn: async () => {
+      // First get student IDs for this dojo
+      let studentQuery = supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("registration_status", "aprovado");
+
+      if (currentDojoId) {
+        studentQuery = studentQuery.eq("dojo_id", currentDojoId);
+      }
+
+      const { data: dojoStudents, error: studentsError } = await studentQuery;
+      if (studentsError) throw studentsError;
+
+      const dojoStudentIds = dojoStudents?.map((s) => s.user_id) || [];
+      if (dojoStudentIds.length === 0) return [];
+
       const { data, error } = await supabase
         .from("payments")
         .select("*")
+        .in("student_id", dojoStudentIds)
         .order("due_date", { ascending: false });
 
       if (error) throw error;
