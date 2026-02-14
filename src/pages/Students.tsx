@@ -526,7 +526,7 @@ export default function Students() {
             <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={actionType === "approve" ? handleApprove : handleReject}
-              className={actionType === "approve" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
+              className={actionType === "approve" ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}
               disabled={actionLoading}
             >
               {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
