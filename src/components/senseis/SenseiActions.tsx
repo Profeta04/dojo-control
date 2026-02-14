@@ -63,9 +63,9 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
   const [editPhone, setEditPhone] = useState(sensei.phone || "");
   const [editBeltGrade, setEditBeltGrade] = useState(sensei.belt_grade || "");
 
-  // Filter to only show black belts as options for senseis
-  const blackBelts = Object.entries(BELT_LABELS).filter(([key]) =>
-    key.startsWith("preta")
+  // Show marrom + black belts as options for senseis
+  const senseiBelts = Object.entries(BELT_LABELS).filter(([key]) =>
+    key === "marrom" || key.startsWith("preta")
   );
 
   const handleEditSensei = async (e: React.FormEvent) => {
@@ -262,7 +262,7 @@ export function SenseiActions({ sensei }: SenseiActionsProps) {
                   <SelectValue placeholder="Selecione a faixa" />
                 </SelectTrigger>
                 <SelectContent>
-                  {blackBelts.map(([value, label]) => (
+                  {senseiBelts.map(([value, label]) => (
                     <SelectItem key={value} value={value}>
                       {label}
                     </SelectItem>
