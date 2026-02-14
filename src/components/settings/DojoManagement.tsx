@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode, Percent } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
@@ -25,6 +25,9 @@ interface DojoFormData {
   description: string;
   logo_url: string;
   pix_key: string;
+  late_fee_percent: string;
+  daily_interest_percent: string;
+  grace_days: string;
 }
 
 const initialFormData: DojoFormData = {
@@ -35,6 +38,9 @@ const initialFormData: DojoFormData = {
   description: "",
   logo_url: "",
   pix_key: "",
+  late_fee_percent: "0",
+  daily_interest_percent: "0",
+  grace_days: "0",
 };
 
 export function DojoManagement() {
@@ -57,6 +63,9 @@ export function DojoManagement() {
         description: data.description || null,
         logo_url: data.logo_url || null,
         pix_key: data.pix_key || null,
+        late_fee_percent: parseFloat(data.late_fee_percent) || 0,
+        daily_interest_percent: parseFloat(data.daily_interest_percent) || 0,
+        grace_days: parseInt(data.grace_days) || 0,
       });
       if (error) throw error;
     },
@@ -81,6 +90,9 @@ export function DojoManagement() {
         description: data.description || null,
         logo_url: data.logo_url || null,
         pix_key: data.pix_key || null,
+        late_fee_percent: parseFloat(data.late_fee_percent) || 0,
+        daily_interest_percent: parseFloat(data.daily_interest_percent) || 0,
+        grace_days: parseInt(data.grace_days) || 0,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -130,6 +142,9 @@ export function DojoManagement() {
       description: dojo.description || "",
       logo_url: dojo.logo_url || "",
       pix_key: (dojo as any).pix_key || "",
+      late_fee_percent: String((dojo as any).late_fee_percent ?? 0),
+      daily_interest_percent: String((dojo as any).daily_interest_percent ?? 0),
+      grace_days: String((dojo as any).grace_days ?? 0),
     });
     setEditingDojo(dojo);
   };
@@ -232,9 +247,60 @@ export function DojoManagement() {
               placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
               className="h-10"
             />
-            <p className="text-xs text-muted-foreground">
+           <p className="text-xs text-muted-foreground">
               Esta chave será exibida para os alunos na tela de pagamentos.
             </p>
+          </div>
+        </div>
+
+        {/* Late Fee Settings */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <Percent className="h-4 w-4" />
+            Taxas de Atraso
+          </h4>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-late_fee`}>Multa (%)</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-late_fee`}
+                type="number"
+                step="0.1"
+                min="0"
+                value={formData.late_fee_percent}
+                onChange={(e) => setFormData({ ...formData, late_fee_percent: e.target.value })}
+                placeholder="2.0"
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">Multa fixa sobre o valor</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-daily_interest`}>Juros diários (%)</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-daily_interest`}
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.daily_interest_percent}
+                onChange={(e) => setFormData({ ...formData, daily_interest_percent: e.target.value })}
+                placeholder="0.33"
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">Por dia de atraso</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`${isEdit ? 'edit' : 'create'}-grace_days`}>Carência (dias)</Label>
+              <Input
+                id={`${isEdit ? 'edit' : 'create'}-grace_days`}
+                type="number"
+                min="0"
+                value={formData.grace_days}
+                onChange={(e) => setFormData({ ...formData, grace_days: e.target.value })}
+                placeholder="3"
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">Dias sem multa após vencimento</p>
+            </div>
           </div>
         </div>
       </div>

@@ -74,3 +74,14 @@ export const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {
   aprovado: "Aprovado",
   rejeitado: "Rejeitado",
 };
+
+export type PaymentCategory = "mensalidade" | "material" | "taxa_exame" | "evento" | "matricula" | "outro";
+
+export const PAYMENT_CATEGORY_LABELS: Record<PaymentCategory, string> = {
+  mensalidade: "Mensalidade",
+  material: "Material / Kimono",
+  taxa_exame: "Taxa de Exame",
+  evento: "Evento",
+  matricula: "Matrícula",
+  outro: "Outro",
+};

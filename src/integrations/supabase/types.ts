@@ -286,10 +286,13 @@ export type Database = {
           color_primary: string | null
           color_secondary: string | null
           created_at: string | null
+          daily_interest_percent: number
           description: string | null
           email: string | null
+          grace_days: number
           id: string
           is_active: boolean | null
+          late_fee_percent: number
           logo_url: string | null
           name: string
           phone: string | null
@@ -302,10 +305,13 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           created_at?: string | null
+          daily_interest_percent?: number
           description?: string | null
           email?: string | null
+          grace_days?: number
           id?: string
           is_active?: boolean | null
+          late_fee_percent?: number
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -318,10 +324,13 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           created_at?: string | null
+          daily_interest_percent?: number
           description?: string | null
           email?: string | null
+          grace_days?: number
           id?: string
           is_active?: boolean | null
+          late_fee_percent?: number
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -439,6 +448,7 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          category: Database["public"]["Enums"]["payment_category"]
           created_at: string | null
           description: string | null
           due_date: string
@@ -454,6 +464,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          category?: Database["public"]["Enums"]["payment_category"]
           created_at?: string | null
           description?: string | null
           due_date: string
@@ -469,6 +480,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category?: Database["public"]["Enums"]["payment_category"]
           created_at?: string | null
           description?: string | null
           due_date?: string
@@ -499,12 +511,14 @@ export type Database = {
           avatar_url: string | null
           belt_grade: string | null
           birth_date: string | null
+          blocked_reason: string | null
           created_at: string | null
           dark_mode: boolean
           dojo_id: string | null
           email: string | null
           guardian_email: string | null
           guardian_user_id: string | null
+          is_blocked: boolean
           is_federated: boolean
           name: string
           phone: string | null
@@ -518,12 +532,14 @@ export type Database = {
           avatar_url?: string | null
           belt_grade?: string | null
           birth_date?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           dark_mode?: boolean
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
           guardian_user_id?: string | null
+          is_blocked?: boolean
           is_federated?: boolean
           name: string
           phone?: string | null
@@ -537,12 +553,14 @@ export type Database = {
           avatar_url?: string | null
           belt_grade?: string | null
           birth_date?: string | null
+          blocked_reason?: string | null
           created_at?: string | null
           dark_mode?: boolean
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
           guardian_user_id?: string | null
+          is_blocked?: boolean
           is_federated?: boolean
           name?: string
           phone?: string | null
@@ -729,10 +747,13 @@ export type Database = {
           color_primary: string | null
           color_secondary: string | null
           created_at: string | null
+          daily_interest_percent: number
           description: string | null
           email: string | null
+          grace_days: number
           id: string
           is_active: boolean | null
+          late_fee_percent: number
           logo_url: string | null
           name: string
           phone: string | null
@@ -787,6 +808,13 @@ export type Database = {
         | "preta_8dan"
         | "preta_9dan"
         | "preta_10dan"
+      payment_category:
+        | "mensalidade"
+        | "material"
+        | "taxa_exame"
+        | "evento"
+        | "matricula"
+        | "outro"
       payment_status: "pendente" | "pago" | "atrasado"
       receipt_status: "pendente_verificacao" | "aprovado" | "rejeitado"
       registration_status: "pendente" | "aprovado" | "rejeitado"
@@ -937,6 +965,14 @@ export const Constants = {
         "preta_8dan",
         "preta_9dan",
         "preta_10dan",
+      ],
+      payment_category: [
+        "mensalidade",
+        "material",
+        "taxa_exame",
+        "evento",
+        "matricula",
+        "outro",
       ],
       payment_status: ["pendente", "pago", "atrasado"],
       receipt_status: ["pendente_verificacao", "aprovado", "rejeitado"],
