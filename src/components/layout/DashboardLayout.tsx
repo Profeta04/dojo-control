@@ -173,7 +173,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </ScrollArea>
 
       {/* Dark Mode Toggle */}
-      {currentDojo && (canManageStudents || isDono || isAdmin) && (
+      {currentDojo && (
         <div className="px-3 lg:px-4 py-2">
           <button
             onClick={toggleDarkMode}
