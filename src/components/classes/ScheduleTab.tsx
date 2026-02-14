@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -54,7 +55,8 @@ interface ScheduleWithClass extends ClassSchedule {
 }
 
 export function ScheduleTab() {
-  const { user, canManageStudents } = useAuth();
+  const { user, canManageStudents, isSensei, isAdmin, isDono } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -66,14 +68,23 @@ export function ScheduleTab() {
   const [cancelReason, setCancelReason] = useState("");
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch ALL classes (not just active) to show schedule correctly
+  // Fetch classes filtered by dojo and sensei
   const { data: classes, isLoading: classesLoading } = useQuery({
-    queryKey: ["classes-all"],
+    queryKey: ["classes-all", currentDojoId, user?.id, isSensei],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("classes")
-        .select("*");
+      let query = supabase.from("classes").select("*");
 
+      // Senseis only see their own classes
+      if (isSensei && !isDono && !isAdmin) {
+        query = query.eq("sensei_id", user!.id);
+      }
+
+      // Filter by dojo if selected
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Class[];
     },
@@ -114,16 +125,22 @@ export function ScheduleTab() {
     enabled: !!user,
   });
 
-  // Fetch schedules for current month - only depends on user
+  // Get class IDs for filtering schedules
+  const classIds = useMemo(() => classes?.map((c) => c.id) || [], [classes]);
+
+  // Fetch schedules for current month - filtered by accessible classes
   const { data: schedules, isLoading: schedulesLoading } = useQuery({
-    queryKey: ["class-schedules", format(currentMonth, "yyyy-MM")],
+    queryKey: ["class-schedules", format(currentMonth, "yyyy-MM"), classIds],
     queryFn: async () => {
+      if (classIds.length === 0) return [];
+
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
 
       const { data, error } = await supabase
         .from("class_schedule")
         .select("*")
+        .in("class_id", classIds)
         .gte("date", format(monthStart, "yyyy-MM-dd"))
         .lte("date", format(monthEnd, "yyyy-MM-dd"))
         .order("date")
@@ -132,7 +149,7 @@ export function ScheduleTab() {
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user,
+    enabled: !!user && classIds.length > 0,
   });
 
   // Enrich schedules with class and sensei info
