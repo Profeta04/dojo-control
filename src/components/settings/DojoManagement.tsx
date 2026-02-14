@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon } from "lucide-react";
+import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
@@ -24,6 +24,7 @@ interface DojoFormData {
   address: string;
   description: string;
   logo_url: string;
+  pix_key: string;
 }
 
 const initialFormData: DojoFormData = {
@@ -33,6 +34,7 @@ const initialFormData: DojoFormData = {
   address: "",
   description: "",
   logo_url: "",
+  pix_key: "",
 };
 
 export function DojoManagement() {
@@ -54,6 +56,7 @@ export function DojoManagement() {
         address: data.address || null,
         description: data.description || null,
         logo_url: data.logo_url || null,
+        pix_key: data.pix_key || null,
       });
       if (error) throw error;
     },
@@ -77,6 +80,7 @@ export function DojoManagement() {
         address: data.address || null,
         description: data.description || null,
         logo_url: data.logo_url || null,
+        pix_key: data.pix_key || null,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -125,6 +129,7 @@ export function DojoManagement() {
       address: dojo.address || "",
       description: dojo.description || "",
       logo_url: dojo.logo_url || "",
+      pix_key: (dojo as any).pix_key || "",
     });
     setEditingDojo(dojo);
   };
@@ -209,6 +214,27 @@ export function DojoManagement() {
               placeholder="Descrição do dojo"
               rows={3}
             />
+          </div>
+        </div>
+
+        {/* PIX Key */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-medium flex items-center gap-2">
+            <QrCode className="h-4 w-4" />
+            Chave Pix para Pagamentos
+          </h4>
+          <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-pix_key`}>Chave Pix</Label>
+            <Input
+              id={`${isEdit ? 'edit' : 'create'}-pix_key`}
+              value={formData.pix_key}
+              onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
+              placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+              className="h-10"
+            />
+            <p className="text-xs text-muted-foreground">
+              Esta chave será exibida para os alunos na tela de pagamentos.
+            </p>
           </div>
         </div>
       </div>
