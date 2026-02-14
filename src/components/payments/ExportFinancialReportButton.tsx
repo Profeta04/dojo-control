@@ -153,7 +153,7 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
             <SelectTrigger>
               <SelectValue placeholder="Selecione o mês" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[200] max-h-[300px]" position="popper">
               {monthOptions.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
