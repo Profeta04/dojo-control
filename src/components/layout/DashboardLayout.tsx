@@ -100,6 +100,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         .update({ belt_grade: selectedBelt as BeltGradeEnum })
         .eq("user_id", profile.user_id);
       if (error) throw error;
+      // Optimistic: update profile in auth cache
+      queryClient.setQueryData(["auth-profile", profile.user_id], (old: any) =>
+        old ? { ...old, belt_grade: selectedBelt } : old
+      );
       queryClient.invalidateQueries({ queryKey: ["auth-profile"] });
       queryClient.invalidateQueries({ queryKey: ["senseis"] });
       setBeltDialogOpen(false);
