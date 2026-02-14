@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
+import dojoLogo from "@/assets/dojo-manager-logo.png";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -115,9 +116,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
             />
           ) : (
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-foreground/20 flex-shrink-0" aria-hidden="true">
-              <span className="text-xl">🥋</span>
-            </div>
+            <img src={dojoLogo} alt="Dojo Manager" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
           )}
           <div className="min-w-0">
             <h1 className="font-bold text-base lg:text-lg text-primary-foreground truncate">{settings.dojo_name}</h1>
@@ -220,9 +219,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
               />
             ) : (
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary-foreground/20 flex-shrink-0" aria-hidden="true">
-                <span className="text-base">🥋</span>
-              </div>
+              <img src={dojoLogo} alt="Dojo Manager" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
             )}
             <span className="font-semibold text-sm text-primary-foreground truncate">
               {settings.dojo_name}

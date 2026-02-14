@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import dojoLogo from "@/assets/dojo-manager-logo.png";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -407,9 +408,7 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary mb-3 sm:mb-4 shadow-lg">
-          <span className="text-3xl sm:text-4xl">🥋</span>
-        </div>
+        <img src={dojoLogo} alt="Dojo Manager" className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full" />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>
       </div>

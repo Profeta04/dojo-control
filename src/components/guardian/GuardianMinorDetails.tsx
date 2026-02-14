@@ -152,9 +152,9 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                           R$ {payment.amount.toFixed(2).replace(".", ",")}
                         </p>
                         <p className={`text-sm capitalize ${
-                          payment.status === "pago" ? "text-green-600" :
-                          payment.status === "atrasado" ? "text-red-600" :
-                          "text-yellow-600"
+                          payment.status === "pago" ? "text-success" :
+                          payment.status === "atrasado" ? "text-destructive" :
+                          "text-warning"
                         }`}>
                           {payment.status}
                         </p>
