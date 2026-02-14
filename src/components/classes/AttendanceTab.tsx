@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -76,7 +77,8 @@ interface StudentAttendance {
 }
 
 export function AttendanceTab() {
-  const { user, canManageStudents } = useAuth();
+  const { user, canManageStudents, isSensei, isAdmin, isDono } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -86,15 +88,39 @@ export function AttendanceTab() {
   const [attendanceList, setAttendanceList] = useState<StudentAttendance[]>([]);
   const [formLoading, setFormLoading] = useState(false);
 
+  // Fetch accessible class IDs based on dojo and role
+  const { data: accessibleClassIds = [] } = useQuery({
+    queryKey: ["accessible-class-ids", currentDojoId, user?.id, isSensei],
+    queryFn: async () => {
+      let query = supabase.from("classes").select("id");
+
+      if (isSensei && !isDono && !isAdmin) {
+        query = query.eq("sensei_id", user!.id);
+      }
+
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return data?.map((c) => c.id) || [];
+    },
+    enabled: !!user,
+  });
+
   // Fetch scheduled classes for selected date
   const { data: schedules, isLoading } = useQuery({
-    queryKey: ["schedules", selectedDate],
+    queryKey: ["schedules", selectedDate, accessibleClassIds],
     queryFn: async () => {
+      if (accessibleClassIds.length === 0) return [];
+
       const { data: schedulesData, error } = await supabase
         .from("class_schedule")
         .select("*")
         .eq("date", selectedDate)
         .eq("is_cancelled", false)
+        .in("class_id", accessibleClassIds)
         .order("start_time");
 
       if (error) throw error;
@@ -141,13 +167,15 @@ export function AttendanceTab() {
 
       return schedulesWithDetails;
     },
-    enabled: !!user,
+    enabled: !!user && accessibleClassIds.length > 0,
   });
 
   // Get available dates with scheduled classes
   const { data: availableDates } = useQuery({
-    queryKey: ["available-dates"],
+    queryKey: ["available-dates", accessibleClassIds],
     queryFn: async () => {
+      if (accessibleClassIds.length === 0) return [];
+
       const today = new Date();
       const startDate = new Date(today);
       startDate.setDate(startDate.getDate() - 30);
@@ -157,6 +185,7 @@ export function AttendanceTab() {
       const { data, error } = await supabase
         .from("class_schedule")
         .select("date")
+        .in("class_id", accessibleClassIds)
         .gte("date", format(startDate, "yyyy-MM-dd"))
         .lte("date", format(endDate, "yyyy-MM-dd"))
         .eq("is_cancelled", false)
@@ -165,7 +194,7 @@ export function AttendanceTab() {
       if (error) throw error;
       return [...new Set(data?.map((d) => d.date) || [])];
     },
-    enabled: !!user,
+    enabled: !!user && accessibleClassIds.length > 0,
   });
 
   const openAttendanceDialog = (schedule: ScheduleWithDetails) => {

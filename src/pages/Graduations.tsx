@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -59,6 +60,7 @@ const BELT_ORDER: BeltGrade[] = [
 
 export default function GraduationsPage() {
   const { user, canManageStudents, loading: authLoading } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -68,9 +70,9 @@ export default function GraduationsPage() {
   const [notes, setNotes] = useState("");
   const [formLoading, setFormLoading] = useState(false);
 
-  // Fetch approved students
+  // Fetch approved students filtered by dojo
   const { data: students, isLoading: studentsLoading } = useQuery({
-    queryKey: ["approved-students"],
+    queryKey: ["approved-students", currentDojoId],
     queryFn: async () => {
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
@@ -82,28 +84,39 @@ export default function GraduationsPage() {
 
       const studentIds = roleData.map((r) => r.user_id);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("profiles")
         .select("*")
         .in("user_id", studentIds)
         .eq("registration_status", "aprovado")
         .order("name");
 
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Profile[];
     },
     enabled: !!user,
   });
 
-  // Fetch classes
+  // Fetch classes filtered by dojo
   const { data: classes, isLoading: classesLoading } = useQuery({
-    queryKey: ["classes-active"],
+    queryKey: ["classes-active", currentDojoId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("classes")
         .select("id, name")
         .eq("is_active", true)
         .order("name");
+
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },

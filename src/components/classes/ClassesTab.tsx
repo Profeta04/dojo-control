@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -62,6 +63,7 @@ const classSchema = z.object({
 
 export function ClassesTab() {
   const { user, profile, canManageStudents, isDono, isAdmin, isSensei } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -89,7 +91,7 @@ export function ClassesTab() {
 
   // Fetch classes with details
   const { data: classes, isLoading } = useQuery({
-    queryKey: ["classes", user?.id, isSensei, isDono, isAdmin],
+    queryKey: ["classes", user?.id, isSensei, isDono, isAdmin, currentDojoId],
     queryFn: async () => {
       let query = supabase
         .from("classes")
@@ -99,6 +101,11 @@ export function ClassesTab() {
       // Senseis only see their own classes
       if (isSensei && !isDono && !isAdmin) {
         query = query.eq("sensei_id", user!.id);
+      }
+
+      // Filter by dojo if selected
+      if (currentDojoId) {
+        query = query.eq("dojo_id", currentDojoId);
       }
 
       const { data: classesData, error } = await query;
