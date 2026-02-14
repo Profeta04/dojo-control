@@ -22,7 +22,7 @@ export function DojoProvider({ children }: { children: ReactNode }) {
 
   // Fetch all dojos the user has access to
   const { data: userDojos = [], isLoading: isLoadingDojos } = useQuery({
-    queryKey: ["user-dojos", user?.id],
+    queryKey: ["user-dojos", user?.id, isAdmin],
     queryFn: async () => {
       if (!user) return [];
 

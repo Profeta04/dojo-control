@@ -87,19 +87,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
   
-  // Debug: remove after fix
-  console.log("[DojoSelector Debug]", {
-    userDojosLength: userDojos.length,
-    userDojos: userDojos.map(d => d.name),
-    canManageStudents,
-    isAdmin,
-    isDono,
-    isSensei,
-    showDojoSelector,
-    isLoadingDojos,
-    currentDojoId,
-  });
-  
   useEffect(() => {
     const loadLogoUrl = async () => {
       if (currentDojo?.logo_url) {
