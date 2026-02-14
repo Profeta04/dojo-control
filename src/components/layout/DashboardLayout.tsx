@@ -143,6 +143,28 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
+        {/* Dojo Selector in sidebar - works on all screen sizes */}
+        {showDojoSelector && (
+          <div className="mt-3">
+            <Select
+              value={currentDojoId || "all"}
+              onValueChange={(value) => setCurrentDojoId(value === "all" ? null : value)}
+            >
+              <SelectTrigger className="w-full h-8 text-xs bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground">
+                <Building className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <SelectValue placeholder="Selecione o dojo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os dojos</SelectItem>
+                {userDojos.map((dojo) => (
+                  <SelectItem key={dojo.id} value={dojo.id}>
+                    {dojo.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <Separator className="bg-sidebar-border" aria-hidden="true" />
