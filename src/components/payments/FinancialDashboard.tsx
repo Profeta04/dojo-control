@@ -51,7 +51,12 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
       const monthStr = format(date, "yyyy-MM");
       const monthLabel = format(date, "MMM", { locale: ptBR });
       
-      const monthPayments = payments.filter(p => p.reference_month === monthStr);
+      const monthPayments = payments.filter(p => {
+        if (!p.reference_month) return false;
+        // reference_month can be "2026-02" or "2026-02-01" — normalize to yyyy-MM
+        const refMonth = p.reference_month.substring(0, 7);
+        return refMonth === monthStr;
+      });
       
       const recebido = monthPayments
         .filter(p => p.status === "pago")
@@ -110,11 +115,11 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
     const lastMonth = format(subMonths(new Date(), 1), "yyyy-MM");
 
     const currentMonthRevenue = payments
-      .filter(p => p.reference_month === currentMonth && p.status === "pago")
+      .filter(p => p.reference_month?.substring(0, 7) === currentMonth && p.status === "pago")
       .reduce((acc, p) => acc + p.amount, 0);
 
     const lastMonthRevenue = payments
-      .filter(p => p.reference_month === lastMonth && p.status === "pago")
+      .filter(p => p.reference_month?.substring(0, 7) === lastMonth && p.status === "pago")
       .reduce((acc, p) => acc + p.amount, 0);
 
     const revenueChange = lastMonthRevenue > 0 
