@@ -408,7 +408,7 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8">
-        <img src={dojoLogo} alt="Dojo Manager" className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full" />
+        <img src={dojoLogo} alt="Dojo Manager" className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full mx-auto" />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>
       </div>
