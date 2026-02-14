@@ -705,6 +705,8 @@ export type Database = {
           name: string
         }[]
       }
+      get_sensei_dojo_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_dojo_id: { Args: { _user_id: string }; Returns: string }
       get_user_dojos: {
         Args: { _user_id: string }
         Returns: {
@@ -738,6 +740,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
