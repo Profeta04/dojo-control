@@ -130,6 +130,18 @@ const PALETTES: PalettePreset[] = [
     name: "Dourado",
     colors: { color_primary: "35 15% 18%", color_secondary: "40 12% 93%", color_tertiary: "45 85% 48%" },
   },
+  {
+    name: "Sakura",
+    colors: { color_primary: "340 20% 22%", color_secondary: "340 15% 93%", color_tertiary: "340 70% 55%" },
+  },
+  {
+    name: "Samurai",
+    colors: { color_primary: "0 15% 12%", color_secondary: "0 8% 90%", color_tertiary: "0 80% 45%" },
+  },
+  {
+    name: "Zen",
+    colors: { color_primary: "160 10% 22%", color_secondary: "160 8% 93%", color_tertiary: "160 40% 42%" },
+  },
 ];
 
 function PaletteSelector({ onSelect, currentColors }: {
