@@ -74,7 +74,7 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 };
 
 export default function PaymentsPage() {
-  const { user, canManageStudents, loading: authLoading } = useAuth();
+  const { user, canManageStudents, isAdmin, loading: authLoading } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -176,7 +176,7 @@ export default function PaymentsPage() {
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   // Fetch active classes (filtered by dojo)
@@ -197,7 +197,7 @@ export default function PaymentsPage() {
       if (error) throw error;
       return data as Class[];
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   // Fetch payments (filtered by dojo students)
@@ -246,7 +246,7 @@ export default function PaymentsPage() {
 
       return enriched;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   const filteredPayments = payments?.filter((p) =>

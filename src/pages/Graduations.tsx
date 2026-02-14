@@ -59,7 +59,7 @@ const BELT_ORDER: BeltGrade[] = [
 ];
 
 export default function GraduationsPage() {
-  const { user, canManageStudents, loading: authLoading } = useAuth();
+  const { user, canManageStudents, isAdmin, loading: authLoading } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -99,7 +99,7 @@ export default function GraduationsPage() {
       if (error) throw error;
       return data as Profile[];
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   // Fetch classes filtered by dojo
@@ -120,7 +120,7 @@ export default function GraduationsPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   // Fetch class_students enrollments
@@ -133,7 +133,7 @@ export default function GraduationsPage() {
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   // Group students by class
@@ -205,7 +205,7 @@ export default function GraduationsPage() {
 
       return enriched;
     },
-    enabled: !!user,
+    enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
   const getNextBelts = (currentBelt: BeltGrade | null): BeltGrade[] => {
