@@ -239,7 +239,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {canManageStudents && (
           <Link to="/students">
-            <Card className="hover:border-accent/50 transition-colors cursor-pointer">
+            <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Alunos Ativos</CardTitle>
                 <Users className="h-4 w-4 text-accent" />
@@ -254,7 +254,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
 
         {isAdmin && (
           <Link to="/senseis">
-            <Card className="hover:border-accent/50 transition-colors cursor-pointer">
+            <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Senseis</CardTitle>
                 <UserCog className="h-4 w-4 text-accent" />
@@ -268,7 +268,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         )}
 
         <Link to="/classes">
-          <Card className="hover:border-accent/50 transition-colors cursor-pointer">
+          <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Turmas Ativas</CardTitle>
               <GraduationCap className="h-4 w-4 text-accent" />
@@ -283,7 +283,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         {canManageStudents && (
           <>
             <Link to="/students">
-              <Card className="hover:border-warning/50 transition-colors cursor-pointer">
+              <Card className="hover:border-warning/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Aprovações Pendentes</CardTitle>
                   <Clock className="h-4 w-4 text-warning" />
@@ -398,7 +398,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
 
           {/* Payments Overview */}
           <Link to="/payments">
-            <Card className="hover:border-accent/50 transition-colors cursor-pointer h-full">
+            <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-accent" />
@@ -435,7 +435,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
       {canManageStudents && (
         <div className="grid gap-4 md:grid-cols-3">
           <Link to="/classes">
-            <Card className="hover:border-accent/50 transition-colors cursor-pointer">
+            <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Registros de Presença</CardTitle>
                 <CalendarDays className="h-4 w-4 text-accent" />
@@ -448,7 +448,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           </Link>
 
           <Link to="/graduations">
-            <Card className="hover:border-gold/50 transition-colors cursor-pointer">
+            <Card className="hover:border-gold/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Graduações Recentes</CardTitle>
                 <TrendingUp className="h-4 w-4 text-gold" />
@@ -461,7 +461,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
           </Link>
 
           <Link to="/classes">
-            <Card className="hover:border-accent/50 transition-colors cursor-pointer">
+            <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Agenda</CardTitle>
                 <CalendarCheck className="h-4 w-4 text-accent" />
