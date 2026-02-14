@@ -188,10 +188,10 @@ export default function PaymentsPage() {
   };
 
   const SECTION_CONFIG = [
-    { key: "pendente_verificacao" as const, label: "📎 Comprovantes Pendentes de Verificação", icon: Receipt, color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/20" },
-    { key: "atrasado" as const, label: "Atrasados", icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/20" },
-    { key: "pendente" as const, label: "Pendentes", icon: Clock, color: "text-warning-foreground", bgColor: "bg-warning/10", borderColor: "border-warning/20" },
-    { key: "pago" as const, label: "Pagos", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/20" },
+    { key: "pendente_verificacao" as const, label: "Comprovantes para Verificar", subtitle: "Aguardando sua análise", icon: Receipt, color: "text-primary", bgColor: "bg-primary/10", borderColor: "border-primary/30", headerBg: "bg-gradient-to-r from-primary/10 via-primary/5 to-transparent" },
+    { key: "atrasado" as const, label: "Pagamentos Atrasados", subtitle: "Requerem atenção imediata", icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30", headerBg: "bg-gradient-to-r from-destructive/10 via-destructive/5 to-transparent" },
+    { key: "pendente" as const, label: "Pagamentos Pendentes", subtitle: "Aguardando pagamento dos alunos", icon: Clock, color: "text-warning-foreground", bgColor: "bg-warning/10", borderColor: "border-warning/30", headerBg: "bg-gradient-to-r from-warning/10 via-warning/5 to-transparent" },
+    { key: "pago" as const, label: "Pagamentos Confirmados", subtitle: "Pagamentos recebidos com sucesso", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/30", headerBg: "bg-gradient-to-r from-success/10 via-success/5 to-transparent" },
   ];
 
   const resetForm = () => setFormData({ student_id: "", reference_month: format(new Date(), "yyyy-MM"), due_date: format(new Date(), "yyyy-MM-dd"), amount: "", notes: "" });
@@ -522,97 +522,104 @@ export default function PaymentsPage() {
             const SectionIcon = section.icon;
 
             return (
-              <Card key={section.key} className={`shadow-sm animate-fade-in border ${section.borderColor}`} style={{ animationDelay: `${sectionIdx * 100}ms` }}>
-                <CardHeader className="p-4 sm:p-5 pb-2">
-                  <CardTitle className={`flex items-center gap-2 text-sm sm:text-base font-semibold ${section.color}`}>
-                    <div className={`p-1.5 rounded-lg ${section.bgColor}`}>
-                      <SectionIcon className="h-4 w-4" />
+              <div key={section.key} className="animate-fade-in" style={{ animationDelay: `${sectionIdx * 100}ms` }}>
+                {/* Section Header */}
+                <div className={`flex items-center justify-between p-4 rounded-t-xl border border-b-0 ${section.borderColor} ${section.headerBg}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${section.bgColor} shadow-sm`}>
+                      <SectionIcon className={`h-5 w-5 ${section.color}`} />
                     </div>
-                    {section.label}
-                    <Badge variant="secondary" className="ml-auto text-xs font-normal">
+                    <div>
+                      <h3 className={`font-semibold text-sm sm:text-base ${section.color}`}>{section.label}</h3>
+                      <p className="text-xs text-muted-foreground">{section.subtitle}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs text-muted-foreground">Subtotal</p>
+                      <p className={`font-bold text-sm ${section.color}`}>
+                        {formatCurrency(sectionPayments.reduce((acc, p) => acc + p.amount, 0))}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className={`text-xs font-semibold px-2.5 py-1 ${section.bgColor} ${section.color} border-0`}>
                       {sectionPayments.length}
                     </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30">
-                          <TableHead className="min-w-[140px]">Aluno</TableHead>
-                          <TableHead className="hidden sm:table-cell">Referência</TableHead>
-                          <TableHead className="hidden md:table-cell">Vencimento</TableHead>
-                          <TableHead>Valor</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Comprov.</TableHead>
-                          {canManageStudents && <TableHead className="w-[80px]">Ações</TableHead>}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {sectionPayments.map((payment, index) => {
-                          const status = getPaymentStatus(payment);
-                          const statusStyle = STATUS_STYLES[status];
-                          const StatusIcon = statusStyle.icon;
-
-                          return (
-                            <TableRow 
-                              key={payment.id}
-                              className="hover:bg-muted/30 transition-colors animate-fade-in"
-                              style={{ animationDelay: `${index * 30}ms` }}
-                            >
-                              <TableCell>
-                                <div className="flex items-center gap-2.5">
-                                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                    <User className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div>
-                                    <p className="font-medium text-sm truncate max-w-[120px]">{payment.studentName}</p>
-                                    <p className="text-xs text-muted-foreground sm:hidden">
-                                      {formatMonth(payment.reference_month)}
-                                    </p>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="hidden sm:table-cell capitalize text-sm">
-                                {formatMonth(payment.reference_month)}
-                              </TableCell>
-                              <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                                {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                              </TableCell>
-                              <TableCell className="font-semibold text-sm">
-                                {formatCurrency(payment.amount)}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={statusStyle.variant} className="gap-1 text-xs">
-                                  <StatusIcon className="h-3 w-3" />
-                                  <span className="hidden sm:inline">{PAYMENT_STATUS_LABELS[status]}</span>
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {payment.receipt_url ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <ReceiptViewButton receiptUrl={payment.receipt_url} className="text-primary" />
-                                    <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground">—</span>
-                                )}
-                              </TableCell>
-                              {canManageStudents && (
-                                <TableCell>
-                                  <Button variant="ghost" size="sm" className="h-8 px-2 hover:bg-primary/10" onClick={() => openEditDialog(payment)}>
-                                    Editar
-                                  </Button>
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+
+                {/* Section Table */}
+                <Card className={`shadow-sm border ${section.borderColor} rounded-t-none`}>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/20">
+                            <TableHead className="min-w-[140px]">Aluno</TableHead>
+                            <TableHead className="hidden sm:table-cell">Referência</TableHead>
+                            <TableHead className="hidden md:table-cell">Vencimento</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead>Comprov.</TableHead>
+                            {canManageStudents && <TableHead className="w-[80px] text-right">Ações</TableHead>}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sectionPayments.map((payment, index) => {
+                            const status = getPaymentStatus(payment);
+                            const statusStyle = STATUS_STYLES[status];
+
+                            return (
+                              <TableRow 
+                                key={payment.id}
+                                className="hover:bg-muted/30 transition-all duration-200 group"
+                              >
+                                <TableCell>
+                                  <div className="flex items-center gap-2.5">
+                                    <div className={`w-8 h-8 rounded-full ${section.bgColor} flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-110`}>
+                                      <User className={`h-4 w-4 ${section.color}`} />
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-sm truncate max-w-[140px]">{payment.studentName}</p>
+                                      <p className="text-xs text-muted-foreground sm:hidden">
+                                        {formatMonth(payment.reference_month)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="hidden sm:table-cell capitalize text-sm">
+                                  {formatMonth(payment.reference_month)}
+                                </TableCell>
+                                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                                  {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                                </TableCell>
+                                <TableCell className="font-semibold text-sm">
+                                  {formatCurrency(payment.amount)}
+                                </TableCell>
+                                <TableCell>
+                                  {payment.receipt_url ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <ReceiptViewButton receiptUrl={payment.receipt_url} className="text-primary" />
+                                      <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground italic">Sem comprovante</span>
+                                  )}
+                                </TableCell>
+                                {canManageStudents && (
+                                  <TableCell className="text-right">
+                                    <Button variant="ghost" size="sm" className={`h-8 px-3 hover:${section.bgColor} ${section.color} opacity-70 group-hover:opacity-100 transition-opacity`} onClick={() => openEditDialog(payment)}>
+                                      Editar
+                                    </Button>
+                                  </TableCell>
+                                )}
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             );
           })}
         </div>
