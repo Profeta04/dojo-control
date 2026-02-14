@@ -669,7 +669,7 @@ export default function PaymentsPage() {
             <CardDescription className="flex items-center gap-1 text-xs">
               <CheckCircle2 className="h-3 w-3" /> Pagos
             </CardDescription>
-            <CardTitle className="text-xl sm:text-2xl text-green-600">{stats.pago}</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-success">{stats.pago}</CardTitle>
           </CardHeader>
         </Card>
       </div>

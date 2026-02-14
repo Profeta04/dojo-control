@@ -140,7 +140,7 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Receita Total (Pagos)</CardDescription>
-            <CardTitle className="text-2xl text-green-600">
+            <CardTitle className="text-2xl text-success">
               {formatCurrency(totals.totalRecebido)}
             </CardTitle>
           </CardHeader>
@@ -178,7 +178,7 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Taxa de Inadimplência</CardDescription>
-            <CardTitle className={`text-2xl ${totals.delinquencyRate > 20 ? "text-red-600" : totals.delinquencyRate > 10 ? "text-amber-600" : "text-green-600"}`}>
+            <CardTitle className={`text-2xl ${totals.delinquencyRate > 20 ? "text-destructive" : totals.delinquencyRate > 10 ? "text-warning" : "text-success"}`}>
               {totals.delinquencyRate.toFixed(1)}%
             </CardTitle>
           </CardHeader>

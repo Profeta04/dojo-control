@@ -298,7 +298,7 @@ export default function Students() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 px-2 sm:px-3"
+                      className="text-success hover:text-success/80 hover:bg-success/10 h-8 px-2 sm:px-3"
                       onClick={() => {
                         setSelectedStudent(student);
                         setActionType("approve");
@@ -310,7 +310,7 @@ export default function Students() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 px-2 sm:px-3"
+                      className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 px-2 sm:px-3"
                       onClick={() => {
                         setSelectedStudent(student);
                         setActionType("reject");
@@ -398,7 +398,7 @@ export default function Students() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-green-600" />
+                <UserCheck className="h-5 w-5 text-success" />
                 Alunos Aprovados
               </CardTitle>
             </CardHeader>
@@ -416,7 +416,7 @@ export default function Students() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <UserX className="h-5 w-5 text-red-600" />
+                <UserX className="h-5 w-5 text-destructive" />
                 Cadastros Rejeitados
               </CardTitle>
             </CardHeader>
