@@ -197,23 +197,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 lg:px-3 py-3 lg:py-4">
         <nav className="space-y-0.5 lg:space-y-1" aria-label="Menu principal">
-          {filteredNavItems.map((item) => (
+          {filteredNavItems.map((item, index) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium transition-colors touch-target no-select",
+                "flex items-center gap-3 px-3 py-3 lg:py-2.5 rounded-lg text-sm font-medium touch-target no-select",
+                "transition-all duration-200 ease-out",
                 "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
-                "active:scale-[0.98] active:bg-sidebar-accent",
+                "active:scale-[0.97]",
                 location.pathname === item.href
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-1"
               )}
+              style={{ animationDelay: `${index * 40}ms` }}
               aria-current={location.pathname === item.href ? "page" : undefined}
             >
-              <span aria-hidden="true" className="flex-shrink-0">{item.icon}</span>
+              <span aria-hidden="true" className={cn(
+                "flex-shrink-0 transition-transform duration-200",
+                location.pathname === item.href ? "scale-110" : "group-hover:scale-110"
+              )}>{item.icon}</span>
               <span className="truncate">{item.title}</span>
+              {location.pathname === item.href && (
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary animate-scale-in" />
+              )}
             </Link>
           ))}
         </nav>
@@ -225,16 +233,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <button
             onClick={toggleDarkMode}
             className={cn(
-              "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-              "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-              "active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+              "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium",
+              "transition-all duration-200 ease-out",
+              "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 hover:translate-x-1",
+              "active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             )}
             aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
           >
             {isDarkMode ? (
-              <Sun className="h-5 w-5 flex-shrink-0" />
+              <Sun className="h-5 w-5 flex-shrink-0 transition-transform duration-300 hover:rotate-45" />
             ) : (
-              <Moon className="h-5 w-5 flex-shrink-0" />
+              <Moon className="h-5 w-5 flex-shrink-0 transition-transform duration-300 hover:-rotate-12" />
             )}
             <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
           </button>
@@ -272,7 +281,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
         <Button
           variant="ghost"
-          className="w-full justify-start h-11 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          className="w-full justify-start h-11 text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 active:scale-[0.97] transition-all duration-200 hover:translate-x-1 focus-visible:ring-2 focus-visible:ring-sidebar-ring"
           onClick={handleSignOut}
           aria-label="Sair da conta"
         >
