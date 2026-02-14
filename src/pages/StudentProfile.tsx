@@ -25,24 +25,28 @@ export default function StudentProfile() {
       <DashboardLayout>
         <PageHeader 
           title="Meu Perfil" 
-          description="Veja seus dados e graduação" 
+          description="Seus dados, frequência e evolução no judô" 
         />
         <div className="mt-6 space-y-6">
+          {/* 1. Profile card with avatar, belt, federation status */}
           <StudentProfileCard />
 
-          {/* Two-column layout for smaller cards */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <AttendanceStatsCard />
-            <UpcomingTrainingsCard />
-          </div>
+          {/* 2. Upcoming trainings - most actionable info first */}
+          <UpcomingTrainingsCard />
 
+          {/* 3. Attendance stats */}
+          <AttendanceStatsCard />
+
+          {/* 4. Contact + Guardian side by side */}
           <div className="grid gap-6 md:grid-cols-2">
             <EditableContactCard />
             <GuardianInfoCard />
           </div>
 
+          {/* 5. Graduation history */}
           <GraduationTimeline />
 
+          {/* 6. Guardian area (if has minors) */}
           {hasMinors && <GuardianDashboard />}
         </div>
       </DashboardLayout>

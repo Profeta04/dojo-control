@@ -33,8 +33,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import { Switch } from "@/components/ui/switch";
 
 type Profile = Tables<"profiles"> | any;
 
@@ -252,6 +253,25 @@ export default function Students() {
   const approvedStudents = students?.filter((s) => s.registration_status === "aprovado") || [];
   const rejectedStudents = students?.filter((s) => s.registration_status === "rejeitado") || [];
 
+  const handleToggleFederated = async (student: Profile) => {
+    const newValue = !student.is_federated;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_federated: newValue } as any)
+        .eq("user_id", student.user_id);
+      
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({
+        title: newValue ? "Aluno federado" : "Federação removida",
+        description: `${student.name} foi ${newValue ? "marcado como federado" : "desmarcado"}.`,
+      });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
+    }
+  };
+
   const StudentTable = ({ data, showActions = false }: { data: Profile[]; showActions?: boolean }) => (
     <div className="overflow-x-auto -mx-4 sm:mx-0">
       <Table>
@@ -260,6 +280,7 @@ export default function Students() {
             <TableHead className="min-w-[120px]">Nome</TableHead>
             <TableHead className="hidden sm:table-cell">Email</TableHead>
             <TableHead>Faixa</TableHead>
+            <TableHead className="hidden md:table-cell">Federado</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
             {showActions && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
@@ -288,6 +309,18 @@ export default function Students() {
                 ) : (
                   <span className="text-muted-foreground text-sm">Branca</span>
                 )}
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={student.is_federated ?? false}
+                    onCheckedChange={() => handleToggleFederated(student)}
+                    aria-label={`Marcar ${student.name} como federado`}
+                  />
+                  {student.is_federated && (
+                    <Shield className="h-4 w-4 text-primary" />
+                  )}
+                </div>
               </TableCell>
               <TableCell className="hidden sm:table-cell">
                 <RegistrationStatusBadge status={student.registration_status || "pendente"} />
