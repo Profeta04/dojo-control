@@ -36,19 +36,20 @@ interface NavItem {
   href: string;
   icon: ReactNode;
   adminOnly?: boolean; // Shows for dono, admin, sensei
+  ownerOnly?: boolean; // Shows only for dono and admin (not sensei)
   studentOnly?: boolean; // Shows only for students
 }
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
   { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, adminOnly: true },
-  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, adminOnly: true },
+  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" />, adminOnly: true },
   { title: "Agenda", href: "/agenda", icon: <GraduationCap className="h-5 w-5" />, studentOnly: true },
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, adminOnly: true },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, adminOnly: true },
-  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, adminOnly: true },
+  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, ownerOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -92,7 +93,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const filteredNavItems = navItems.filter((item) => {
     // Dashboard is always visible
-    if (!item.adminOnly && !item.studentOnly) return true;
+    if (!item.adminOnly && !item.ownerOnly && !item.studentOnly) return true;
+    // Owner-only items for dono and admin only (not sensei)
+    if (item.ownerOnly && (isDono || isAdmin)) return true;
     // Admin-only items for dono, admin, sensei
     if (item.adminOnly && canManageStudents) return true;
     // Student-only items
