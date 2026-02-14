@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useDojoContext } from "@/hooks/useDojoContext";
@@ -20,16 +21,43 @@ interface DashboardStatsProps {
   canManageStudents: boolean;
 }
 
-const COLORS = {
-  success: "hsl(142, 70%, 40%)",
-  warning: "hsl(38, 92%, 50%)",
-  destructive: "hsl(0, 84%, 50%)",
-  accent: "hsl(4, 85%, 50%)",
-  muted: "hsl(0, 0%, 45%)",
-};
+// Read CSS variable values at render time for theme-awareness
+function getCSSColor(varName: string): string {
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return value ? `hsl(${value})` : "hsl(0 0% 50%)";
+}
+
+function useThemeColors() {
+  const [colors, setColors] = React.useState({
+    success: "hsl(142, 70%, 40%)",
+    warning: "hsl(38, 92%, 50%)",
+    destructive: "hsl(0, 84%, 50%)",
+    accent: "hsl(4, 85%, 50%)",
+    muted: "hsl(0, 0%, 45%)",
+    primary: "hsl(220, 15%, 20%)",
+  });
+
+  React.useEffect(() => {
+    // Small delay to let theme CSS vars apply
+    const timer = setTimeout(() => {
+      setColors({
+        success: getCSSColor("--success"),
+        warning: getCSSColor("--warning"),
+        destructive: getCSSColor("--destructive"),
+        accent: getCSSColor("--accent"),
+        muted: getCSSColor("--muted-foreground"),
+        primary: getCSSColor("--primary"),
+      });
+    }, 50);
+    return () => clearTimeout(timer);
+  });
+
+  return colors;
+}
 
 export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsProps) {
   const { currentDojoId } = useDojoContext();
+  const COLORS = useThemeColors();
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-complete-stats", currentDojoId],
