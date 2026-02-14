@@ -60,7 +60,7 @@ const classSchema = z.object({
 });
 
 export function ClassesTab() {
-  const { user, canManageStudents, isDono, isAdmin, isSensei } = useAuth();
+  const { user, profile, canManageStudents, isDono, isAdmin, isSensei } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -271,6 +271,7 @@ export function ClassesTab() {
         schedule: "Ver calendário",
         max_students: maxStudents ? parseInt(maxStudents) : null,
         sensei_id: user!.id,
+        dojo_id: profile?.dojo_id || null,
         is_active: true,
       };
 
