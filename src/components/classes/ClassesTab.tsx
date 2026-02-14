@@ -36,9 +36,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, GraduationCap, Users, Clock, UserPlus, UserMinus, Loader2, Edit, Trash2, CalendarDays, X } from "lucide-react";
+import { Plus, GraduationCap, Users, Clock, UserPlus, UserMinus, Loader2, Edit, Trash2, CalendarDays, X, Search, Check } from "lucide-react";
 import { z } from "zod";
 import { Tables } from "@/integrations/supabase/types";
+import { BeltBadge } from "@/components/shared/BeltBadge";
 import { format, isSameDay, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -76,6 +77,8 @@ export function ClassesTab() {
   const [description, setDescription] = useState("");
   const [maxStudents, setMaxStudents] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [studentSearch, setStudentSearch] = useState("");
   const [editMode, setEditMode] = useState(false);
 
   // Schedule form state
@@ -347,22 +350,28 @@ export function ClassesTab() {
     }
   };
 
-  const handleEnrollStudent = async () => {
-    if (!selectedClass || !selectedStudentId) return;
+  const handleEnrollStudents = async () => {
+    if (!selectedClass || selectedStudentIds.length === 0) return;
 
     setFormLoading(true);
 
     try {
-      const { error } = await supabase.from("class_students").insert({
+      const inserts = selectedStudentIds.map((studentId) => ({
         class_id: selectedClass.id,
-        student_id: selectedStudentId,
-      });
+        student_id: studentId,
+      }));
+
+      const { error } = await supabase.from("class_students").insert(inserts);
 
       if (error) throw error;
 
-      toast({ title: "Aluno matriculado!", description: "Aluno adicionado à turma." });
+      toast({ 
+        title: "Aluno(s) matriculado(s)!", 
+        description: `${selectedStudentIds.length} aluno(s) adicionado(s) à turma.` 
+      });
       setEnrollDialogOpen(false);
-      setSelectedStudentId("");
+      setSelectedStudentIds([]);
+      setStudentSearch("");
       queryClient.invalidateQueries({ queryKey: ["classes"] });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
@@ -642,31 +651,96 @@ export function ClassesTab() {
       </Dialog>
 
       {/* Enroll Dialog */}
-      <Dialog open={enrollDialogOpen} onOpenChange={setEnrollDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={enrollDialogOpen} onOpenChange={(open) => { setEnrollDialogOpen(open); if (!open) { setSelectedStudentIds([]); setStudentSearch(""); } }}>
+        <DialogContent className="sm:max-w-lg max-w-[95vw]">
           <DialogHeader>
-            <DialogTitle>Matricular Aluno</DialogTitle>
-            <DialogDescription>Selecione um aluno para {selectedClass?.name}</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-accent" />
+              Matricular Alunos
+            </DialogTitle>
+            <DialogDescription>
+              Selecione alunos para <span className="font-medium text-foreground">{selectedClass?.name}</span>
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <Select value={selectedStudentId} onValueChange={setSelectedStudentId}>
-              <SelectTrigger><SelectValue placeholder="Selecione um aluno" /></SelectTrigger>
-              <SelectContent>
-                {availableStudents && availableStudents.length > 0 ? (
-                  availableStudents.map((student) => (
-                    <SelectItem key={student.user_id} value={student.user_id}>{student.name}</SelectItem>
-                  ))
-                ) : (
-                  <div className="p-2 text-sm text-muted-foreground text-center">Nenhum aluno disponível</div>
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEnrollDialogOpen(false)}>Cancelar</Button>
-              <Button className="bg-accent hover:bg-accent/90" onClick={handleEnrollStudent} disabled={!selectedStudentId || formLoading}>
-                {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Matricular
-              </Button>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar aluno por nome..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Student list */}
+            <div className="border rounded-lg divide-y divide-border max-h-[300px] overflow-y-auto">
+              {availableStudents && availableStudents.length > 0 ? (
+                availableStudents
+                  .filter((s) => !studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase()))
+                  .map((student) => {
+                    const isSelected = selectedStudentIds.includes(student.user_id);
+                    return (
+                      <button
+                        key={student.user_id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedStudentIds((prev) =>
+                            isSelected
+                              ? prev.filter((id) => id !== student.user_id)
+                              : [...prev, student.user_id]
+                          );
+                        }}
+                        className={`w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-accent/10 ${isSelected ? "bg-accent/5" : ""}`}
+                      >
+                        <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-accent border-accent text-accent-foreground" : "border-muted-foreground/30"}`}>
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{student.name}</p>
+                          <p className="text-xs text-muted-foreground">{student.belt_grade ? `Faixa ${student.belt_grade}` : "Sem faixa"}</p>
+                        </div>
+                        {student.belt_grade && (
+                          <BeltBadge grade={student.belt_grade as any} size="sm" />
+                        )}
+                      </button>
+                    );
+                  })
+              ) : (
+                <div className="p-6 text-center">
+                  <Users className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum aluno disponível para matrícula</p>
+                </div>
+              )}
+              {availableStudents && availableStudents.length > 0 && availableStudents.filter((s) => !studentSearch || s.name.toLowerCase().includes(studentSearch.toLowerCase())).length === 0 && (
+                <div className="p-4 text-center">
+                  <p className="text-sm text-muted-foreground">Nenhum aluno encontrado para "{studentSearch}"</p>
+                </div>
+              )}
+            </div>
+
+            {/* Selection count + actions */}
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {selectedStudentIds.length > 0
+                  ? `${selectedStudentIds.length} aluno(s) selecionado(s)`
+                  : "Selecione ao menos um aluno"}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setEnrollDialogOpen(false); setSelectedStudentIds([]); setStudentSearch(""); }}>
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-accent hover:bg-accent/90"
+                  onClick={handleEnrollStudents}
+                  disabled={selectedStudentIds.length === 0 || formLoading}
+                >
+                  {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Matricular {selectedStudentIds.length > 0 ? `(${selectedStudentIds.length})` : ""}
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
