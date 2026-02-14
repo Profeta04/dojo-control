@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Users, GraduationCap, CalendarDays, CreditCard, 
@@ -28,12 +29,43 @@ const COLORS = {
 };
 
 export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsProps) {
+  const { currentDojoId } = useDojoContext();
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ["dashboard-complete-stats"],
+    queryKey: ["dashboard-complete-stats", currentDojoId],
     queryFn: async () => {
       const now = new Date();
       const currentMonthStart = format(startOfMonth(now), "yyyy-MM-dd");
       const currentMonthEnd = format(endOfMonth(now), "yyyy-MM-dd");
+
+      // Helper to add dojo filter to profile queries
+      const addDojoFilter = (query: any) => {
+        if (currentDojoId) {
+          return query.eq("dojo_id", currentDojoId);
+        }
+        return query;
+      };
+
+      // Get student user_ids for the current dojo to filter related tables
+      let studentUserIds: string[] = [];
+      if (currentDojoId) {
+        // Get all users with sensei/admin roles to exclude
+        const { data: nonStudentRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .in("role", ["sensei", "admin", "dono", "super_admin"]);
+        const excludeIds = new Set((nonStudentRoles || []).map(r => r.user_id));
+
+        const { data: dojoProfiles } = await supabase
+          .from("profiles")
+          .select("user_id")
+          .eq("dojo_id", currentDojoId)
+          .eq("registration_status", "aprovado");
+
+        studentUserIds = (dojoProfiles || [])
+          .filter(p => !excludeIds.has(p.user_id))
+          .map(p => p.user_id);
+      }
       
       // Fetch all data in parallel
       const [
@@ -49,28 +81,51 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         recentGraduationsRes
       ] = await Promise.all([
         // Total approved students
-        supabase.from("profiles").select("id", { count: "exact" }).eq("registration_status", "aprovado"),
+        addDojoFilter(supabase.from("profiles").select("user_id", { count: "exact" }).eq("registration_status", "aprovado")),
         // Active classes
-        supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true),
+        currentDojoId
+          ? supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true).eq("dojo_id", currentDojoId)
+          : supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true),
         // Pending approvals
-        supabase.from("profiles").select("id", { count: "exact" }).eq("registration_status", "pendente"),
-        // Pending payments
-        supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente"),
+        addDojoFilter(supabase.from("profiles").select("user_id", { count: "exact" }).eq("registration_status", "pendente")),
+        // Pending payments - filter by student_ids if dojo selected
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente").in("student_id", studentUserIds)
+          : currentDojoId 
+            ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente").eq("student_id", "none")
+            : supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente"),
         // Total senseis
         supabase.from("user_roles").select("id", { count: "exact" }).eq("role", "sensei"),
         // Total attendance records this month
-        supabase.from("attendance").select("id, present", { count: "exact" })
-          .gte("date", currentMonthStart).lte("date", currentMonthEnd),
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd).in("student_id", studentUserIds)
+          : currentDojoId
+            ? supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd).eq("student_id", "none")
+            : supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd),
         // Monthly attendance breakdown for chart
-        supabase.from("attendance").select("present, date")
-          .gte("date", format(subMonths(now, 5), "yyyy-MM-dd")),
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")).in("student_id", studentUserIds)
+          : currentDojoId
+            ? supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")).eq("student_id", "none")
+            : supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")),
         // Paid payments
-        supabase.from("payments").select("amount").eq("status", "pago"),
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("payments").select("amount").eq("status", "pago").in("student_id", studentUserIds)
+          : currentDojoId
+            ? supabase.from("payments").select("amount").eq("status", "pago").eq("student_id", "none")
+            : supabase.from("payments").select("amount").eq("status", "pago"),
         // Overdue payments
-        supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado"),
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado").in("student_id", studentUserIds)
+          : currentDojoId
+            ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado").eq("student_id", "none")
+            : supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado"),
         // Recent graduations (last 3 months)
-        supabase.from("graduation_history").select("id", { count: "exact" })
-          .gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd"))
+        currentDojoId && studentUserIds.length > 0
+          ? supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd")).in("student_id", studentUserIds)
+          : currentDojoId
+            ? supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd")).eq("student_id", "none")
+            : supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd"))
       ]);
 
       // Calculate attendance stats
