@@ -13,7 +13,7 @@ export interface Dojo {
   color_primary: string | null;
   color_secondary: string | null;
   color_accent: string | null;
-  dark_mode: boolean | null;
+  pix_key: string | null;
   is_active: boolean | null;
   created_at: string | null;
   updated_at: string | null;

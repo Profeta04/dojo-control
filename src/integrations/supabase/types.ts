@@ -286,7 +286,6 @@ export type Database = {
           color_primary: string | null
           color_secondary: string | null
           created_at: string | null
-          dark_mode: boolean | null
           description: string | null
           email: string | null
           id: string
@@ -303,7 +302,6 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           created_at?: string | null
-          dark_mode?: boolean | null
           description?: string | null
           email?: string | null
           id?: string
@@ -320,7 +318,6 @@ export type Database = {
           color_primary?: string | null
           color_secondary?: string | null
           created_at?: string | null
-          dark_mode?: boolean | null
           description?: string | null
           email?: string | null
           id?: string
@@ -726,7 +723,6 @@ export type Database = {
           color_primary: string | null
           color_secondary: string | null
           created_at: string | null
-          dark_mode: boolean | null
           description: string | null
           email: string | null
           id: string
