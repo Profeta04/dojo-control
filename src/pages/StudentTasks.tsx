@@ -7,6 +7,7 @@ import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard"
 import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 import { LeaderboardPanel } from "@/components/gamification/LeaderboardPanel";
 import { XPBar } from "@/components/gamification/XPBar";
+import { SeasonBanner } from "@/components/gamification/SeasonBanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Swords, Trophy, Crown } from "lucide-react";
 
@@ -25,8 +26,13 @@ export default function StudentTasks() {
           description="Complete missões, ganhe XP e suba no ranking!" 
         />
         
-        {/* XP Bar at the top */}
-        <div className="mt-4 mb-6">
+        {/* Season Banner */}
+        <div className="mt-4">
+          <SeasonBanner />
+        </div>
+
+        {/* XP Bar */}
+        <div className="mt-3 mb-6">
           <XPBar />
         </div>
 
