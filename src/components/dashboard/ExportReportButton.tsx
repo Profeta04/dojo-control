@@ -111,6 +111,7 @@ export function ExportReportButton() {
           dojoName: currentDojo?.name || "Dojo",
           logoUrl: currentDojo?.logo_url,
           primaryColor: currentDojo?.color_primary,
+          secondaryColor: currentDojo?.color_secondary,
           accentColor: currentDojo?.color_accent,
         },
         totalStudents: studentsRes.count || 0,

@@ -120,8 +120,19 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  const { headerBg, lightBg } = resolveDojoColors(data.dojoInfo);
+  const { headerBg, accentBg, lightBg } = resolveDojoColors(data.dojoInfo);
   const dojoName = data.dojoInfo.dojoName || "Dojo";
+
+  // Helper: section title with accent underline
+  const drawSectionTitle = (title: string, y: number) => {
+    doc.setFontSize(13);
+    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
+    doc.text(title, 20, y);
+    doc.setDrawColor(accentBg[0], accentBg[1], accentBg[2]);
+    doc.setLineWidth(1.5);
+    doc.line(20, y + 2, 20 + doc.getTextWidth(title), y + 2);
+    doc.setLineWidth(0.5);
+  };
 
   // ── Header ──
   const headerHeight = logoBase64 ? 52 : 44;
@@ -151,10 +162,8 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   let yPos = headerHeight + 10;
 
   // ── Resumo Financeiro ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Resumo Financeiro", 20, yPos);
-  yPos += 7;
+  drawSectionTitle("Resumo Financeiro", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -176,10 +185,8 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Gráfico de Barras ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Receita por Mês (Últimos 6 Meses)", 20, yPos);
-  yPos += 8;
+  drawSectionTitle("Receita por Mês (Últimos 6 Meses)", yPos);
+  yPos += 10;
 
   const chartHeight = 65;
   const chartWidth = pageWidth - 70;
@@ -187,20 +194,16 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   if (yPos + chartHeight + 25 > doc.internal.pageSize.getHeight() - 20) {
     doc.addPage();
     yPos = 20;
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text("Receita por Mês (Últimos 6 Meses)", 20, yPos);
-    yPos += 8;
+    drawSectionTitle("Receita por Mês (Últimos 6 Meses)", yPos);
+    yPos += 10;
   }
 
   drawBarChart(doc, data.monthlyRevenue, 40, yPos, chartWidth, chartHeight);
   yPos += chartHeight + 28;
 
   // ── Detalhamento Mensal ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Detalhamento Mensal", 20, yPos);
-  yPos += 7;
+  drawSectionTitle("Detalhamento Mensal", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -225,10 +228,8 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   if (data.payments.length > 0) {
     if (yPos > 200) { doc.addPage(); yPos = 20; }
 
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text("Detalhamento de Pagamentos", 20, yPos);
-    yPos += 7;
+    drawSectionTitle("Detalhamento de Pagamentos", yPos);
+    yPos += 9;
 
     autoTable(doc, {
       startY: yPos,

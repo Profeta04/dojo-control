@@ -48,8 +48,19 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  const { headerBg, lightBg } = resolveDojoColors(data.dojoInfo);
+  const { headerBg, accentBg, lightBg } = resolveDojoColors(data.dojoInfo);
   const dojoName = data.dojoInfo.dojoName || "Dojo";
+
+  // Helper: section title with accent underline
+  const sectionTitle = (title: string, y: number) => {
+    doc.setFontSize(13);
+    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
+    doc.text(title, 20, y);
+    doc.setDrawColor(accentBg[0], accentBg[1], accentBg[2]);
+    doc.setLineWidth(1.5);
+    doc.line(20, y + 2, 20 + doc.getTextWidth(title), y + 2);
+    doc.setLineWidth(0.5);
+  };
 
   // ── Header ──
   const headerHeight = logoBase64 ? 48 : 40;
@@ -76,10 +87,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   let yPos = headerHeight + 10;
 
   // ── Resumo Geral ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Resumo Geral", 20, yPos);
-  yPos += 7;
+  sectionTitle("Resumo Geral", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -101,10 +110,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Presenças ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Presenças do Mês Atual", 20, yPos);
-  yPos += 7;
+  sectionTitle("Presenças do Mês Atual", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -125,10 +132,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Evolução Presenças ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Evolução de Presenças (Últimos 6 Meses)", 20, yPos);
-  yPos += 7;
+  sectionTitle("Evolução de Presenças (Últimos 6 Meses)", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -151,10 +156,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   if (yPos > 240) { doc.addPage(); yPos = 20; }
 
   // ── Situação Financeira ──
-  doc.setFontSize(13);
-  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.text("Situação Financeira", 20, yPos);
-  yPos += 7;
+  sectionTitle("Situação Financeira", yPos);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -176,10 +179,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   // ── Optional: Lista de Alunos ──
   if (data.studentsList && data.studentsList.length > 0) {
     if (yPos > 200) { doc.addPage(); yPos = 20; }
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text("Lista de Alunos", 20, yPos);
-    yPos += 7;
+    sectionTitle("Lista de Alunos", yPos);
+    yPos += 9;
 
     autoTable(doc, {
       startY: yPos,
@@ -197,10 +198,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   // ── Optional: Lista de Turmas ──
   if (data.classesList && data.classesList.length > 0) {
     if (yPos > 200) { doc.addPage(); yPos = 20; }
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text("Lista de Turmas", 20, yPos);
-    yPos += 7;
+    sectionTitle("Lista de Turmas", yPos);
+    yPos += 9;
 
     autoTable(doc, {
       startY: yPos,
@@ -218,10 +217,8 @@ export function generateDojoReport(data: DojoReportData, logoBase64?: string | n
   // ── Optional: Lista de Pagamentos ──
   if (data.paymentsList && data.paymentsList.length > 0) {
     if (yPos > 200) { doc.addPage(); yPos = 20; }
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text("Lista de Pagamentos", 20, yPos);
-    yPos += 7;
+    sectionTitle("Lista de Pagamentos", yPos);
+    yPos += 9;
 
     autoTable(doc, {
       startY: yPos,
