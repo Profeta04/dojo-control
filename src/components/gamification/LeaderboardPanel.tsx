@@ -4,17 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BeltBadge } from "@/components/shared/BeltBadge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Crown, Medal, Flame, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
 import { SeasonAvatarBorder } from "@/components/gamification/SeasonAvatarBorder";
-
-const PODIUM_STYLES = [
-  { bg: "bg-amber-500/10", border: "border-amber-400/40", icon: "🥇", textColor: "text-amber-600" },
-  { bg: "bg-gray-300/10", border: "border-gray-400/40", icon: "🥈", textColor: "text-gray-500" },
-  { bg: "bg-orange-400/10", border: "border-orange-400/40", icon: "🥉", textColor: "text-orange-600" },
-];
 
 function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | null; name: string; userId?: string }) {
   const publicUrl = avatarUrl
@@ -32,8 +26,10 @@ function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | nu
   );
 }
 
+const RANK_ICONS = ["🥇", "🥈", "🥉"];
+
 export function LeaderboardPanel() {
-  const { leaderboard, isLoading, myRank, topThree, totalParticipants } = useLeaderboard();
+  const { leaderboard, isLoading, myRank, totalParticipants } = useLeaderboard();
   const { user } = useAuth();
 
   if (isLoading) return null;
@@ -63,112 +59,101 @@ export function LeaderboardPanel() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-1">
-        {/* Podium - Top 3 */}
-        {topThree.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {[1, 0, 2].map((podiumIdx) => {
-              const entry = topThree[podiumIdx];
-              if (!entry) return <div key={podiumIdx} />;
-              const style = PODIUM_STYLES[podiumIdx];
+      <CardContent className="px-0 pb-3">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-12 text-center">#</TableHead>
+              <TableHead>Aluno</TableHead>
+              <TableHead className="text-center hidden sm:table-cell">Faixa</TableHead>
+              <TableHead className="text-center hidden sm:table-cell">Nível</TableHead>
+              <TableHead className="text-center hidden sm:table-cell">
+                <span className="flex items-center justify-center gap-1">
+                  <Flame className="h-3 w-3" /> Streak
+                </span>
+              </TableHead>
+              <TableHead className="text-center hidden sm:table-cell">
+                <span className="flex items-center justify-center gap-1">
+                  <Medal className="h-3 w-3" /> Troféus
+                </span>
+              </TableHead>
+              <TableHead className="text-right">XP</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {leaderboard.map((entry) => {
               const isMe = entry.user_id === user?.id;
-
+              const rank = entry.rank;
               return (
-                <motion.div
+                <TableRow
                   key={entry.user_id}
                   className={cn(
-                    "flex flex-col items-center p-3 rounded-xl border-2 transition-all",
-                    style.bg, style.border,
-                    podiumIdx === 0 && "row-start-1 -mt-2",
-                    isMe && "ring-2 ring-accent/30"
+                    isMe && "bg-accent/10 font-medium",
+                    rank <= 3 && "bg-amber-500/[0.03]"
                   )}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: podiumIdx * 0.1 }}
                 >
-                  <span className="text-xl mb-1">{style.icon}</span>
-                  <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
-                  <p className="text-[11px] font-semibold mt-1.5 text-center truncate w-full">
-                    {entry.name.split(" ")[0]}
-                  </p>
-                  <p className={cn("text-[10px] font-bold mt-0.5", style.textColor)}>
-                    {entry.total_xp} XP
-                  </p>
-                  {entry.belt_grade && (
-                    <div className="mt-1">
-                      <BeltBadge grade={entry.belt_grade as any} size="sm" />
+                  <TableCell className="text-center font-bold text-sm">
+                    {rank <= 3 ? (
+                      <span className="text-lg">{RANK_ICONS[rank - 1]}</span>
+                    ) : (
+                      <span className="text-muted-foreground">#{rank}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
+                      <div className="min-w-0">
+                        <p className={cn("text-sm font-medium truncate", isMe && "text-primary")}>
+                          {entry.name}
+                          {isMe && <span className="text-[10px] ml-1 text-muted-foreground">(você)</span>}
+                        </p>
+                        {/* Mobile-only compact info */}
+                        <div className="flex items-center gap-2 sm:hidden text-[10px] text-muted-foreground mt-0.5">
+                          {entry.belt_grade && <BeltBadge grade={entry.belt_grade as any} size="sm" />}
+                          <span>Nv.{entry.level}</span>
+                          {entry.current_streak > 0 && (
+                            <span className="flex items-center gap-0.5 text-orange-500">
+                              <Flame className="h-2.5 w-2.5" />{entry.current_streak}d
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  {entry.achievement_count > 0 && (
-                    <div className="flex items-center gap-0.5 mt-1">
-                      <Medal className="h-2.5 w-2.5 text-accent" />
-                      <span className="text-[9px] text-muted-foreground">{entry.achievement_count}</span>
-                    </div>
-                  )}
-                </motion.div>
+                  </TableCell>
+                  <TableCell className="text-center hidden sm:table-cell">
+                    {entry.belt_grade ? <BeltBadge grade={entry.belt_grade as any} size="sm" /> : "—"}
+                  </TableCell>
+                  <TableCell className="text-center hidden sm:table-cell">
+                    <Badge variant="outline" className="text-[10px]">Nv. {entry.level}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center hidden sm:table-cell">
+                    {entry.current_streak > 0 ? (
+                      <span className="flex items-center justify-center gap-0.5 text-orange-500 text-xs font-medium">
+                        <Flame className="h-3 w-3" />{entry.current_streak}d
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center hidden sm:table-cell">
+                    {entry.achievement_count > 0 ? (
+                      <Badge variant="secondary" className="text-[10px]">{entry.achievement_count}</Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <span className={cn("font-bold text-sm", rank <= 3 && "text-amber-600")}>
+                      {entry.total_xp}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground ml-0.5">XP</span>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </div>
-        )}
-
-        {/* Rest of leaderboard */}
-        <div className="space-y-1">
-          {leaderboard.slice(3).map((entry, idx) => {
-            const isMe = entry.user_id === user?.id;
-            const rank = idx + 4;
-
-            return (
-              <motion.div
-                key={entry.user_id}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg transition-all",
-                  isMe ? "bg-accent/5 border border-accent/20" : "hover:bg-muted/50"
-                )}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.03 }}
-              >
-                <span className={cn(
-                  "text-xs font-bold w-6 text-center",
-                  rank <= 10 ? "text-foreground" : "text-muted-foreground"
-                )}>
-                  #{rank}
-                </span>
-                <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
-                <div className="flex-1 min-w-0">
-                  <p className={cn("text-sm font-medium truncate", isMe && "text-accent")}>
-                    {entry.name}
-                    {isMe && <span className="text-[10px] ml-1 text-muted-foreground">(você)</span>}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">Nv. {entry.level}</span>
-                    {entry.current_streak > 0 && (
-                      <span className="text-[10px] text-orange-500 flex items-center gap-0.5">
-                        <Flame className="h-2.5 w-2.5" />
-                        {entry.current_streak}d
-                      </span>
-                    )}
-                    {entry.achievement_count > 0 && (
-                      <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                        <Medal className="h-2.5 w-2.5" />
-                        {entry.achievement_count}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-bold">{entry.total_xp}</p>
-                  <p className="text-[9px] text-muted-foreground">XP</p>
-                </div>
-                {entry.belt_grade && (
-                  <BeltBadge grade={entry.belt_grade as any} size="sm" />
-                )}
-              </motion.div>
-            );
-          })}
-        </div>
-
-        <div className="text-center pt-2">
+          </TableBody>
+        </Table>
+        <div className="text-center pt-3 px-4">
           <p className="text-[10px] text-muted-foreground">
             {totalParticipants} participantes no ranking
           </p>

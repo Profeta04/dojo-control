@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Zap, Send, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { TaskWithAssignee, TaskStatus, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
 import { useAchievements } from "@/hooks/useAchievements";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
 import { XPNotification } from "@/components/gamification/XPNotification";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface TaskCardProps {
   task: TaskWithAssignee;
@@ -30,6 +32,9 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
 
 export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, xpValue = 10 }: TaskCardProps) {
   const [isSliding, setIsSliding] = useState(false);
+  const [showEvidence, setShowEvidence] = useState(false);
+  const [evidenceText, setEvidenceText] = useState(task.evidence_text || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
   const { grantXP, currentStreak, totalXp } = useXP();
   const { checkAndUnlock } = useAchievements();
@@ -39,32 +44,52 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isCompleted && !isCancelled;
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
-  const handleToggleComplete = async () => {
-    if (!isCompleted) {
-      setIsSliding(true);
-      fireConfetti();
+  const handleSubmitEvidence = async () => {
+    if (!evidenceText.trim()) {
+      toast.error("Descreva o que você fez para completar esta tarefa.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Save evidence text
+      await supabase
+        .from("tasks")
+        .update({ evidence_text: evidenceText.trim() })
+        .eq("id", task.id);
 
       // Grant XP
-      try {
-        const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "task" });
-        // Also grant season XP
-        grantSeasonXP.mutate({ baseXP: xpValue });
-        setXpNotif({
-          amount: result.xpGranted,
-          multiplier: result.multiplier,
-          leveledUp: result.leveledUp,
-          newLevel: result.newLevel,
-        });
-        const { count } = await supabase
-          .from("tasks").select("id", { count: "exact", head: true })
-          .eq("assigned_to", task.assigned_to).eq("status", "concluida");
-        checkAndUnlock.mutate({ tasksCompleted: (count || 0) + 1, currentStreak, totalXp: result.newTotal });
-      } catch {}
+      setIsSliding(true);
+      fireConfetti();
+      const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "task" });
+      grantSeasonXP.mutate({ baseXP: xpValue });
+      setXpNotif({
+        amount: result.xpGranted,
+        multiplier: result.multiplier,
+        leveledUp: result.leveledUp,
+        newLevel: result.newLevel,
+      });
+      const { count } = await supabase
+        .from("tasks").select("id", { count: "exact", head: true })
+        .eq("assigned_to", task.assigned_to).eq("status", "concluida");
+      checkAndUnlock.mutate({ tasksCompleted: (count || 0) + 1, currentStreak, totalXp: result.newTotal });
 
       setTimeout(() => {
         onStatusChange(task.id, "concluida");
         setIsSliding(false);
+        setShowEvidence(false);
       }, 500);
+    } catch {
+      toast.error("Erro ao completar tarefa");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleComplete = () => {
+    if (!isCompleted) {
+      // Show evidence form instead of completing directly
+      setShowEvidence(true);
     } else {
       onStatusChange(task.id, "pendente");
     }
@@ -97,8 +122,8 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
               "hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               isCompleted ? "text-success" : "text-muted-foreground hover:text-primary"
             )}
-            disabled={isCancelled}
-            aria-label={isCompleted ? "Marcar como pendente" : "Marcar como concluída"}
+            disabled={isCancelled || showEvidence}
+            aria-label={isCompleted ? "Marcar como pendente" : "Completar tarefa"}
             aria-pressed={isCompleted}
           >
             {isCompleted ? (
@@ -165,6 +190,52 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
               </p>
             )}
 
+            {/* Evidence form - shown when trying to complete */}
+            {showEvidence && !isCompleted && (
+              <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border space-y-2">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                  <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                  Descreva o que você fez:
+                </div>
+                <Textarea
+                  value={evidenceText}
+                  onChange={(e) => setEvidenceText(e.target.value)}
+                  placeholder="Ex: Pratiquei 30 repetições de Harai-goshi com o parceiro..."
+                  className="min-h-[60px] text-xs resize-none"
+                  disabled={isSubmitting}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setShowEvidence(false); setEvidenceText(""); }}
+                    disabled={isSubmitting}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    onClick={handleSubmitEvidence}
+                    disabled={isSubmitting || !evidenceText.trim()}
+                  >
+                    <Send className="h-3 w-3" />
+                    Enviar e Concluir
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Show evidence on completed tasks */}
+            {isCompleted && task.evidence_text && (
+              <div className="mt-2 p-2 rounded-md bg-success/5 border border-success/20">
+                <p className="text-[10px] text-muted-foreground italic">
+                  <MessageSquare className="h-3 w-3 inline mr-1" />
+                  {task.evidence_text}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center gap-3 mt-2.5 text-[11px] text-muted-foreground" role="contentinfo">
               {task.due_date && (

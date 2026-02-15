@@ -42,6 +42,7 @@ export interface Task {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
+  evidence_text: string | null;
 }
 
 export interface TaskWithAssignee extends Task {
