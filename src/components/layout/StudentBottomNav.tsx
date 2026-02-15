@@ -58,12 +58,13 @@ export function StudentBottomNav() {
               <Link
                 key={tab.href}
                 to={tab.href}
-                className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[52px]"
+                className="flex flex-col items-center -mt-4 relative"
                 aria-current={isActive ? "page" : undefined}
               >
                 <div
                   className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+                    "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+                    "shadow-md border-[3px] border-sidebar",
                     isActive
                       ? "ring-2 ring-primary ring-offset-1 ring-offset-sidebar scale-110"
                       : "ring-1 ring-sidebar-border hover:scale-105"
@@ -77,7 +78,7 @@ export function StudentBottomNav() {
                     />
                   ) : (
                     <span className={cn(
-                      "text-xs font-bold",
+                      "text-sm font-bold",
                       isActive ? "text-primary" : "text-sidebar-foreground/60"
                     )}>
                       {profile?.name?.charAt(0).toUpperCase() || "U"}
@@ -85,7 +86,7 @@ export function StudentBottomNav() {
                   )}
                 </div>
                 {profile?.belt_grade && (
-                  <div className="animate-scale-in">
+                  <div className="mt-0.5 animate-scale-in">
                     <BeltBadge grade={profile.belt_grade as any} size="sm" />
                   </div>
                 )}
