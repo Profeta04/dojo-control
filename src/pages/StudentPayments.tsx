@@ -17,9 +17,9 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   CreditCard, CheckCircle2, Clock, AlertTriangle, Copy, QrCode, Mail,
-  Upload, Loader2, FileImage, DollarSign
+  Upload, Loader2, FileImage, DollarSign, CalendarClock, TrendingUp, Tag
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
@@ -207,14 +207,50 @@ export default function StudentPaymentsPage() {
     return format(date, "MMMM 'de' yyyy", { locale: ptBR });
   };
 
-  // Stats
-  const stats = useMemo(() => ({
-    total: payments?.length || 0,
-    pendente: payments?.filter((p) => p.status === "pendente").length || 0,
-    atrasado: payments?.filter((p) => p.status === "atrasado").length || 0,
-    pago: payments?.filter((p) => p.status === "pago").length || 0,
-    totalPendente: payments?.filter((p) => p.status === "pendente" || p.status === "atrasado").reduce((acc, p) => acc + p.amount, 0) || 0,
-  }), [payments]);
+  // Stats with late fees included
+  const statsWithFees = useMemo(() => {
+    if (!payments) return { total: 0, pendente: 0, atrasado: 0, pago: 0, totalPendente: 0, totalWithFees: 0 };
+    let totalWithFees = 0;
+    payments.forEach((p) => {
+      if (p.status === "pendente" || p.status === "atrasado") {
+        const fees = calculateLateFees(p);
+        totalWithFees += fees ? fees.total : p.amount;
+      }
+    });
+    return {
+      total: payments.length,
+      pendente: payments.filter((p) => p.status === "pendente").length,
+      atrasado: payments.filter((p) => p.status === "atrasado").length,
+      pago: payments.filter((p) => p.status === "pago").length,
+      totalPendente: payments.filter((p) => p.status === "pendente" || p.status === "atrasado").reduce((acc, p) => acc + p.amount, 0),
+      totalWithFees,
+    };
+  }, [payments, dojoData]);
+
+  // Next due payment
+  const nextDuePayment = useMemo(() => {
+    if (!payments) return null;
+    const pending = payments
+      .filter((p) => p.status === "pendente" || p.status === "atrasado")
+      .sort((a, b) => a.due_date.localeCompare(b.due_date));
+    return pending[0] || null;
+  }, [payments]);
+
+  // Group payments by status
+  const groupedPayments = useMemo(() => {
+    if (!payments) return { atrasado: [], pendente: [], pago: [] };
+    return {
+      atrasado: payments.filter((p) => p.status === "atrasado"),
+      pendente: payments.filter((p) => p.status === "pendente"),
+      pago: payments.filter((p) => p.status === "pago"),
+    };
+  }, [payments]);
+
+  const SECTION_CONFIG = [
+    { key: "atrasado" as const, label: "Pagamentos Atrasados", subtitle: "Regularize sua situação", icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30", headerBg: "bg-gradient-to-r from-destructive/10 via-destructive/5 to-transparent" },
+    { key: "pendente" as const, label: "Pagamentos Pendentes", subtitle: "Aguardando pagamento", icon: Clock, color: "text-warning-foreground", bgColor: "bg-warning/10", borderColor: "border-warning/30", headerBg: "bg-gradient-to-r from-warning/10 via-warning/5 to-transparent" },
+    { key: "pago" as const, label: "Pagamentos Confirmados", subtitle: "Pagamentos realizados", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/30", headerBg: "bg-gradient-to-r from-success/10 via-success/5 to-transparent" },
+  ];
 
   if (authLoading || paymentsLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
@@ -239,7 +275,57 @@ export default function StudentPaymentsPage() {
       <PageHeader title="Mensalidade" description="Informações sobre seus pagamentos" />
 
       {/* Stats Cards */}
-      <PaymentStatsCards stats={stats} formatCurrency={formatCurrency} variant="student" />
+      <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
+
+      {/* Highlight Cards: Total com taxas + Próximo vencimento */}
+      <div className="grid gap-4 mb-6 sm:grid-cols-2">
+        {/* Total com taxas acumuladas */}
+        {statsWithFees.totalWithFees > 0 && (
+          <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <CardHeader className="pb-2 relative">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-destructive font-medium flex items-center gap-1.5">
+                  <TrendingUp className="h-4 w-4" />
+                  Total Devido (com taxas)
+                </CardDescription>
+              </div>
+              <CardTitle className="text-3xl font-bold text-destructive">
+                {formatCurrency(statsWithFees.totalWithFees)}
+              </CardTitle>
+              {statsWithFees.totalWithFees > statsWithFees.totalPendente && (
+                <p className="text-xs text-destructive/70 mt-1">
+                  Inclui {formatCurrency(statsWithFees.totalWithFees - statsWithFees.totalPendente)} em multas e juros
+                </p>
+              )}
+            </CardHeader>
+          </Card>
+        )}
+
+        {/* Próximo vencimento */}
+        {nextDuePayment && (
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <CardHeader className="pb-2 relative">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-primary font-medium flex items-center gap-1.5">
+                  <CalendarClock className="h-4 w-4" />
+                  Próximo Vencimento
+                </CardDescription>
+              </div>
+              <CardTitle className="text-2xl font-bold text-foreground">
+                {format(parseISO(nextDuePayment.due_date), "dd 'de' MMMM", { locale: ptBR })}
+              </CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="outline" className="text-xs">
+                  {PAYMENT_CATEGORY_LABELS[nextDuePayment.category as PaymentCategory] || nextDuePayment.category}
+                </Badge>
+                <span className="text-sm font-semibold">{formatCurrency(nextDuePayment.amount)}</span>
+              </div>
+            </CardHeader>
+          </Card>
+        )}
+      </div>
 
       {/* Pix Payment Card */}
       <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm hover-scale animate-fade-in overflow-hidden relative">
@@ -279,162 +365,162 @@ export default function StudentPaymentsPage() {
 
           <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl">
             <p className="text-sm text-warning-foreground">
-              <strong>Importante:</strong> Após o pagamento, envie o comprovante na tabela abaixo.
+              <strong>Importante:</strong> Após o pagamento, envie o comprovante abaixo.
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Pending Amount Alert */}
-      {stats.totalPendente > 0 && (
-        <Card className="mb-6 border-warning/30 bg-gradient-to-r from-warning/10 via-warning/5 to-transparent shadow-sm animate-fade-in">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardDescription className="text-warning-foreground font-medium">
-                Valor Pendente Total
-              </CardDescription>
-              <div className="p-2 rounded-lg bg-warning/10">
-                <DollarSign className="h-5 w-5 text-warning-foreground" />
+      {/* Sectioned Payments */}
+      {payments && payments.length > 0 ? (
+        <div className="space-y-6">
+          {SECTION_CONFIG.map((section, sectionIdx) => {
+            const sectionPayments = groupedPayments[section.key];
+            if (sectionPayments.length === 0) return null;
+            const SectionIcon = section.icon;
+
+            return (
+              <div key={section.key} className="animate-fade-in" style={{ animationDelay: `${sectionIdx * 100}ms` }}>
+                {/* Section Header */}
+                <div className={`flex items-center justify-between p-4 rounded-t-xl border border-b-0 ${section.borderColor} ${section.headerBg}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${section.bgColor} shadow-sm`}>
+                      <SectionIcon className={`h-5 w-5 ${section.color}`} />
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold text-sm sm:text-base ${section.color}`}>{section.label}</h3>
+                      <p className="text-xs text-muted-foreground">{section.subtitle}</p>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className={`text-xs font-semibold px-2.5 py-1 ${section.bgColor} ${section.color} border-0`}>
+                    {sectionPayments.length}
+                  </Badge>
+                </div>
+
+                {/* Section Table */}
+                <Card className={`shadow-sm border ${section.borderColor} rounded-t-none`}>
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/20">
+                            <TableHead>Referência</TableHead>
+                            <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+                            <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
+                            <TableHead>Valor</TableHead>
+                            <TableHead className="text-right">Comprovante</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {sectionPayments.map((payment, index) => {
+                            const lateFees = calculateLateFees(payment);
+
+                            return (
+                              <TableRow 
+                                key={payment.id}
+                                className="hover:bg-muted/30 transition-colors animate-fade-in"
+                                style={{ animationDelay: `${index * 50}ms` }}
+                              >
+                                <TableCell>
+                                  <div>
+                                    <p className="capitalize font-medium text-sm">
+                                      {formatMonth(payment.reference_month)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground sm:hidden">
+                                      {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="hidden sm:table-cell">
+                                  <Badge variant="outline" className="text-xs gap-1">
+                                    <Tag className="h-3 w-3" />
+                                    {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                                  {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
+                                    {lateFees && (
+                                      <div className="text-xs space-y-0.5 mt-1">
+                                        {lateFees.fee > 0 && (
+                                          <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
+                                        )}
+                                        {lateFees.interest > 0 && (
+                                          <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
+                                        )}
+                                        <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex flex-col items-end gap-1.5">
+                                    {payment.receipt_url ? (
+                                      <>
+                                        <ReceiptProgress 
+                                          status={payment.receipt_status as any} 
+                                          hasReceipt={!!payment.receipt_url} 
+                                        />
+                                        <div className="flex items-center gap-1.5">
+                                          <ReceiptStatusBadge status={payment.receipt_status as any} />
+                                          <ReceiptViewButton receiptUrl={payment.receipt_url} />
+                                        </div>
+                                        {payment.receipt_status === "rejeitado" && (
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => openUploadDialog(payment)}
+                                            className="text-xs animate-fade-in border-destructive/30 text-destructive hover:bg-destructive/10"
+                                          >
+                                            <Upload className="h-3 w-3 mr-1" />
+                                            Reenviar
+                                          </Button>
+                                        )}
+                                      </>
+                                    ) : payment.status !== "pago" ? (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => openUploadDialog(payment)}
+                                        className="hover-scale"
+                                      >
+                                        <Upload className="h-4 w-4 mr-1" />
+                                        Enviar
+                                      </Button>
+                                    ) : (
+                                      <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/20">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Confirmado
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="shadow-sm animate-fade-in">
+          <CardContent className="text-center py-16">
+            <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
+              <CreditCard className="h-10 w-10 text-muted-foreground/50" />
             </div>
-            <CardTitle className="text-3xl font-bold text-warning-foreground">
-              {formatCurrency(stats.totalPendente)}
-            </CardTitle>
-          </CardHeader>
+            <p className="text-muted-foreground font-medium">Nenhuma mensalidade registrada.</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Seus pagamentos aparecerão aqui.</p>
+          </CardContent>
         </Card>
       )}
-
-      {/* Payments Table */}
-      <Card className="animate-fade-in shadow-sm" style={{ animationDelay: "200ms" }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Histórico de Mensalidades
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {payments && payments.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>Referência</TableHead>
-                  <TableHead className="hidden sm:table-cell">Categoria</TableHead>
-                  <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Comprovante</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-              {payments.map((payment, index) => {
-                  const statusStyle = STATUS_STYLES[payment.status];
-                  const StatusIcon = statusStyle.icon;
-                  const lateFees = calculateLateFees(payment);
-
-                  return (
-                    <TableRow 
-                      key={payment.id}
-                      className="hover:bg-muted/30 transition-colors animate-fade-in"
-                      style={{ animationDelay: `${index * 50}ms` }}
-                    >
-                      <TableCell>
-                        <div>
-                          <p className="capitalize font-medium text-sm">
-                            {formatMonth(payment.reference_month)}
-                          </p>
-                          <p className="text-xs text-muted-foreground sm:hidden">
-                            {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant="outline" className="text-xs">
-                          {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                        {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
-                          {lateFees && (
-                            <div className="text-xs space-y-0.5 mt-1">
-                              {lateFees.fee > 0 && (
-                                <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
-                              )}
-                              {lateFees.interest > 0 && (
-                                <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
-                              )}
-                              <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={statusStyle.variant} className="gap-1">
-                          <StatusIcon className="h-3 w-3" />
-                          {PAYMENT_STATUS_LABELS[payment.status]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-col items-end gap-1.5">
-                          {payment.receipt_url ? (
-                            <>
-                              <ReceiptProgress 
-                                status={payment.receipt_status as any} 
-                                hasReceipt={!!payment.receipt_url} 
-                              />
-                              <div className="flex items-center gap-1.5">
-                                <ReceiptStatusBadge status={payment.receipt_status as any} />
-                                <ReceiptViewButton receiptUrl={payment.receipt_url} />
-                              </div>
-                              {payment.receipt_status === "rejeitado" && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openUploadDialog(payment)}
-                                  className="text-xs animate-fade-in border-destructive/30 text-destructive hover:bg-destructive/10"
-                                >
-                                  <Upload className="h-3 w-3 mr-1" />
-                                  Reenviar
-                                </Button>
-                              )}
-                            </>
-                          ) : payment.status !== "pago" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openUploadDialog(payment)}
-                              className="hover-scale"
-                            >
-                              <Upload className="h-4 w-4 mr-1" />
-                              Enviar
-                            </Button>
-                          ) : (
-                            <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/20">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Confirmado
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-16">
-              <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
-                <CreditCard className="h-10 w-10 text-muted-foreground/50" />
-              </div>
-              <p className="text-muted-foreground font-medium">Nenhuma mensalidade registrada.</p>
-              <p className="text-xs text-muted-foreground/70 mt-1">Seus pagamentos aparecerão aqui.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
