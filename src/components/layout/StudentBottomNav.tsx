@@ -47,7 +47,7 @@ export function StudentBottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border safe-area-inset-bottom"
       aria-label="Navegação do aluno"
     >
-      <div className="flex items-center justify-around px-1 pt-1.5 pb-1.5">
+      <div className="flex items-end justify-around px-1 pt-1.5 pb-1.5">
         {studentTabs.map((tab) => {
           const isActive = location.pathname === tab.href;
           const Icon = tab.icon;
@@ -58,7 +58,7 @@ export function StudentBottomNav() {
               <Link
                 key={tab.href}
                 to={tab.href}
-                className="flex flex-col items-center -mt-4 relative"
+                className="flex flex-col items-center -mt-5 relative px-2"
                 aria-current={isActive ? "page" : undefined}
               >
                 <div
