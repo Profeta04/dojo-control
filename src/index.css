@@ -11,8 +11,8 @@
     --color-secondary: 220 10% 92%;
     --color-tertiary: 4 85% 50%;
     
-    /* Derived colors */
-    --background: 220 15% 98%;
+    /* Derived colors - improved contrast */
+    --background: 220 14% 95%;
     --foreground: 220 15% 10%;
 
     --card: 0 0% 100%;
@@ -27,8 +27,8 @@
     --secondary: var(--color-secondary);
     --secondary-foreground: 220 15% 15%;
 
-    --muted: 220 10% 94%;
-    --muted-foreground: 220 10% 40%;
+    --muted: 220 10% 92%;
+    --muted-foreground: 220 10% 38%;
 
     --accent: var(--color-tertiary);
     --accent-foreground: 0 0% 100%;
@@ -40,8 +40,8 @@
     --info: 220 15% 45%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 13% 87%;
-    --input: 220 13% 87%;
+    --border: 220 13% 85%;
+    --input: 220 13% 85%;
     --ring: var(--color-tertiary);
 
     --radius: 0.5rem;
