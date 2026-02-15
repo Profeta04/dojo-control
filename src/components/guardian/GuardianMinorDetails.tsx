@@ -3,12 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { User, CreditCard, GraduationCap, Calendar, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO, differenceInCalendarDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PAYMENT_CATEGORY_LABELS, PaymentCategory } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type Payment = Tables<"payments">;
@@ -23,6 +25,7 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [graduations, setGraduations] = useState<GraduationHistory[]>([]);
   const [attendance, setAttendance] = useState<Attendance[]>([]);
+  const [dojoData, setDojoData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +55,16 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
         .order("date", { ascending: false })
         .limit(30);
 
+      // Fetch dojo data for late fee calculation
+      if (minor.dojo_id) {
+        const { data: dojo } = await supabase
+          .from("dojos")
+          .select("late_fee_percent, late_fee_fixed, daily_interest_percent, grace_days")
+          .eq("id", minor.dojo_id)
+          .single();
+        setDojoData(dojo);
+      }
+
       setPayments(paymentsData || []);
       setGraduations(graduationsData || []);
       setAttendance(attendanceData || []);
@@ -68,15 +81,31 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
   const getPaymentStatusIcon = (status: string) => {
     switch (status) {
       case "pago":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case "pendente":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+        return <Clock className="h-4 w-4 text-warning" />;
       case "atrasado":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       default:
         return null;
     }
   };
+
+  const calculateLateFees = (payment: Payment) => {
+    if (payment.status !== "atrasado" || !dojoData) return null;
+    const graceDays = dojoData.grace_days || 0;
+    const daysLate = differenceInCalendarDays(new Date(), parseISO(payment.due_date)) - graceDays;
+    if (daysLate <= 0) return null;
+    const feePercent = dojoData.late_fee_percent || 0;
+    const fixedFee = dojoData.late_fee_fixed || 0;
+    const interestPercent = dojoData.daily_interest_percent || 0;
+    const fee = payment.amount * (feePercent / 100) + fixedFee;
+    const interest = payment.amount * (interestPercent / 100) * daysLate;
+    const total = payment.amount + fee + interest;
+    return { fee, interest, total, daysLate };
+  };
+
+  const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   const attendanceRate = attendance.length > 0
     ? Math.round((attendance.filter(a => a.present).length / attendance.length) * 100)
@@ -133,7 +162,9 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {payments.map((payment) => (
+                  {payments.map((payment) => {
+                    const lateFees = calculateLateFees(payment);
+                    return (
                     <div
                       key={payment.id}
                       className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
@@ -145,12 +176,27 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                           <p className="text-sm text-muted-foreground">
                             Vencimento: {format(new Date(payment.due_date), "dd/MM/yyyy")}
                           </p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                          </Badge>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold">
-                          R$ {payment.amount.toFixed(2).replace(".", ",")}
+                          {formatCurrency(payment.amount)}
                         </p>
+                        {lateFees && (
+                          <div className="text-xs space-y-0.5 mt-1">
+                            {lateFees.fee > 0 && (
+                              <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
+                            )}
+                            {lateFees.interest > 0 && (
+                              <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
+                            )}
+                            <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
+                          </div>
+                        )}
+                        {!lateFees && (
                         <p className={`text-sm capitalize ${
                           payment.status === "pago" ? "text-success" :
                           payment.status === "atrasado" ? "text-destructive" :
@@ -158,9 +204,11 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                         }`}>
                           {payment.status}
                         </p>
+                        )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -237,9 +285,9 @@ export function GuardianMinorDetails({ minor }: GuardianMinorDetailsProps) {
                     >
                       <div className="flex items-center gap-3">
                         {record.present ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-success" />
                         ) : (
-                          <XCircle className="h-4 w-4 text-red-500" />
+                          <XCircle className="h-4 w-4 text-destructive" />
                         )}
                         <span className={record.present ? "text-foreground" : "text-muted-foreground"}>
                           {record.present ? "Presente" : "Ausente"}
