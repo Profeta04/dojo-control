@@ -31,6 +31,7 @@ import { BeltBadge } from "@/components/shared/BeltBadge";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BlockedStudentScreen } from "@/components/auth/BlockedStudentScreen";
 import { supabase } from "@/integrations/supabase/client";
+import { StudentBottomNav } from "./StudentBottomNav";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Select,
@@ -361,6 +362,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Student bottom nav on mobile */}
+      {isStudent && !canManageStudents && <StudentBottomNav />}
       {/* Skip to main content link */}
       <a 
         href="#main-content" 
@@ -370,9 +373,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         Pular para o conteúdo principal
       </a>
 
-      {/* Mobile Header */}
+      {/* Student Mobile Top Bar - minimal with logo and notifications */}
+      {isStudent && !canManageStudents && (
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border safe-area-inset-top">
+          <div className="h-12 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+              ) : (
+                <img src={dojoLogo} alt="Dojo Manager" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+              )}
+              <span className="font-semibold text-sm text-sidebar-foreground truncate">
+                {currentDojo?.name || settings.dojo_name}
+              </span>
+            </div>
+            <NotificationBell />
+          </div>
+        </header>
+      )}
+
+      {/* Mobile Header - hidden for students (they use bottom nav) */}
       <header 
-        className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top"
+        className={cn(
+          "lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top",
+          isStudent && !canManageStudents && "hidden"
+        )}
         role="banner"
       >
         <div className="h-14 px-3 flex items-center justify-between">
@@ -407,8 +432,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Mobile Sidebar Overlay */}
-      {sidebarOpen && (
+      {/* Mobile Sidebar Overlay - not for students */}
+      {sidebarOpen && !(isStudent && !canManageStudents) && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
@@ -425,24 +450,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <NavContent />
       </aside>
 
-      {/* Mobile Sidebar - Slide in/out */}
-      <aside
-        id="mobile-sidebar"
-        className={cn(
-          "lg:hidden fixed top-0 left-0 z-50 h-full w-[280px] bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out",
-          "will-change-transform",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-        role="navigation"
-        aria-label="Menu lateral mobile"
-      >
-        <NavContent />
-      </aside>
+      {/* Mobile Sidebar - Slide in/out (not for students) */}
+      {!(isStudent && !canManageStudents) && (
+        <aside
+          id="mobile-sidebar"
+          className={cn(
+            "lg:hidden fixed top-0 left-0 z-50 h-full w-[280px] bg-sidebar border-r border-sidebar-border flex flex-col transition-transform duration-300 ease-out",
+            "will-change-transform",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+          role="navigation"
+          aria-label="Menu lateral mobile"
+        >
+          <NavContent />
+        </aside>
+      )}
 
       {/* Main Content */}
       <main id="main-content" className="lg:pl-64 min-h-screen" tabIndex={-1}>
         {/* Mobile spacer for fixed header */}
-        <div className="h-14 lg:hidden safe-area-inset-top" />
+        {/* Mobile spacer for fixed header */}
+        <div className={cn("lg:hidden safe-area-inset-top", isStudent && !canManageStudents ? "h-12" : "h-14")} />
         
         {/* Desktop header area */}
         <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
@@ -471,7 +499,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
-        <div className="p-3 sm:p-4 lg:p-6 safe-area-inset-bottom">
+        <div className={cn("p-3 sm:p-4 lg:p-6 safe-area-inset-bottom", isStudent && !canManageStudents && "pb-24 lg:pb-6")}>
           {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
             <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
           ) : (
