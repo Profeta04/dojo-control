@@ -14,11 +14,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, Plus, Loader2, Edit2, Trash2, GraduationCap, Play } from "lucide-react";
+import { CalendarClock, Plus, Loader2, Edit2, Trash2, GraduationCap, Play, ChevronDown } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 interface FeePlan {
   id: string;
   name: string;
@@ -232,82 +232,63 @@ export function MonthlyFeePlans() {
 
   return (
     <>
-      <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-transparent shadow-sm animate-fade-in">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="p-1.5 rounded-lg bg-accent/10">
-                  <CalendarClock className="h-4 w-4 text-accent-foreground" />
-                </div>
-                Mensalidades Programadas
-              </CardTitle>
-              <CardDescription>Cobranças automáticas geradas mensalmente</CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={() => setGenerateConfirmOpen(true)} disabled={generating || !plans || plans.length === 0}>
-                {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                <span className="hidden sm:inline">Gerar Agora</span>
-              </Button>
-              <Button size="sm" onClick={openCreate}>
-                <Plus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Novo Plano</span><span className="sm:hidden">Novo</span>
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {plansLoading ? (
-            <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : plans && plans.length > 0 ? (
-            <div className="space-y-3">
-              {plans.map((plan) => (
-                <div
-                  key={plan.id}
-                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    plan.is_active
-                      ? "bg-card border-border"
-                      : "bg-muted/30 border-muted opacity-60"
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-sm truncate">{plan.name}</p>
-                      <Badge variant={plan.is_active ? "default" : "secondary"} className="text-xs">
-                        {plan.is_active ? "Ativo" : "Pausado"}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      <span className="font-semibold text-foreground">{formatCurrency(plan.amount)}</span>
-                      <span>Dia {plan.due_day}</span>
-                      <span className="flex items-center gap-1">
-                        <GraduationCap className="h-3 w-3" />
-                        {plan.monthly_fee_plan_classes.length} turma(s)
-                      </span>
-                    </div>
+      <Collapsible defaultOpen className="animate-fade-in">
+        <Card className="border-accent/20 bg-gradient-to-r from-accent/5 to-transparent shadow-sm">
+          <CollapsibleTrigger asChild>
+            <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl group">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-accent/10">
+                    <CalendarClock className="h-4 w-4 text-accent-foreground" />
                   </div>
-                  <div className="flex items-center gap-2 ml-2 flex-shrink-0">
-                    <Switch
-                      checked={plan.is_active}
-                      onCheckedChange={() => handleToggleActive(plan)}
-                      aria-label="Ativar/Pausar plano"
-                    />
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(plan)}>
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(plan.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                  <div>
+                    <CardTitle className="text-base">Mensalidades Programadas</CardTitle>
+                    <CardDescription>Cobranças automáticas geradas mensalmente</CardDescription>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Nenhum plano criado. Crie um plano para gerar mensalidades automaticamente.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex items-center gap-2">
+                  <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setGenerateConfirmOpen(true)} disabled={generating || !plans || plans.length === 0}>
+                      {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                      <span className="hidden sm:inline">Gerar Agora</span>
+                    </Button>
+                    <Button size="sm" onClick={openCreate}>
+                      <Plus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Novo Plano</span><span className="sm:hidden">Novo</span>
+                    </Button>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </div>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent>
+              {plansLoading ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              ) : plans && plans.length > 0 ? (
+                <div className="space-y-3">
+                  {plans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                        plan.is_active
+                          ? "bg-card border-border"
+                          : "bg-muted/30 border-muted opacity-60"
+                      }`}
+                    >
+...
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum plano criado. Crie um plano para gerar mensalidades automaticamente.
+                </p>
+              )}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) resetForm(); setDialogOpen(open); }}>
