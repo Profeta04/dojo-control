@@ -71,6 +71,7 @@ export default function PaymentsPage() {
   const [pixSaving, setPixSaving] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [lateFeePercent, setLateFeePercent] = useState("0");
+  const [lateFeeFixed, setLateFeeFixed] = useState("0");
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0");
   const [graceDays, setGraceDays] = useState("0");
   const [lateFeeSaving, setLateFeeSaving] = useState(false);
@@ -82,7 +83,7 @@ export default function PaymentsPage() {
       if (!currentDojoId) return null;
       const { data, error } = await supabase
         .from("dojos")
-        .select("id, name, pix_key, late_fee_percent, daily_interest_percent, grace_days")
+        .select("id, name, pix_key, late_fee_percent, late_fee_fixed, daily_interest_percent, grace_days")
         .eq("id", currentDojoId)
         .single();
       if (error) return null;
@@ -94,6 +95,7 @@ export default function PaymentsPage() {
   useEffect(() => {
     setPixKeyInput((currentDojo as any)?.pix_key || "");
     setLateFeePercent(String((currentDojo as any)?.late_fee_percent ?? 0));
+    setLateFeeFixed(String((currentDojo as any)?.late_fee_fixed ?? 0));
     setDailyInterestPercent(String((currentDojo as any)?.daily_interest_percent ?? 0));
     setGraceDays(String((currentDojo as any)?.grace_days ?? 0));
   }, [currentDojo]);
@@ -119,6 +121,7 @@ export default function PaymentsPage() {
     try {
       const { error } = await supabase.from("dojos").update({
         late_fee_percent: parseFloat(lateFeePercent) || 0,
+        late_fee_fixed: parseFloat(lateFeeFixed) || 0,
         daily_interest_percent: parseFloat(dailyInterestPercent) || 0,
         grace_days: parseInt(graceDays) || 0,
       }).eq("id", currentDojoId);
@@ -217,7 +220,8 @@ export default function PaymentsPage() {
     if (daysLate <= 0) return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
     const feePercent = (currentDojo as any).late_fee_percent || 0;
     const interestPercent = (currentDojo as any).daily_interest_percent || 0;
-    const fee = payment.amount * (feePercent / 100);
+    const fixedFee = (currentDojo as any).late_fee_fixed || 0;
+    const fee = payment.amount * (feePercent / 100) + fixedFee;
     const interest = payment.amount * (interestPercent / 100) * daysLate;
     return { fee, interest, total: payment.amount + fee + interest, daysLate };
   };
@@ -606,7 +610,7 @@ export default function PaymentsPage() {
               <CardDescription>Multa, juros e carência para pagamentos atrasados</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Multa (%)</Label>
                   <Input
@@ -616,6 +620,18 @@ export default function PaymentsPage() {
                     value={lateFeePercent}
                     onChange={(e) => setLateFeePercent(e.target.value)}
                     placeholder="2.0"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Multa fixa (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={lateFeeFixed}
+                    onChange={(e) => setLateFeeFixed(e.target.value)}
+                    placeholder="10.00"
                     className="h-9"
                   />
                 </div>
