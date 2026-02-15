@@ -80,7 +80,7 @@ export function UpcomingTrainingsCard() {
   };
 
   return (
-    <Card className="shadow-sm border-border">
+    <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Calendar className="h-5 w-5" />
@@ -98,7 +98,7 @@ export function UpcomingTrainingsCard() {
             {trainings.map(t => (
               <div
                 key={t.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border/40"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col items-center min-w-[48px]">

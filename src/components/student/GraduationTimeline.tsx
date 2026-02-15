@@ -68,7 +68,7 @@ export function GraduationTimeline() {
                   {/* Timeline dot */}
                   <div className="absolute -left-[18px] top-1 w-3 h-3 rounded-full bg-primary ring-2 ring-background" />
 
-                  <div className="rounded-lg bg-muted/50 p-4">
+                  <div className="rounded-lg bg-muted p-4 border border-border/40">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <div className="flex items-center gap-3">
                         {grad.from_belt && (

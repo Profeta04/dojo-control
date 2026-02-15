@@ -91,7 +91,7 @@ export function StudentProfileCard() {
   const isFederated = (profile as any).is_federated ?? false;
 
   return (
-    <Card className="overflow-hidden shadow-sm border-border">
+    <Card className="overflow-hidden">
       <CardHeader className="bg-muted/50 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           Meus Dados
