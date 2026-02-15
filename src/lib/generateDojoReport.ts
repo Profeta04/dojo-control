@@ -2,15 +2,14 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PdfDojoInfo, resolveDojoColors } from "./pdfTheme";
 
 export interface DojoReportData {
-  // General stats
+  dojoInfo: PdfDojoInfo;
   totalStudents: number;
   activeClasses: number;
   pendingApprovals: number;
   totalSenseis: number;
-  
-  // Attendance stats
   attendanceRate: number;
   presentCount: number;
   totalAttendance: number;
@@ -20,30 +19,22 @@ export interface DojoReportData {
     total: number;
     taxa: number;
   }>;
-  
-  // Payment stats
   totalReceived: number;
   pendingPayments: number;
   overduePayments: number;
-  
-  // Graduation stats
   recentGraduations: number;
-  
-  // Detailed lists
   studentsList?: Array<{
     name: string;
     email: string;
     belt: string;
     status: string;
   }>;
-  
   classesList?: Array<{
     name: string;
     schedule: string;
     sensei: string;
     studentCount: number;
   }>;
-  
   paymentsList?: Array<{
     studentName: string;
     referenceMonth: string;
@@ -57,31 +48,31 @@ export function generateDojoReport(data: DojoReportData) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  
-  // Header
-  doc.setFontSize(24);
-  doc.setTextColor(20, 20, 20);
-  doc.text("🥋 Dojo Control", pageWidth / 2, 25, { align: "center" });
-  
-  doc.setFontSize(14);
-  doc.setTextColor(100, 100, 100);
-  doc.text("Relatório de Estatísticas", pageWidth / 2, 35, { align: "center" });
-  
-  doc.setFontSize(10);
-  doc.text(`Gerado em: ${today}`, pageWidth / 2, 42, { align: "center" });
-  
-  // Divider
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 48, pageWidth - 20, 48);
-  
-  let yPos = 58;
-  
-  // Section: Resumo Geral
-  doc.setFontSize(14);
-  doc.setTextColor(20, 20, 20);
+  const { headerBg, lightBg } = resolveDojoColors(data.dojoInfo);
+  const dojoName = data.dojoInfo.dojoName || "Dojo";
+
+  // ── Header ──
+  doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
+  doc.rect(0, 0, pageWidth, 40, "F");
+
+  doc.setFontSize(22);
+  doc.setTextColor(255, 255, 255);
+  doc.text(dojoName, pageWidth / 2, 18, { align: "center" });
+
+  doc.setFontSize(12);
+  doc.text("Relatório de Estatísticas", pageWidth / 2, 27, { align: "center" });
+
+  doc.setFontSize(9);
+  doc.text(`Gerado em: ${today}`, pageWidth / 2, 35, { align: "center" });
+
+  let yPos = 50;
+
+  // ── Resumo Geral ──
+  doc.setFontSize(13);
+  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
   doc.text("Resumo Geral", 20, yPos);
-  yPos += 8;
-  
+  yPos += 7;
+
   autoTable(doc, {
     startY: yPos,
     head: [["Indicador", "Valor"]],
@@ -93,19 +84,20 @@ export function generateDojoReport(data: DojoReportData) {
       ["Graduações Recentes (3 meses)", data.recentGraduations.toString()],
     ],
     theme: "striped",
-    headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 },
+    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: lightBg },
+    styles: { fontSize: 10, cellPadding: 4 },
     margin: { left: 20, right: 20 },
   });
-  
-  yPos = (doc as any).lastAutoTable.finalY + 15;
-  
-  // Section: Presenças
-  doc.setFontSize(14);
-  doc.setTextColor(20, 20, 20);
+
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+
+  // ── Presenças ──
+  doc.setFontSize(13);
+  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
   doc.text("Presenças do Mês Atual", 20, yPos);
-  yPos += 8;
-  
+  yPos += 7;
+
   autoTable(doc, {
     startY: yPos,
     head: [["Indicador", "Valor"]],
@@ -116,166 +108,150 @@ export function generateDojoReport(data: DojoReportData) {
       ["Total de Registros", data.totalAttendance.toString()],
     ],
     theme: "striped",
-    headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 },
+    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: lightBg },
+    styles: { fontSize: 10, cellPadding: 4 },
     margin: { left: 20, right: 20 },
   });
-  
-  yPos = (doc as any).lastAutoTable.finalY + 15;
-  
-  // Section: Evolução de Presenças (últimos 6 meses)
-  doc.setFontSize(14);
+
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+
+  // ── Evolução Presenças ──
+  doc.setFontSize(13);
+  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
   doc.text("Evolução de Presenças (Últimos 6 Meses)", 20, yPos);
-  yPos += 8;
-  
+  yPos += 7;
+
   autoTable(doc, {
     startY: yPos,
     head: [["Mês", "Presenças", "Total", "Taxa"]],
-    body: data.monthlyAttendance.map(month => [
+    body: data.monthlyAttendance.map((month) => [
       month.name.charAt(0).toUpperCase() + month.name.slice(1),
       month.presencas.toString(),
       month.total.toString(),
-      `${month.taxa}%`
+      `${month.taxa}%`,
     ]),
     theme: "striped",
-    headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 },
+    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: lightBg },
+    styles: { fontSize: 10, cellPadding: 4 },
     margin: { left: 20, right: 20 },
   });
-  
-  yPos = (doc as any).lastAutoTable.finalY + 15;
-  
-  // Check if we need a new page
-  if (yPos > 240) {
-    doc.addPage();
-    yPos = 20;
-  }
-  
-  // Section: Situação Financeira
-  doc.setFontSize(14);
-  doc.setTextColor(20, 20, 20);
+
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+
+  if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+  // ── Situação Financeira ──
+  doc.setFontSize(13);
+  doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
   doc.text("Situação Financeira", 20, yPos);
-  yPos += 8;
-  
+  yPos += 7;
+
   autoTable(doc, {
     startY: yPos,
     head: [["Indicador", "Valor"]],
     body: [
-      ["Total Recebido", `R$ ${data.totalReceived.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+      ["Total Recebido", `R$ ${data.totalReceived.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`],
       ["Pagamentos Pendentes", data.pendingPayments.toString()],
       ["Pagamentos Atrasados", data.overduePayments.toString()],
     ],
     theme: "striped",
-    headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-    styles: { fontSize: 10 },
+    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+    alternateRowStyles: { fillColor: lightBg },
+    styles: { fontSize: 10, cellPadding: 4 },
     margin: { left: 20, right: 20 },
   });
-  
-  yPos = (doc as any).lastAutoTable.finalY + 15;
-  
-  // Optional: Students List
+
+  yPos = (doc as any).lastAutoTable.finalY + 12;
+
+  // ── Optional: Lista de Alunos ──
   if (data.studentsList && data.studentsList.length > 0) {
-    if (yPos > 200) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFontSize(14);
+    if (yPos > 200) { doc.addPage(); yPos = 20; }
+    doc.setFontSize(13);
+    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
     doc.text("Lista de Alunos", 20, yPos);
-    yPos += 8;
-    
+    yPos += 7;
+
     autoTable(doc, {
       startY: yPos,
       head: [["Nome", "Email", "Faixa", "Status"]],
-      body: data.studentsList.map(student => [
-        student.name,
-        student.email,
-        student.belt,
-        student.status
-      ]),
+      body: data.studentsList.map((s) => [s.name, s.email, s.belt, s.status]),
       theme: "striped",
-      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 },
+      headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: lightBg },
+      styles: { fontSize: 9, cellPadding: 3 },
       margin: { left: 20, right: 20 },
     });
-    
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as any).lastAutoTable.finalY + 12;
   }
-  
-  // Optional: Classes List
+
+  // ── Optional: Lista de Turmas ──
   if (data.classesList && data.classesList.length > 0) {
-    if (yPos > 200) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFontSize(14);
+    if (yPos > 200) { doc.addPage(); yPos = 20; }
+    doc.setFontSize(13);
+    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
     doc.text("Lista de Turmas", 20, yPos);
-    yPos += 8;
-    
+    yPos += 7;
+
     autoTable(doc, {
       startY: yPos,
       head: [["Turma", "Horário", "Sensei", "Alunos"]],
-      body: data.classesList.map(cls => [
-        cls.name,
-        cls.schedule,
-        cls.sensei,
-        cls.studentCount.toString()
-      ]),
+      body: data.classesList.map((c) => [c.name, c.schedule, c.sensei, c.studentCount.toString()]),
       theme: "striped",
-      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 },
+      headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: lightBg },
+      styles: { fontSize: 9, cellPadding: 3 },
       margin: { left: 20, right: 20 },
     });
-    
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as any).lastAutoTable.finalY + 12;
   }
-  
-  // Optional: Payments List
+
+  // ── Optional: Lista de Pagamentos ──
   if (data.paymentsList && data.paymentsList.length > 0) {
-    if (yPos > 200) {
-      doc.addPage();
-      yPos = 20;
-    }
-    
-    doc.setFontSize(14);
+    if (yPos > 200) { doc.addPage(); yPos = 20; }
+    doc.setFontSize(13);
+    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
     doc.text("Lista de Pagamentos", 20, yPos);
-    yPos += 8;
-    
+    yPos += 7;
+
     autoTable(doc, {
       startY: yPos,
       head: [["Aluno", "Referência", "Valor", "Status", "Vencimento"]],
-      body: data.paymentsList.map(payment => [
-        payment.studentName,
-        payment.referenceMonth,
-        `R$ ${payment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-        payment.status,
-        payment.dueDate
+      body: data.paymentsList.map((p) => [
+        p.studentName,
+        p.referenceMonth,
+        `R$ ${p.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+        p.status,
+        p.dueDate,
       ]),
       theme: "striped",
-      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255] },
-      styles: { fontSize: 9 },
-      margin: { left: 20, right: 20 },
+      headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: lightBg },
+      styles: { fontSize: 9, cellPadding: 3 },
+      margin: { left: 15, right: 15 },
     });
   }
-  
-  // Footer on all pages
+
+  // ── Footer ──
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    const pageH = doc.internal.pageSize.getHeight();
+    // Colored footer bar
+    doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
+    doc.rect(0, pageH - 14, pageWidth, 14, "F");
     doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
+    doc.setTextColor(255, 255, 255);
     doc.text(
-      `Dojo Control - Página ${i} de ${pageCount}`,
+      `${dojoName} — Relatório de Estatísticas — Página ${i} de ${pageCount}`,
       pageWidth / 2,
-      doc.internal.pageSize.getHeight() - 10,
+      pageH - 5,
       { align: "center" }
     );
   }
-  
-  // Save the PDF
-  const fileName = `relatorio-dojo-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+
+  const fileName = `relatorio-${dojoName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
   doc.save(fileName);
-  
   return fileName;
 }
