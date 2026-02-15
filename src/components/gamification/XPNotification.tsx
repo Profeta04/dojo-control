@@ -1,7 +1,7 @@
-import { useXP } from "@/hooks/useXP";
 import { motion, AnimatePresence } from "framer-motion";
 import { Zap, ArrowUp } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
+import { fireConfetti } from "@/lib/confetti";
 
 interface XPNotificationProps {
   xpAmount: number;
@@ -15,10 +15,15 @@ interface XPNotificationProps {
 export function XPNotification({ xpAmount, multiplier, leveledUp, newLevel, show, onComplete }: XPNotificationProps) {
   useEffect(() => {
     if (show) {
+      if (leveledUp) {
+        // Big celebration for level up
+        fireConfetti();
+        setTimeout(() => fireConfetti(), 300);
+      }
       const timer = setTimeout(onComplete, 3000);
       return () => clearTimeout(timer);
     }
-  }, [show, onComplete]);
+  }, [show, onComplete, leveledUp]);
 
   return (
     <AnimatePresence>

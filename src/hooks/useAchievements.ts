@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useEffect, useCallback } from "react";
+import { fireLegendaryConfetti } from "@/lib/confetti";
 
 export interface Achievement {
   id: string;
@@ -163,6 +164,14 @@ export function useAchievements(targetUserId?: string) {
               related_id: achievement.id,
             });
           }
+        }
+      }
+
+      // Fire legendary confetti for epic/legendary achievements
+      for (const a of newlyUnlocked) {
+        if (a.rarity === "legendary" || a.rarity === "epic") {
+          fireLegendaryConfetti();
+          break;
         }
       }
 
