@@ -17,7 +17,8 @@ export function AvatarUpload() {
     queryFn: async () => {
       if (!profile?.avatar_url) return null;
       const { data } = supabase.storage.from("avatars").getPublicUrl(profile.avatar_url);
-      return data.publicUrl;
+      // Add cache-buster to force reload after upload
+      return `${data.publicUrl}?t=${Date.now()}`;
     },
     enabled: !!profile?.avatar_url,
   });
