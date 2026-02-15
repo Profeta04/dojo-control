@@ -8,6 +8,7 @@ import { Crown, Medal, Flame, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { SeasonAvatarBorder } from "@/components/gamification/SeasonAvatarBorder";
 
 const PODIUM_STYLES = [
   { bg: "bg-amber-500/10", border: "border-amber-400/40", icon: "🥇", textColor: "text-amber-600" },
@@ -15,17 +16,19 @@ const PODIUM_STYLES = [
   { bg: "bg-orange-400/10", border: "border-orange-400/40", icon: "🥉", textColor: "text-orange-600" },
 ];
 
-function LeaderboardAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
+function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | null; name: string; userId?: string }) {
   const publicUrl = avatarUrl
     ? supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl
     : null;
   return (
-    <Avatar className="h-8 w-8 border border-border">
-      <AvatarImage src={publicUrl || undefined} alt={name} />
-      <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-        {name.charAt(0).toUpperCase()}
-      </AvatarFallback>
-    </Avatar>
+    <SeasonAvatarBorder userId={userId} size="sm">
+      <Avatar className="h-8 w-8 border border-border">
+        <AvatarImage src={publicUrl || undefined} alt={name} />
+        <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+          {name.charAt(0).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+    </SeasonAvatarBorder>
   );
 }
 
@@ -84,7 +87,7 @@ export function LeaderboardPanel() {
                   transition={{ delay: podiumIdx * 0.1 }}
                 >
                   <span className="text-xl mb-1">{style.icon}</span>
-                  <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} />
+                  <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
                   <p className="text-[11px] font-semibold mt-1.5 text-center truncate w-full">
                     {entry.name.split(" ")[0]}
                   </p>
@@ -131,7 +134,7 @@ export function LeaderboardPanel() {
                 )}>
                   #{rank}
                 </span>
-                <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} />
+                <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
                 <div className="flex-1 min-w-0">
                   <p className={cn("text-sm font-medium truncate", isMe && "text-accent")}>
                     {entry.name}

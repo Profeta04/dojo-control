@@ -5,9 +5,10 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, Palette } from "lucide-react";
+import { Building2, Palette, Sparkles } from "lucide-react";
 import { DojoManagement } from "@/components/settings/DojoManagement";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
+import { SeasonsManagement } from "@/components/settings/SeasonsManagement";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -57,7 +58,7 @@ export default function Settings() {
       />
 
       <Tabs defaultValue="dojos" className="mt-6 space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-sm">
+        <TabsList className="grid w-full grid-cols-3 max-w-md">
           <TabsTrigger value="dojos" className="gap-2">
             <Building2 className="h-4 w-4" aria-hidden="true" />
             Dojos
@@ -66,16 +67,22 @@ export default function Settings() {
             <Palette className="h-4 w-4" aria-hidden="true" />
             Tema
           </TabsTrigger>
+          <TabsTrigger value="seasons" className="gap-2">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            Temporadas
+          </TabsTrigger>
         </TabsList>
 
-        {/* Dojos Management - Admin and Super Admin */}
         <TabsContent value="dojos" className="space-y-6">
           <DojoManagement />
         </TabsContent>
 
-        {/* Theme Settings */}
         <TabsContent value="theme" className="space-y-6">
           <DojoThemeSettings />
+        </TabsContent>
+
+        <TabsContent value="seasons" className="space-y-6">
+          <SeasonsManagement />
         </TabsContent>
       </Tabs>
     </DashboardLayout>
