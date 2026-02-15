@@ -1,13 +1,22 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
+import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react";
 import dojoLogo from "@/assets/dojo-manager-logo.png";
 
 const Index = () => {
   const { user, isStudent, canManageStudents } = useAuth();
+  const { userDojos } = useDojoContext();
+  const { settings } = useDojoSettings();
   const isStudentOnly = isStudent && !canManageStudents;
   const homeLink = isStudentOnly ? "/perfil" : "/dashboard";
+
+  const currentDojo = userDojos.length > 0 ? userDojos[0] : null;
+  const subtitle = user && settings.welcome_message
+    ? settings.welcome_message
+    : "Sistema completo de gestão para seu dojo de judô";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -20,7 +29,7 @@ const Index = () => {
         </h1>
         
         <p className="text-base sm:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-md px-2">
-          Sistema completo de gestão para seu dojo de judô
+          {subtitle}
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 w-full max-w-xs sm:max-w-none sm:w-auto">
