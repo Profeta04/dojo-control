@@ -20,7 +20,7 @@ const taskSchema = z.object({
   assigned_to: z.string().min(1, "Selecione um aluno"),
   due_date: z.string().optional(),
   priority: z.enum(["baixa", "normal", "alta"]),
-  category: z.enum(["tecnica", "fisica", "administrativa", "outra"]),
+  category: z.enum(["tecnica", "fisica", "administrativa", "outra", "technical", "physical", "administrative", "theory"]),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -113,7 +113,7 @@ export function CreateTaskDialog() {
     
     form.setValue('title', template.title);
     form.setValue('description', template.description || '');
-    form.setValue('category', categoryMap[template.category] || 'outra');
+    form.setValue('category', (categoryMap[template.category] || template.category || 'outra') as TaskCategory);
   };
 
   return (
