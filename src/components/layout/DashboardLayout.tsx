@@ -221,7 +221,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           )}
           <div className="min-w-0">
             <h1 className="font-bold text-base lg:text-lg text-sidebar-foreground truncate">{currentDojo?.name || settings.dojo_name}</h1>
-            <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
+            <p className="text-xs text-sidebar-foreground/60 truncate">{currentDojo?.description || "Sistema de Gestão"}</p>
           </div>
         </div>
         {/* Dojo Selector in sidebar - works on all screen sizes */}
