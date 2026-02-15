@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Pencil, Save, X } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Pencil, Save, X, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,21 @@ export function StudentProfileCard() {
       return data || [];
     },
     enabled: !!user?.id,
+  });
+
+  const { data: dojoInfo } = useQuery({
+    queryKey: ["student-dojo-info", profile?.dojo_id],
+    queryFn: async () => {
+      if (!profile?.dojo_id) return null;
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("name, description")
+        .eq("id", profile.dojo_id)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.dojo_id,
   });
 
   const { data: studentClasses, isLoading: loadingClasses } = useQuery({
@@ -139,7 +154,21 @@ export function StudentProfileCard() {
           <div className="flex-1 space-y-4">
             <div>
               <h3 className="text-xl font-semibold">{profile.name}</h3>
-              <p className="text-sm text-muted-foreground">Judoca</p>
+              {dojoInfo ? (
+                <div className="mt-1">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {dojoInfo.name}
+                  </p>
+                  {dojoInfo.description && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      {dojoInfo.description}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Judoca</p>
+              )}
             </div>
 
             {profile.birth_date && (
