@@ -44,6 +44,7 @@ export function StudentBottomNav() {
 
   return (
     <nav
+      id="student-bottom-nav"
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border safe-area-inset-bottom"
       aria-label="Navegação do aluno"
     >

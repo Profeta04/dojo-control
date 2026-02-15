@@ -185,7 +185,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <NotificationBell />
         </div>
 
-        <div className={cn("p-3 sm:p-4 lg:p-6 safe-area-inset-bottom", useBottomNav && "pb-32 lg:pb-6")}>
+        <div
+          className={cn("p-3 sm:p-4 lg:p-6", !useBottomNav && "safe-area-inset-bottom")}
+          style={useBottomNav ? { paddingBottom: "calc(10rem + env(safe-area-inset-bottom, 0px))" } : undefined}
+        >
           {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
             <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
           ) : (
