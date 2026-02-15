@@ -32,6 +32,7 @@ import {
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
+import { MonthlyFeePlans } from "@/components/payments/MonthlyFeePlans";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -44,6 +45,7 @@ type Class = Tables<"classes">;
 interface PaymentWithStudent extends Payment {
   studentName: string;
   studentBlocked?: boolean;
+  studentScholarship?: boolean;
 }
 
 const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | "destructive"; icon: typeof CheckCircle2 }> = {
@@ -187,7 +189,7 @@ export default function PaymentsPage() {
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["payments", currentDojoId],
     queryFn: async () => {
-      let studentQuery = supabase.from("profiles").select("user_id, name, is_blocked").eq("registration_status", "aprovado");
+      let studentQuery = supabase.from("profiles").select("user_id, name, is_blocked, is_scholarship").eq("registration_status", "aprovado");
       if (currentDojoId) studentQuery = studentQuery.eq("dojo_id", currentDojoId);
       const { data: dojoStudents, error: studentsError } = await studentQuery;
       if (studentsError) throw studentsError;
@@ -202,6 +204,7 @@ export default function PaymentsPage() {
           ...p,
           studentName: student?.name || "Desconhecido",
           studentBlocked: (student as any)?.is_blocked || false,
+          studentScholarship: (student as any)?.is_scholarship || false,
         };
       });
       return enriched;
@@ -571,6 +574,13 @@ export default function PaymentsPage() {
         )}
       </div>
 
+      {/* Monthly Fee Plans */}
+      {canManageStudents && currentDojoId && (
+        <div className="mb-6">
+          <MonthlyFeePlans />
+        </div>
+      )}
+
       {/* PIX Key & Late Fee Configuration */}
       {canManageStudents && currentDojoId && (
         <div className="grid gap-4 mb-6 md:grid-cols-2">
@@ -788,7 +798,14 @@ export default function PaymentsPage() {
                                       )}
                                     </div>
                                     <div>
-                                      <p className="font-medium text-sm truncate max-w-[140px]">{payment.studentName}</p>
+                                      <div className="flex items-center gap-1">
+                                        <p className="font-medium text-sm truncate max-w-[140px]">{payment.studentName}</p>
+                                        {payment.studentScholarship && (
+                                          <Badge variant="outline" className="text-[10px] px-1 py-0 border-accent text-accent-foreground">
+                                            Bolsista
+                                          </Badge>
+                                        )}
+                                      </div>
                                       <p className="text-xs text-muted-foreground sm:hidden">
                                         {formatMonth(payment.reference_month)}
                                       </p>
