@@ -1,0 +1,1 @@
+ALTER TABLE public.dojos ADD COLUMN late_fee_fixed numeric NOT NULL DEFAULT 0;

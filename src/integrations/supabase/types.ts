@@ -292,6 +292,7 @@ export type Database = {
           grace_days: number
           id: string
           is_active: boolean | null
+          late_fee_fixed: number
           late_fee_percent: number
           logo_url: string | null
           name: string
@@ -311,6 +312,7 @@ export type Database = {
           grace_days?: number
           id?: string
           is_active?: boolean | null
+          late_fee_fixed?: number
           late_fee_percent?: number
           logo_url?: string | null
           name: string
@@ -330,6 +332,7 @@ export type Database = {
           grace_days?: number
           id?: string
           is_active?: boolean | null
+          late_fee_fixed?: number
           late_fee_percent?: number
           logo_url?: string | null
           name?: string
@@ -753,6 +756,7 @@ export type Database = {
           grace_days: number
           id: string
           is_active: boolean | null
+          late_fee_fixed: number
           late_fee_percent: number
           logo_url: string | null
           name: string
