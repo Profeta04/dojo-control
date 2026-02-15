@@ -44,6 +44,7 @@ const CATEGORY_CONFIG: Record<string, { icon: any; label: string; color: string 
   technical: { icon: BookOpen, label: "Técnico", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   physical: { icon: Dumbbell, label: "Físico", color: "bg-green-500/10 text-green-600 border-green-500/20" },
   administrative: { icon: FileText, label: "Administrativo", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+  theory: { icon: HelpCircle, label: "Teórico", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
   other: { icon: MoreHorizontal, label: "Outro", color: "bg-gray-500/10 text-gray-600 border-gray-500/20" },
 };
 
@@ -175,6 +176,7 @@ export function TaskTemplatesDialog({ open, onOpenChange, onSelectTemplate }: Ta
               <SelectItem value="technical">Técnico</SelectItem>
               <SelectItem value="physical">Físico</SelectItem>
               <SelectItem value="administrative">Administrativo</SelectItem>
+              <SelectItem value="theory">Teórico</SelectItem>
               <SelectItem value="other">Outro</SelectItem>
             </SelectContent>
           </Select>

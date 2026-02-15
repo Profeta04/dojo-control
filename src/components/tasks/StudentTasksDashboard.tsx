@@ -42,7 +42,6 @@ interface TaskTemplate {
   title: string;
   options: string[] | null;
   correct_option: number | null;
-  video_url: string | null;
 }
 
 // Define the thematic groups for quizzes with Lucide icons
@@ -83,16 +82,16 @@ export function StudentTasksDashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("task_templates")
-        .select("id, title, options, correct_option, video_url");
+        .select("id, title, options, correct_option");
       if (error) throw error;
       return data as TaskTemplate[];
     },
   });
 
   const templateDataMap = templates.reduce((acc, t) => {
-    acc[t.title] = { options: t.options, correctOption: t.correct_option, videoUrl: t.video_url };
+    acc[t.title] = { options: t.options, correctOption: t.correct_option };
     return acc;
-  }, {} as Record<string, { options: string[] | null; correctOption: number | null; videoUrl: string | null }>);
+  }, {} as Record<string, { options: string[] | null; correctOption: number | null }>);
 
   const filteredTasks = tasks.filter(t => categoryFilter === "all" || t.category === categoryFilter);
   const pendingTasks = filteredTasks.filter(t => t.status === "pendente");
@@ -266,14 +265,12 @@ export function StudentTasksDashboard() {
                         <TaskCard
                           task={task}
                           onStatusChange={handleStatusChange}
-                          videoUrl={taskData?.videoUrl || undefined}
                         />
                       ) : (
                         <TaskQuizCard
                           task={task}
                           options={taskData.options!}
                           correctOption={taskData.correctOption!}
-                          videoUrl={taskData.videoUrl || undefined}
                         />
                       )}
                     </div>
