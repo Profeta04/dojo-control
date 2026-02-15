@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { LayoutDashboard, ClipboardList, GraduationCap, CreditCard } from "lucide-react";
+import { LayoutDashboard, ClipboardList, Calendar, CreditCard, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,8 +10,9 @@ import { useState, useEffect } from "react";
 const studentTabs = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
-  { title: "Agenda", href: "/agenda", icon: GraduationCap },
+  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
+  { title: "Config", href: "/config", icon: Settings, isProfile: true },
 ];
 
 export function StudentBottomNav() {
@@ -46,29 +47,26 @@ export function StudentBottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border safe-area-inset-bottom"
       aria-label="Navegação do aluno"
     >
-      <div className="flex items-end justify-around px-2 pt-1 pb-1">
+      <div className="flex items-center justify-around px-1 pt-1.5 pb-1.5">
         {studentTabs.map((tab) => {
           const isActive = location.pathname === tab.href;
           const Icon = tab.icon;
 
-          // Center tab (Agenda) gets the avatar
-          const isCenter = tab.href === "/agenda";
-
-          if (isCenter) {
+          // Profile/Config tab shows avatar
+          if (tab.isProfile) {
             return (
               <Link
                 key={tab.href}
                 to={tab.href}
-                className="flex flex-col items-center -mt-5 relative"
+                className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[52px]"
                 aria-current={isActive ? "page" : undefined}
               >
                 <div
                   className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
-                    "shadow-lg border-4 border-sidebar",
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
                     isActive
-                      ? "bg-primary scale-110 ring-2 ring-primary/30"
-                      : "bg-sidebar-accent hover:scale-105"
+                      ? "ring-2 ring-primary ring-offset-1 ring-offset-sidebar scale-110"
+                      : "ring-1 ring-sidebar-border hover:scale-105"
                   )}
                 >
                   {avatarUrl ? (
@@ -79,16 +77,15 @@ export function StudentBottomNav() {
                     />
                   ) : (
                     <span className={cn(
-                      "text-lg font-bold transition-colors duration-200",
-                      isActive ? "text-primary-foreground" : "text-sidebar-foreground"
+                      "text-xs font-bold",
+                      isActive ? "text-primary" : "text-sidebar-foreground/60"
                     )}>
                       {profile?.name?.charAt(0).toUpperCase() || "U"}
                     </span>
                   )}
                 </div>
-                {/* Belt badge below avatar */}
                 {profile?.belt_grade && (
-                  <div className="mt-0.5 animate-scale-in">
+                  <div className="animate-scale-in">
                     <BeltBadge grade={profile.belt_grade as any} size="sm" />
                   </div>
                 )}
@@ -101,7 +98,7 @@ export function StudentBottomNav() {
               key={tab.href}
               to={tab.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all duration-200 min-w-[60px]",
+                "flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-all duration-200 min-w-[52px]",
                 isActive
                   ? "text-primary"
                   : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
@@ -111,7 +108,7 @@ export function StudentBottomNav() {
               <div className="relative">
                 <Icon
                   className={cn(
-                    "h-6 w-6 transition-all duration-200",
+                    "h-5 w-5 transition-all duration-200",
                     isActive && "scale-110"
                   )}
                 />

@@ -86,6 +86,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const studentNavMode = isStudent && !canManageStudents
+    ? (localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom")
+    : "sidebar";
+  const useBottomNav = isStudent && !canManageStudents && studentNavMode === "bottom";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [beltDialogOpen, setBeltDialogOpen] = useState(false);
   const [selectedBelt, setSelectedBelt] = useState("");
@@ -363,7 +367,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Student bottom nav on mobile */}
-      {isStudent && !canManageStudents && <StudentBottomNav />}
+      {useBottomNav && <StudentBottomNav />}
       {/* Skip to main content link */}
       <a 
         href="#main-content" 
@@ -374,7 +378,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </a>
 
       {/* Student Mobile Top Bar - minimal with logo and notifications */}
-      {isStudent && !canManageStudents && (
+      {useBottomNav && (
         <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border safe-area-inset-top">
           <div className="h-12 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -396,7 +400,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <header 
         className={cn(
           "lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top",
-          isStudent && !canManageStudents && "hidden"
+          useBottomNav && "hidden"
         )}
         role="banner"
       >
@@ -433,7 +437,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </header>
 
       {/* Mobile Sidebar Overlay - not for students */}
-      {sidebarOpen && !(isStudent && !canManageStudents) && (
+      {sidebarOpen && !useBottomNav && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
@@ -451,7 +455,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile Sidebar - Slide in/out (not for students) */}
-      {!(isStudent && !canManageStudents) && (
+      {!useBottomNav && (
         <aside
           id="mobile-sidebar"
           className={cn(
@@ -470,7 +474,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <main id="main-content" className="lg:pl-64 min-h-screen" tabIndex={-1}>
         {/* Mobile spacer for fixed header */}
         {/* Mobile spacer for fixed header */}
-        <div className={cn("lg:hidden safe-area-inset-top", isStudent && !canManageStudents ? "h-12" : "h-14")} />
+        <div className={cn("lg:hidden safe-area-inset-top", useBottomNav ? "h-12" : "h-14")} />
         
         {/* Desktop header area */}
         <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
@@ -499,7 +503,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {!showDojoSelector && <div />}
           <NotificationBell />
         </div>
-        <div className={cn("p-3 sm:p-4 lg:p-6 safe-area-inset-bottom", isStudent && !canManageStudents && "pb-24 lg:pb-6")}>
+        <div className={cn("p-3 sm:p-4 lg:p-6 safe-area-inset-bottom", useBottomNav && "pb-24 lg:pb-6")}>
           {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
             <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
           ) : (
