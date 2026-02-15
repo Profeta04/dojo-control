@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          annual_year: number | null
+          category: string
+          created_at: string
+          criteria_type: string
+          criteria_value: number
+          description: string | null
+          icon: string
+          id: string
+          is_annual: boolean
+          name: string
+          rarity: string
+          xp_reward: number
+        }
+        Insert: {
+          annual_year?: number | null
+          category?: string
+          created_at?: string
+          criteria_type: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string
+          id?: string
+          is_annual?: boolean
+          name: string
+          rarity?: string
+          xp_reward?: number
+        }
+        Update: {
+          annual_year?: number | null
+          category?: string
+          created_at?: string
+          criteria_type?: string
+          criteria_value?: number
+          description?: string | null
+          icon?: string
+          id?: string
+          is_annual?: boolean
+          name?: string
+          rarity?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       attendance: {
         Row: {
           class_id: string
@@ -415,6 +460,44 @@ export type Database = {
           },
         ]
       }
+      leaderboard_history: {
+        Row: {
+          created_at: string
+          dojo_id: string
+          final_rank: number
+          final_xp: number
+          id: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          dojo_id: string
+          final_rank: number
+          final_xp?: number
+          id?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          dojo_id?: string
+          final_rank?: number
+          final_xp?: number
+          id?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaderboard_history_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monthly_fee_plan_classes: {
         Row: {
           class_id: string
@@ -688,6 +771,71 @@ export type Database = {
         }
         Relationships: []
       }
+      student_achievements: {
+        Row: {
+          achievement_id: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_xp: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       task_templates: {
         Row: {
           belt_level: string
@@ -739,11 +887,17 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          evidence_text: string | null
           id: string
           priority: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
+          template_id: string | null
           title: string
           updated_at: string
+          xp_value: number
         }
         Insert: {
           assigned_by: string
@@ -753,11 +907,17 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          evidence_text?: string | null
           id?: string
           priority?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          template_id?: string | null
           title: string
           updated_at?: string
+          xp_value?: number
         }
         Update: {
           assigned_by?: string
@@ -767,13 +927,27 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          evidence_text?: string | null
           id?: string
           priority?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
+          template_id?: string | null
           title?: string
           updated_at?: string
+          xp_value?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
