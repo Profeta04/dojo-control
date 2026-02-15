@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode, Percent } from "lucide-react";
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
@@ -150,7 +150,7 @@ export function DojoManagement() {
   };
 
   const renderFormFields = (isEdit = false) => (
-    <ScrollArea className="max-h-[60vh] pr-4">
+    <div className="overflow-y-auto max-h-[55vh] pr-2">
       <div className="space-y-6">
         {/* Logo Upload */}
         {isEdit && editingDojo && (
@@ -304,7 +304,7 @@ export function DojoManagement() {
           </div>
         </div>
       </div>
-    </ScrollArea>
+    </div>
   );
 
   if (isLoading) {
@@ -340,7 +340,7 @@ export function DojoManagement() {
                 Novo Dojo
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Criar Novo Dojo</DialogTitle>
                 <DialogDescription>
@@ -450,17 +450,15 @@ export function DojoManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDojo} onOpenChange={(open) => !open && setEditingDojo(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Dojo</DialogTitle>
             <DialogDescription>
               Atualize as informações do dojo
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4 flex-1 min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
-              {renderFormFields(true)}
-            </div>
+          <div className="space-y-4 pt-4">
+            {renderFormFields(true)}
             <Button
               onClick={handleUpdate}
               disabled={updateDojoMutation.isPending}
