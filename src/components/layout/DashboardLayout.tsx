@@ -1,5 +1,5 @@
 import { ReactNode, useState, useEffect } from "react";
-import dojoLogo from "@/assets/dojo-manager-logo.png";
+import dojoLogo from "@/assets/dojo-control-logo.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               ) : (
-                <img src={dojoLogo} alt="Dojo Manager" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
+                <img src={dojoLogo} alt="Dojo Control" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               )}
               {showDojoSelector && !isLoadingDojos ? (
                 <Select
@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {logoUrl ? (
               <img src={logoUrl} alt="Logo" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
             ) : (
-              <img src={dojoLogo} alt="Dojo Manager" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
+              <img src={dojoLogo} alt="Dojo Control" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
             )}
             <span className="font-semibold text-sm text-sidebar-foreground truncate">
               {currentDojo?.name || settings.dojo_name}
