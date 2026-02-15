@@ -20,6 +20,7 @@ import StudentPayments from "./pages/StudentPayments";
 import Settings from "./pages/Settings";
 import StudentProfile from "./pages/StudentProfile";
 import StudentTasks from "./pages/StudentTasks";
+import StudentConfig from "./pages/StudentConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/perfil" element={<StudentProfile />} />
                 <Route path="/tarefas" element={<StudentTasks />} />
+                <Route path="/config" element={<StudentConfig />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
