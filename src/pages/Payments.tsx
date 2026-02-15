@@ -25,10 +25,11 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   CreditCard, Plus, Loader2, DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent
+  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent, ChevronDown
 } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
@@ -574,111 +575,129 @@ export default function PaymentsPage() {
         )}
       </div>
 
+      {/* PIX Key Configuration - First Section */}
+      {canManageStudents && currentDojoId && (
+        <Collapsible defaultOpen className="mb-4 animate-fade-in">
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-sm">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <QrCode className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Chave Pix do Dojo</CardTitle>
+                      <CardDescription>Exibida para os alunos na tela de pagamentos</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent>
+                <div className="flex gap-2">
+                  <Input
+                    value={pixKeyInput}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPixKeyInput(e.target.value)}
+                    placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSavePixKey} disabled={pixSaving} size="sm">
+                    {pixSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
+
       {/* Monthly Fee Plans */}
       {canManageStudents && currentDojoId && (
-        <div className="mb-6">
+        <div className="mb-4 animate-fade-in">
           <MonthlyFeePlans />
         </div>
       )}
 
-      {/* PIX Key & Late Fee Configuration */}
+      {/* Late Fee Configuration */}
       {canManageStudents && currentDojoId && (
-        <div className="grid gap-4 mb-6 md:grid-cols-2">
-          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-sm animate-fade-in">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="p-1.5 rounded-lg bg-primary/10">
-                  <QrCode className="h-4 w-4 text-primary" />
+        <Collapsible className="mb-4 animate-fade-in">
+          <Card className="border-warning/20 bg-gradient-to-r from-warning/5 to-transparent shadow-sm">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="pb-3 cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-warning/10">
+                      <Percent className="h-4 w-4 text-warning-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Taxas de Atraso</CardTitle>
+                      <CardDescription>Multa, juros e carência para pagamentos atrasados</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
                 </div>
-                Chave Pix do Dojo
-              </CardTitle>
-              <CardDescription>Exibida para os alunos na tela de pagamentos</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  value={pixKeyInput}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPixKeyInput(e.target.value)}
-                  placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
-                  className="flex-1"
-                />
-                <Button onClick={handleSavePixKey} disabled={pixSaving} size="sm">
-                  {pixSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar</>}
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Multa (%)</Label>
+                    <Input type="number" step="0.1" min="0" value={lateFeePercent} onChange={(e) => setLateFeePercent(e.target.value)} placeholder="2.0" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Multa fixa (R$)</Label>
+                    <Input type="number" step="0.01" min="0" value={lateFeeFixed} onChange={(e) => setLateFeeFixed(e.target.value)} placeholder="10.00" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Juros/dia (%)</Label>
+                    <Input type="number" step="0.01" min="0" value={dailyInterestPercent} onChange={(e) => setDailyInterestPercent(e.target.value)} placeholder="0.33" className="h-9" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Carência (dias)</Label>
+                    <Input type="number" min="0" value={graceDays} onChange={(e) => setGraceDays(e.target.value)} placeholder="3" className="h-9" />
+                  </div>
+                </div>
+                <Button onClick={handleSaveLateFees} disabled={lateFeeSaving} size="sm" className="w-full">
+                  {lateFeeSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar Taxas</>}
                 </Button>
-              </div>
-            </CardContent>
+              </CardContent>
+            </CollapsibleContent>
           </Card>
-
-          <Card className="border-warning/20 bg-gradient-to-r from-warning/5 to-transparent shadow-sm animate-fade-in">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="p-1.5 rounded-lg bg-warning/10">
-                  <Percent className="h-4 w-4 text-warning-foreground" />
-                </div>
-                Taxas de Atraso
-              </CardTitle>
-              <CardDescription>Multa, juros e carência para pagamentos atrasados</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <Label className="text-xs">Multa (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    value={lateFeePercent}
-                    onChange={(e) => setLateFeePercent(e.target.value)}
-                    placeholder="2.0"
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Multa fixa (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={lateFeeFixed}
-                    onChange={(e) => setLateFeeFixed(e.target.value)}
-                    placeholder="10.00"
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Juros/dia (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={dailyInterestPercent}
-                    onChange={(e) => setDailyInterestPercent(e.target.value)}
-                    placeholder="0.33"
-                    className="h-9"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Carência (dias)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={graceDays}
-                    onChange={(e) => setGraceDays(e.target.value)}
-                    placeholder="3"
-                    className="h-9"
-                  />
-                </div>
-              </div>
-              <Button onClick={handleSaveLateFees} disabled={lateFeeSaving} size="sm" className="w-full">
-                {lateFeeSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar Taxas</>}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+        </Collapsible>
       )}
 
       {/* Financial Dashboard Charts */}
-      {canManageStudents && payments && payments.length > 0 && <FinancialDashboard payments={payments} />}
+      {canManageStudents && payments && payments.length > 0 && (
+        <Collapsible className="mb-4 animate-fade-in">
+          <Card>
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors rounded-t-xl group">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-primary/10">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Dashboard Financeiro</CardTitle>
+                      <CardDescription>Gráficos e indicadores de receita</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <FinancialDashboard payments={payments} />
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+      )}
 
       {/* Stats Cards */}
       <PaymentStatsCards stats={stats} formatCurrency={formatCurrency} variant="admin" />
