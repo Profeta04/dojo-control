@@ -100,7 +100,7 @@ export function StudentBottomNav() {
               key={tab.href}
               to={tab.href}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-all duration-200 min-w-[52px]",
+                "flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-xl transition-all duration-200 min-w-[56px]",
                 isActive
                   ? "text-accent"
                   : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
@@ -110,7 +110,7 @@ export function StudentBottomNav() {
               <div className="relative">
                 <Icon
                   className={cn(
-                    "h-5 w-5 transition-all duration-200",
+                    "h-[22px] w-[22px] transition-all duration-200",
                     isActive && "scale-110"
                   )}
                 />
@@ -119,7 +119,7 @@ export function StudentBottomNav() {
                 )}
               </div>
               <span className={cn(
-                "text-[10px] font-medium transition-all duration-200",
+                "text-[11px] font-medium transition-all duration-200",
                 isActive && "font-semibold"
               )}>
                 {tab.title}
