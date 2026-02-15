@@ -56,6 +56,7 @@ const basePendingTask = {
   completed_at: null,
   created_at: "2026-02-01T10:00:00Z",
   updated_at: "2026-02-01T10:00:00Z",
+  evidence_text: null,
   assignee_name: "Carlos Silva",
   assigner_name: "Sensei Yamamoto",
 };
