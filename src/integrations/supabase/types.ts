@@ -415,6 +415,86 @@ export type Database = {
           },
         ]
       }
+      monthly_fee_plan_classes: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          plan_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          plan_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_fee_plan_classes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_fee_plan_classes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_fee_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      monthly_fee_plans: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          dojo_id: string
+          due_day: number
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          dojo_id: string
+          due_day?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          dojo_id?: string
+          due_day?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_fee_plans_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -523,6 +603,7 @@ export type Database = {
           guardian_user_id: string | null
           is_blocked: boolean
           is_federated: boolean
+          is_scholarship: boolean
           name: string
           phone: string | null
           registration_status: string | null
@@ -544,6 +625,7 @@ export type Database = {
           guardian_user_id?: string | null
           is_blocked?: boolean
           is_federated?: boolean
+          is_scholarship?: boolean
           name: string
           phone?: string | null
           registration_status?: string | null
@@ -565,6 +647,7 @@ export type Database = {
           guardian_user_id?: string | null
           is_blocked?: boolean
           is_federated?: boolean
+          is_scholarship?: boolean
           name?: string
           phone?: string | null
           registration_status?: string | null

@@ -33,9 +33,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 
 type Profile = Tables<"profiles"> | any;
 
@@ -55,6 +56,7 @@ export default function Students() {
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
+  const [scholarshipConfirm, setScholarshipConfirm] = useState<Profile | null>(null);
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
@@ -272,6 +274,58 @@ export default function Students() {
     }
   };
 
+
+  const handleToggleScholarship = async (student: Profile, cancelPending: boolean = false) => {
+    const newValue = !student.is_scholarship;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_scholarship: newValue } as any)
+        .eq("user_id", student.user_id);
+      
+      if (error) throw error;
+
+      // If marking as scholarship and user chose to cancel pending payments
+      if (newValue && cancelPending) {
+        await supabase
+          .from("payments")
+          .delete()
+          .eq("student_id", student.user_id)
+          .eq("status", "pendente")
+          .eq("category", "mensalidade");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      toast({
+        title: newValue ? "Aluno marcado como bolsista" : "Bolsa removida",
+        description: `${student.name} ${newValue ? "não receberá mensalidades programadas" : "voltará a receber mensalidades"}.`,
+      });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
+    } finally {
+      setScholarshipConfirm(null);
+    }
+  };
+
+  const handleScholarshipToggleClick = async (student: Profile) => {
+    if (!student.is_scholarship) {
+      // Turning ON scholarship — check for pending payments
+      const { data: pendingPayments } = await supabase
+        .from("payments")
+        .select("id")
+        .eq("student_id", student.user_id)
+        .eq("status", "pendente")
+        .eq("category", "mensalidade");
+
+      if (pendingPayments && pendingPayments.length > 0) {
+        setScholarshipConfirm(student);
+        return;
+      }
+    }
+    handleToggleScholarship(student, false);
+  };
+
   const StudentTable = ({ data, showActions = false }: { data: Profile[]; showActions?: boolean }) => (
     <div className="overflow-x-auto -mx-4 sm:mx-0">
       <Table>
@@ -281,6 +335,7 @@ export default function Students() {
             <TableHead className="hidden sm:table-cell">Email</TableHead>
             <TableHead>Faixa</TableHead>
             <TableHead className="hidden md:table-cell">Federado</TableHead>
+            <TableHead className="hidden md:table-cell">Bolsista</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
             {showActions && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
@@ -322,8 +377,22 @@ export default function Students() {
                   )}
                 </div>
               </TableCell>
+              <TableCell className="hidden md:table-cell">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={student.is_scholarship ?? false}
+                    onCheckedChange={() => handleScholarshipToggleClick(student)}
+                    aria-label={`Marcar ${student.name} como bolsista`}
+                  />
+                  {student.is_scholarship && (
+                    <Badge variant="outline" className="text-xs gap-1 border-accent text-accent-foreground">
+                      <GraduationCap className="h-3 w-3" />
+                      Bolsista
+                    </Badge>
+                  )}
+                </div>
+              </TableCell>
               <TableCell className="hidden sm:table-cell">
-                <RegistrationStatusBadge status={student.registration_status || "pendente"} />
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">
@@ -564,6 +633,33 @@ export default function Students() {
             >
               {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {actionType === "approve" ? "Aprovar" : "Rejeitar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Scholarship Confirmation Dialog */}
+      <AlertDialog open={!!scholarshipConfirm} onOpenChange={(open) => { if (!open) setScholarshipConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar como bolsista</AlertDialogTitle>
+            <AlertDialogDescription>
+              {scholarshipConfirm?.name} possui mensalidades pendentes. Deseja cancelá-las ao marcá-lo como bolsista?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, false)}
+            >
+              Manter pendentes
+            </Button>
+            <AlertDialogAction
+              onClick={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, true)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancelar pendentes
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
