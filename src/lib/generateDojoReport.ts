@@ -44,7 +44,7 @@ export interface DojoReportData {
   }>;
 }
 
-export function generateDojoReport(data: DojoReportData) {
+export function generateDojoReport(data: DojoReportData, logoBase64?: string | null) {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -52,20 +52,28 @@ export function generateDojoReport(data: DojoReportData) {
   const dojoName = data.dojoInfo.dojoName || "Dojo";
 
   // ── Header ──
+  const headerHeight = logoBase64 ? 48 : 40;
   doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.rect(0, 0, pageWidth, 40, "F");
+  doc.rect(0, 0, pageWidth, headerHeight, "F");
 
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, "PNG", 14, 6, 28, 28);
+    } catch { /* logo failed, continue without */ }
+  }
+
+  const textX = logoBase64 ? pageWidth / 2 + 10 : pageWidth / 2;
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
-  doc.text(dojoName, pageWidth / 2, 18, { align: "center" });
+  doc.text(dojoName, textX, 18, { align: "center" });
 
   doc.setFontSize(12);
-  doc.text("Relatório de Estatísticas", pageWidth / 2, 27, { align: "center" });
+  doc.text("Relatório de Estatísticas", textX, 27, { align: "center" });
 
   doc.setFontSize(9);
-  doc.text(`Gerado em: ${today}`, pageWidth / 2, 35, { align: "center" });
+  doc.text(`Gerado em: ${today}`, textX, 35, { align: "center" });
 
-  let yPos = 50;
+  let yPos = headerHeight + 10;
 
   // ── Resumo Geral ──
   doc.setFontSize(13);
