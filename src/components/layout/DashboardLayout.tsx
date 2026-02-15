@@ -70,15 +70,32 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {useBottomNav && (
         <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top">
           <div className="h-14 px-4 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               ) : (
                 <img src={dojoLogo} alt="Dojo Manager" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               )}
-              <span className="font-semibold text-base text-sidebar-foreground truncate">
-                {currentDojo?.name || settings.dojo_name}
-              </span>
+              {showDojoSelector && !isLoadingDojos ? (
+                <Select
+                  value={currentDojoId || "all"}
+                  onValueChange={(value) => setCurrentDojoId(value === "all" ? null : value)}
+                >
+                  <SelectTrigger className="h-8 text-xs bg-sidebar-accent/30 border-sidebar-border text-sidebar-foreground max-w-[160px]">
+                    <SelectValue placeholder="Selecione o dojo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os dojos</SelectItem>
+                    {userDojos.map((dojo) => (
+                      <SelectItem key={dojo.id} value={dojo.id}>{dojo.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="font-semibold text-base text-sidebar-foreground truncate">
+                  {currentDojo?.name || settings.dojo_name}
+                </span>
+              )}
             </div>
             <NotificationBell />
           </div>
