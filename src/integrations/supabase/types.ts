@@ -1144,6 +1144,7 @@ export type Database = {
         Returns: string[]
       }
       get_user_dojo_id: { Args: { _user_id: string }; Returns: string }
+      get_user_dojo_id_safe: { Args: { _user_id: string }; Returns: string }
       get_user_dojos: {
         Args: { _user_id: string }
         Returns: {
