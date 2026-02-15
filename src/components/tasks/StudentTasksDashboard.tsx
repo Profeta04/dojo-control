@@ -152,7 +152,8 @@ export function StudentTasksDashboard() {
   });
 
   const CATEGORY_ICONS: Record<TaskCategory, LucideIcon> = {
-    tecnica: Swords, fisica: Dumbbell, administrativa: Briefcase, outra: MoreHorizontal,
+    tecnica: Swords, technical: Swords, fisica: Dumbbell, physical: Dumbbell,
+    administrativa: Briefcase, administrative: Briefcase, outra: MoreHorizontal, theory: BookOpen,
   };
 
   const groupedRegularPendingTasks = useMemo((): GroupedTasks[] => {

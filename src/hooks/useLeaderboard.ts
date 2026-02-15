@@ -30,21 +30,38 @@ export function useLeaderboard() {
   const { user } = useAuth();
   const { currentDojoId } = useDojoContext();
 
+  // Fallback: get dojo from user profile if context not set
+  const { data: profileDojoId } = useQuery({
+    queryKey: ["profile-dojo-id", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("dojo_id")
+        .eq("user_id", user.id)
+        .single();
+      return data?.dojo_id || null;
+    },
+    enabled: !!user && !currentDojoId,
+  });
+
+  const effectiveDojoId = currentDojoId || profileDojoId;
+
   // Current live leaderboard
   const {
     data: leaderboard = [],
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ["leaderboard", currentDojoId],
+    queryKey: ["leaderboard", effectiveDojoId],
     queryFn: async (): Promise<LeaderboardEntry[]> => {
-      if (!currentDojoId) return [];
+      if (!effectiveDojoId) return [];
 
       // Get all approved students in this dojo
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url, belt_grade")
-        .eq("dojo_id", currentDojoId)
+        .eq("dojo_id", effectiveDojoId)
         .eq("registration_status", "aprovado");
 
       if (profilesError) throw profilesError;
@@ -104,15 +121,15 @@ export function useLeaderboard() {
 
       return entries;
     },
-    enabled: !!currentDojoId,
+    enabled: !!effectiveDojoId,
   });
 
   // Realtime for XP changes
   useEffect(() => {
-    if (!currentDojoId) return;
+    if (!effectiveDojoId) return;
 
     const channel = supabase
-      .channel(`leaderboard-${currentDojoId}`)
+      .channel(`leaderboard-${effectiveDojoId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "student_xp" },
@@ -125,18 +142,18 @@ export function useLeaderboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentDojoId, refetch]);
+  }, [effectiveDojoId, refetch]);
 
   // Historical leaderboards
   const { data: history = [] } = useQuery({
-    queryKey: ["leaderboard-history", currentDojoId],
+    queryKey: ["leaderboard-history", effectiveDojoId],
     queryFn: async (): Promise<LeaderboardHistoryEntry[]> => {
-      if (!currentDojoId) return [];
+      if (!effectiveDojoId) return [];
 
       const { data, error } = await supabase
         .from("leaderboard_history")
         .select("*")
-        .eq("dojo_id", currentDojoId)
+        .eq("dojo_id", effectiveDojoId)
         .order("year", { ascending: false })
         .order("final_rank", { ascending: true });
 
@@ -162,7 +179,7 @@ export function useLeaderboard() {
 
       return data as LeaderboardHistoryEntry[];
     },
-    enabled: !!currentDojoId,
+    enabled: !!effectiveDojoId,
   });
 
   // Current user's position
