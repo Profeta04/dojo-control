@@ -71,14 +71,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Student Mobile Top Bar */}
       {useBottomNav && (
         <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top">
-          <div className="h-12 px-4 flex items-center justify-between">
+          <div className="h-14 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               {logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                <img src={logoUrl} alt="Logo" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               ) : (
-                <img src={dojoLogo} alt="Dojo Manager" className="w-7 h-7 rounded-lg object-cover flex-shrink-0" />
+                <img src={dojoLogo} alt="Dojo Manager" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" />
               )}
-              <span className="font-semibold text-sm text-sidebar-foreground truncate">
+              <span className="font-semibold text-base text-sidebar-foreground truncate">
                 {currentDojo?.name || settings.dojo_name}
               </span>
             </div>
@@ -159,7 +159,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main id="main-content" className="lg:pl-64 min-h-screen w-full min-w-0 overflow-x-hidden" tabIndex={-1}>
-        <div className={cn("lg:hidden safe-area-inset-top", useBottomNav ? "h-12" : "h-14")} />
+        <div className={cn("lg:hidden safe-area-inset-top", "h-14")} />
 
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
