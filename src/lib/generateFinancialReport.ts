@@ -116,7 +116,7 @@ function drawBarChart(
   });
 }
 
-export function generateFinancialReport(data: FinancialReportData): string {
+export function generateFinancialReport(data: FinancialReportData, logoBase64?: string | null): string {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
@@ -124,23 +124,31 @@ export function generateFinancialReport(data: FinancialReportData): string {
   const dojoName = data.dojoInfo.dojoName || "Dojo";
 
   // ── Header ──
+  const headerHeight = logoBase64 ? 52 : 44;
   doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.rect(0, 0, pageWidth, 44, "F");
+  doc.rect(0, 0, pageWidth, headerHeight, "F");
 
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, "PNG", 14, 8, 28, 28);
+    } catch { /* logo failed */ }
+  }
+
+  const textX = logoBase64 ? pageWidth / 2 + 10 : pageWidth / 2;
   doc.setFontSize(22);
   doc.setTextColor(255, 255, 255);
-  doc.text("Relatório Financeiro", pageWidth / 2, 16, { align: "center" });
+  doc.text("Relatório Financeiro", textX, 16, { align: "center" });
 
   doc.setFontSize(13);
-  doc.text(dojoName, pageWidth / 2, 25, { align: "center" });
+  doc.text(dojoName, textX, 25, { align: "center" });
 
   doc.setFontSize(11);
-  doc.text(`Referência: ${data.referenceMonthLabel}`, pageWidth / 2, 33, { align: "center" });
+  doc.text(`Referência: ${data.referenceMonthLabel}`, textX, 33, { align: "center" });
 
   doc.setFontSize(9);
-  doc.text(`Gerado em: ${today}`, pageWidth / 2, 40, { align: "center" });
+  doc.text(`Gerado em: ${today}`, textX, 40, { align: "center" });
 
-  let yPos = 54;
+  let yPos = headerHeight + 10;
 
   // ── Resumo Financeiro ──
   doc.setFontSize(13);

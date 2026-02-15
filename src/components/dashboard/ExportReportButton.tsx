@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { FileDown, Loader2 } from "lucide-react";
 import { generateDojoReport, DojoReportData } from "@/lib/generateDojoReport";
+import { fetchLogoAsBase64 } from "@/lib/fetchLogoForPdf";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -193,7 +194,8 @@ export function ExportReportButton() {
         }
       }
 
-      const fileName = generateDojoReport(reportData);
+      const logoBase64 = await fetchLogoAsBase64(currentDojo?.logo_url);
+      const fileName = generateDojoReport(reportData, logoBase64);
       toast.success(`Relatório "${fileName}" gerado com sucesso!`);
       setIsOpen(false);
     } catch (error) {

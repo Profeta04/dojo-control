@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { fetchLogoAsBase64 } from "@/lib/fetchLogoForPdf";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -33,7 +34,7 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
     return { value, label: label.charAt(0).toUpperCase() + label.slice(1) };
   });
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsGenerating(true);
     try {
       const [refYear, refMonth] = selectedMonth.split("-").map(Number);
@@ -94,7 +95,8 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
         })),
       };
 
-      const fileName = generateFinancialReport(reportData);
+      const logoBase64 = await fetchLogoAsBase64(currentDojo?.logo_url);
+      const fileName = generateFinancialReport(reportData, logoBase64);
       toast.success(`Relatório "${fileName}" gerado com sucesso!`);
       setIsOpen(false);
     } catch (error) {

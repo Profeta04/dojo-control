@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { fetchLogoAsBase64 } from "@/lib/fetchLogoForPdf";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -97,7 +98,8 @@ export function StudentReportDialog() {
         tasks: tasksRes.data || [],
       };
 
-      const fileName = generateStudentReport(reportData);
+      const logoBase64 = await fetchLogoAsBase64(currentDojo?.logo_url);
+      const fileName = generateStudentReport(reportData, logoBase64);
       toast({ title: "Relatório gerado!", description: `O arquivo ${fileName} foi baixado.` });
       setOpen(false);
       setSelectedStudentId("");
