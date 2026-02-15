@@ -783,6 +783,7 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      mark_overdue_payments: { Args: never; Returns: undefined }
       remove_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
