@@ -150,7 +150,7 @@ export function DojoManagement() {
   };
 
   const renderFormFields = (isEdit = false) => (
-    <ScrollArea className="max-h-[70vh] pr-4">
+    <ScrollArea className="max-h-[60vh] pr-4">
       <div className="space-y-6">
         {/* Logo Upload */}
         {isEdit && editingDojo && (
@@ -450,15 +450,17 @@ export function DojoManagement() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editingDojo} onOpenChange={(open) => !open && setEditingDojo(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Editar Dojo</DialogTitle>
             <DialogDescription>
               Atualize as informações do dojo
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            {renderFormFields(true)}
+          <div className="space-y-4 pt-4 flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0">
+              {renderFormFields(true)}
+            </div>
             <Button
               onClick={handleUpdate}
               disabled={updateDojoMutation.isPending}
