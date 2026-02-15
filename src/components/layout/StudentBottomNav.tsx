@@ -10,9 +10,9 @@ import { useState, useEffect } from "react";
 const studentTabs = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
+  { title: "Config", href: "/config", icon: Settings, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
-  { title: "Config", href: "/config", icon: Settings, isProfile: true },
 ];
 
 export function StudentBottomNav() {
