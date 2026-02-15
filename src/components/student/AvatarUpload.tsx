@@ -74,7 +74,7 @@ export function AvatarUpload() {
 
   return (
     <div className="relative group">
-      <div className="w-28 h-28 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-primary/20">
+      <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-primary/20">
         {avatarUrl ? (
           <img
             src={avatarUrl}
@@ -82,7 +82,7 @@ export function AvatarUpload() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-4xl font-bold text-primary">{initials}</span>
+          <span className="text-3xl sm:text-4xl font-bold text-primary">{initials}</span>
         )}
       </div>
 
@@ -90,7 +90,7 @@ export function AvatarUpload() {
         onClick={() => fileInputRef.current?.click()}
         disabled={uploading}
         className={cn(
-          "absolute bottom-0 right-0 w-9 h-9 rounded-full bg-primary text-primary-foreground",
+          "absolute bottom-0 right-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-primary text-primary-foreground",
           "flex items-center justify-center shadow-lg",
           "transition-all hover:scale-110 active:scale-95",
           "disabled:opacity-50"

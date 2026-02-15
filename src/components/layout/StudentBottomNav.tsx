@@ -59,13 +59,13 @@ export function StudentBottomNav() {
               <Link
                 key={tab.href}
                 to={tab.href}
-                className="flex flex-col items-center -mt-5 relative px-2"
+                className="flex flex-col items-center -mt-4 relative px-2"
                 aria-current={isActive ? "page" : undefined}
               >
                 <div
                   className={cn(
-                    "w-13 h-13 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
-                    "shadow-lg border-[3px] border-sidebar",
+                    "w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+                    "shadow-md border-2 border-sidebar",
                     isActive
                       ? "ring-2 ring-accent ring-offset-1 ring-offset-sidebar scale-110"
                       : "ring-1 ring-sidebar-border hover:scale-105"
