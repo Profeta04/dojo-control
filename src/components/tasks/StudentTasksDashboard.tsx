@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTasks, TaskCategory, CATEGORY_CONFIG, TaskWithAssignee } from "@/hooks/useTasks";
-import { TaskQuizCard } from "./TaskQuizCard";
+import { SequentialQuizCard } from "./SequentialQuizCard";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { 
   ClipboardList, 
@@ -156,9 +156,25 @@ export function StudentTasksDashboard() {
 
   const renderGroupedTasks = (groups: GroupedTasks[], prefix: string, isCompleted = false) => (
     <div className="space-y-2">
-      {groups.map((group, groupIndex) => {
+      {groups.map((group) => {
         const isOpen = openGroups[`${prefix}-${group.groupId}`] ?? false;
-        const globalStartIndex = groups.slice(0, groupIndex).reduce((sum, g) => sum + g.tasks.length, 0);
+
+        // Build quiz questions for this group
+        const quizQuestions = group.tasks
+          .map(task => {
+            const taskData = templateDataMap[task.title];
+            if (!taskData?.options || taskData.correctOption === null) return null;
+            return {
+              task,
+              options: taskData.options,
+              correctOption: taskData.correctOption,
+              xpValue: 10,
+            };
+          })
+          .filter(Boolean) as { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[];
+
+        const completedInGroup = group.tasks.filter(t => t.status === "concluida").length;
+        const groupProgress = group.tasks.length > 0 ? Math.round((completedInGroup / group.tasks.length) * 100) : 0;
 
         return (
           <Collapsible
@@ -177,8 +193,11 @@ export function StudentTasksDashboard() {
                   </div>
                   <span className={cn("font-medium text-sm", isOpen && "text-primary")}>{group.label}</span>
                   <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-semibold">
-                    {group.tasks.length}
+                    {completedInGroup}/{group.tasks.length}
                   </Badge>
+                  {groupProgress === 100 && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                  )}
                 </div>
                 <div className={cn("transition-transform duration-200", isOpen && "rotate-90")}>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -186,33 +205,17 @@ export function StudentTasksDashboard() {
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="mt-2 space-y-2 pl-3 ml-5 border-l-2 border-primary/15">
-                {group.tasks.map((task, taskIndex) => {
-                  const taskData = templateDataMap[task.title];
-                  const taskNumber = globalStartIndex + taskIndex + 1;
-                  const hasQuiz = taskData?.options && taskData.correctOption !== null;
-
-                  return (
-                    <div key={task.id} className="relative animate-fade-in" style={{ animationDelay: `${taskIndex * 50}ms` }}>
-                      <div className="absolute -left-[21px] top-4 w-5 h-5 rounded-full bg-background border-2 border-primary/30 flex items-center justify-center">
-                        <span className="text-[9px] font-bold text-primary">{taskNumber}</span>
-                      </div>
-                      {hasQuiz ? (
-                        <TaskQuizCard
-                          task={task}
-                          options={taskData.options!}
-                          correctOption={taskData.correctOption!}
-                          xpValue={10}
-                        />
-                      ) : (
-                        <Card className="p-4 opacity-60">
-                          <p className="text-sm text-muted-foreground">{task.title}</p>
-                          <Badge variant="outline" className="text-[10px] mt-2">Sem quiz disponível</Badge>
-                        </Card>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="mt-2 pl-3 ml-5 border-l-2 border-primary/15">
+                {quizQuestions.length > 0 ? (
+                  <SequentialQuizCard
+                    questions={quizQuestions}
+                    groupLabel={group.label}
+                  />
+                ) : (
+                  <Card className="p-4 opacity-60">
+                    <p className="text-sm text-muted-foreground">Sem questões disponíveis neste grupo.</p>
+                  </Card>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
