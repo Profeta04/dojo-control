@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-// Mock hooks before importing component
 vi.mock("@/hooks/useXP", () => ({
   useXP: () => ({
     grantXP: { mutateAsync: vi.fn().mockResolvedValue({ xpGranted: 10, multiplier: 1, leveledUp: false, newLevel: 1, newTotal: 10 }) },
@@ -71,39 +70,39 @@ const completedTask = {
 
 describe("JoinVictus - TaskCard", () => {
   it("renderiza título e descrição da tarefa", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText("Praticar De-ashi-barai")).toBeInTheDocument();
-    expect(screen.getByText("Varredura no pé avançado do oponente")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
+    expect(getByText("Praticar De-ashi-barai")).toBeInTheDocument();
+    expect(getByText("Varredura no pé avançado do oponente")).toBeInTheDocument();
   });
 
   it("exibe badge de XP para tarefa pendente", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
-    expect(screen.getByText("15 XP")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
+    expect(getByText("15 XP")).toBeInTheDocument();
   });
 
   it("não exibe badge de XP para tarefa concluída", () => {
-    render(<TaskCard task={completedTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
-    expect(screen.queryByText("15 XP")).not.toBeInTheDocument();
+    const { queryByText } = render(<TaskCard task={completedTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
+    expect(queryByText("15 XP")).not.toBeInTheDocument();
   });
 
   it("exibe nome do responsável pela atribuição", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText("Por: Sensei Yamamoto")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
+    expect(getByText("Por: Sensei Yamamoto")).toBeInTheDocument();
   });
 
   it("exibe nome do aluno quando showAssignee=true", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} showAssignee />, { wrapper: createWrapper() });
-    expect(screen.getByText("Para: Carlos Silva")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} showAssignee />, { wrapper: createWrapper() });
+    expect(getByText("Para: Carlos Silva")).toBeInTheDocument();
   });
 
   it("exibe badge de prioridade", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText("Normal")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
+    expect(getByText("Normal")).toBeInTheDocument();
   });
 
   it("exibe badge de categoria 'Técnica'", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByText("Técnica")).toBeInTheDocument();
+    const { getByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
+    expect(getByText("Técnica")).toBeInTheDocument();
   });
 
   it("aplica estilo de conclusão na tarefa concluída", () => {
@@ -113,13 +112,13 @@ describe("JoinVictus - TaskCard", () => {
   });
 
   it("não exibe vídeo (funcionalidade removida)", () => {
-    const { container } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
+    const { container, queryByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(container.querySelector("a[href*='youtube']")).toBeNull();
-    expect(screen.queryByText("Assistir vídeo")).not.toBeInTheDocument();
+    expect(queryByText("Assistir vídeo")).not.toBeInTheDocument();
   });
 
   it("exibe botão de excluir quando onDelete é fornecido", () => {
-    render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} onDelete={vi.fn()} />, { wrapper: createWrapper() });
-    expect(screen.getByLabelText(`Excluir tarefa: ${basePendingTask.title}`)).toBeInTheDocument();
+    const { getByLabelText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} onDelete={vi.fn()} />, { wrapper: createWrapper() });
+    expect(getByLabelText(`Excluir tarefa: ${basePendingTask.title}`)).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 
 describe("JoinVictus - BeltBadge Component", () => {
@@ -23,8 +23,8 @@ describe("JoinVictus - BeltBadge Component", () => {
   });
 
   it.each(belts)("exibe label para faixa $grade quando showLabel=true", ({ grade, label }) => {
-    render(<BeltBadge grade={grade} showLabel />);
-    expect(screen.getByText(label)).toBeInTheDocument();
+    const { getByText } = render(<BeltBadge grade={grade} showLabel />);
+    expect(getByText(label)).toBeInTheDocument();
   });
 
   it("renderiza em tamanhos diferentes (sm, md, lg)", () => {

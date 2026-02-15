@@ -1,42 +1,42 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { PaymentStatusBadge, RegistrationStatusBadge } from "@/components/shared/StatusBadge";
 
 describe("JoinVictus - PaymentStatusBadge", () => {
   it("renderiza status 'pendente' com label correto", () => {
-    render(<PaymentStatusBadge status="pendente" />);
-    expect(screen.getByText("Pendente")).toBeInTheDocument();
+    const { getByText } = render(<PaymentStatusBadge status="pendente" />);
+    expect(getByText("Pendente")).toBeInTheDocument();
   });
 
   it("renderiza status 'pago' com label correto", () => {
-    render(<PaymentStatusBadge status="pago" />);
-    expect(screen.getByText("Pago")).toBeInTheDocument();
+    const { getByText } = render(<PaymentStatusBadge status="pago" />);
+    expect(getByText("Pago")).toBeInTheDocument();
   });
 
   it("renderiza status 'atrasado' com label correto", () => {
-    render(<PaymentStatusBadge status="atrasado" />);
-    expect(screen.getByText("Atrasado")).toBeInTheDocument();
+    const { getByText } = render(<PaymentStatusBadge status="atrasado" />);
+    expect(getByText("Atrasado")).toBeInTheDocument();
   });
 
   it("renderiza status desconhecido sem quebrar", () => {
-    render(<PaymentStatusBadge status="desconhecido" />);
-    expect(screen.getByText("desconhecido")).toBeInTheDocument();
+    const { getByText } = render(<PaymentStatusBadge status="desconhecido" />);
+    expect(getByText("desconhecido")).toBeInTheDocument();
   });
 });
 
 describe("JoinVictus - RegistrationStatusBadge", () => {
   it("renderiza status 'pendente'", () => {
-    render(<RegistrationStatusBadge status="pendente" />);
-    expect(screen.getByText("Pendente")).toBeInTheDocument();
+    const { getByText } = render(<RegistrationStatusBadge status="pendente" />);
+    expect(getByText("Pendente")).toBeInTheDocument();
   });
 
   it("renderiza status 'aprovado'", () => {
-    render(<RegistrationStatusBadge status="aprovado" />);
-    expect(screen.getByText("Aprovado")).toBeInTheDocument();
+    const { getByText } = render(<RegistrationStatusBadge status="aprovado" />);
+    expect(getByText("Aprovado")).toBeInTheDocument();
   });
 
   it("renderiza status 'rejeitado'", () => {
-    render(<RegistrationStatusBadge status="rejeitado" />);
-    expect(screen.getByText("Rejeitado")).toBeInTheDocument();
+    const { getByText } = render(<RegistrationStatusBadge status="rejeitado" />);
+    expect(getByText("Rejeitado")).toBeInTheDocument();
   });
 });

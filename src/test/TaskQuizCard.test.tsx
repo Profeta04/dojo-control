@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 vi.mock("@/hooks/useTasks", () => ({
@@ -79,32 +79,32 @@ const options = [
 
 describe("JoinVictus - TaskQuizCard", () => {
   it("renderiza título do quiz", () => {
-    render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
-    expect(screen.getByText("Quiz: O que é Ippon?")).toBeInTheDocument();
+    const { getByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
+    expect(getByText("Quiz: O que é Ippon?")).toBeInTheDocument();
   });
 
   it("renderiza todas as opções", () => {
-    render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
+    const { getByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
     options.forEach(opt => {
-      expect(screen.getByText(opt)).toBeInTheDocument();
+      expect(getByText(opt)).toBeInTheDocument();
     });
   });
 
   it("exibe badge de XP e Quiz", () => {
-    render(<TaskQuizCard task={quizTask} options={options} correctOption={1} xpValue={20} />, { wrapper: createWrapper() });
-    expect(screen.getByText("20 XP")).toBeInTheDocument();
-    expect(screen.getByText("Quiz")).toBeInTheDocument();
+    const { getByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} xpValue={20} />, { wrapper: createWrapper() });
+    expect(getByText("20 XP")).toBeInTheDocument();
+    expect(getByText("Quiz")).toBeInTheDocument();
   });
 
   it("botão 'Verificar Resposta' desabilitado sem seleção", () => {
-    render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
-    const button = screen.getByText("Verificar Resposta");
+    const { getByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
+    const button = getByText("Verificar Resposta");
     expect(button.closest("button")).toBeDisabled();
   });
 
   it("não exibe link de vídeo (funcionalidade removida)", () => {
-    const { container } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
+    const { container, queryByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
     expect(container.querySelector("a[href*='youtube']")).toBeNull();
-    expect(screen.queryByText("Assistir vídeo de apoio")).not.toBeInTheDocument();
+    expect(queryByText("Assistir vídeo de apoio")).not.toBeInTheDocument();
   });
 });
