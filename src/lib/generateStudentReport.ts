@@ -70,7 +70,7 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-  const { headerBg, lightBg } = resolveDojoColors(data.dojoInfo);
+  const { headerBg, accentBg, lightBg } = resolveDojoColors(data.dojoInfo);
   const dojoName = data.dojoInfo.dojoName || "Dojo";
 
   // ── Header ──
@@ -102,7 +102,11 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
     doc.setFontSize(13);
     doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
     doc.text(title, 20, yPos);
-    yPos += 7;
+    doc.setDrawColor(accentBg[0], accentBg[1], accentBg[2]);
+    doc.setLineWidth(1.5);
+    doc.line(20, yPos + 2, 20 + doc.getTextWidth(title), yPos + 2);
+    doc.setLineWidth(0.5);
+    yPos += 9;
   };
 
   const tableDefaults = {
