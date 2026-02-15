@@ -76,6 +76,7 @@ const navItems: NavItem[] = [
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, adminOnly: true },
   { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, ownerOnly: true },
+  { title: "Configurações", href: "/config", icon: <Settings className="h-5 w-5" />, studentOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
