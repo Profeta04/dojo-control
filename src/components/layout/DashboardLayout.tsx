@@ -170,9 +170,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         if (currentDojo.logo_url.startsWith('http')) {
           setLogoUrl(currentDojo.logo_url);
         } else {
-          // Assume it's a storage path in a public bucket
+          // Try signed URL first, then fall back to public URL
           const signedUrl = await getSignedUrl('dojo-logos', currentDojo.logo_url);
-          setLogoUrl(signedUrl);
+          if (signedUrl) {
+            setLogoUrl(signedUrl);
+          } else {
+            // Fall back to public URL
+            const { data } = supabase.storage.from('dojo-logos').getPublicUrl(currentDojo.logo_url);
+            setLogoUrl(data?.publicUrl || null);
+          }
         }
       } else {
         setLogoUrl(null);
@@ -207,14 +213,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {logoUrl ? (
             <img 
               src={logoUrl} 
-              alt={`Logo ${settings.dojo_name}`}
+              alt={`Logo ${currentDojo?.name || settings.dojo_name}`}
               className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
             />
           ) : (
             <img src={dojoLogo} alt="Dojo Manager" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
           )}
           <div className="min-w-0">
-            <h1 className="font-bold text-base lg:text-lg text-sidebar-foreground truncate">{settings.dojo_name}</h1>
+            <h1 className="font-bold text-base lg:text-lg text-sidebar-foreground truncate">{currentDojo?.name || settings.dojo_name}</h1>
             <p className="text-xs text-sidebar-foreground/60">Sistema de Gestão</p>
           </div>
         </div>
@@ -374,14 +380,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {logoUrl ? (
               <img 
                 src={logoUrl} 
-                alt={`Logo ${settings.dojo_name}`}
+                alt={`Logo ${currentDojo?.name || settings.dojo_name}`}
                 className="w-8 h-8 rounded-lg object-cover flex-shrink-0"
               />
             ) : (
               <img src={dojoLogo} alt="Dojo Manager" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
             )}
             <span className="font-semibold text-sm text-sidebar-foreground truncate">
-              {settings.dojo_name}
+              {currentDojo?.name || settings.dojo_name}
             </span>
           </div>
           <div className="flex items-center gap-0.5 flex-shrink-0">
