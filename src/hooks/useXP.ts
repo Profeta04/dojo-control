@@ -196,12 +196,25 @@ export function useXP(targetUserId?: string) {
         if (error) throw error;
       }
 
+      // Notify on level up
+      const previousLevel = current ? calculateLevel(current.total_xp) : 0;
+      const leveledUp = newLevel > previousLevel;
+
+      if (leveledUp) {
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          title: `⬆️ Subiu de nível!`,
+          message: `Parabéns! Você alcançou o Nível ${newLevel}!`,
+          type: "level_up",
+        });
+      }
+
       return {
         xpGranted: finalXP,
         multiplier,
         newTotal: newTotalXP,
         newLevel,
-        leveledUp: newLevel > (current ? calculateLevel(current.total_xp) : 0),
+        leveledUp,
         reason,
       };
     },
