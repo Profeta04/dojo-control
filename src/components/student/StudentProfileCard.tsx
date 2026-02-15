@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Pencil, Save, X, Building2 } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Pencil, Save, X, Building2, MapPin } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,7 +47,7 @@ export function StudentProfileCard() {
       if (!profile?.dojo_id) return null;
       const { data, error } = await supabase
         .from("dojos")
-        .select("name, description")
+        .select("name, address")
         .eq("id", profile.dojo_id)
         .single();
       if (error) throw error;
@@ -156,15 +157,27 @@ export function StudentProfileCard() {
               <h3 className="text-xl font-semibold">{profile.name}</h3>
               {dojoInfo ? (
                 <div className="mt-1">
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Building2 className="h-3.5 w-3.5" />
-                    {dojoInfo.name}
-                  </p>
-                  {dojoInfo.description && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      {dojoInfo.description}
-                    </p>
-                  )}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
+                        <Building2 className="h-3.5 w-3.5" />
+                        {dojoInfo.name}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72">
+                      <div className="space-y-2">
+                        <p className="font-medium text-sm">{dojoInfo.name}</p>
+                        {dojoInfo.address ? (
+                          <p className="text-sm text-muted-foreground flex items-start gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                            {dojoInfo.address}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">Endereço não cadastrado</p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">Judoca</p>
