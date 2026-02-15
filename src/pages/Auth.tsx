@@ -446,7 +446,7 @@ export default function Auth() {
         <img
           src={dojoLogoUrl || dojoLogo}
           alt={dojoLogoUrl ? "Logo do Dojo" : "Dojo Manager"}
-          className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border border-foreground rounded-full mx-auto object-cover"
+          className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border-2 border-border rounded-full mx-auto object-cover shadow-md"
         />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>

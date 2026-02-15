@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Student Mobile Top Bar */}
       {useBottomNav && (
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border safe-area-inset-top">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top">
           <div className="h-12 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               {logoUrl ? (
@@ -187,7 +187,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         <div
           className={cn("p-3 sm:p-4 lg:p-6", !useBottomNav && "safe-area-inset-bottom")}
-          style={useBottomNav ? { paddingBottom: "calc(10rem + env(safe-area-inset-bottom, 0px))" } : undefined}
+          style={useBottomNav ? { paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" } : undefined}
         >
           {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
             <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
