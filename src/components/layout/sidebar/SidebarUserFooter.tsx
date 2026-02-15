@@ -51,19 +51,19 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
 
   return (
     <>
-      <div className="p-3 safe-area-inset-bottom" role="region" aria-label="Informações do usuário">
-        <div className="flex items-center gap-3 mb-2 px-1">
+      <div className="p-4 safe-area-inset-bottom" role="region" aria-label="Informações do usuário">
+        <div className="flex items-center gap-3.5 mb-3 px-1">
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className={cn(
-              "w-9 h-9 rounded-full overflow-hidden flex items-center justify-center",
+              "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center",
               "ring-2 ring-sidebar-border/50 transition-all duration-200",
               avatarUrl ? "" : "bg-sidebar-accent"
             )}>
               {avatarUrl ? (
                 <img src={avatarUrl} alt={profile?.name || "Avatar"} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-sidebar-accent-foreground font-semibold text-sm">
+                <span className="text-sidebar-accent-foreground font-semibold text-base">
                   {profile?.name?.charAt(0).toUpperCase() || "U"}
                 </span>
               )}
@@ -71,7 +71,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
           </div>
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold text-sidebar-foreground truncate leading-tight">
+            <p className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">
               {profile?.name || "Usuário"}
             </p>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -89,7 +89,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
                   <BeltBadge grade={profile.belt_grade as any} size="sm" />
                 )
               )}
-              <span className="text-[11px] text-sidebar-foreground/50 font-medium">{roleLabel}</span>
+              <span className="text-xs text-sidebar-foreground/50 font-medium">{roleLabel}</span>
             </div>
           </div>
           {/* Config gear icon */}
@@ -107,7 +107,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
               aria-label="Configurações"
             >
               <Settings className={cn(
-                "h-4.5 w-4.5 transition-transform duration-300",
+                "h-5 w-5 transition-transform duration-300",
                 isConfigActive ? "rotate-90" : "hover:rotate-45"
               )} />
             </Link>
@@ -119,7 +119,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
           <Button
             variant="ghost"
             className={cn(
-              "flex-1 justify-start h-8 text-[12px] text-sidebar-foreground/50",
+              "flex-1 justify-start h-9 text-xs text-sidebar-foreground/50",
               "hover:text-destructive hover:bg-destructive/10",
               "active:scale-[0.98] transition-all duration-200",
               "focus-visible:ring-2 focus-visible:ring-sidebar-ring"
@@ -127,7 +127,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
             onClick={handleSignOut}
             aria-label="Sair da conta"
           >
-            <LogOut className="h-3.5 w-3.5 mr-1.5" />
+            <LogOut className="h-4 w-4 mr-2" />
             Sair
           </Button>
         </div>
