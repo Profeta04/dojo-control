@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, Plus, Loader2, Edit2, Trash2, GraduationCap } from "lucide-react";
+import { CalendarClock, Plus, Loader2, Edit2, Trash2, GraduationCap, Play } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -40,6 +40,7 @@ export function MonthlyFeePlans() {
   const [editingPlan, setEditingPlan] = useState<FeePlan | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -194,6 +195,26 @@ export function MonthlyFeePlans() {
     }
   };
 
+  const handleGenerateNow = async () => {
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-monthly-payments");
+      if (error) throw error;
+      const result = data as { generated: number; message: string };
+      toast({
+        title: "Mensalidades geradas!",
+        description: result.generated > 0
+          ? `${result.generated} pagamento(s) criado(s) com sucesso.`
+          : "Nenhum novo pagamento gerado (todos já existem ou não há alunos elegíveis).",
+      });
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+    } catch (error: any) {
+      toast({ title: "Erro ao gerar mensalidades", description: error.message, variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const toggleClass = (classId: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -222,9 +243,15 @@ export function MonthlyFeePlans() {
               </CardTitle>
               <CardDescription>Cobranças automáticas geradas mensalmente</CardDescription>
             </div>
-            <Button size="sm" onClick={openCreate}>
-              <Plus className="h-4 w-4 mr-1" /> Novo Plano
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={handleGenerateNow} disabled={generating || !plans || plans.length === 0}>
+                {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                <span className="hidden sm:inline">Gerar Agora</span>
+              </Button>
+              <Button size="sm" onClick={openCreate}>
+                <Plus className="h-4 w-4 mr-1" /> <span className="hidden sm:inline">Novo Plano</span><span className="sm:hidden">Novo</span>
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
