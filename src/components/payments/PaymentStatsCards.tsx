@@ -69,17 +69,17 @@ export function PaymentStatsCards({ stats, formatCurrency, variant = "admin" }: 
         return (
           <Card 
             key={card.label}
-            className={`${card.bgClass} border-0 shadow-sm hover-scale animate-fade-in overflow-hidden relative`}
+            className={`${card.bgClass} border border-border/40 shadow-sm hover-scale animate-fade-in overflow-hidden relative`}
             style={{ animationDelay: card.delay }}
           >
             <CardHeader className="pb-2 p-4">
               <div className="flex items-center justify-between">
-                <CardDescription className="flex items-center gap-1.5 text-xs font-medium">
+                <CardDescription className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
                   {card.label}
                 </CardDescription>
-                <Icon className={`h-4 w-4 ${card.color} opacity-60`} />
+                <Icon className={`h-4 w-4 ${card.color} opacity-70`} />
               </div>
-              <CardTitle className={`text-2xl sm:text-3xl font-bold ${card.color}`}>
+              <CardTitle className={`text-2xl sm:text-3xl font-extrabold ${card.color}`}>
                 {card.value}
               </CardTitle>
             </CardHeader>

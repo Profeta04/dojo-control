@@ -12,14 +12,14 @@
     --color-tertiary: 4 85% 50%;
     
     /* Derived colors - high contrast light mode */
-    --background: 220 14% 93%;
-    --foreground: 220 15% 8%;
+    --background: 220 14% 91%;
+    --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 8%;
+    --card-foreground: 220 20% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 8%;
+    --popover-foreground: 220 20% 10%;
 
     --primary: var(--color-primary);
     --primary-foreground: 0 0% 98%;
@@ -27,8 +27,8 @@
     --secondary: var(--color-secondary);
     --secondary-foreground: 220 15% 12%;
 
-    --muted: 220 10% 90%;
-    --muted-foreground: 220 10% 32%;
+    --muted: 220 10% 94%;
+    --muted-foreground: 220 12% 38%;
 
     --accent: var(--color-tertiary);
     --accent-foreground: 0 0% 100%;
@@ -40,8 +40,8 @@
     --info: 220 15% 40%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 13% 80%;
-    --input: 220 13% 82%;
+    --border: 220 13% 78%;
+    --input: 220 13% 80%;
     --ring: var(--color-tertiary);
 
     --radius: 0.5rem;

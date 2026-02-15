@@ -46,8 +46,8 @@ export function GraduationTimeline() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Award className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-lg font-bold">
+          <Award className="h-5 w-5 text-accent" />
           Histórico de Graduações
         </CardTitle>
       </CardHeader>

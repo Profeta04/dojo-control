@@ -83,9 +83,9 @@ export default function Dashboard() {
         ) : null}
       </div>
 
-      <div className="mt-6 p-4 sm:p-6 bg-card rounded-lg border border-border">
-        <h2 className="text-base sm:text-lg font-semibold mb-2">🎯 Próximos passos</h2>
-        <p className="text-sm text-muted-foreground">
+      <div className="mt-6 p-4 sm:p-6 bg-card rounded-xl border border-border/60 shadow-sm">
+        <h2 className="text-base sm:text-lg font-bold text-foreground mb-2">Próximos passos</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
           {canManageStudents 
             ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
             : "Acompanhe suas tarefas e evolução no judô."}

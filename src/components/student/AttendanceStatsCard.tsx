@@ -84,8 +84,8 @@ export function AttendanceStatsCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <CalendarCheck className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-lg font-bold">
+          <CalendarCheck className="h-5 w-5 text-accent" />
           Frequência
         </CardTitle>
       </CardHeader>
@@ -103,25 +103,25 @@ export function AttendanceStatsCard() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
-            <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
-            <p className="text-2xl font-bold">{stats.total}</p>
-            <p className="text-xs text-muted-foreground">Total de aulas</p>
+          <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-3.5 text-center border border-primary/10">
+            <TrendingUp className="h-4 w-4 mx-auto mb-1.5 text-primary" />
+            <p className="text-2xl font-extrabold text-foreground">{stats.total}</p>
+            <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Total de aulas</p>
           </div>
-          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
-            <CalendarCheck className="h-4 w-4 mx-auto mb-1 text-green-600" />
-            <p className="text-2xl font-bold text-green-600">{stats.present}</p>
-            <p className="text-xs text-muted-foreground">Presenças</p>
+          <div className="rounded-xl bg-gradient-to-br from-success/10 to-success/5 p-3.5 text-center border border-success/10">
+            <CalendarCheck className="h-4 w-4 mx-auto mb-1.5 text-success" />
+            <p className="text-2xl font-extrabold text-success">{stats.present}</p>
+            <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Presenças</p>
           </div>
-          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
-            <CalendarX className="h-4 w-4 mx-auto mb-1 text-red-500" />
-            <p className="text-2xl font-bold text-red-500">{stats.absent}</p>
-            <p className="text-xs text-muted-foreground">Faltas</p>
+          <div className="rounded-xl bg-gradient-to-br from-destructive/10 to-destructive/5 p-3.5 text-center border border-destructive/10">
+            <CalendarX className="h-4 w-4 mx-auto mb-1.5 text-destructive" />
+            <p className="text-2xl font-extrabold text-destructive">{stats.absent}</p>
+            <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Faltas</p>
           </div>
-          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
-            <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
-            <p className="text-2xl font-bold text-orange-500">{stats.currentStreak}</p>
-            <p className="text-xs text-muted-foreground">Sequência atual</p>
+          <div className="rounded-xl bg-gradient-to-br from-warning/10 to-warning/5 p-3.5 text-center border border-warning/10">
+            <Flame className="h-4 w-4 mx-auto mb-1.5 text-warning" />
+            <p className="text-2xl font-extrabold text-warning">{stats.currentStreak}</p>
+            <p className="text-[11px] font-medium text-muted-foreground mt-0.5">Sequência atual</p>
           </div>
         </div>
       </CardContent>

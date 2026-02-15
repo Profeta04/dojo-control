@@ -92,8 +92,8 @@ export function StudentProfileCard() {
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="bg-muted/50 pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
+      <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50 pb-4">
+        <CardTitle className="flex items-center gap-2 text-lg font-bold">
           Meus Dados
         </CardTitle>
       </CardHeader>
