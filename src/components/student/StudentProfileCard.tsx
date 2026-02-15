@@ -93,7 +93,7 @@ export function StudentProfileCard() {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50 pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg font-bold">
+        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
           Meus Dados
         </CardTitle>
       </CardHeader>
@@ -121,13 +121,13 @@ export function StudentProfileCard() {
           {/* Student Info */}
           <div className="flex-1 space-y-4">
             <div>
-              <h3 className="text-xl font-semibold">{profile.name}</h3>
+              <h3 className="text-xl sm:text-2xl font-semibold">{profile.name}</h3>
               {dojoInfo ? (
                 <div className="mt-1">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className="text-sm text-muted-foreground flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer">
-                        <Building2 className="h-3.5 w-3.5" />
+                      <button className="text-sm sm:text-base text-muted-foreground flex items-center gap-1.5 hover:text-foreground transition-colors cursor-pointer">
+                        <Building2 className="h-4 w-4 sm:h-5 sm:w-5" />
                         {dojoInfo.name}
                       </button>
                     </PopoverTrigger>
@@ -152,22 +152,22 @@ export function StudentProfileCard() {
             </div>
 
             {profile.birth_date && (
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 text-sm sm:text-base">
+                <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                 <span>{format(new Date(profile.birth_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</span>
               </div>
             )}
 
             {/* Contact info - read only */}
             <div className="pt-3 border-t border-border">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Contato</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm sm:text-base font-medium text-muted-foreground mb-2">Contato</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="flex items-center gap-2 text-sm sm:text-base">
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                   <span className="truncate">{profile.email || "Não informado"}</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
+                <div className="flex items-center gap-2 text-sm sm:text-base">
+                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
                   <span>{profile.phone || "Não informado"}</span>
                 </div>
               </div>
