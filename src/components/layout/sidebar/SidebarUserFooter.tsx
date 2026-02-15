@@ -21,9 +21,8 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [beltDialogOpen, setBeltDialogOpen] = useState(false);
 
-  const showStudentConfig = isStudent && !canManageStudents;
-  const configHref = showStudentConfig ? "/config" : null;
-  const isConfigActive = configHref ? location.pathname === configHref : false;
+  const configHref = "/config";
+  const isConfigActive = location.pathname === configHref;
 
   useEffect(() => {
     const loadAvatar = async () => {

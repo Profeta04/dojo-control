@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 
 export default function StudentConfig() {
-  const { profile, user, signOut } = useAuth();
+  const { profile, user, signOut, isDono, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -101,6 +101,7 @@ export default function StudentConfig() {
     navigate("/auth");
   };
 
+  const roleLabel = isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno";
   const isFederated = (profile as any)?.is_federated ?? false;
 
   return (

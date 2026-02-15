@@ -28,10 +28,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const { getSignedUrl } = useSignedUrl();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const studentNavMode = isStudent && !canManageStudents
-    ? (localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom")
-    : "sidebar";
-  const useBottomNav = isStudent && !canManageStudents && studentNavMode === "bottom";
+  const navMode = localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom";
+  const useBottomNav = navMode === "bottom";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
