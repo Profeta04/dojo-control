@@ -440,19 +440,25 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-8 relative overflow-hidden">
+      {/* Decorative background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-3xl -translate-y-1/2" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl translate-y-1/2 translate-x-1/4" />
+      </div>
+      
       {/* Header */}
-      <div className="text-center mb-6 sm:mb-8">
+      <div className="text-center mb-6 sm:mb-8 relative z-10">
         <img
           src={dojoLogoUrl || dojoLogo}
           alt={dojoLogoUrl ? "Logo do Dojo" : "Dojo Manager"}
-          className="w-20 h-20 sm:w-24 sm:h-24 mb-1 border-2 border-border rounded-full mx-auto object-cover shadow-md"
+          className="w-20 h-20 sm:w-24 sm:h-24 mb-2 border-2 border-border rounded-full mx-auto object-cover shadow-lg"
         />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Dojo Manager</h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo de Judô</p>
       </div>
 
-      <Card className="w-full max-w-md border-border shadow-lg">
+      <Card className="w-full max-w-md border-border shadow-xl relative z-10">
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 h-11">
             <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
