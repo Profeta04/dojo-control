@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && !useBottomNav && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
         />

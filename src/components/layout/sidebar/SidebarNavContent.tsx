@@ -37,6 +37,7 @@ interface NavItem {
   studentOnly?: boolean;
 }
 
+// Main navigation items (no config here — it goes in footer)
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, adminOnly: true },
   { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-5 w-5" />, studentOnly: true },
@@ -49,7 +50,6 @@ const navItems: NavItem[] = [
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, adminOnly: true },
   { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, ownerOnly: true },
-  { title: "Configurações", href: "/config", icon: <Settings className="h-5 w-5" />, studentOnly: true },
 ];
 
 interface SidebarNavContentProps {
@@ -61,7 +61,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
   const location = useLocation();
   const { canManageStudents, isStudent, isDono, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
-  const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
+  const { currentDojoId, setCurrentDojoId, userDojos } = useDojoContext();
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
 
@@ -73,6 +73,60 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     return false;
   });
 
+  // Group items into sections
+  const mainItems = filteredNavItems.filter(i => 
+    ["/dashboard", "/perfil", "/tarefas", "/students", "/senseis", "/classes", "/agenda"].includes(i.href)
+  );
+  const financeItems = filteredNavItems.filter(i => 
+    ["/payments", "/mensalidade", "/graduations"].includes(i.href)
+  );
+  const adminItems = filteredNavItems.filter(i => 
+    ["/settings"].includes(i.href)
+  );
+
+  const renderNavItem = (item: NavItem, index: number) => {
+    const isActive = location.pathname === item.href;
+    return (
+      <Link
+        key={item.href}
+        to={item.href}
+        onClick={onCloseMobile}
+        className={cn(
+          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium",
+          "transition-all duration-200 ease-out",
+          "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
+          "active:scale-[0.98]",
+          isActive
+            ? "bg-sidebar-primary/15 text-sidebar-primary"
+            : "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/40"
+        )}
+        style={{
+          animationDelay: `${index * 30}ms`,
+          animation: "fade-in 0.3s ease-out both",
+        }}
+        aria-current={isActive ? "page" : undefined}
+      >
+        {/* Animated left bar indicator */}
+        <span className={cn(
+          "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-sidebar-primary transition-all duration-300",
+          isActive ? "h-5 opacity-100" : "h-0 opacity-0"
+        )} />
+        <span className={cn(
+          "flex-shrink-0 transition-all duration-200",
+          isActive
+            ? "text-sidebar-primary scale-110"
+            : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80 group-hover:scale-105"
+        )}>
+          {item.icon}
+        </span>
+        <span className="truncate">{item.title}</span>
+        {isActive && (
+          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary animate-scale-in" />
+        )}
+      </Link>
+    );
+  };
+
   return (
     <>
       {/* Logo & Dojo Header */}
@@ -80,8 +134,8 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-sidebar-border/50">
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
+              <img
+                src={logoUrl}
                 alt={`Logo ${currentDojo?.name || settings.dojo_name}`}
                 className="w-full h-full object-cover"
               />
@@ -124,58 +178,56 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
         )}
       </div>
 
-      <Separator className="bg-sidebar-border/60 mx-3" />
+      <Separator className="bg-sidebar-border/40 mx-4" />
 
-      {/* Navigation Links */}
+      {/* Navigation Links - Sections */}
       <ScrollArea className="flex-1 px-3 py-3">
-        <nav className="space-y-0.5" aria-label="Menu principal">
-          {filteredNavItems.map((item, index) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={onCloseMobile}
-                className={cn(
-                  "group flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium",
-                  "transition-all duration-200 ease-out",
-                  "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
-                  "active:scale-[0.98]",
-                  isActive
-                    ? "bg-sidebar-primary/15 text-sidebar-primary shadow-sm"
-                    : "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                )}
-                style={{ 
-                  animationDelay: `${index * 30}ms`,
-                  animation: "fade-in 0.3s ease-out both",
-                }}
-                aria-current={isActive ? "page" : undefined}
-              >
-                <span className={cn(
-                  "flex-shrink-0 transition-all duration-200",
-                  isActive 
-                    ? "text-sidebar-primary scale-110" 
-                    : "text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80 group-hover:scale-105"
-                )}>
-                  {item.icon}
-                </span>
-                <span className="truncate">{item.title}</span>
-                {isActive && (
-                  <span className="ml-auto w-1.5 h-1.5 rounded-full bg-sidebar-primary animate-scale-in" />
-                )}
-              </Link>
-            );
-          })}
+        <nav aria-label="Menu principal">
+          {/* Section: Principal */}
+          {mainItems.length > 0 && (
+            <div className="mb-3">
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                Principal
+              </p>
+              <div className="space-y-0.5">
+                {mainItems.map((item, i) => renderNavItem(item, i))}
+              </div>
+            </div>
+          )}
+
+          {/* Section: Financeiro / Graduações */}
+          {financeItems.length > 0 && (
+            <div className="mb-3">
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                {canManageStudents ? "Financeiro" : "Pagamentos"}
+              </p>
+              <div className="space-y-0.5">
+                {financeItems.map((item, i) => renderNavItem(item, mainItems.length + i))}
+              </div>
+            </div>
+          )}
+
+          {/* Section: Administração */}
+          {adminItems.length > 0 && (
+            <div>
+              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+                Administração
+              </p>
+              <div className="space-y-0.5">
+                {adminItems.map((item, i) => renderNavItem(item, mainItems.length + financeItems.length + i))}
+              </div>
+            </div>
+          )}
         </nav>
       </ScrollArea>
 
       {/* Dark Mode Toggle */}
       <SidebarDarkModeToggle />
 
-      <Separator className="bg-sidebar-border/60 mx-3" />
+      <Separator className="bg-sidebar-border/40 mx-4" />
 
-      {/* User Footer */}
-      <SidebarUserFooter />
+      {/* User Footer with config gear icon */}
+      <SidebarUserFooter onCloseMobile={onCloseMobile} />
     </>
   );
 }

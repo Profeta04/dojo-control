@@ -1,21 +1,29 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
-import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { LogOut, Pencil } from "lucide-react";
+import { LogOut, Pencil, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SidebarBeltDialog } from "./SidebarBeltDialog";
 
-export function SidebarUserFooter() {
+interface SidebarUserFooterProps {
+  onCloseMobile?: () => void;
+}
+
+export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
+  const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut, isDono, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const { getSignedUrl } = useSignedUrl();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [beltDialogOpen, setBeltDialogOpen] = useState(false);
+
+  const showStudentConfig = isStudent && !canManageStudents;
+  const configHref = showStudentConfig ? "/config" : null;
+  const isConfigActive = configHref ? location.pathname === configHref : false;
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -44,7 +52,7 @@ export function SidebarUserFooter() {
   return (
     <>
       <div className="p-3 safe-area-inset-bottom" role="region" aria-label="Informações do usuário">
-        <div className="flex items-center gap-3 mb-2.5 px-1">
+        <div className="flex items-center gap-3 mb-2 px-1">
           {/* Avatar */}
           <div className="flex-shrink-0">
             <div className={cn(
@@ -84,21 +92,45 @@ export function SidebarUserFooter() {
               <span className="text-[11px] text-sidebar-foreground/50 font-medium">{roleLabel}</span>
             </div>
           </div>
-        </div>
-        <Button
-          variant="ghost"
-          className={cn(
-            "w-full justify-start h-9 text-[13px] text-sidebar-foreground/60",
-            "hover:text-destructive hover:bg-destructive/10",
-            "active:scale-[0.98] transition-all duration-200",
-            "focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          {/* Config gear icon */}
+          {configHref && (
+            <Link
+              to={configHref}
+              onClick={onCloseMobile}
+              className={cn(
+                "flex-shrink-0 p-1.5 rounded-lg transition-all duration-200",
+                isConfigActive
+                  ? "text-sidebar-primary bg-sidebar-primary/15"
+                  : "text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+              )}
+              title="Configurações"
+              aria-label="Configurações"
+            >
+              <Settings className={cn(
+                "h-4.5 w-4.5 transition-transform duration-300",
+                isConfigActive ? "rotate-90" : "hover:rotate-45"
+              )} />
+            </Link>
           )}
-          onClick={handleSignOut}
-          aria-label="Sair da conta"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Sair
-        </Button>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-1.5">
+          <Button
+            variant="ghost"
+            className={cn(
+              "flex-1 justify-start h-8 text-[12px] text-sidebar-foreground/50",
+              "hover:text-destructive hover:bg-destructive/10",
+              "active:scale-[0.98] transition-all duration-200",
+              "focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+            )}
+            onClick={handleSignOut}
+            aria-label="Sair da conta"
+          >
+            <LogOut className="h-3.5 w-3.5 mr-1.5" />
+            Sair
+          </Button>
+        </div>
       </div>
 
       <SidebarBeltDialog open={beltDialogOpen} onOpenChange={setBeltDialogOpen} />
