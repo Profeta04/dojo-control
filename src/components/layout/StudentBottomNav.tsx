@@ -1,13 +1,29 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { LayoutDashboard, ClipboardList, Calendar, CreditCard, Settings } from "lucide-react";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Calendar,
+  CreditCard,
+  Settings,
+  Users,
+  GraduationCap,
+  Trophy,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
-const studentTabs = [
+interface TabItem {
+  title: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  isProfile?: boolean;
+}
+
+const studentTabs: TabItem[] = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
@@ -15,11 +31,34 @@ const studentTabs = [
   { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
 ];
 
+const adminTabs: TabItem[] = [
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Alunos", href: "/students", icon: Users },
+  { title: "Config", href: "/config", icon: Settings, isProfile: true },
+  { title: "Pagamentos", href: "/payments", icon: CreditCard },
+  { title: "Turmas", href: "/classes", icon: GraduationCap },
+];
+
+const senseiTabs: TabItem[] = [
+  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Alunos", href: "/students", icon: Users },
+  { title: "Config", href: "/config", icon: Settings, isProfile: true },
+  { title: "Pagamentos", href: "/payments", icon: CreditCard },
+  { title: "Turmas", href: "/classes", icon: GraduationCap },
+];
+
 export function StudentBottomNav() {
   const location = useLocation();
-  const { profile } = useAuth();
+  const { profile, isStudent, canManageStudents, isSensei } = useAuth();
   const { getSignedUrl } = useSignedUrl();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  // Pick tabs based on role
+  const tabs = isStudent && !canManageStudents
+    ? studentTabs
+    : isSensei && !canManageStudents
+      ? senseiTabs
+      : adminTabs;
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -46,10 +85,10 @@ export function StudentBottomNav() {
     <nav
       id="student-bottom-nav"
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
-      aria-label="Navegação do aluno"
+      aria-label="Navegação principal"
     >
       <div className="flex items-end justify-around px-1 pt-2 pb-3">
-        {studentTabs.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = location.pathname === tab.href;
           const Icon = tab.icon;
 
