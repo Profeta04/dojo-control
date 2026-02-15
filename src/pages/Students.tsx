@@ -350,6 +350,28 @@ export default function Students() {
                   <div className="sm:hidden mt-1">
                     <RegistrationStatusBadge status={student.registration_status || "pendente"} />
                   </div>
+                  <div className="md:hidden flex items-center gap-3 mt-1.5">
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Switch
+                        checked={student.is_federated ?? false}
+                        onCheckedChange={() => handleToggleFederated(student)}
+                        aria-label={`Federado`}
+                        className="scale-75 origin-left"
+                      />
+                      {student.is_federated ? <Shield className="h-3 w-3 text-primary" /> : null}
+                      Fed.
+                    </label>
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Switch
+                        checked={student.is_scholarship ?? false}
+                        onCheckedChange={() => handleScholarshipToggleClick(student)}
+                        aria-label={`Bolsista`}
+                        className="scale-75 origin-left"
+                      />
+                      {student.is_scholarship ? <GraduationCap className="h-3 w-3 text-accent-foreground" /> : null}
+                      Bolsa
+                    </label>
+                  </div>
                 </div>
               </TableCell>
               <TableCell className="hidden sm:table-cell">
