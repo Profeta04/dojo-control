@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Youtube } from "lucide-react";
+import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Youtube, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TaskWithAssignee, TaskStatus, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
+import { useXP } from "@/hooks/useXP";
+import { useAchievements } from "@/hooks/useAchievements";
 import { cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
+import { XPNotification } from "@/components/gamification/XPNotification";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TaskCardProps {
   task: TaskWithAssignee;
@@ -15,6 +19,7 @@ interface TaskCardProps {
   onDelete?: (taskId: string) => void;
   showAssignee?: boolean;
   videoUrl?: string;
+  xpValue?: number;
 }
 
 const priorityConfig: Record<TaskPriority, { label: string; className: string }> = {
@@ -23,17 +28,36 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
   alta: { label: "Alta", className: "bg-destructive/10 text-destructive" },
 };
 
-export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, videoUrl }: TaskCardProps) {
+export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, videoUrl, xpValue = 10 }: TaskCardProps) {
   const [isSliding, setIsSliding] = useState(false);
+  const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
+  const { grantXP, currentStreak, totalXp } = useXP();
+  const { checkAndUnlock } = useAchievements();
   const isCompleted = task.status === "concluida";
   const isCancelled = task.status === "cancelada";
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isCompleted && !isCancelled;
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
-  const handleToggleComplete = () => {
+  const handleToggleComplete = async () => {
     if (!isCompleted) {
       setIsSliding(true);
       fireConfetti();
+
+      // Grant XP
+      try {
+        const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "task" });
+        setXpNotif({
+          amount: result.xpGranted,
+          multiplier: result.multiplier,
+          leveledUp: result.leveledUp,
+          newLevel: result.newLevel,
+        });
+        const { count } = await supabase
+          .from("tasks").select("id", { count: "exact", head: true })
+          .eq("assigned_to", task.assigned_to).eq("status", "concluida");
+        checkAndUnlock.mutate({ tasksCompleted: (count || 0) + 1, currentStreak, totalXp: result.newTotal });
+      } catch {}
+
       setTimeout(() => {
         onStatusChange(task.id, "concluida");
         setIsSliding(false);
@@ -101,6 +125,12 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
                     )}
                   >
                     {CATEGORY_CONFIG[task.category].label}
+                  </Badge>
+                )}
+                {!isCompleted && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-accent/30 text-accent">
+                    <Zap className="h-2.5 w-2.5 mr-0.5" />
+                    {xpValue} XP
                   </Badge>
                 )}
                 <Badge 
@@ -174,6 +204,17 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
           </div>
         </div>
       </CardContent>
+      
+      {xpNotif && (
+        <XPNotification
+          xpAmount={xpNotif.amount}
+          multiplier={xpNotif.multiplier}
+          leveledUp={xpNotif.leveledUp}
+          newLevel={xpNotif.newLevel}
+          show={!!xpNotif}
+          onComplete={() => setXpNotif(null)}
+        />
+      )}
     </Card>
   );
 }

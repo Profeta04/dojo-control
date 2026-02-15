@@ -1,30 +1,37 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, BookOpen, Loader2, Youtube, RotateCcw, Sparkles } from "lucide-react";
+import { CheckCircle2, XCircle, BookOpen, Loader2, Youtube, RotateCcw, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
+import { useXP } from "@/hooks/useXP";
+import { useAchievements } from "@/hooks/useAchievements";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
+import { XPNotification } from "@/components/gamification/XPNotification";
 
 interface TaskQuizCardProps {
   task: TaskWithAssignee;
   options: string[];
   correctOption: number;
   videoUrl?: string;
+  xpValue?: number;
 }
 
-export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQuizCardProps) {
+export function TaskQuizCard({ task, options, correctOption, videoUrl, xpValue = 10 }: TaskQuizCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isSliding, setIsSliding] = useState(false);
+  const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
   const { updateTaskStatus } = useTasks();
+  const { grantXP, currentStreak, totalXp } = useXP();
+  const { checkAndUnlock } = useAchievements();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedOption === null) return;
     
     const selectedIndex = parseInt(selectedOption);
@@ -37,6 +44,24 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
       fireConfetti();
       setIsSliding(true);
       toast.success("Resposta correta! 🎉");
+      
+      // Grant XP
+      try {
+        const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "quiz" });
+        setXpNotif({
+          amount: result.xpGranted,
+          multiplier: result.multiplier,
+          leveledUp: result.leveledUp,
+          newLevel: result.newLevel,
+        });
+        // Check achievements
+        const completedCount = (await import("@/integrations/supabase/client")).supabase
+          .from("tasks").select("id", { count: "exact" })
+          .eq("assigned_to", task.assigned_to).eq("status", "concluida");
+        const count = (await completedCount).count || 0;
+        checkAndUnlock.mutate({ tasksCompleted: count + 1, currentStreak, totalXp: result.newTotal });
+      } catch {}
+
       setTimeout(() => {
         updateTaskStatus.mutate({ taskId: task.id, status: "concluida" });
         setIsSliding(false);
@@ -84,9 +109,15 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
               )}
             </div>
           </div>
-          <Badge variant="secondary" className="flex-shrink-0 text-xs font-medium">
-            Quiz
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <Badge variant="secondary" className="text-xs font-medium flex items-center gap-1">
+              <Zap className="h-3 w-3 text-accent" />
+              {xpValue} XP
+            </Badge>
+            <Badge variant="secondary" className="text-xs font-medium">
+              Quiz
+            </Badge>
+          </div>
         </div>
         {videoUrl && (
           <a
@@ -184,6 +215,17 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl }: TaskQui
           )}
         </div>
       </CardContent>
+      
+      {xpNotif && (
+        <XPNotification
+          xpAmount={xpNotif.amount}
+          multiplier={xpNotif.multiplier}
+          leveledUp={xpNotif.leveledUp}
+          newLevel={xpNotif.newLevel}
+          show={!!xpNotif}
+          onComplete={() => setXpNotif(null)}
+        />
+      )}
     </Card>
   );
 }

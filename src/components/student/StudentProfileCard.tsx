@@ -3,13 +3,15 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Building2, MapPin } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Building2, MapPin, Star } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { AvatarUpload } from "./AvatarUpload";
+import { XPBar } from "@/components/gamification/XPBar";
+import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 
 export function StudentProfileCard() {
   const { profile, user } = useAuth();
@@ -208,6 +210,20 @@ export function StudentProfileCard() {
                 <p className="text-sm text-muted-foreground">Nenhuma turma vinculada</p>
               </div>
             )}
+
+            {/* XP & Level */}
+            <div className="pt-3 border-t border-border">
+              <XPBar compact />
+            </div>
+
+            {/* Achievements Badges */}
+            <div className="pt-3 border-t border-border">
+              <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                <Star className="h-3.5 w-3.5 text-accent" />
+                Conquistas
+              </p>
+              <AchievementsPanel compact maxVisible={6} />
+            </div>
           </div>
         </div>
       </CardContent>
