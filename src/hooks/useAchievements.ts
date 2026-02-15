@@ -154,6 +154,14 @@ export function useAchievements(targetUserId?: string) {
 
           if (!error) {
             newlyUnlocked.push(achievement);
+            // Create notification for the user
+            await supabase.from("notifications").insert({
+              user_id: userId,
+              title: `🏅 Conquista desbloqueada!`,
+              message: `Você desbloqueou "${achievement.name}"! +${achievement.xp_reward} XP`,
+              type: "achievement",
+              related_id: achievement.id,
+            });
           }
         }
       }
