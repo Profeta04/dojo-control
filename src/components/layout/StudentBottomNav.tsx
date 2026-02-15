@@ -45,10 +45,10 @@ export function StudentBottomNav() {
   return (
     <nav
       id="student-bottom-nav"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t border-sidebar-border safe-area-inset-bottom"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
       aria-label="Navegação do aluno"
     >
-      <div className="flex items-end justify-around px-1 pt-1.5 pb-1.5">
+      <div className="flex items-end justify-around px-2 pt-1.5 pb-2">
         {studentTabs.map((tab) => {
           const isActive = location.pathname === tab.href;
           const Icon = tab.icon;
@@ -64,10 +64,10 @@ export function StudentBottomNav() {
               >
                 <div
                   className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
-                    "shadow-md border-[3px] border-sidebar",
+                    "w-13 h-13 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+                    "shadow-lg border-[3px] border-sidebar",
                     isActive
-                      ? "ring-2 ring-primary ring-offset-1 ring-offset-sidebar scale-110"
+                      ? "ring-2 ring-accent ring-offset-1 ring-offset-sidebar scale-110"
                       : "ring-1 ring-sidebar-border hover:scale-105"
                   )}
                 >
@@ -80,7 +80,7 @@ export function StudentBottomNav() {
                   ) : (
                     <span className={cn(
                       "text-sm font-bold",
-                      isActive ? "text-primary" : "text-sidebar-foreground/60"
+                      isActive ? "text-accent" : "text-sidebar-foreground/60"
                     )}>
                       {profile?.name?.charAt(0).toUpperCase() || "U"}
                     </span>
@@ -102,7 +102,7 @@ export function StudentBottomNav() {
               className={cn(
                 "flex flex-col items-center gap-0.5 py-1 px-2 rounded-xl transition-all duration-200 min-w-[52px]",
                 isActive
-                  ? "text-primary"
+                  ? "text-accent"
                   : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
               )}
               aria-current={isActive ? "page" : undefined}
@@ -115,7 +115,7 @@ export function StudentBottomNav() {
                   )}
                 />
                 {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary animate-scale-in" />
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-accent animate-scale-in" />
                 )}
               </div>
               <span className={cn(

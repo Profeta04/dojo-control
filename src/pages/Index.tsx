@@ -22,7 +22,7 @@ const Index = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Hero Section */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:p-8 text-center safe-area-inset">
-        <img src={dojoLogo} alt="Dojo Manager" className="w-24 h-24 sm:w-32 sm:h-32 mb-4 sm:mb-6 border border-foreground rounded-full" />
+        <img src={dojoLogo} alt="Dojo Manager" className="w-24 h-24 sm:w-28 sm:h-28 mb-4 sm:mb-6 border-2 border-border rounded-full shadow-lg" />
         
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4 tracking-tight">
           Dojo Manager
@@ -53,35 +53,21 @@ const Index = () => {
         </div>
 
         {/* Features */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-10 sm:mt-16 w-full max-w-4xl px-2">
-          <div className="p-4 sm:p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 mb-3 mx-auto">
-              <Users className="h-6 w-6 text-accent" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-10 sm:mt-16 w-full max-w-4xl px-2">
+          {[
+            { icon: Users, title: "Gestão de Alunos", desc: "Cadastro e acompanhamento completo" },
+            { icon: CalendarDays, title: "Controle de Turmas", desc: "Agenda e organização das aulas" },
+            { icon: Trophy, title: "Graduações", desc: "Histórico de faixas e progressão" },
+            { icon: Shield, title: "Presenças", desc: "Controle de frequência" },
+          ].map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="p-4 sm:p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+              <div className="flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-primary/10 mb-3 mx-auto">
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <h3 className="font-semibold mb-1 text-sm sm:text-base text-card-foreground">{title}</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">{desc}</p>
             </div>
-            <h3 className="font-semibold mb-1.5 text-sm sm:text-base">Gestão de Alunos</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">Cadastro e acompanhamento completo</p>
-          </div>
-          <div className="p-4 sm:p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 mb-3 mx-auto">
-              <CalendarDays className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="font-semibold mb-1.5 text-sm sm:text-base">Controle de Turmas</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">Agenda e organização das aulas</p>
-          </div>
-          <div className="p-4 sm:p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 mb-3 mx-auto">
-              <Trophy className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="font-semibold mb-1.5 text-sm sm:text-base">Graduações</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">Histórico de faixas e progressão</p>
-          </div>
-          <div className="p-4 sm:p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/10 mb-3 mx-auto">
-              <Shield className="h-6 w-6 text-accent" />
-            </div>
-            <h3 className="font-semibold mb-1.5 text-sm sm:text-base">Presenças</h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">Controle de frequência</p>
-          </div>
+          ))}
         </div>
       </div>
 
