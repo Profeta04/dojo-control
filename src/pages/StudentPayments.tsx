@@ -28,7 +28,8 @@ import { PaymentStatsCards } from "@/components/payments/PaymentStatsCards";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PaymentStatus, PAYMENT_STATUS_LABELS } from "@/lib/constants";
+import { PaymentStatus, PAYMENT_STATUS_LABELS, PAYMENT_CATEGORY_LABELS, PaymentCategory } from "@/lib/constants";
+import { differenceInCalendarDays } from "date-fns";
 
 type Payment = Tables<"payments">;
 
@@ -57,7 +58,7 @@ export default function StudentPaymentsPage() {
       if (!profile?.dojo_id) return null;
       const { data, error } = await supabase
         .from("dojos")
-        .select("pix_key, name")
+        .select("pix_key, name, late_fee_percent, late_fee_fixed, daily_interest_percent, grace_days")
         .eq("id", profile.dojo_id)
         .single();
       if (error) return null;
@@ -67,6 +68,21 @@ export default function StudentPaymentsPage() {
   });
 
   const pixKey = (dojoData as any)?.pix_key || "Chave Pix não configurada";
+
+  const calculateLateFees = (payment: Payment) => {
+    if (payment.status !== "atrasado" || !dojoData) return null;
+    const dojo = dojoData as any;
+    const graceDays = dojo.grace_days || 0;
+    const daysLate = differenceInCalendarDays(new Date(), parseISO(payment.due_date)) - graceDays;
+    if (daysLate <= 0) return null;
+    const feePercent = dojo.late_fee_percent || 0;
+    const fixedFee = dojo.late_fee_fixed || 0;
+    const interestPercent = dojo.daily_interest_percent || 0;
+    const fee = payment.amount * (feePercent / 100) + fixedFee;
+    const interest = payment.amount * (interestPercent / 100) * daysLate;
+    const total = payment.amount + fee + interest;
+    return { fee, interest, total, daysLate };
+  };
 
   const isMinorWithGuardian = useMemo(() => {
     if (!profile?.birth_date || !profile?.guardian_email) return false;
@@ -302,6 +318,7 @@ export default function StudentPaymentsPage() {
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead>Referência</TableHead>
+                  <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                   <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
                   <TableHead>Valor</TableHead>
                   <TableHead>Status</TableHead>
@@ -309,9 +326,10 @@ export default function StudentPaymentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payments.map((payment, index) => {
+              {payments.map((payment, index) => {
                   const statusStyle = STATUS_STYLES[payment.status];
                   const StatusIcon = statusStyle.icon;
+                  const lateFees = calculateLateFees(payment);
 
                   return (
                     <TableRow 
@@ -329,11 +347,29 @@ export default function StudentPaymentsPage() {
                           </p>
                         </div>
                       </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <Badge variant="outline" className="text-xs">
+                          {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                         {format(parseISO(payment.due_date), "dd/MM/yyyy")}
                       </TableCell>
-                      <TableCell className="font-semibold text-sm">
-                        {formatCurrency(payment.amount)}
+                      <TableCell>
+                        <div>
+                          <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
+                          {lateFees && (
+                            <div className="text-xs space-y-0.5 mt-1">
+                              {lateFees.fee > 0 && (
+                                <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
+                              )}
+                              {lateFees.interest > 0 && (
+                                <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
+                              )}
+                              <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusStyle.variant} className="gap-1">
