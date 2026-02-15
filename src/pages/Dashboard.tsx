@@ -12,6 +12,9 @@ import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard"
 import { TasksManagement } from "@/components/tasks/TasksManagement";
 import { PendingApprovalScreen } from "@/components/auth/PendingApprovalScreen";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
+import { SenseiAnalytics } from "@/components/dashboard/SenseiAnalytics";
+import { XPBar } from "@/components/gamification/XPBar";
+import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -57,8 +60,10 @@ export default function Dashboard() {
 
       {/* Student Profile Card - Shows for students only */}
       {isStudentOnly && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-4">
           <StudentProfileCard />
+          <XPBar />
+          <AchievementsPanel compact maxVisible={8} />
         </div>
       )}
 
@@ -72,6 +77,13 @@ export default function Dashboard() {
       {/* Dashboard Stats Component - Only for admins/senseis */}
       {canManageStudents && (
         <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+      )}
+
+      {/* Sensei Analytics - task completion, overdue, ranking */}
+      {canManageStudents && (
+        <div className="mt-6">
+          <SenseiAnalytics />
+        </div>
       )}
 
       {/* Tasks Section */}
