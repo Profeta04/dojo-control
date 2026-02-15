@@ -13,7 +13,7 @@ interface DojoSettings {
 }
 
 const DEFAULT_SETTINGS: DojoSettings = {
-  dojo_name: "Dojo Manager",
+  dojo_name: "Dojo Control",
   dojo_phone: "",
   dojo_email: "",
   dojo_address: "",

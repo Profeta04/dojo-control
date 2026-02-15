@@ -59,7 +59,7 @@ export function PendingApprovalScreen() {
 
       {/* Footer */}
       <p className="absolute bottom-6 text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Dojo Manager
+        © {new Date().getFullYear()} Dojo Control
       </p>
     </div>
   );

@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
 import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react";
-import dojoLogo from "@/assets/dojo-manager-logo.png";
+import dojoLogo from "@/assets/dojo-control-logo.png";
 
 const features = [
   { 
@@ -61,11 +61,11 @@ const Index = () => {
         <div className="relative z-10 flex flex-col items-center">
           <div className="relative mb-6">
             <div className="absolute inset-0 bg-accent/10 rounded-full blur-xl scale-150" />
-            <img src={dojoLogo} alt="Dojo Manager" className="relative w-24 h-24 sm:w-28 sm:h-28 border-2 border-border rounded-full shadow-xl" />
+            <img src={dojoLogo} alt="Dojo Control" className="relative w-24 h-24 sm:w-28 sm:h-28 border-2 border-border rounded-full shadow-xl" />
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground mb-3 sm:mb-4 tracking-tight">
-            Dojo Manager
+            Dojo Control
           </h1>
           
           <p className="text-base sm:text-lg text-muted-foreground mb-8 sm:mb-10 max-w-md px-2 leading-relaxed">
@@ -112,7 +112,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-4 sm:py-6 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/60 px-4 safe-area-inset-bottom">
-        <p>© {new Date().getFullYear()} Dojo Manager - Sistema de Gestão de Judô</p>
+        <p>© {new Date().getFullYear()} Dojo Control - Sistema de Gestão de Judô</p>
       </footer>
     </div>
   );

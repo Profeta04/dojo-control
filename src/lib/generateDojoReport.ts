@@ -61,7 +61,7 @@ export function generateDojoReport(data: DojoReportData) {
   // Header
   doc.setFontSize(24);
   doc.setTextColor(20, 20, 20);
-  doc.text("🥋 Dojo Manager", pageWidth / 2, 25, { align: "center" });
+  doc.text("🥋 Dojo Control", pageWidth / 2, 25, { align: "center" });
   
   doc.setFontSize(14);
   doc.setTextColor(100, 100, 100);
@@ -266,7 +266,7 @@ export function generateDojoReport(data: DojoReportData) {
     doc.setFontSize(8);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      `Dojo Manager - Página ${i} de ${pageCount}`,
+      `Dojo Control - Página ${i} de ${pageCount}`,
       pageWidth / 2,
       doc.internal.pageSize.getHeight() - 10,
       { align: "center" }
