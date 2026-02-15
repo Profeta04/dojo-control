@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Youtube, Zap } from "lucide-react";
+import { CheckCircle2, Circle, Clock, AlertTriangle, Trash2, Zap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,6 @@ interface TaskCardProps {
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onDelete?: (taskId: string) => void;
   showAssignee?: boolean;
-  videoUrl?: string;
   xpValue?: number;
 }
 
@@ -29,7 +28,7 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
   alta: { label: "Alta", className: "bg-destructive/10 text-destructive" },
 };
 
-export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, videoUrl, xpValue = 10 }: TaskCardProps) {
+export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false, xpValue = 10 }: TaskCardProps) {
   const [isSliding, setIsSliding] = useState(false);
   const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
   const { grantXP, currentStreak, totalXp } = useXP();
@@ -166,17 +165,6 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
               </p>
             )}
 
-            {videoUrl && (
-              <a
-                href={videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 mt-2 text-xs text-destructive hover:text-destructive/80 font-medium transition-colors bg-destructive/5 px-2.5 py-1 rounded-md"
-              >
-                <Youtube className="h-3.5 w-3.5" />
-                Assistir vídeo
-              </a>
-            )}
 
             <div className="flex items-center gap-3 mt-2.5 text-[11px] text-muted-foreground" role="contentinfo">
               {task.due_date && (

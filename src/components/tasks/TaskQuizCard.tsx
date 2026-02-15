@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, XCircle, BookOpen, Loader2, Youtube, RotateCcw, Sparkles, Zap } from "lucide-react";
+import { CheckCircle2, XCircle, BookOpen, Loader2, RotateCcw, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
@@ -18,11 +18,10 @@ interface TaskQuizCardProps {
   task: TaskWithAssignee;
   options: string[];
   correctOption: number;
-  videoUrl?: string;
   xpValue?: number;
 }
 
-export function TaskQuizCard({ task, options, correctOption, videoUrl, xpValue = 10 }: TaskQuizCardProps) {
+export function TaskQuizCard({ task, options, correctOption, xpValue = 10 }: TaskQuizCardProps) {
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
@@ -123,17 +122,6 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl, xpValue =
             </Badge>
           </div>
         </div>
-        {videoUrl && (
-          <a
-            href={videoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-3 text-xs text-destructive hover:text-destructive/80 font-medium transition-colors bg-destructive/5 px-3 py-1.5 rounded-md w-fit"
-          >
-            <Youtube className="h-3.5 w-3.5" />
-            Assistir vídeo de apoio
-          </a>
-        )}
       </CardHeader>
 
       <CardContent className="pb-4">
