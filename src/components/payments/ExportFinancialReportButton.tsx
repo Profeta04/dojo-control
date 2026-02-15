@@ -1,19 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { FileDown, Loader2 } from "lucide-react";
 import { useDojoContext } from "@/hooks/useDojoContext";
@@ -35,7 +26,6 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const { userDojos, currentDojoId } = useDojoContext();
 
-  // Generate last 12 months as options
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i);
     const value = format(date, "yyyy-MM");
@@ -45,48 +35,26 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
 
   const handleExport = () => {
     setIsGenerating(true);
-
     try {
       const [refYear, refMonth] = selectedMonth.split("-").map(Number);
-      const refDate = new Date(refYear, refMonth - 1, 15); // mid-month to avoid timezone issues
+      const refDate = new Date(refYear, refMonth - 1, 15);
       const refMonthLabel = format(refDate, "MMMM 'de' yyyy", { locale: ptBR });
       const currentDojo = userDojos.find((d) => d.id === currentDojoId) || userDojos[0];
-      const dojoName = currentDojo?.name || "Dojo";
 
-      // Filter payments for selected month
-      const monthPayments = payments.filter((p) => {
-        if (!p.reference_month) return false;
-        return p.reference_month.substring(0, 7) === selectedMonth;
-      });
-
-      // Calculate totals (all payments, not just selected month)
-      const totalRecebido = payments
-        .filter((p) => p.status === "pago")
-        .reduce((acc, p) => acc + p.amount, 0);
-      const totalPendente = payments
-        .filter((p) => p.status === "pendente")
-        .reduce((acc, p) => acc + p.amount, 0);
-      const totalAtrasado = payments
-        .filter((p) => p.status === "atrasado")
-        .reduce((acc, p) => acc + p.amount, 0);
+      const totalRecebido = payments.filter((p) => p.status === "pago").reduce((a, p) => a + p.amount, 0);
+      const totalPendente = payments.filter((p) => p.status === "pendente").reduce((a, p) => a + p.amount, 0);
+      const totalAtrasado = payments.filter((p) => p.status === "atrasado").reduce((a, p) => a + p.amount, 0);
       const totalGeral = totalRecebido + totalPendente + totalAtrasado;
-      const delinquencyRate =
-        payments.length > 0
-          ? (payments.filter((p) => p.status === "atrasado").length / payments.length) * 100
-          : 0;
+      const delinquencyRate = payments.length > 0
+        ? (payments.filter((p) => p.status === "atrasado").length / payments.length) * 100
+        : 0;
 
-      // Monthly revenue (6 months ending at selected month)
       const monthlyRevenue = [];
       for (let i = 5; i >= 0; i--) {
         const date = subMonths(refDate, i);
         const monthStr = format(date, "yyyy-MM");
         const monthLabel = format(date, "MMM", { locale: ptBR });
-
-        const mPayments = payments.filter((p) => {
-          if (!p.reference_month) return false;
-          return p.reference_month.substring(0, 7) === monthStr;
-        });
-
+        const mPayments = payments.filter((p) => p.reference_month?.substring(0, 7) === monthStr);
         monthlyRevenue.push({
           monthLabel,
           recebido: mPayments.filter((p) => p.status === "pago").reduce((a, p) => a + p.amount, 0),
@@ -95,13 +63,17 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
         });
       }
 
-      // All payments sorted by due_date desc
       const sortedPayments = [...payments].sort(
         (a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime()
       );
 
       const reportData: FinancialReportData = {
-        dojoName,
+        dojoInfo: {
+          dojoName: currentDojo?.name || "Dojo",
+          logoUrl: currentDojo?.logo_url,
+          primaryColor: currentDojo?.color_primary,
+          accentColor: currentDojo?.color_accent,
+        },
         referenceMonth: selectedMonth,
         referenceMonthLabel: refMonthLabel.charAt(0).toUpperCase() + refMonthLabel.slice(1),
         totalRecebido,
@@ -148,7 +120,6 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
             Selecione o mês de referência para o relatório em PDF.
           </DialogDescription>
         </DialogHeader>
-
         <div className="py-4">
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
             <SelectTrigger>
@@ -156,24 +127,15 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
             </SelectTrigger>
             <SelectContent className="z-[200] max-h-[300px]" position="popper">
               {monthOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
-          </Button>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>Cancelar</Button>
           <Button onClick={handleExport} disabled={isGenerating}>
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <FileDown className="h-4 w-4 mr-2" />
-            )}
+            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
             Gerar PDF
           </Button>
         </div>
