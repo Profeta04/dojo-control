@@ -39,17 +39,17 @@ interface NavItem {
 
 // Main navigation items (no config here — it goes in footer)
 const navItems: NavItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, adminOnly: true },
-  { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-5 w-5" />, studentOnly: true },
-  { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-5 w-5" />, studentOnly: true },
-  { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, adminOnly: true },
-  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, ownerOnly: true },
-  { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-5 w-5" />, adminOnly: true },
-  { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-5 w-5" />, studentOnly: true },
-  { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-5 w-5" />, adminOnly: true },
-  { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-5 w-5" />, studentOnly: true },
-  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-5 w-5" />, adminOnly: true },
-  { title: "Configurações", href: "/settings", icon: <Settings className="h-5 w-5" />, ownerOnly: true },
+  { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Alunos", href: "/students", icon: <Users className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
+  { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Configurações", href: "/settings", icon: <Settings className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
 ];
 
 interface SidebarNavContentProps {
@@ -92,7 +92,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
         to={item.href}
         onClick={onCloseMobile}
         className={cn(
-          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium",
+          "group relative flex items-center gap-3.5 px-3.5 py-3 rounded-lg text-sm font-medium",
           "transition-all duration-200 ease-out",
           "focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
           "active:scale-[0.98]",
@@ -131,8 +131,8 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     <>
       {/* Logo & Dojo Header */}
       <div className="p-4 lg:p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-sidebar-border/50">
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-sidebar-border/50">
             {logoUrl ? (
               <img
                 src={logoUrl}
@@ -141,15 +141,15 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
               />
             ) : (
               <div className="w-full h-full bg-sidebar-primary/10 flex items-center justify-center">
-                <Building className="h-5 w-5 text-sidebar-primary" />
+                <Building className="h-6 w-6 text-sidebar-primary" />
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="font-bold text-sm text-sidebar-foreground truncate leading-tight">
+            <h1 className="font-bold text-base text-sidebar-foreground truncate leading-tight">
               {currentDojo?.name || settings.dojo_name}
             </h1>
-            <p className="text-[11px] text-sidebar-foreground/50 truncate mt-0.5">
+            <p className="text-xs text-sidebar-foreground/50 truncate mt-0.5">
               {currentDojo?.description || "Sistema de Gestão"}
             </p>
           </div>
@@ -181,15 +181,15 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
       <Separator className="bg-sidebar-border/40 mx-4" />
 
       {/* Navigation Links - Sections */}
-      <ScrollArea className="flex-1 px-3 py-3">
+      <ScrollArea className="flex-1 px-3.5 py-3.5">
         <nav aria-label="Menu principal">
           {/* Section: Principal */}
           {mainItems.length > 0 && (
-            <div className="mb-3">
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+            <div className="mb-4">
+              <p className="px-3.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
                 Principal
               </p>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {mainItems.map((item, i) => renderNavItem(item, i))}
               </div>
             </div>
@@ -197,11 +197,11 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
           {/* Section: Financeiro / Graduações */}
           {financeItems.length > 0 && (
-            <div className="mb-3">
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+            <div className="mb-4">
+              <p className="px-3.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
                 {canManageStudents ? "Financeiro" : "Pagamentos"}
               </p>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {financeItems.map((item, i) => renderNavItem(item, mainItems.length + i))}
               </div>
             </div>
@@ -210,10 +210,10 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
           {/* Section: Administração */}
           {adminItems.length > 0 && (
             <div>
-              <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
+              <p className="px-3.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
                 Administração
               </p>
-              <div className="space-y-0.5">
+              <div className="space-y-1">
                 {adminItems.map((item, i) => renderNavItem(item, mainItems.length + financeItems.length + i))}
               </div>
             </div>

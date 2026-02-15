@@ -43,11 +43,11 @@ export function SidebarDarkModeToggle() {
   if (!profile) return null;
 
   return (
-    <div className="px-3 py-1.5">
+    <div className="px-3.5 py-2">
       <button
         onClick={toggleDarkMode}
         className={cn(
-          "group flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-[13px] font-medium",
+          "group flex items-center gap-3.5 w-full px-3.5 py-3 rounded-lg text-sm font-medium",
           "transition-all duration-200 ease-out",
           "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
           "active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
@@ -56,9 +56,9 @@ export function SidebarDarkModeToggle() {
       >
         <span className="flex-shrink-0 text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80 transition-all duration-200">
           {isDarkMode ? (
-            <Sun className="h-5 w-5 transition-transform duration-300 group-hover:rotate-45" />
+            <Sun className="h-[1.35rem] w-[1.35rem] transition-transform duration-300 group-hover:rotate-45" />
           ) : (
-            <Moon className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-12" />
+            <Moon className="h-[1.35rem] w-[1.35rem] transition-transform duration-300 group-hover:-rotate-12" />
           )}
         </span>
         <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
