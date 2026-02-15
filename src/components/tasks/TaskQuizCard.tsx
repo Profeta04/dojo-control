@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useSeasons } from "@/hooks/useSeasons";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import { XPNotification } from "@/components/gamification/XPNotification";
@@ -30,6 +31,7 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl, xpValue =
   const { updateTaskStatus } = useTasks();
   const { grantXP, currentStreak, totalXp } = useXP();
   const { checkAndUnlock } = useAchievements();
+  const { grantSeasonXP } = useSeasons();
 
   const handleSubmit = async () => {
     if (selectedOption === null) return;
@@ -48,6 +50,8 @@ export function TaskQuizCard({ task, options, correctOption, videoUrl, xpValue =
       // Grant XP
       try {
         const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "quiz" });
+        // Also grant season XP
+        grantSeasonXP.mutate({ baseXP: xpValue });
         setXpNotif({
           amount: result.xpGranted,
           multiplier: result.multiplier,

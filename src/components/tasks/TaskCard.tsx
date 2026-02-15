@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { TaskWithAssignee, TaskStatus, TaskPriority, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useSeasons } from "@/hooks/useSeasons";
 import { cn } from "@/lib/utils";
 import { fireConfetti } from "@/lib/confetti";
 import { XPNotification } from "@/components/gamification/XPNotification";
@@ -33,6 +34,7 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
   const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
   const { grantXP, currentStreak, totalXp } = useXP();
   const { checkAndUnlock } = useAchievements();
+  const { grantSeasonXP } = useSeasons();
   const isCompleted = task.status === "concluida";
   const isCancelled = task.status === "cancelada";
   const isOverdue = task.due_date && isPast(new Date(task.due_date)) && !isCompleted && !isCancelled;
@@ -46,6 +48,8 @@ export function TaskCard({ task, onStatusChange, onDelete, showAssignee = false,
       // Grant XP
       try {
         const result = await grantXP.mutateAsync({ baseXP: xpValue, reason: "task" });
+        // Also grant season XP
+        grantSeasonXP.mutate({ baseXP: xpValue });
         setXpNotif({
           amount: result.xpGranted,
           multiplier: result.multiplier,

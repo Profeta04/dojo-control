@@ -747,6 +747,151 @@ export type Database = {
           },
         ]
       }
+      season_rewards: {
+        Row: {
+          earned_at: string
+          final_rank: number | null
+          final_xp: number | null
+          id: string
+          reward_type: string
+          reward_value: string
+          season_id: string
+          user_id: string
+        }
+        Insert: {
+          earned_at?: string
+          final_rank?: number | null
+          final_xp?: number | null
+          id?: string
+          reward_type: string
+          reward_value: string
+          season_id: string
+          user_id: string
+        }
+        Update: {
+          earned_at?: string
+          final_rank?: number | null
+          final_xp?: number | null
+          id?: string
+          reward_type?: string
+          reward_value?: string
+          season_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_rewards_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_xp: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          level: number
+          longest_streak: number
+          season_id: string
+          total_xp: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          season_id: string
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          level?: number
+          longest_streak?: number
+          season_id?: string
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_xp_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      seasons: {
+        Row: {
+          border_style: string | null
+          color_accent: string
+          color_primary: string
+          created_at: string
+          end_date: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          quarter: number
+          slug: string
+          start_date: string
+          theme: string
+          title_reward: string | null
+          xp_multiplier: number
+          year: number
+        }
+        Insert: {
+          border_style?: string | null
+          color_accent?: string
+          color_primary?: string
+          created_at?: string
+          end_date: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          quarter: number
+          slug: string
+          start_date: string
+          theme: string
+          title_reward?: string | null
+          xp_multiplier?: number
+          year: number
+        }
+        Update: {
+          border_style?: string | null
+          color_accent?: string
+          color_primary?: string
+          created_at?: string
+          end_date?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          quarter?: number
+          slug?: string
+          start_date?: string
+          theme?: string
+          title_reward?: string | null
+          xp_multiplier?: number
+          year?: number
+        }
+        Relationships: []
+      }
       settings: {
         Row: {
           created_at: string

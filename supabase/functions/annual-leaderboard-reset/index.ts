@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const now = new Date();
-    const year = now.getFullYear() - 1; // Archive the previous year
+    const year = now.getFullYear() - 1;
 
     // Get all dojos
     const { data: dojos } = await supabase.from("dojos").select("id");
@@ -31,7 +31,6 @@ Deno.serve(async (req) => {
     const topThreeByDojo: Record<string, { user_id: string; name: string; rank: number; xp: number }[]> = {};
 
     for (const dojo of dojos) {
-      // Get all approved students in this dojo with XP
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, name")
@@ -43,7 +42,6 @@ Deno.serve(async (req) => {
       const userIds = profiles.map((p) => p.user_id);
       const nameMap = new Map(profiles.map((p) => [p.user_id, p.name]));
 
-      // Get XP data
       const { data: xpData } = await supabase
         .from("student_xp")
         .select("*")
@@ -51,10 +49,8 @@ Deno.serve(async (req) => {
 
       if (!xpData || xpData.length === 0) continue;
 
-      // Sort by XP descending
       const sorted = [...xpData].sort((a, b) => b.total_xp - a.total_xp);
 
-      // Archive to leaderboard_history
       const historyEntries = sorted.map((entry, idx) => ({
         user_id: entry.user_id,
         dojo_id: dojo.id,
@@ -63,7 +59,6 @@ Deno.serve(async (req) => {
         final_rank: idx + 1,
       }));
 
-      // Check if already archived for this year
       const { count } = await supabase
         .from("leaderboard_history")
         .select("id", { count: "exact", head: true })
@@ -75,7 +70,6 @@ Deno.serve(async (req) => {
         if (!error) totalArchived += historyEntries.length;
       }
 
-      // Top 3 for awards
       const top3 = sorted.slice(0, 3).map((entry, idx) => ({
         user_id: entry.user_id,
         name: nameMap.get(entry.user_id) || "Unknown",
@@ -84,38 +78,9 @@ Deno.serve(async (req) => {
       }));
       topThreeByDojo[dojo.id] = top3;
 
-      // Award annual achievements to top 3
-      const { data: annualAchievements } = await supabase
-        .from("achievements")
-        .select("*")
-        .eq("is_annual", true)
-        .eq("annual_year", year);
-
-      if (annualAchievements) {
-        for (const achievement of annualAchievements) {
-          for (const winner of top3) {
-            // Check criteria (e.g., rank-based)
-            if (achievement.criteria_type === "annual_rank" && winner.rank <= achievement.criteria_value) {
-              await supabase.from("student_achievements").upsert(
-                { user_id: winner.user_id, achievement_id: achievement.id },
-                { onConflict: "user_id,achievement_id" }
-              );
-
-              await supabase.from("notifications").insert({
-                user_id: winner.user_id,
-                title: `🏆 Premiação Anual ${year}!`,
-                message: `Parabéns! Você ficou em ${winner.rank}º lugar no ranking anual! +${achievement.xp_reward} XP`,
-                type: "achievement",
-                related_id: achievement.id,
-              });
-            }
-          }
-        }
-      }
-
       // Notify top 3
+      const medals = ["🥇", "🥈", "🥉"];
       for (const winner of top3) {
-        const medals = ["🥇", "🥈", "🥉"];
         await supabase.from("notifications").insert({
           user_id: winner.user_id,
           title: `${medals[winner.rank - 1]} Ranking Anual ${year}`,
@@ -124,7 +89,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Reset XP for new year
+      // Reset XP
       const { error: resetError } = await supabase
         .from("student_xp")
         .update({
@@ -139,6 +104,94 @@ Deno.serve(async (req) => {
       if (!resetError) totalReset += userIds.length;
     }
 
+    // --- Season end: close active season, award top 3 ---
+    const { data: activeSeason } = await supabase
+      .from("seasons")
+      .select("*")
+      .eq("is_active", true)
+      .maybeSingle();
+
+    let seasonResults = null;
+
+    if (activeSeason) {
+      // Get season XP leaderboard
+      const { data: seasonXpData } = await supabase
+        .from("season_xp")
+        .select("*")
+        .eq("season_id", activeSeason.id)
+        .order("total_xp", { ascending: false });
+
+      if (seasonXpData && seasonXpData.length > 0) {
+        const seasonTop3 = seasonXpData.slice(0, 3);
+        const medals = ["🥇", "🥈", "🥉"];
+        const rewardTypes = ["title", "border", "badge"];
+
+        for (let i = 0; i < seasonTop3.length; i++) {
+          const entry = seasonTop3[i];
+
+          // Award title
+          if (activeSeason.title_reward) {
+            await supabase.from("season_rewards").upsert({
+              user_id: entry.user_id,
+              season_id: activeSeason.id,
+              reward_type: "title",
+              reward_value: activeSeason.title_reward,
+              final_rank: i + 1,
+              final_xp: entry.total_xp,
+            }, { onConflict: "user_id,season_id,reward_type" });
+          }
+
+          // Award border
+          if (activeSeason.border_style && i === 0) {
+            await supabase.from("season_rewards").upsert({
+              user_id: entry.user_id,
+              season_id: activeSeason.id,
+              reward_type: "border",
+              reward_value: activeSeason.border_style,
+              final_rank: 1,
+              final_xp: entry.total_xp,
+            }, { onConflict: "user_id,season_id,reward_type" });
+          }
+
+          // Badge for all top 3
+          await supabase.from("season_rewards").upsert({
+            user_id: entry.user_id,
+            season_id: activeSeason.id,
+            reward_type: "badge",
+            reward_value: `${activeSeason.name} - ${medals[i]} ${i + 1}º lugar`,
+            final_rank: i + 1,
+            final_xp: entry.total_xp,
+          }, { onConflict: "user_id,season_id,reward_type" });
+
+          // Notify
+          await supabase.from("notifications").insert({
+            user_id: entry.user_id,
+            title: `${medals[i]} Temporada ${activeSeason.name}`,
+            message: `Você ficou em ${i + 1}º lugar na temporada com ${entry.total_xp} XP!`,
+            type: "season_reward",
+          });
+        }
+
+        seasonResults = { season: activeSeason.name, top3: seasonTop3.slice(0, 3).map((e, i) => ({ rank: i + 1, xp: e.total_xp, user_id: e.user_id })) };
+      }
+
+      // Deactivate current season
+      await supabase.from("seasons").update({ is_active: false }).eq("id", activeSeason.id);
+
+      // Activate next season
+      const { data: nextSeason } = await supabase
+        .from("seasons")
+        .select("*")
+        .gt("start_date", activeSeason.end_date)
+        .order("start_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (nextSeason) {
+        await supabase.from("seasons").update({ is_active: true }).eq("id", nextSeason.id);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -146,6 +199,7 @@ Deno.serve(async (req) => {
         totalArchived,
         totalReset,
         topThreeByDojo,
+        seasonResults,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
