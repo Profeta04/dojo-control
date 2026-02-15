@@ -70,6 +70,10 @@ export default function PaymentsPage() {
   const [pixKeyInput, setPixKeyInput] = useState("");
   const [pixSaving, setPixSaving] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [lateFeePercent, setLateFeePercent] = useState("0");
+  const [dailyInterestPercent, setDailyInterestPercent] = useState("0");
+  const [graceDays, setGraceDays] = useState("0");
+  const [lateFeeSaving, setLateFeeSaving] = useState(false);
 
   // Fetch current dojo's data (PIX key + late fee settings)
   const { data: currentDojo } = useQuery({
@@ -89,6 +93,9 @@ export default function PaymentsPage() {
 
   useEffect(() => {
     setPixKeyInput((currentDojo as any)?.pix_key || "");
+    setLateFeePercent(String((currentDojo as any)?.late_fee_percent ?? 0));
+    setDailyInterestPercent(String((currentDojo as any)?.daily_interest_percent ?? 0));
+    setGraceDays(String((currentDojo as any)?.grace_days ?? 0));
   }, [currentDojo]);
 
   const handleSavePixKey = async () => {
@@ -103,6 +110,25 @@ export default function PaymentsPage() {
       toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
     } finally {
       setPixSaving(false);
+    }
+  };
+
+  const handleSaveLateFees = async () => {
+    if (!currentDojoId) return;
+    setLateFeeSaving(true);
+    try {
+      const { error } = await supabase.from("dojos").update({
+        late_fee_percent: parseFloat(lateFeePercent) || 0,
+        daily_interest_percent: parseFloat(dailyInterestPercent) || 0,
+        grace_days: parseInt(graceDays) || 0,
+      }).eq("id", currentDojoId);
+      if (error) throw error;
+      toast({ title: "Taxas de atraso salvas!" });
+      queryClient.invalidateQueries({ queryKey: ["dojo-details", currentDojoId] });
+    } catch (error: any) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+    } finally {
+      setLateFeeSaving(false);
     }
   };
 
@@ -541,32 +567,88 @@ export default function PaymentsPage() {
         )}
       </div>
 
-      {/* PIX Key Configuration */}
+      {/* PIX Key & Late Fee Configuration */}
       {canManageStudents && currentDojoId && (
-        <Card className="mb-6 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-sm animate-fade-in">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <QrCode className="h-4 w-4 text-primary" />
+        <div className="grid gap-4 mb-6 md:grid-cols-2">
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent shadow-sm animate-fade-in">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <QrCode className="h-4 w-4 text-primary" />
+                </div>
+                Chave Pix do Dojo
+              </CardTitle>
+              <CardDescription>Exibida para os alunos na tela de pagamentos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Input
+                  value={pixKeyInput}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPixKeyInput(e.target.value)}
+                  placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
+                  className="flex-1"
+                />
+                <Button onClick={handleSavePixKey} disabled={pixSaving} size="sm">
+                  {pixSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar</>}
+                </Button>
               </div>
-              Chave Pix do Dojo
-            </CardTitle>
-            <CardDescription>Configure a chave Pix exibida para os alunos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-2">
-              <Input
-                value={pixKeyInput}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPixKeyInput(e.target.value)}
-                placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
-                className="flex-1"
-              />
-              <Button onClick={handleSavePixKey} disabled={pixSaving} size="sm">
-                {pixSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar</>}
+            </CardContent>
+          </Card>
+
+          <Card className="border-warning/20 bg-gradient-to-r from-warning/5 to-transparent shadow-sm animate-fade-in">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="p-1.5 rounded-lg bg-warning/10">
+                  <Percent className="h-4 w-4 text-warning-foreground" />
+                </div>
+                Taxas de Atraso
+              </CardTitle>
+              <CardDescription>Multa, juros e carência para pagamentos atrasados</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Multa (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={lateFeePercent}
+                    onChange={(e) => setLateFeePercent(e.target.value)}
+                    placeholder="2.0"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Juros/dia (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={dailyInterestPercent}
+                    onChange={(e) => setDailyInterestPercent(e.target.value)}
+                    placeholder="0.33"
+                    className="h-9"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Carência (dias)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={graceDays}
+                    onChange={(e) => setGraceDays(e.target.value)}
+                    placeholder="3"
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <Button onClick={handleSaveLateFees} disabled={lateFeeSaving} size="sm" className="w-full">
+                {lateFeeSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-1" /> Salvar Taxas</>}
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {/* Financial Dashboard Charts */}
