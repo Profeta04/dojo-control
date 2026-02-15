@@ -65,7 +65,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-5 w-5" />, adminOnly: true },
-  { title: "Perfil", href: "/perfil", icon: <User className="h-5 w-5" />, studentOnly: true },
+  { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-5 w-5" />, studentOnly: true },
   { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-5 w-5" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-5 w-5" />, adminOnly: true },
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-5 w-5" />, ownerOnly: true },
