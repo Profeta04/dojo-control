@@ -103,22 +103,22 @@ export function AttendanceStatsCard() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-lg bg-muted/50 p-3 text-center">
+          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
             <TrendingUp className="h-4 w-4 mx-auto mb-1 text-primary" />
             <p className="text-2xl font-bold">{stats.total}</p>
             <p className="text-xs text-muted-foreground">Total de aulas</p>
           </div>
-          <div className="rounded-lg bg-muted/50 p-3 text-center">
+          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
             <CalendarCheck className="h-4 w-4 mx-auto mb-1 text-green-600" />
             <p className="text-2xl font-bold text-green-600">{stats.present}</p>
             <p className="text-xs text-muted-foreground">Presenças</p>
           </div>
-          <div className="rounded-lg bg-muted/50 p-3 text-center">
+          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
             <CalendarX className="h-4 w-4 mx-auto mb-1 text-red-500" />
             <p className="text-2xl font-bold text-red-500">{stats.absent}</p>
             <p className="text-xs text-muted-foreground">Faltas</p>
           </div>
-          <div className="rounded-lg bg-muted/50 p-3 text-center">
+          <div className="rounded-lg bg-muted p-3 text-center border border-border/50">
             <Flame className="h-4 w-4 mx-auto mb-1 text-orange-500" />
             <p className="text-2xl font-bold text-orange-500">{stats.currentStreak}</p>
             <p className="text-xs text-muted-foreground">Sequência atual</p>
