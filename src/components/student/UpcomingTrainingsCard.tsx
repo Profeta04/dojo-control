@@ -82,8 +82,8 @@ export function UpcomingTrainingsCard() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Calendar className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-lg font-bold">
+          <Calendar className="h-5 w-5 text-accent" />
           Próximos Treinos
         </CardTitle>
       </CardHeader>
