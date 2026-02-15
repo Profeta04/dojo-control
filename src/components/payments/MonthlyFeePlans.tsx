@@ -41,6 +41,7 @@ export function MonthlyFeePlans() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generateConfirmOpen, setGenerateConfirmOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -244,7 +245,7 @@ export function MonthlyFeePlans() {
               <CardDescription>Cobranças automáticas geradas mensalmente</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={handleGenerateNow} disabled={generating || !plans || plans.length === 0}>
+              <Button size="sm" variant="outline" onClick={() => setGenerateConfirmOpen(true)} disabled={generating || !plans || plans.length === 0}>
                 {generating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Play className="h-4 w-4 mr-1" />}
                 <span className="hidden sm:inline">Gerar Agora</span>
               </Button>
@@ -418,6 +419,25 @@ export function MonthlyFeePlans() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Generate Confirmation */}
+      <AlertDialog open={generateConfirmOpen} onOpenChange={setGenerateConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar mensalidades agora?</AlertDialogTitle>
+            <AlertDialogDescription>
+              As mensalidades do mês atual serão geradas para todos os alunos elegíveis dos planos ativos. Alunos bolsistas e que já possuem mensalidade neste mês serão ignorados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGenerateNow}>
+              {generating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Play className="h-4 w-4 mr-2" />}
+              Gerar Mensalidades
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
