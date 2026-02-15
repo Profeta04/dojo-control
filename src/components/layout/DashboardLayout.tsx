@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Main Content */}
-      <main id="main-content" className="lg:pl-64 min-h-screen" tabIndex={-1}>
+      <main id="main-content" className="lg:pl-64 min-h-screen w-full min-w-0 overflow-x-hidden" tabIndex={-1}>
         <div className={cn("lg:hidden safe-area-inset-top", useBottomNav ? "h-12" : "h-14")} />
 
         {/* Desktop header */}
