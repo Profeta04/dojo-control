@@ -23,7 +23,7 @@ export default function StudentProfile() {
     <RequireApproval>
       <DashboardLayout>
         <PageHeader 
-          title="Meu Perfil" 
+          title="Dashboard" 
           description="Seus dados, frequência e evolução no judô" 
         />
         <div className="mt-6 space-y-6">
