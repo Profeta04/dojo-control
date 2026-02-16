@@ -8,10 +8,19 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Clock, QrCode, AlertTriangle } from "lucide-react";
-import { format, parseISO, differenceInMinutes } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CheckCircle2, Clock, QrCode, AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
+import { format, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { fireConfetti } from "@/lib/confetti";
+import { motion } from "framer-motion";
 
 interface AvailableClass {
   scheduleId: string;
@@ -20,6 +29,8 @@ interface AvailableClass {
   startTime: string;
   endTime: string;
   alreadyCheckedIn: boolean;
+  status: "open" | "early" | "late";
+  statusMessage: string;
 }
 
 export default function Checkin() {
@@ -28,6 +39,8 @@ export default function Checkin() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [confirmClass, setConfirmClass] = useState<AvailableClass | null>(null);
+  const [successClass, setSuccessClass] = useState<AvailableClass | null>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
 
@@ -52,7 +65,7 @@ export default function Checkin() {
     enabled: !!token && !!user,
   });
 
-  // Fetch available classes for today
+  // Fetch available classes for today — show ALL enrolled, with time status
   const { data: classes, isLoading: classesLoading, refetch } = useQuery({
     queryKey: ["checkin-classes", dojo?.id, today, user?.id],
     queryFn: async () => {
@@ -106,10 +119,9 @@ export default function Checkin() {
         const classInfo = dojoClasses.find((c) => c.id === schedule.class_id);
         if (!classInfo) continue;
 
-        // Check time window: 1h before to 1h after
         const [startH, startM] = schedule.start_time.split(":").map(Number);
         const [endH, endM] = schedule.end_time.split(":").map(Number);
-        
+
         const classStart = new Date();
         classStart.setHours(startH, startM, 0, 0);
         const classEnd = new Date();
@@ -118,17 +130,30 @@ export default function Checkin() {
         const minutesBefore = differenceInMinutes(classStart, now);
         const minutesAfterEnd = differenceInMinutes(now, classEnd);
 
-        // Allow checkin from 1h before start to 1h after end
-        if (minutesBefore <= 60 && minutesAfterEnd <= 60) {
-          result.push({
-            scheduleId: schedule.id,
-            classId: schedule.class_id,
-            className: classInfo.name,
-            startTime: schedule.start_time,
-            endTime: schedule.end_time,
-            alreadyCheckedIn: checkedClassIds.has(schedule.class_id),
-          });
+        let status: AvailableClass["status"] = "open";
+        let statusMessage = "";
+
+        if (minutesBefore > 60) {
+          status = "early";
+          statusMessage = `Abre ${minutesBefore - 60 > 60 ? `em ${Math.floor((minutesBefore - 60) / 60)}h${(minutesBefore - 60) % 60 > 0 ? `${(minutesBefore - 60) % 60}min` : ""}` : `em ${minutesBefore - 60}min`}`;
+        } else if (minutesAfterEnd > 60) {
+          status = "late";
+          statusMessage = "Encerrado";
+        } else {
+          status = "open";
+          statusMessage = "Disponível agora";
         }
+
+        result.push({
+          scheduleId: schedule.id,
+          classId: schedule.class_id,
+          className: classInfo.name,
+          startTime: schedule.start_time,
+          endTime: schedule.end_time,
+          alreadyCheckedIn: checkedClassIds.has(schedule.class_id),
+          status,
+          statusMessage,
+        });
       }
 
       return result;
@@ -137,8 +162,9 @@ export default function Checkin() {
   });
 
   const handleCheckin = async (cls: AvailableClass) => {
-    if (!user || cls.alreadyCheckedIn) return;
+    if (!user || cls.alreadyCheckedIn || cls.status !== "open") return;
     setSubmitting(cls.classId);
+    setConfirmClass(null);
 
     try {
       const { error } = await supabase.from("attendance").insert({
@@ -158,11 +184,11 @@ export default function Checkin() {
         }
       } else {
         fireConfetti();
-        toast({ title: "Presença confirmada! 🎉", description: `${cls.className} — ${cls.startTime.slice(0, 5)}` });
+        setSuccessClass(cls);
         refetch();
       }
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao registrar presença", description: err.message, variant: "destructive" });
     } finally {
       setSubmitting(null);
     }
@@ -216,10 +242,10 @@ export default function Checkin() {
             <div className="text-center py-6 space-y-2">
               <Clock className="h-10 w-10 mx-auto text-muted-foreground/50" />
               <p className="text-sm text-muted-foreground">
-                Nenhuma aula disponível para check-in no momento.
+                Nenhuma aula agendada para você hoje neste dojo.
               </p>
               <p className="text-xs text-muted-foreground">
-                O check-in é permitido de 1h antes até 1h após o horário da aula.
+                Verifique se você está matriculado em uma turma com aula hoje.
               </p>
             </div>
           ) : (
@@ -233,30 +259,46 @@ export default function Checkin() {
                   className={`transition-colors ${
                     cls.alreadyCheckedIn
                       ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800"
+                      : cls.status !== "open"
+                      ? "opacity-60"
                       : ""
                   }`}
                 >
-                  <CardContent className="p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{cls.className}</p>
+                  <CardContent className="p-4 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{cls.className}</p>
                       <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                        <Clock className="h-3 w-3 flex-shrink-0" />
                         {cls.startTime.slice(0, 5)} - {cls.endTime.slice(0, 5)}
                       </p>
+                      {cls.status !== "open" && !cls.alreadyCheckedIn && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {cls.statusMessage}
+                        </p>
+                      )}
                     </div>
                     {cls.alreadyCheckedIn ? (
-                      <Badge className="bg-green-600 gap-1">
+                      <Badge className="bg-green-600 gap-1 flex-shrink-0">
                         <CheckCircle2 className="h-3 w-3" />
                         Confirmado
                       </Badge>
-                    ) : (
+                    ) : cls.status === "open" ? (
                       <Button
                         size="sm"
-                        onClick={() => handleCheckin(cls)}
+                        className="flex-shrink-0"
+                        onClick={() => setConfirmClass(cls)}
                         disabled={submitting === cls.classId}
                       >
-                        {submitting === cls.classId ? "..." : "Confirmar"}
+                        {submitting === cls.classId ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          "Confirmar"
+                        )}
                       </Button>
+                    ) : (
+                      <Badge variant="secondary" className="flex-shrink-0">
+                        {cls.statusMessage}
+                      </Badge>
                     )}
                   </CardContent>
                 </Card>
@@ -265,6 +307,77 @@ export default function Checkin() {
           )}
         </CardContent>
       </Card>
+
+      {/* Confirmation dialog */}
+      <Dialog open={!!confirmClass} onOpenChange={(open) => !open && setConfirmClass(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmar Presença</DialogTitle>
+            <DialogDescription>
+              Deseja registrar presença na aula abaixo?
+            </DialogDescription>
+          </DialogHeader>
+          {confirmClass && (
+            <div className="bg-muted/50 rounded-lg p-4 text-center space-y-1">
+              <p className="font-semibold text-lg">{confirmClass.className}</p>
+              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
+                <Clock className="h-4 w-4" />
+                {confirmClass.startTime.slice(0, 5)} - {confirmClass.endTime.slice(0, 5)}
+              </p>
+              <p className="text-xs text-muted-foreground">{dojo.name}</p>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setConfirmClass(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => confirmClass && handleCheckin(confirmClass)}
+              disabled={!!submitting}
+            >
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />
+              )}
+              Confirmar Presença
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success dialog */}
+      <Dialog open={!!successClass} onOpenChange={(open) => !open && setSuccessClass(null)}>
+        <DialogContent className="max-w-sm text-center">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
+            >
+              <ShieldCheck className="h-10 w-10 text-green-600 dark:text-green-400" />
+            </motion.div>
+            <div className="space-y-1">
+              <h3 className="text-xl font-bold text-foreground">Presença Confirmada! 🎉</h3>
+              {successClass && (
+                <>
+                  <p className="text-sm font-medium">{successClass.className}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {successClass.startTime.slice(0, 5)} - {successClass.endTime.slice(0, 5)}
+                  </p>
+                </>
+              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Seu sensei já pode ver sua presença registrada.
+              </p>
+            </div>
+            <Button onClick={() => setSuccessClass(null)} className="w-full mt-2">
+              OK
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
