@@ -76,17 +76,14 @@ export function StudentTasksDashboard() {
   }, [tasks]);
 
   const filteredTasks = deduplicatedTasks.filter(t => categoryFilter === "all" || t.category === categoryFilter);
-  const pendingTasks = filteredTasks.filter(t => t.status === "pendente");
-  const completedTasks = filteredTasks.filter(t => t.status === "concluida");
-  const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
 
-  const totalTasks = filteredTasks.length;
-  const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
-
-  // Build flat quiz questions list (mixed themes, shuffled per student)
+  // Build quiz questions first so stats reflect only quiz-capable tasks
   const allQuizQuestions = useMemo(() => {
+    const seenTitles = new Set<string>();
     const questions = filteredTasks
       .map(task => {
+        if (seenTitles.has(task.title)) return null;
+        seenTitles.add(task.title);
         const taskData = templateDataMap[task.title];
         if (!taskData?.options || taskData.correctOption === null) return null;
         return {
@@ -98,9 +95,18 @@ export function StudentTasksDashboard() {
       })
       .filter(Boolean) as { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[];
     
-    // Shuffle with user ID as seed for consistent per-student ordering
     return seededShuffle(questions, user?.id || "default");
   }, [filteredTasks, templateDataMap, user?.id]);
+
+  // Stats derived from quiz-capable tasks only
+  const quizTasks = allQuizQuestions.map(q => q.task);
+  const pendingTasks = quizTasks.filter(t => t.status === "pendente");
+  const completedTasks = quizTasks.filter(t => t.status === "concluida");
+  const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
+
+  const totalTasks = quizTasks.length;
+  const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+
 
   if (isLoading) return <LoadingSpinner />;
 
