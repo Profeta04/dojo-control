@@ -102,7 +102,8 @@ export function TasksManagement() {
       toast.success(`${selectedIds.size} tarefas excluídas`);
       setSelectedIds(new Set());
       setShowBatchDeleteDialog(false);
-    } catch {
+    } catch (err) {
+      console.error("Erro ao excluir tarefas em lote:", err);
       toast.error("Erro ao excluir tarefas em lote");
     }
   };
@@ -115,7 +116,8 @@ export function TasksManagement() {
       toast.success(`Todas as tarefas de ${name} foram excluídas`);
       setSelectedStudentId("");
       setShowStudentDeleteDialog(false);
-    } catch {
+    } catch (err) {
+      console.error("Erro ao excluir tarefas do aluno:", err);
       toast.error("Erro ao excluir tarefas do aluno");
     }
   };
