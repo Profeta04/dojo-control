@@ -78,7 +78,7 @@ export default function Scanner() {
         >
           <h1 className="text-xl font-bold text-foreground">Scanner de Presença</h1>
           <p className="text-sm text-muted-foreground">
-            Aponte para o QR Code circular do dojo
+            Aponte para o QR Code do dojo
           </p>
         </motion.div>
 
@@ -134,57 +134,25 @@ export default function Scanner() {
           >
             {/* Scanner viewport - circular */}
             <div className="relative w-72 h-72 mx-auto">
-              {/* Video feed (hidden, controlled by html5-qrcode) */}
+              {/* Video feed (controlled by html5-qrcode) */}
               <div
                 id="qr-reader-video"
-                className="absolute inset-0 rounded-full overflow-hidden"
-                style={{
-                  clipPath: "circle(50% at 50% 50%)",
-                }}
+                className="absolute inset-0 rounded-2xl overflow-hidden"
               />
 
               {/* Circular overlay border */}
-              <div className="absolute inset-0 rounded-full pointer-events-none z-10">
-                {/* Gradient ring */}
-                <svg width="100%" height="100%" viewBox="0 0 288 288" className="absolute inset-0">
-                  <defs>
-                    <linearGradient id="scan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="hsl(var(--accent))" />
-                      <stop offset="50%" stopColor="hsl(var(--primary))" />
-                      <stop offset="100%" stopColor="hsl(var(--accent))" />
-                    </linearGradient>
-                  </defs>
-                  <circle
-                    cx="144"
-                    cy="144"
-                    r="140"
-                    fill="none"
-                    stroke="url(#scan-gradient)"
-                    strokeWidth="4"
-                    opacity="0.8"
-                  />
-                </svg>
+              <div className="absolute inset-0 rounded-2xl pointer-events-none z-10">
+                {/* Border */}
+                <div className="absolute inset-0 rounded-2xl border-2 border-accent/60" />
 
                 {/* Scanning animation */}
                 {started && !scanSuccess && (
                   <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0"
-                  >
-                    <svg width="100%" height="100%" viewBox="0 0 288 288">
-                      <circle
-                        cx="144"
-                        cy="144"
-                        r="140"
-                        fill="none"
-                        stroke="hsl(var(--accent))"
-                        strokeWidth="3"
-                        strokeDasharray="60 820"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </motion.div>
+                    animate={{ y: [0, 260, 0] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute left-2 right-2 h-0.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]"
+                    style={{ top: 4 }}
+                  />
                 )}
 
                 {/* Corner markers */}
@@ -193,7 +161,7 @@ export default function Scanner() {
 
               {/* Loading spinner before camera starts */}
               {!started && (
-                <div className="absolute inset-0 rounded-full bg-muted/80 flex items-center justify-center z-20">
+                <div className="absolute inset-0 rounded-2xl bg-muted/80 flex items-center justify-center z-20">
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
@@ -209,7 +177,7 @@ export default function Scanner() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="absolute inset-0 rounded-full bg-accent/90 flex items-center justify-center z-20"
+                    className="absolute inset-0 rounded-2xl bg-accent/90 flex items-center justify-center z-20"
                   >
                     <motion.div
                       initial={{ scale: 0 }}
@@ -225,7 +193,7 @@ export default function Scanner() {
 
             {/* Helper text below scanner */}
             <p className="text-center text-xs text-muted-foreground mt-4">
-              {scanSuccess ? "Presença detectada!" : "Posicione o QR Code dentro do círculo"}
+              {scanSuccess ? "Presença detectada!" : "Posicione o QR Code dentro do quadro"}
             </p>
           </motion.div>
         )}
