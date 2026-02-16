@@ -8,15 +8,10 @@ import { TaskWithAssignee } from "@/hooks/useTasks";
 import {
   ClipboardList,
   CheckCircle2,
-  Clock,
   TrendingUp,
-  BookOpen,
-  AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BeltBadge } from "@/components/shared/BeltBadge";
 import { cn } from "@/lib/utils";
 
 interface TaskTemplate {
@@ -245,39 +240,7 @@ export function StudentTasksDashboard() {
   return (
     <div className="space-y-6" role="region" aria-label="Centro de Questões">
       {/* Progress Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-primary" />
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Nível Atual</p>
-                <div className="mt-1">
-                  <BeltBadge grade={currentBelt as any} size="sm" />
-                </div>
-              </div>
-              <div className="p-2 rounded-xl bg-primary/10">
-                <BookOpen className="h-5 w-5 text-primary" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden">
-          <div className="h-1 bg-warning" />
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Restantes</p>
-                <p className="text-2xl font-bold mt-1">{pendingCount}</p>
-              </div>
-              <div className="p-2 rounded-xl bg-warning/10">
-                <Clock className="h-5 w-5 text-warning" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-2 gap-3">
         <Card className="overflow-hidden">
           <div className="h-1 bg-success" />
           <CardContent className="p-4">
@@ -312,19 +275,7 @@ export function StudentTasksDashboard() {
 
       {/* Main Quiz Card */}
       <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <BookOpen className="h-5 w-5 text-primary" />
-              Progressão de Questões
-            </CardTitle>
-            <Badge variant="outline" className="text-xs">
-              {totalCompleted} / {totalQuestions}
-            </Badge>
-          </div>
-        </CardHeader>
-
-        <CardContent>
+        <CardContent className="pt-6">
           {quizQuestions.length === 0 || totalCompleted === totalQuestions ? (
             <div className="text-center py-12 text-muted-foreground">
               <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
