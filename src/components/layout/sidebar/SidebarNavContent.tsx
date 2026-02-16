@@ -15,6 +15,7 @@ import {
   CalendarDays,
   ClipboardList,
   TrendingUp,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -47,6 +48,7 @@ const navItems: NavItem[] = [
   { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
@@ -77,7 +79,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   // Group items into sections
   const mainItems = filteredNavItems.filter(i => 
-    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/agenda"].includes(i.href)
+    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
     ["/payments", "/mensalidade", "/graduations"].includes(i.href)
