@@ -15,6 +15,11 @@ export interface Dojo {
   color_accent: string | null;
   pix_key: string | null;
   is_active: boolean | null;
+  checkin_token: string;
+  grace_days: number;
+  late_fee_fixed: number;
+  late_fee_percent: number;
+  daily_interest_percent: number;
   created_at: string | null;
   updated_at: string | null;
 }
