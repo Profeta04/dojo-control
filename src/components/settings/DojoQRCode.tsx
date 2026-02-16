@@ -94,70 +94,33 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     const qrAreaSize = size - padding * 2;
     const moduleSize = qrAreaSize / moduleCount;
 
-    // Group adjacent horizontal modules into capsules
-    const capsules: { row: number; colStart: number; colEnd: number }[] = [];
-    for (let row = 0; row < moduleCount; row++) {
-      let col = 0;
-      while (col < moduleCount) {
-        if (modules.get(row, col)) {
-          const start = col;
-          while (col < moduleCount && modules.get(row, col)) col++;
-          capsules.push({ row, colStart: start, colEnd: col - 1 });
-        } else {
-          col++;
-        }
-      }
-    }
+    // Draw individual circular dots (white on dark, like Kik style)
+    const dotRadius = moduleSize * 0.42;
 
     ctx.save();
-    // Clip to circle
     ctx.beginPath();
     ctx.arc(cx, cy, outerRadius - 2, 0, Math.PI * 2);
     ctx.clip();
 
-    // Draw capsules (white on dark)
-    for (const cap of capsules) {
-      const x1 = padding + cap.colStart * moduleSize;
-      const x2 = padding + (cap.colEnd + 1) * moduleSize;
-      const y1 = padding + cap.row * moduleSize;
-      const capW = x2 - x1;
-      const capH = moduleSize;
-      const capCx = x1 + capW / 2;
-      const capCy = y1 + capH / 2;
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (!modules.get(row, col)) continue;
 
-      // Skip modules in logo zone
-      const distFromCenter = Math.sqrt((capCx - cx) ** 2 + (capCy - cy) ** 2);
-      if (distFromCenter < logoZoneRadius + moduleSize * 1.5) continue;
+        const x = padding + col * moduleSize + moduleSize / 2;
+        const y = padding + row * moduleSize + moduleSize / 2;
 
-      // Skip modules outside the circle
-      const x1Dist = Math.sqrt((x1 - cx) ** 2 + (capCy - cy) ** 2);
-      const x2Dist = Math.sqrt((x2 - cx) ** 2 + (capCy - cy) ** 2);
-      if (x1Dist > outerRadius - 8 || x2Dist > outerRadius - 8) continue;
+        // Skip dots in logo zone
+        const distFromCenter = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+        if (distFromCenter < logoZoneRadius + moduleSize * 1.5) continue;
 
-      // Draw rounded capsule
-      const r = Math.min(capH * 0.45, capW * 0.45);
-      const shrink = moduleSize * 0.12;
-      const sx = x1 + shrink;
-      const sy = y1 + shrink;
-      const sw = capW - shrink * 2;
-      const sh = capH - shrink * 2;
+        // Skip dots outside the circle
+        if (distFromCenter > outerRadius - 12) continue;
 
-      if (sw <= 0 || sh <= 0) continue;
-
-      const cr = Math.min(sh / 2, sw / 2, r);
-      ctx.beginPath();
-      ctx.moveTo(sx + cr, sy);
-      ctx.lineTo(sx + sw - cr, sy);
-      ctx.arcTo(sx + sw, sy, sx + sw, sy + cr, cr);
-      ctx.lineTo(sx + sw, sy + sh - cr);
-      ctx.arcTo(sx + sw, sy + sh, sx + sw - cr, sy + sh, cr);
-      ctx.lineTo(sx + cr, sy + sh);
-      ctx.arcTo(sx, sy + sh, sx, sy + sh - cr, cr);
-      ctx.lineTo(sx, sy + cr);
-      ctx.arcTo(sx, sy, sx + cr, sy, cr);
-      ctx.closePath();
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+      }
     }
 
     ctx.restore();
