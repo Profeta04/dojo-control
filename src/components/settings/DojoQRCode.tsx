@@ -63,7 +63,6 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     if (!canvas) return;
 
     const size = 600;
-    const padding = 40;
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
@@ -73,111 +72,103 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     const qrData = QRCode.create(checkinUrl, { errorCorrectionLevel: "H" });
     const modules = qrData.modules;
     const moduleCount = modules.size;
-    const qrAreaSize = size - padding * 2;
-    const moduleSize = qrAreaSize / moduleCount;
-    const dotRadius = moduleSize * 0.38;
+
+    const cx = size / 2;
+    const cy = size / 2;
+    const outerRadius = size / 2;
+    const logoZoneRadius = size * 0.18;
 
     // Clear
     ctx.clearRect(0, 0, size, size);
 
-    // Draw circular background
+    // Dark circular background using primary color
     ctx.save();
     ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff";
+    ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = primary;
     ctx.fill();
     ctx.restore();
 
-    // Create gradient for dots
-    const gradient = ctx.createLinearGradient(0, 0, size, size);
-    gradient.addColorStop(0, primary);
-    gradient.addColorStop(0.5, accent);
-    gradient.addColorStop(1, primary);
+    // Map QR modules into circular/radial layout with capsule shapes
+    const padding = 50;
+    const qrAreaSize = size - padding * 2;
+    const moduleSize = qrAreaSize / moduleCount;
 
-    // Circular clip for all QR content
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 8, 0, Math.PI * 2);
-    ctx.clip();
-
-    // Logo exclusion zone
-    const logoZoneRadius = size * 0.16;
-    const centerX = size / 2;
-    const centerY = size / 2;
-
-    // Draw modules as rounded dots
+    // Group adjacent horizontal modules into capsules
+    const capsules: { row: number; colStart: number; colEnd: number }[] = [];
     for (let row = 0; row < moduleCount; row++) {
-      for (let col = 0; col < moduleCount; col++) {
-        if (!modules.get(row, col)) continue;
-
-        const x = padding + col * moduleSize + moduleSize / 2;
-        const y = padding + row * moduleSize + moduleSize / 2;
-
-        // Skip dots in logo zone
-        const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-        if (distFromCenter < logoZoneRadius + moduleSize) continue;
-
-        // Skip dots outside circular boundary
-        if (distFromCenter > size / 2 - padding * 0.7) continue;
-
-        // Check if this is a finder pattern (top-left, top-right, bottom-left corners)
-        const isFinderPattern = isInFinderPattern(row, col, moduleCount);
-
-        if (isFinderPattern) {
-          // Draw finder patterns with special style
-          drawFinderDot(ctx, x, y, moduleSize * 0.48, primary);
+      let col = 0;
+      while (col < moduleCount) {
+        if (modules.get(row, col)) {
+          const start = col;
+          while (col < moduleCount && modules.get(row, col)) col++;
+          capsules.push({ row, colStart: start, colEnd: col - 1 });
         } else {
-          // Draw regular dots with gradient
-          ctx.beginPath();
-          ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
-          ctx.fillStyle = gradient;
-          ctx.fill();
+          col++;
         }
       }
     }
 
-    // Draw custom finder patterns (the 3 corner squares)
-    drawCustomFinderPattern(ctx, padding + 3.5 * moduleSize, padding + 3.5 * moduleSize, moduleSize * 3.5, primary, accent);
-    drawCustomFinderPattern(ctx, padding + (moduleCount - 3.5) * moduleSize, padding + 3.5 * moduleSize, moduleSize * 3.5, primary, accent);
-    drawCustomFinderPattern(ctx, padding + 3.5 * moduleSize, padding + (moduleCount - 3.5) * moduleSize, moduleSize * 3.5, primary, accent);
-
-    ctx.restore(); // Remove circular clip
-
-    // Draw outer ring with gradient
-    const ringGradient = ctx.createLinearGradient(0, 0, size, size);
-    ringGradient.addColorStop(0, primary);
-    ringGradient.addColorStop(0.5, accent);
-    ringGradient.addColorStop(1, primary);
-
+    ctx.save();
+    // Clip to circle
     ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
-    ctx.strokeStyle = ringGradient;
-    ctx.lineWidth = 6;
-    ctx.stroke();
+    ctx.arc(cx, cy, outerRadius - 2, 0, Math.PI * 2);
+    ctx.clip();
 
-    // Inner decorative ring
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 12, 0, Math.PI * 2);
-    ctx.strokeStyle = primary;
-    ctx.lineWidth = 1.5;
-    ctx.globalAlpha = 0.3;
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    // Draw capsules (white on dark)
+    for (const cap of capsules) {
+      const x1 = padding + cap.colStart * moduleSize;
+      const x2 = padding + (cap.colEnd + 1) * moduleSize;
+      const y1 = padding + cap.row * moduleSize;
+      const capW = x2 - x1;
+      const capH = moduleSize;
+      const capCx = x1 + capW / 2;
+      const capCy = y1 + capH / 2;
 
-    // Draw center circle for logo
-    const logoBgRadius = logoZoneRadius + 4;
+      // Skip modules in logo zone
+      const distFromCenter = Math.sqrt((capCx - cx) ** 2 + (capCy - cy) ** 2);
+      if (distFromCenter < logoZoneRadius + moduleSize * 1.5) continue;
+
+      // Skip modules outside the circle
+      const x1Dist = Math.sqrt((x1 - cx) ** 2 + (capCy - cy) ** 2);
+      const x2Dist = Math.sqrt((x2 - cx) ** 2 + (capCy - cy) ** 2);
+      if (x1Dist > outerRadius - 8 || x2Dist > outerRadius - 8) continue;
+
+      // Draw rounded capsule
+      const r = Math.min(capH * 0.45, capW * 0.45);
+      const shrink = moduleSize * 0.12;
+      const sx = x1 + shrink;
+      const sy = y1 + shrink;
+      const sw = capW - shrink * 2;
+      const sh = capH - shrink * 2;
+
+      if (sw <= 0 || sh <= 0) continue;
+
+      const cr = Math.min(sh / 2, sw / 2, r);
+      ctx.beginPath();
+      ctx.moveTo(sx + cr, sy);
+      ctx.lineTo(sx + sw - cr, sy);
+      ctx.arcTo(sx + sw, sy, sx + sw, sy + cr, cr);
+      ctx.lineTo(sx + sw, sy + sh - cr);
+      ctx.arcTo(sx + sw, sy + sh, sx + sw - cr, sy + sh, cr);
+      ctx.lineTo(sx + cr, sy + sh);
+      ctx.arcTo(sx, sy + sh, sx, sy + sh - cr, cr);
+      ctx.lineTo(sx, sy + cr);
+      ctx.arcTo(sx, sy, sx + cr, sy, cr);
+      ctx.closePath();
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // Draw center circle for logo (white)
+    const logoBgRadius = logoZoneRadius + 6;
     ctx.save();
     ctx.beginPath();
-    ctx.arc(centerX, centerY, logoBgRadius, 0, Math.PI * 2);
+    ctx.arc(cx, cy, logoBgRadius, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
-
-    // Logo ring with gradient
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, logoBgRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = ringGradient;
-    ctx.lineWidth = 3;
-    ctx.stroke();
     ctx.restore();
 
     // Draw logo or fallback
@@ -187,25 +178,22 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
       img.onload = () => {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(centerX, centerY, logoZoneRadius, 0, Math.PI * 2);
+        ctx.arc(cx, cy, logoZoneRadius, 0, Math.PI * 2);
         ctx.clip();
         ctx.drawImage(
           img,
-          centerX - logoZoneRadius,
-          centerY - logoZoneRadius,
+          cx - logoZoneRadius,
+          cy - logoZoneRadius,
           logoZoneRadius * 2,
           logoZoneRadius * 2
         );
         ctx.restore();
       };
-      img.onerror = () => drawFallbackLogo(ctx, centerX, centerY, logoZoneRadius, dojoName, primary);
+      img.onerror = () => drawFallbackLogo(ctx, cx, cy, logoZoneRadius, dojoName, primary);
       img.src = logoUrl;
     } else {
-      drawFallbackLogo(ctx, centerX, centerY, logoZoneRadius, dojoName, primary);
+      drawFallbackLogo(ctx, cx, cy, logoZoneRadius, dojoName, primary);
     }
-
-    // Draw dojo name around the bottom arc
-    drawTextArc(ctx, dojoName.toUpperCase(), size / 2, size / 2, size / 2 - 22, Math.PI * 0.65, Math.PI * 0.35, primary);
   }, [checkinUrl, primary, accent, logoUrl, dojoName]);
 
   useEffect(() => {
