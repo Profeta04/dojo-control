@@ -44,14 +44,10 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
   const { checkAndUnlock } = useAchievements();
   const { grantSeasonXP } = useSeasons();
 
-  const completedCount = questions.filter(q => q.task.status === "concluida").length + 
-    (currentIndex > questions.findIndex(q => q.task.status !== "concluida") ? 
-      questions.slice(questions.findIndex(q => q.task.status !== "concluida"), currentIndex)
-        .filter(q => q.task.status !== "concluida").length : 0);
-  
   const totalCount = questions.length;
+  const completedCount = questions.filter(q => q.task.status === "concluida").length;
   const allDone = currentIndex >= totalCount;
-  const progressPercent = Math.round((Math.min(currentIndex, totalCount) / totalCount) * 100);
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const currentQuestion = allDone ? null : questions[currentIndex];
 
