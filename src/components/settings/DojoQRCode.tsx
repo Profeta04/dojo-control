@@ -16,14 +16,39 @@ interface DojoQRCodeProps {
   colorAccent?: string | null;
 }
 
-export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCodeProps) {
+function toHex(val: string | null | undefined, fallback: string): string {
+  if (!val) return fallback;
+  if (val.startsWith("#")) return val;
+  // HSL string "262 83% 58%" → convert to hex
+  const parts = val.trim().split(/\s+/);
+  if (parts.length >= 3) {
+    const h = parseFloat(parts[0]);
+    const s = parseFloat(parts[1]) / 100;
+    const l = parseFloat(parts[2]) / 100;
+    return hslToHex(h, s, l);
+  }
+  return fallback;
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * Math.max(0, Math.min(1, color))).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrimary, colorAccent }: DojoQRCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const posterCanvasRef = useRef<HTMLCanvasElement>(null);
   const [regenerating, setRegenerating] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const checkinUrl = `${window.location.origin}/checkin/${checkinToken}`;
+  const primary = toHex(colorPrimary, "#6d28d9");
+  const accent = toHex(colorAccent, "#f59e0b");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -38,7 +63,6 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
       errorCorrectionLevel: "H",
       color: { dark: "#000000", light: "#ffffff" },
     }, () => {
-      // Draw logo on top of QR code center
       if (!logoUrl) {
         drawFallbackLogo(canvas, dojoName, logoSize);
         return;
@@ -52,12 +76,8 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
         const pad = 6;
-
-        // White background behind logo
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(cx - logoSize / 2 - pad, cy - logoSize / 2 - pad, logoSize + pad * 2, logoSize + pad * 2);
-
-        // Draw logo
         ctx.drawImage(img, cx - logoSize / 2, cy - logoSize / 2, logoSize, logoSize);
       };
       img.onerror = () => drawFallbackLogo(canvas, dojoName, logoSize);
@@ -69,7 +89,6 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
     const qrCanvas = canvasRef.current;
     if (!qrCanvas) return;
 
-    // Create poster canvas
     const posterW = 800;
     const posterH = 1100;
     const poster = document.createElement("canvas");
@@ -82,82 +101,102 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, posterW, posterH);
 
-    // Top accent bar
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, posterW, 8);
+    // Top accent bar with dojo primary color
+    ctx.fillStyle = primary;
+    ctx.fillRect(0, 0, posterW, 10);
+
+    // Thin accent line below
+    ctx.fillStyle = accent;
+    ctx.fillRect(0, 10, posterW, 4);
 
     // Dojo name
-    ctx.fillStyle = "#111111";
-    ctx.font = "bold 38px system-ui, -apple-system, sans-serif";
+    ctx.fillStyle = primary;
+    ctx.font = "bold 42px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(dojoName.toUpperCase(), posterW / 2, 80);
+    ctx.fillText(dojoName.toUpperCase(), posterW / 2, 85);
 
-    // Divider line
-    ctx.strokeStyle = "#e5e5e5";
-    ctx.lineWidth = 1;
+    // Divider with accent color
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(posterW * 0.2, 105);
-    ctx.lineTo(posterW * 0.8, 105);
+    ctx.moveTo(posterW * 0.25, 110);
+    ctx.lineTo(posterW * 0.75, 110);
     ctx.stroke();
 
     // Instruction text
     ctx.fillStyle = "#333333";
-    ctx.font = "600 26px system-ui, -apple-system, sans-serif";
-    ctx.fillText("📱 Escaneie o QR Code abaixo", posterW / 2, 160);
-    ctx.fillText("para marcar sua presença", posterW / 2, 195);
+    ctx.font = "600 28px system-ui, -apple-system, sans-serif";
+    ctx.fillText("Escaneie o QR Code abaixo", posterW / 2, 165);
+    ctx.fillStyle = primary;
+    ctx.font = "bold 30px system-ui, -apple-system, sans-serif";
+    ctx.fillText("para marcar sua presença!", posterW / 2, 205);
 
     // QR Code - centered, large
-    const qrSize = 450;
+    const qrSize = 420;
     const qrX = (posterW - qrSize) / 2;
-    const qrY = 240;
+    const qrY = 250;
 
-    // QR border/shadow
-    ctx.shadowColor = "rgba(0,0,0,0.08)";
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetY = 4;
+    // QR card with primary border
+    ctx.shadowColor = "rgba(0,0,0,0.1)";
+    ctx.shadowBlur = 24;
+    ctx.shadowOffsetY = 6;
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    roundRect(ctx, qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
+    roundRect(ctx, qrX - 24, qrY - 24, qrSize + 48, qrSize + 48, 20);
     ctx.fill();
     ctx.shadowColor = "transparent";
 
-    ctx.strokeStyle = "#e5e5e5";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = primary;
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    roundRect(ctx, qrX - 20, qrY - 20, qrSize + 40, qrSize + 40, 16);
+    roundRect(ctx, qrX - 24, qrY - 24, qrSize + 48, qrSize + 48, 20);
+    ctx.stroke();
+
+    // Accent inner border
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    roundRect(ctx, qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 14);
     ctx.stroke();
 
     // Draw QR
     ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
     // Steps section
-    const stepsY = qrY + qrSize + 60;
+    const stepsY = qrY + qrSize + 70;
 
-    ctx.fillStyle = "#111111";
-    ctx.font = "bold 22px system-ui, -apple-system, sans-serif";
-    ctx.textAlign = "center";
+    // Steps background pill
+    ctx.fillStyle = primary + "0D"; // 5% opacity
+    ctx.beginPath();
+    roundRect(ctx, posterW * 0.12, stepsY - 30, posterW * 0.76, 170, 16);
+    ctx.fill();
+
+    ctx.fillStyle = primary;
+    ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
     ctx.fillText("Como funciona?", posterW / 2, stepsY);
 
     const steps = [
-      "1️⃣  Abra a câmera do celular",
-      "2️⃣  Aponte para o QR Code acima",
-      "3️⃣  Confirme sua presença no app",
+      "1.  Abra a câmera do celular",
+      "2.  Aponte para o QR Code acima",
+      "3.  Confirme sua presença no app",
     ];
 
-    ctx.fillStyle = "#555555";
+    ctx.fillStyle = "#444444";
     ctx.font = "500 20px system-ui, -apple-system, sans-serif";
     steps.forEach((step, i) => {
       ctx.fillText(step, posterW / 2, stepsY + 40 + i * 36);
     });
 
     // Footer
-    ctx.fillStyle = "#999999";
+    ctx.fillStyle = "#aaaaaa";
     ctx.font = "400 14px system-ui, -apple-system, sans-serif";
-    ctx.fillText("Presença registrada automaticamente • Dojo Control", posterW / 2, posterH - 40);
+    ctx.fillText("Presença registrada automaticamente • Dojo Control", posterW / 2, posterH - 50);
 
     // Bottom accent bar
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, posterH - 8, posterW, 8);
+    ctx.fillStyle = accent;
+    ctx.fillRect(0, posterH - 14, posterW, 4);
+    ctx.fillStyle = primary;
+    ctx.fillRect(0, posterH - 10, posterW, 10);
 
     // Download
     const link = document.createElement("a");
@@ -188,7 +227,13 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
   return (
     <Card className="overflow-hidden">
       <CardContent className="flex flex-col items-center gap-5 pt-6 pb-6">
-        <canvas ref={canvasRef} className="rounded-xl shadow-lg" />
+        <div className="w-full flex justify-center">
+          <canvas
+            ref={canvasRef}
+            className="rounded-xl shadow-lg"
+            style={{ width: 220, height: 220 }}
+          />
+        </div>
 
         <div className="text-center space-y-1">
           <p className="text-sm font-medium text-foreground">QR Code de Presença</p>
