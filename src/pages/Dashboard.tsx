@@ -15,6 +15,8 @@ import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { SenseiAnalytics } from "@/components/dashboard/SenseiAnalytics";
 import { XPBar } from "@/components/gamification/XPBar";
 import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LayoutDashboard, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -74,35 +76,43 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Dashboard Stats Component - Only for admins/senseis */}
+      {/* Staff Tabbed Content */}
       {canManageStudents && (
-        <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+        <Tabs defaultValue="dashboard" className="mt-2">
+          <TabsList className="grid w-full grid-cols-2 h-11">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2 text-sm">
+              <LayoutDashboard className="h-4 w-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="progress" className="flex items-center gap-2 text-sm">
+              <TrendingUp className="h-4 w-4" />
+              Progresso dos Alunos
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="mt-6 space-y-6">
+            <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />
+            <SenseiAnalytics />
+            <div className="p-4 sm:p-6 bg-card rounded-xl border border-border/60 shadow-sm">
+              <h2 className="text-base sm:text-lg font-bold text-foreground mb-2">Próximos passos</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos.
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="progress" className="mt-6">
+            <TasksManagement />
+          </TabsContent>
+        </Tabs>
       )}
 
-      {/* Sensei Analytics - task completion, overdue, ranking */}
-      {canManageStudents && (
+      {/* Student Content */}
+      {isStudentOnly && (
         <div className="mt-6">
-          <SenseiAnalytics />
+          <StudentTasksDashboard />
         </div>
       )}
-
-      {/* Student Progress Section */}
-      <div className="mt-6">
-        {isStudentOnly ? (
-          <StudentTasksDashboard />
-        ) : canManageStudents ? (
-          <TasksManagement />
-        ) : null}
-      </div>
-
-      <div className="mt-6 p-4 sm:p-6 bg-card rounded-xl border border-border/60 shadow-sm">
-        <h2 className="text-base sm:text-lg font-bold text-foreground mb-2">Próximos passos</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          {canManageStudents 
-            ? "Use o menu lateral para gerenciar alunos, turmas, presenças e pagamentos."
-            : "Acompanhe suas tarefas e evolução no judô."}
-        </p>
-      </div>
     </DashboardLayout>
   );
 }
