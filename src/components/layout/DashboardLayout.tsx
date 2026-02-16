@@ -3,11 +3,12 @@ import dojoLogo from "@/assets/dojo-control-logo.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
+import { Link } from "react-router-dom";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Menu, X, Building } from "lucide-react";
+import { Menu, X, Building, Settings } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BlockedStudentScreen } from "@/components/auth/BlockedStudentScreen";
 import { supabase } from "@/integrations/supabase/client";
@@ -97,7 +98,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </span>
               )}
             </div>
-            <NotificationBell />
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Link to="/config">
+                <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent">
+                  <Settings className="h-5 w-5" />
+                </Button>
+              </Link>
+              <NotificationBell />
+            </div>
           </div>
         </header>
       )}
