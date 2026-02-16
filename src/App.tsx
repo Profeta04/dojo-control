@@ -23,6 +23,7 @@ import Settings from "./pages/Settings";
 import StudentProfile from "./pages/StudentProfile";
 import StudentTasks from "./pages/StudentTasks";
 import StudentConfig from "./pages/StudentConfig";
+import StudentProgress from "./pages/StudentProgress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ function AnimatedRoutes() {
         <Route path="/perfil" element={<PageTransition><StudentProfile /></PageTransition>} />
         <Route path="/tarefas" element={<PageTransition><StudentTasks /></PageTransition>} />
         <Route path="/config" element={<PageTransition><StudentConfig /></PageTransition>} />
+        <Route path="/progresso" element={<PageTransition><StudentProgress /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>
