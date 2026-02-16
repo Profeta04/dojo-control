@@ -24,6 +24,7 @@ import StudentProfile from "./pages/StudentProfile";
 import StudentTasks from "./pages/StudentTasks";
 import StudentConfig from "./pages/StudentConfig";
 import StudentProgress from "./pages/StudentProgress";
+import Checkin from "./pages/Checkin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ function AnimatedRoutes() {
         <Route path="/tarefas" element={<PageTransition><StudentTasks /></PageTransition>} />
         <Route path="/config" element={<PageTransition><StudentConfig /></PageTransition>} />
         <Route path="/progresso" element={<PageTransition><StudentProgress /></PageTransition>} />
+        <Route path="/checkin/:token" element={<PageTransition><Checkin /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

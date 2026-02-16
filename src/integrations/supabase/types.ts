@@ -68,6 +68,7 @@ export type Database = {
           marked_by: string | null
           notes: string | null
           present: boolean
+          self_checked_in: boolean
           student_id: string
         }
         Insert: {
@@ -78,6 +79,7 @@ export type Database = {
           marked_by?: string | null
           notes?: string | null
           present?: boolean
+          self_checked_in?: boolean
           student_id: string
         }
         Update: {
@@ -88,6 +90,7 @@ export type Database = {
           marked_by?: string | null
           notes?: string | null
           present?: boolean
+          self_checked_in?: boolean
           student_id?: string
         }
         Relationships: [
@@ -327,6 +330,7 @@ export type Database = {
       dojos: {
         Row: {
           address: string | null
+          checkin_token: string
           color_accent: string | null
           color_primary: string | null
           color_secondary: string | null
@@ -347,6 +351,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          checkin_token?: string
           color_accent?: string | null
           color_primary?: string | null
           color_secondary?: string | null
@@ -367,6 +372,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          checkin_token?: string
           color_accent?: string | null
           color_primary?: string | null
           color_secondary?: string | null
@@ -1138,6 +1144,14 @@ export type Database = {
           name: string
         }[]
       }
+      get_dojo_by_checkin_token: {
+        Args: { _token: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+        }[]
+      }
       get_sensei_dojo_ids: { Args: { _user_id: string }; Returns: string[] }
       get_student_class_ids: {
         Args: { _student_id: string }
@@ -1149,6 +1163,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: {
           address: string | null
+          checkin_token: string
           color_accent: string | null
           color_primary: string | null
           color_secondary: string | null
