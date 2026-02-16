@@ -10,7 +10,7 @@ import {
   CheckCircle2,
   TrendingUp,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
@@ -275,7 +275,13 @@ export function StudentTasksDashboard() {
 
       {/* Main Quiz Card */}
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            Questões
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {quizQuestions.length === 0 || totalCompleted === totalQuestions ? (
             <div className="text-center py-12 text-muted-foreground">
               <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
