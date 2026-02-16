@@ -7,7 +7,9 @@ export type RegistrationStatus = Database["public"]["Enums"]["registration_statu
 
 export const BELT_LABELS: Record<BeltGrade, string> = {
   branca: "Faixa Branca",
+  bordo: "Faixa Bordô",
   cinza: "Faixa Cinza",
+  azul_escura: "Faixa Azul Escura",
   azul: "Faixa Azul",
   amarela: "Faixa Amarela",
   laranja: "Faixa Laranja",
@@ -28,7 +30,9 @@ export const BELT_LABELS: Record<BeltGrade, string> = {
 
 export const BELT_COLORS: Record<BeltGrade, string> = {
   branca: "bg-white border-2 border-foreground/40",
+  bordo: "bg-red-900",
   cinza: "bg-belt-cinza",
+  azul_escura: "bg-blue-900",
   azul: "bg-belt-azul",
   amarela: "bg-belt-amarela",
   laranja: "bg-belt-laranja",

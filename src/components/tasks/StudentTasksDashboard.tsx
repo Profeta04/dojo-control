@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTasks, TaskCategory, CATEGORY_CONFIG, TaskWithAssignee } from "@/hooks/useTasks";
 import { SequentialQuizCard } from "./SequentialQuizCard";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   ClipboardList, 
   CheckCircle2, 
@@ -26,8 +27,24 @@ interface TaskTemplate {
   correct_option: number | null;
 }
 
+// Seeded shuffle: each student gets a unique but consistent order
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const result = [...arr];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  }
+  for (let i = result.length - 1; i > 0; i--) {
+    hash = ((hash << 5) - hash + i) | 0;
+    const j = Math.abs(hash) % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 export function StudentTasksDashboard() {
   const { tasks, isLoading } = useTasks();
+  const { user } = useAuth();
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
 
   const { data: templates = [] } = useQuery({
@@ -54,9 +71,9 @@ export function StudentTasksDashboard() {
   const totalTasks = filteredTasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Build flat quiz questions list (mixed themes)
+  // Build flat quiz questions list (mixed themes, shuffled per student)
   const allQuizQuestions = useMemo(() => {
-    return filteredTasks
+    const questions = filteredTasks
       .map(task => {
         const taskData = templateDataMap[task.title];
         if (!taskData?.options || taskData.correctOption === null) return null;
@@ -68,7 +85,10 @@ export function StudentTasksDashboard() {
         };
       })
       .filter(Boolean) as { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[];
-  }, [filteredTasks, templateDataMap]);
+    
+    // Shuffle with user ID as seed for consistent per-student ordering
+    return seededShuffle(questions, user?.id || "default");
+  }, [filteredTasks, templateDataMap, user?.id]);
 
   if (isLoading) return <LoadingSpinner />;
 

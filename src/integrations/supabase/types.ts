@@ -1199,7 +1199,9 @@ export type Database = {
       app_role: "super_admin" | "dono" | "admin" | "sensei" | "student"
       belt_grade:
         | "branca"
+        | "bordo"
         | "cinza"
+        | "azul_escura"
         | "azul"
         | "amarela"
         | "laranja"
@@ -1356,7 +1358,9 @@ export const Constants = {
       app_role: ["super_admin", "dono", "admin", "sensei", "student"],
       belt_grade: [
         "branca",
+        "bordo",
         "cinza",
+        "azul_escura",
         "azul",
         "amarela",
         "laranja",
