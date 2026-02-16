@@ -1,8 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTasks, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { TaskCard } from "./TaskCard";
-import { CreateTaskDialog } from "./CreateTaskDialog";
-import { AutoAssignTasksDialog } from "./AutoAssignTasksDialog";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter, Trash2, UserX, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -224,20 +222,14 @@ export function TasksManagement() {
   return (
     <div className="space-y-6">
       {/* Header with Create Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <ClipboardList className="h-5 w-5" />
-            Gerenciar Tarefas
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Crie e acompanhe tarefas para os alunos
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <AutoAssignTasksDialog />
-          <CreateTaskDialog />
-        </div>
+      <div>
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <ClipboardList className="h-5 w-5" />
+          Gerenciar Questões
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Acompanhe o progresso dos alunos nas questões
+        </p>
       </div>
 
       {/* Stats Cards */}
