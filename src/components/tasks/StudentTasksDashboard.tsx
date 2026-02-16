@@ -246,7 +246,7 @@ export function StudentTasksDashboard() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Respondidas</p>
+                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Acertos</p>
                 <p className="text-2xl font-bold mt-1">{totalCompleted}</p>
               </div>
               <div className="p-2 rounded-xl bg-success/10">

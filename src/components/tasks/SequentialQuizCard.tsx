@@ -180,12 +180,6 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
       )} />
 
       <CardHeader className="pb-3 pt-4">
-        <div className="flex items-center gap-3 mb-3">
-          <Progress value={progressPercent} className="flex-1 h-2" />
-          <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-            {completedCount} de {totalCount}
-          </span>
-        </div>
 
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-3 min-w-0">
