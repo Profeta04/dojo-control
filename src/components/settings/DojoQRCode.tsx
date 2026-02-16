@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, QrCode, RefreshCw, Loader2 } from "lucide-react";
+import { Download, RefreshCw, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,9 +12,32 @@ interface DojoQRCodeProps {
   dojoName: string;
   checkinToken: string;
   logoUrl?: string | null;
+  colorPrimary?: string | null;
+  colorAccent?: string | null;
 }
 
-export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCodeProps) {
+// Convert hex to HSL components
+function hexToHSL(hex: string): { h: number; s: number; l: number } {
+  hex = hex.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrimary, colorAccent }: DojoQRCodeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [regenerating, setRegenerating] = useState(false);
   const { toast } = useToast();
@@ -22,104 +45,172 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
 
   const checkinUrl = `${window.location.origin}/checkin/${checkinToken}`;
 
-  useEffect(() => {
-    renderQR();
-  }, [checkinToken, logoUrl]);
+  // Get dojo colors or defaults - handle HSL values stored as "h s% l%"
+  const toColor = (val: string | null | undefined, fallback: string): string => {
+    if (!val) return fallback;
+    if (val.startsWith("#") || val.startsWith("rgb") || val.startsWith("hsl")) return val;
+    // Assume HSL without wrapper: "262 83% 58%" → "hsl(262, 83%, 58%)"
+    const parts = val.trim().split(/\s+/);
+    if (parts.length >= 3) return `hsl(${parts[0]}, ${parts[1]}, ${parts[2]})`;
+    return fallback;
+  };
 
-  const renderQR = async () => {
+  const primary = toColor(colorPrimary, "#6d28d9");
+  const accent = toColor(colorAccent, "#f59e0b");
+
+  const renderQR = useCallback(async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const size = 400;
+    const size = 600;
+    const padding = 40;
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Generate QR to offscreen canvas
-    const qrCanvas = document.createElement("canvas");
-    await QRCode.toCanvas(qrCanvas, checkinUrl, {
-      width: size,
-      margin: 2,
-      color: { dark: "#1a1a2e", light: "#ffffff" },
-      errorCorrectionLevel: "H",
-    });
+    // Generate QR matrix
+    const qrData = QRCode.create(checkinUrl, { errorCorrectionLevel: "H" });
+    const modules = qrData.modules;
+    const moduleCount = modules.size;
+    const qrAreaSize = size - padding * 2;
+    const moduleSize = qrAreaSize / moduleCount;
+    const dotRadius = moduleSize * 0.38;
 
-    // Draw circular clipped QR
+    // Clear
     ctx.clearRect(0, 0, size, size);
+
+    // Draw circular background
     ctx.save();
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
-    ctx.closePath();
-    ctx.clip();
-    ctx.drawImage(qrCanvas, 0, 0, size, size);
-    ctx.restore();
-
-    // Draw circular border
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
-    ctx.strokeStyle = "#1a1a2e";
-    ctx.lineWidth = 4;
-    ctx.stroke();
-
-    // Draw center circle for logo
-    const logoRadius = size * 0.15;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, logoRadius + 4, 0, Math.PI * 2);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
-    ctx.strokeStyle = "#1a1a2e";
+    ctx.restore();
+
+    // Create gradient for dots
+    const gradient = ctx.createLinearGradient(0, 0, size, size);
+    gradient.addColorStop(0, primary);
+    gradient.addColorStop(0.5, accent);
+    gradient.addColorStop(1, primary);
+
+    // Circular clip for all QR content
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 8, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Logo exclusion zone
+    const logoZoneRadius = size * 0.16;
+    const centerX = size / 2;
+    const centerY = size / 2;
+
+    // Draw modules as rounded dots
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (!modules.get(row, col)) continue;
+
+        const x = padding + col * moduleSize + moduleSize / 2;
+        const y = padding + row * moduleSize + moduleSize / 2;
+
+        // Skip dots in logo zone
+        const distFromCenter = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+        if (distFromCenter < logoZoneRadius + moduleSize) continue;
+
+        // Skip dots outside circular boundary
+        if (distFromCenter > size / 2 - padding * 0.7) continue;
+
+        // Check if this is a finder pattern (top-left, top-right, bottom-left corners)
+        const isFinderPattern = isInFinderPattern(row, col, moduleCount);
+
+        if (isFinderPattern) {
+          // Draw finder patterns with special style
+          drawFinderDot(ctx, x, y, moduleSize * 0.48, primary);
+        } else {
+          // Draw regular dots with gradient
+          ctx.beginPath();
+          ctx.arc(x, y, dotRadius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
+      }
+    }
+
+    // Draw custom finder patterns (the 3 corner squares)
+    drawCustomFinderPattern(ctx, padding + 3.5 * moduleSize, padding + 3.5 * moduleSize, moduleSize * 3.5, primary, accent);
+    drawCustomFinderPattern(ctx, padding + (moduleCount - 3.5) * moduleSize, padding + 3.5 * moduleSize, moduleSize * 3.5, primary, accent);
+    drawCustomFinderPattern(ctx, padding + 3.5 * moduleSize, padding + (moduleCount - 3.5) * moduleSize, moduleSize * 3.5, primary, accent);
+
+    ctx.restore(); // Remove circular clip
+
+    // Draw outer ring with gradient
+    const ringGradient = ctx.createLinearGradient(0, 0, size, size);
+    ringGradient.addColorStop(0, primary);
+    ringGradient.addColorStop(0.5, accent);
+    ringGradient.addColorStop(1, primary);
+
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 2, 0, Math.PI * 2);
+    ctx.strokeStyle = ringGradient;
+    ctx.lineWidth = 6;
+    ctx.stroke();
+
+    // Inner decorative ring
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, size / 2 - 12, 0, Math.PI * 2);
+    ctx.strokeStyle = primary;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // Draw center circle for logo
+    const logoBgRadius = logoZoneRadius + 4;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, logoBgRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
+
+    // Logo ring with gradient
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, logoBgRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = ringGradient;
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.restore();
 
-    // Draw logo or fallback text
+    // Draw logo or fallback
     if (logoUrl) {
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = () => {
         ctx.save();
         ctx.beginPath();
-        ctx.arc(size / 2, size / 2, logoRadius, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, logoZoneRadius, 0, Math.PI * 2);
         ctx.clip();
         ctx.drawImage(
           img,
-          size / 2 - logoRadius,
-          size / 2 - logoRadius,
-          logoRadius * 2,
-          logoRadius * 2
+          centerX - logoZoneRadius,
+          centerY - logoZoneRadius,
+          logoZoneRadius * 2,
+          logoZoneRadius * 2
         );
         ctx.restore();
       };
-      img.onerror = () => {
-        drawFallbackText(ctx, size, logoRadius, dojoName);
-      };
+      img.onerror = () => drawFallbackLogo(ctx, centerX, centerY, logoZoneRadius, dojoName, primary);
       img.src = logoUrl;
     } else {
-      drawFallbackText(ctx, size, logoRadius, dojoName);
+      drawFallbackLogo(ctx, centerX, centerY, logoZoneRadius, dojoName, primary);
     }
-  };
 
-  const drawFallbackText = (
-    ctx: CanvasRenderingContext2D,
-    size: number,
-    radius: number,
-    name: string
-  ) => {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold ${radius * 0.8}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(name.charAt(0).toUpperCase(), size / 2, size / 2);
-    ctx.restore();
-  };
+    // Draw dojo name around the bottom arc
+    drawTextArc(ctx, dojoName.toUpperCase(), size / 2, size / 2, size / 2 - 22, Math.PI * 0.65, Math.PI * 0.35, primary);
+  }, [checkinUrl, primary, accent, logoUrl, dojoName]);
+
+  useEffect(() => {
+    renderQR();
+  }, [renderQR]);
 
   const handleDownload = () => {
     const canvas = canvasRef.current;
@@ -140,6 +231,7 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
         .eq("id", dojoId);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["dojos"] });
+      queryClient.invalidateQueries({ queryKey: ["user-dojos"] });
       toast({ title: "QR Code regenerado!", description: "O código antigo foi invalidado." });
     } catch (err: any) {
       toast({ title: "Erro", description: err.message, variant: "destructive" });
@@ -149,23 +241,31 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
   };
 
   return (
-    <Card>
-      <CardContent className="flex flex-col items-center gap-4 pt-6">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <QrCode className="h-4 w-4" />
-          QR Code de Presença
+    <Card className="overflow-hidden">
+      <CardContent className="flex flex-col items-center gap-5 pt-6 pb-6">
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            className="rounded-full shadow-xl"
+            style={{ width: 260, height: 260 }}
+          />
+          {/* Glow effect */}
+          <div
+            className="absolute inset-0 rounded-full opacity-20 blur-xl -z-10"
+            style={{ background: `linear-gradient(135deg, ${primary}, ${accent})`, transform: "scale(1.1)" }}
+          />
         </div>
-        <canvas
-          ref={canvasRef}
-          className="rounded-full border-2 border-border"
-          style={{ width: 200, height: 200 }}
-        />
-        <p className="text-xs text-muted-foreground text-center max-w-[250px]">
-          Imprima e cole na parede do dojo. Alunos escaneiam para registrar presença automaticamente.
-        </p>
+
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium text-foreground">QR Code de Presença</p>
+          <p className="text-xs text-muted-foreground max-w-[280px]">
+            Imprima e cole na parede do dojo. Alunos escaneiam para registrar presença automaticamente.
+          </p>
+        </div>
+
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-1" />
+            <Download className="h-4 w-4 mr-1.5" />
             Baixar PNG
           </Button>
           <Button
@@ -175,9 +275,9 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
             disabled={regenerating}
           >
             {regenerating ? (
-              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
             ) : (
-              <RefreshCw className="h-4 w-4 mr-1" />
+              <RefreshCw className="h-4 w-4 mr-1.5" />
             )}
             Regenerar
           </Button>
@@ -185,4 +285,117 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl }: DojoQRCo
       </CardContent>
     </Card>
   );
+}
+
+// --- Helper drawing functions ---
+
+function isInFinderPattern(row: number, col: number, size: number): boolean {
+  // Top-left
+  if (row < 7 && col < 7) return true;
+  // Top-right
+  if (row < 7 && col >= size - 7) return true;
+  // Bottom-left
+  if (row >= size - 7 && col < 7) return true;
+  return false;
+}
+
+function drawFinderDot(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, color: string) {
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawCustomFinderPattern(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  primary: string,
+  accent: string
+) {
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.strokeStyle = primary;
+  ctx.lineWidth = radius * 0.22;
+  ctx.stroke();
+
+  // Inner filled circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.45, 0, Math.PI * 2);
+  ctx.fillStyle = accent;
+  ctx.fill();
+}
+
+function drawFallbackLogo(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  name: string,
+  color: string
+) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.clip();
+
+  // Gradient background
+  const grad = ctx.createLinearGradient(cx - radius, cy - radius, cx + radius, cy + radius);
+  grad.addColorStop(0, color);
+  grad.addColorStop(1, shiftColor(color, 30));
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `bold ${radius * 0.9}px system-ui, -apple-system, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(name.charAt(0).toUpperCase(), cx, cy);
+  ctx.restore();
+}
+
+function drawTextArc(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  cx: number,
+  cy: number,
+  radius: number,
+  startAngle: number,
+  endAngle: number,
+  color: string
+) {
+  ctx.save();
+  ctx.font = "bold 11px system-ui, -apple-system, sans-serif";
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  const totalAngle = endAngle - startAngle;
+  // Only render if there's enough space
+  if (text.length === 0) { ctx.restore(); return; }
+
+  const anglePerChar = totalAngle / (text.length + 1);
+
+  for (let i = 0; i < text.length; i++) {
+    const angle = startAngle + anglePerChar * (i + 1);
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI / 2);
+    ctx.globalAlpha = 0.6;
+    ctx.fillText(text[i], 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function shiftColor(hex: string, amount: number): string {
+  const hsl = hexToHSL(hex);
+  const newL = Math.min(100, Math.max(0, hsl.l + amount));
+  return `hsl(${hsl.h}, ${hsl.s}%, ${newL}%)`;
 }

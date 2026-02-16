@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScanLine, ArrowLeft, Camera } from "lucide-react";
+import { ArrowLeft, Camera, ShieldCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Scanner() {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ export default function Scanner() {
   const [started, setStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState(false);
 
   const requestCameraAndStart = async () => {
     try {
@@ -26,7 +27,7 @@ export default function Scanner() {
   useEffect(() => {
     if (!permissionGranted) return;
 
-    const scanner = new Html5Qrcode("qr-reader");
+    const scanner = new Html5Qrcode("qr-reader-video");
     scannerRef.current = scanner;
 
     scanner
@@ -36,8 +37,9 @@ export default function Scanner() {
         (decodedText) => {
           const match = decodedText.match(/\/checkin\/([a-f0-9-]+)/i);
           if (match) {
+            setScanSuccess(true);
             scanner.stop().catch(() => {});
-            navigate(`/checkin/${match[1]}`);
+            setTimeout(() => navigate(`/checkin/${match[1]}`), 800);
           } else {
             toast({
               title: "QR Code inválido",
@@ -60,53 +62,201 @@ export default function Scanner() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 pb-24">
-      <Card className="max-w-md w-full">
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold flex items-center gap-2">
-              <Camera className="h-5 w-5 text-accent" />
-              Scanner de Presença
-            </h1>
-          </div>
+      {/* Back button */}
+      <div className="absolute top-4 left-4 safe-area-inset-top z-20">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="bg-background/80 backdrop-blur-sm">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+      </div>
 
-          <p className="text-sm text-muted-foreground text-center">
-            Aponte a câmera para o QR Code do dojo para registrar presença.
+      <div className="max-w-sm w-full space-y-6">
+        {/* Title */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-1"
+        >
+          <h1 className="text-xl font-bold text-foreground">Scanner de Presença</h1>
+          <p className="text-sm text-muted-foreground">
+            Aponte para o QR Code circular do dojo
           </p>
+        </motion.div>
 
-          {error ? (
-            <div className="text-center space-y-3 py-6">
-              <ScanLine className="h-12 w-12 mx-auto text-destructive/60" />
-              <p className="text-sm text-destructive">{error}</p>
-              <Button variant="outline" onClick={() => { setError(null); setPermissionGranted(false); }}>
-                Tentar novamente
-              </Button>
+        {error ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-4 py-8"
+          >
+            <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+              <Camera className="h-10 w-10 text-destructive/60" />
             </div>
-          ) : !permissionGranted ? (
-            <div className="text-center space-y-4 py-8">
-              <Camera className="h-14 w-14 mx-auto text-accent/70" />
-              <p className="text-sm text-muted-foreground">
-                Precisamos acessar sua câmera para ler o QR Code do dojo.
-              </p>
-              <Button onClick={requestCameraAndStart} className="gap-2">
-                <Camera className="h-4 w-4" />
-                Permitir Câmera
-              </Button>
+            <p className="text-sm text-destructive">{error}</p>
+            <Button variant="outline" onClick={() => { setError(null); setPermissionGranted(false); }}>
+              Tentar novamente
+            </Button>
+          </motion.div>
+        ) : !permissionGranted ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-6 py-8"
+          >
+            {/* Animated camera icon */}
+            <div className="relative w-24 h-24 mx-auto">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-24 h-24 rounded-full bg-accent/10 flex items-center justify-center"
+              >
+                <Camera className="h-12 w-12 text-accent" />
+              </motion.div>
+              {/* Pulsing ring */}
+              <motion.div
+                animate={{ scale: [1, 1.4], opacity: [0.4, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="absolute inset-0 rounded-full border-2 border-accent"
+              />
             </div>
-          ) : (
-            <div className="relative rounded-xl overflow-hidden bg-black aspect-square">
-              <div id="qr-reader" className="w-full h-full" />
+            <p className="text-sm text-muted-foreground">
+              Precisamos da câmera para ler o QR Code do dojo.
+            </p>
+            <Button onClick={requestCameraAndStart} className="gap-2" size="lg">
+              <Camera className="h-4 w-4" />
+              Permitir Câmera
+            </Button>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative"
+          >
+            {/* Scanner viewport - circular */}
+            <div className="relative w-72 h-72 mx-auto">
+              {/* Video feed (hidden, controlled by html5-qrcode) */}
+              <div
+                id="qr-reader-video"
+                className="absolute inset-0 rounded-full overflow-hidden"
+                style={{
+                  clipPath: "circle(50% at 50% 50%)",
+                }}
+              />
+
+              {/* Circular overlay border */}
+              <div className="absolute inset-0 rounded-full pointer-events-none z-10">
+                {/* Gradient ring */}
+                <svg width="100%" height="100%" viewBox="0 0 288 288" className="absolute inset-0">
+                  <defs>
+                    <linearGradient id="scan-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="hsl(var(--accent))" />
+                      <stop offset="50%" stopColor="hsl(var(--primary))" />
+                      <stop offset="100%" stopColor="hsl(var(--accent))" />
+                    </linearGradient>
+                  </defs>
+                  <circle
+                    cx="144"
+                    cy="144"
+                    r="140"
+                    fill="none"
+                    stroke="url(#scan-gradient)"
+                    strokeWidth="4"
+                    opacity="0.8"
+                  />
+                </svg>
+
+                {/* Scanning animation */}
+                {started && !scanSuccess && (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0"
+                  >
+                    <svg width="100%" height="100%" viewBox="0 0 288 288">
+                      <circle
+                        cx="144"
+                        cy="144"
+                        r="140"
+                        fill="none"
+                        stroke="hsl(var(--accent))"
+                        strokeWidth="3"
+                        strokeDasharray="60 820"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </motion.div>
+                )}
+
+                {/* Corner markers */}
+                <ScanCorners />
+              </div>
+
+              {/* Loading spinner before camera starts */}
               {!started && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <ScanLine className="h-10 w-10 text-accent animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-muted/80 flex items-center justify-center z-20">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Camera className="h-10 w-10 text-accent" />
+                  </motion.div>
                 </div>
               )}
+
+              {/* Success overlay */}
+              <AnimatePresence>
+                {scanSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute inset-0 rounded-full bg-accent/90 flex items-center justify-center z-20"
+                  >
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200 }}
+                    >
+                      <ShieldCheck className="h-16 w-16 text-accent-foreground" />
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {/* Helper text below scanner */}
+            <p className="text-center text-xs text-muted-foreground mt-4">
+              {scanSuccess ? "Presença detectada!" : "Posicione o QR Code dentro do círculo"}
+            </p>
+          </motion.div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function ScanCorners() {
+  const cornerSize = 24;
+  const strokeWidth = 3;
+  const color = "hsl(var(--accent))";
+
+  return (
+    <>
+      {/* Top-left */}
+      <svg className="absolute top-4 left-4" width={cornerSize} height={cornerSize}>
+        <path d={`M0 ${cornerSize} L0 0 L${cornerSize} 0`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      </svg>
+      {/* Top-right */}
+      <svg className="absolute top-4 right-4" width={cornerSize} height={cornerSize}>
+        <path d={`M0 0 L${cornerSize} 0 L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      </svg>
+      {/* Bottom-left */}
+      <svg className="absolute bottom-4 left-4" width={cornerSize} height={cornerSize}>
+        <path d={`M0 0 L0 ${cornerSize} L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      </svg>
+      {/* Bottom-right */}
+      <svg className="absolute bottom-4 right-4" width={cornerSize} height={cornerSize}>
+        <path d={`M${cornerSize} 0 L${cornerSize} ${cornerSize} L0 ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      </svg>
+    </>
   );
 }

@@ -73,6 +73,8 @@ export default function Attendance() {
                 dojoName={currentDojo.name}
                 checkinToken={currentDojo.checkin_token}
                 logoUrl={logoUrl}
+                colorPrimary={currentDojo.color_primary}
+                colorAccent={currentDojo.color_accent}
               />
             ) : (
               <p className="text-muted-foreground text-sm">Nenhum dojo selecionado.</p>
