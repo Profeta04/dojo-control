@@ -82,6 +82,7 @@ export function ClassesTab() {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [studentSearch, setStudentSearch] = useState("");
   const [editMode, setEditMode] = useState(false);
+  const [martialArt, setMartialArt] = useState("judo");
 
   // Schedule form state
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -211,6 +212,7 @@ export function ClassesTab() {
     setName("");
     setDescription("");
     setMaxStudents("");
+    setMartialArt("judo");
     setEditMode(false);
     setSelectedClass(null);
   };
@@ -227,6 +229,7 @@ export function ClassesTab() {
     setName(cls.name);
     setDescription(cls.description || "");
     setMaxStudents(cls.max_students?.toString() || "");
+    setMartialArt(cls.martial_art || "judo");
     setEditMode(true);
     setDialogOpen(true);
   };
@@ -280,6 +283,7 @@ export function ClassesTab() {
         description: description || null,
         schedule: "Ver calendário",
         max_students: maxStudents ? parseInt(maxStudents) : null,
+        martial_art: martialArt,
         sensei_id: user!.id,
         dojo_id: profile?.dojo_id || null,
         is_active: true,
@@ -464,6 +468,18 @@ export function ClassesTab() {
                   <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Turma Iniciante" required />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="martialArt">Arte marcial *</Label>
+                  <Select value={martialArt} onValueChange={setMartialArt}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a arte marcial" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="judo">Judô</SelectItem>
+                      <SelectItem value="bjj">Jiu-Jitsu (BJJ)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="maxStudents">Máximo de alunos</Label>
                   <Input id="maxStudents" type="number" min="1" value={maxStudents} onChange={(e) => setMaxStudents(e.target.value)} placeholder="Sem limite" />
                 </div>
@@ -503,6 +519,9 @@ export function ClassesTab() {
                     </div>
                     <Badge variant={cls.is_active ? "default" : "secondary"}>
                       {cls.is_active ? "Ativa" : "Inativa"}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {cls.martial_art === "bjj" ? "BJJ" : "Judô"}
                     </Badge>
                   </div>
                 </CardHeader>
