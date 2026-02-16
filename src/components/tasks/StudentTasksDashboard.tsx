@@ -11,31 +11,12 @@ import {
   Trophy, 
   Filter, 
   BookOpen, 
-  ChevronRight, 
-  Dumbbell,
-  Scroll,
-  Home,
-  Target,
-  User,
-  RotateCcw,
-  Scale,
-  Medal,
-  LucideIcon,
-  Swords,
   AlertTriangle,
   TrendingUp,
-  Brain,
-  Flame,
-  ShieldCheck,
-  Footprints,
-  HandMetal
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface TaskTemplate {
@@ -45,46 +26,10 @@ interface TaskTemplate {
   correct_option: number | null;
 }
 
-// Thematic groups for quiz categorization
-const THEMATIC_GROUPS: { id: string; label: string; icon: LucideIcon; keywords: string[] }[] = [
-  { id: "historia", label: "História do Judô", icon: Scroll, keywords: ["Judô", "Jigoro", "criou", "criado", "Kodokan", "nasceu", "veio", "significa Judô", "história"] },
-  { id: "vocabulario", label: "Vocabulário do Dojo", icon: Home, keywords: ["Dojô", "Judogi", "Obi", "Sensei", "Tatame", "vocabulário"] },
-  { id: "comandos", label: "Comandos e Papéis", icon: Target, keywords: ["Tori", "Uke", "Rei", "Hajime", "Matte", "Randori", "comando"] },
-  { id: "posturas", label: "Posturas e Pegadas", icon: User, keywords: ["Shizen-tai", "Jigo-tai", "Kumi-kata", "postura", "pegada"] },
-  { id: "ukemi", label: "Quedas (Ukemi)", icon: RotateCcw, keywords: ["Ukemi", "Mae Ukemi", "Ushiro Ukemi", "Yoko Ukemi", "Zenpo Kaiten", "quedas", "queda"] },
-  { id: "principios", label: "Princípios do Judô", icon: Scale, keywords: ["Jita Kyoei", "Seiryoku Zenyo", "princípio"] },
-  { id: "olimpico", label: "Judô Olímpico", icon: Medal, keywords: ["olímpico", "olimpíadas", "medalha"] },
-  { id: "tecnicas-projecao", label: "Técnicas de Projeção", icon: Swords, keywords: ["projeção", "Nage-waza", "goshi", "otoshi", "gari", "guruma", "harai", "seoi", "barai", "ashi", "Tai-sabaki", "derrubar", "varredura"] },
-  { id: "tecnicas-solo", label: "Técnicas de Solo", icon: HandMetal, keywords: ["gatame", "solo", "Ne-waza", "imobilização", "estrangulamento", "chave", "armlock", "Juji", "Kansetsu"] },
-  { id: "preparacao-fisica", label: "Preparação Física", icon: Dumbbell, keywords: ["físic", "treino", "força", "explosão", "circuito", "resistência", "flexibilidade", "aquecimento", "condicionamento"] },
-  { id: "competicao", label: "Competição e Regras", icon: ShieldCheck, keywords: ["competição", "regra", "arbitragem", "penalidade", "shido", "ippon", "waza-ari", "campeonato"] },
-  { id: "faixas", label: "Faixas e Graduação", icon: Flame, keywords: ["faixa", "graduação", "exame", "dan", "kyu", "faixa preta"] },
-  { id: "kata", label: "Katas", icon: Footprints, keywords: ["kata", "Nage-no-kata", "Katame-no-kata"] },
-];
-
-function getThematicGroup(title: string): string {
-  const lower = title.toLowerCase();
-  for (const group of THEMATIC_GROUPS) {
-    if (group.keywords.some(keyword => lower.includes(keyword.toLowerCase()))) {
-      return group.id;
-    }
-  }
-  return "outros";
-}
-
-interface GroupedTasks {
-  groupId: string;
-  label: string;
-  icon: LucideIcon;
-  tasks: TaskWithAssignee[];
-}
-
 export function StudentTasksDashboard() {
-  const { tasks, isLoading, updateTaskStatus } = useTasks();
+  const { tasks, isLoading } = useTasks();
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  // Fetch task templates to get quiz options
   const { data: templates = [] } = useQuery({
     queryKey: ["task-templates-options"],
     queryFn: async () => {
@@ -109,120 +54,23 @@ export function StudentTasksDashboard() {
   const totalTasks = filteredTasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Group tasks by thematic category
-  const groupTasks = (taskList: TaskWithAssignee[]): GroupedTasks[] => {
-    const groups: Record<string, TaskWithAssignee[]> = {};
-    taskList.forEach((task) => {
-      const groupId = getThematicGroup(task.title);
-      if (!groups[groupId]) groups[groupId] = [];
-      groups[groupId].push(task);
-    });
-
-    const result = THEMATIC_GROUPS
-      .filter(group => groups[group.id]?.length > 0)
-      .map(group => ({
-        groupId: group.id, label: group.label, icon: group.icon,
-        tasks: groups[group.id].sort((a, b) => a.title.localeCompare(b.title)),
-      }));
-
-    // Add "Outros" group for uncategorized
-    if (groups["outros"]?.length > 0) {
-      result.push({
-        groupId: "outros", label: "Outros", icon: Brain,
-        tasks: groups["outros"].sort((a, b) => a.title.localeCompare(b.title)),
-      });
-    }
-
-    return result;
-  };
-
-  const groupedPendingTasks = useMemo(() => groupTasks(pendingTasks), [pendingTasks]);
-  const groupedCompletedTasks = useMemo(() => groupTasks(completedTasks), [completedTasks]);
-
-  const toggleGroup = (groupId: string) => {
-    setOpenGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
-  };
-
-  const handleStatusChange = async (taskId: string, status: "pendente" | "concluida" | "cancelada") => {
-    try {
-      await updateTaskStatus.mutateAsync({ taskId, status });
-      toast.success(status === "concluida" ? "Questão respondida! 🎉" : "Questão reaberta");
-    } catch {
-      toast.error("Erro ao atualizar questão");
-    }
-  };
+  // Build flat quiz questions list (mixed themes)
+  const allQuizQuestions = useMemo(() => {
+    return filteredTasks
+      .map(task => {
+        const taskData = templateDataMap[task.title];
+        if (!taskData?.options || taskData.correctOption === null) return null;
+        return {
+          task,
+          options: taskData.options,
+          correctOption: taskData.correctOption,
+          xpValue: 10,
+        };
+      })
+      .filter(Boolean) as { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[];
+  }, [filteredTasks, templateDataMap]);
 
   if (isLoading) return <LoadingSpinner />;
-
-  const renderGroupedTasks = (groups: GroupedTasks[], prefix: string, isCompleted = false) => (
-    <div className="space-y-2">
-      {groups.map((group) => {
-        const isOpen = openGroups[`${prefix}-${group.groupId}`] ?? false;
-
-        // Build quiz questions for this group
-        const quizQuestions = group.tasks
-          .map(task => {
-            const taskData = templateDataMap[task.title];
-            if (!taskData?.options || taskData.correctOption === null) return null;
-            return {
-              task,
-              options: taskData.options,
-              correctOption: taskData.correctOption,
-              xpValue: 10,
-            };
-          })
-          .filter(Boolean) as { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[];
-
-        const completedInGroup = group.tasks.filter(t => t.status === "concluida").length;
-        const groupProgress = group.tasks.length > 0 ? Math.round((completedInGroup / group.tasks.length) * 100) : 0;
-
-        return (
-          <Collapsible
-            key={group.groupId}
-            open={isOpen}
-            onOpenChange={() => toggleGroup(`${prefix}-${group.groupId}`)}
-          >
-            <CollapsibleTrigger className="w-full">
-              <div className={cn(
-                "flex items-center justify-between p-3 rounded-xl transition-all duration-200 cursor-pointer",
-                isOpen ? "bg-primary/10 shadow-sm" : "bg-muted/40 hover:bg-muted/70"
-              )}>
-                <div className="flex items-center gap-3">
-                  <div className={cn("p-1.5 rounded-lg", isOpen ? "bg-primary/20" : "bg-muted")}>
-                    <group.icon className={cn("h-4 w-4", isOpen ? "text-primary" : "text-muted-foreground")} />
-                  </div>
-                  <span className={cn("font-medium text-sm", isOpen && "text-primary")}>{group.label}</span>
-                  <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-semibold">
-                    {completedInGroup}/{group.tasks.length}
-                  </Badge>
-                  {groupProgress === 100 && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  )}
-                </div>
-                <div className={cn("transition-transform duration-200", isOpen && "rotate-90")}>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-2 pl-3 ml-5 border-l-2 border-primary/15">
-                {quizQuestions.length > 0 ? (
-                  <SequentialQuizCard
-                    questions={quizQuestions}
-                    groupLabel={group.label}
-                  />
-                ) : (
-                  <Card className="p-4 opacity-60">
-                    <p className="text-sm text-muted-foreground">Sem questões disponíveis neste grupo.</p>
-                  </Card>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        );
-      })}
-    </div>
-  );
 
   return (
     <div className="space-y-6" role="region" aria-label="Centro de Questões">
@@ -292,7 +140,7 @@ export function StudentTasksDashboard() {
         </Card>
       </div>
 
-      {/* Main Tasks Card */}
+      {/* Main Quiz Card */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -322,7 +170,7 @@ export function StudentTasksDashboard() {
                 key={cat}
                 className={cn(
                   "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200",
-                  categoryFilter === cat 
+                  categoryFilter === cat
                     ? cn(CATEGORY_CONFIG[cat].bgColor, CATEGORY_CONFIG[cat].color, "shadow-sm")
                     : "bg-muted/60 text-muted-foreground hover:bg-muted"
                 )}
@@ -336,51 +184,19 @@ export function StudentTasksDashboard() {
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-10" aria-label="Abas de questões">
-              <TabsTrigger value="pending" className="flex items-center gap-2 text-sm data-[state=active]:shadow-sm">
-                <Clock className="h-3.5 w-3.5" />
-                Pendentes
-                <Badge variant="secondary" className="ml-1 h-5 text-[10px] px-1.5">
-                  {pendingTasks.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger value="completed" className="flex items-center gap-2 text-sm data-[state=active]:shadow-sm">
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Respondidas
-                <Badge variant="secondary" className="ml-1 h-5 text-[10px] px-1.5">
-                  {completedTasks.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="pending" className="mt-4 space-y-5">
-              {pendingTasks.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <div className="mx-auto w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
-                    <Trophy className="h-8 w-8 text-success" />
-                  </div>
-                  <p className="font-medium text-foreground">Parabéns!</p>
-                  <p className="text-sm mt-1">Todas as questões foram respondidas! 🥋</p>
-                </div>
-              ) : (
-                renderGroupedTasks(groupedPendingTasks, "pending")
-              )}
-            </TabsContent>
-
-            <TabsContent value="completed" className="mt-4 space-y-5">
-              {completedTasks.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                    <ClipboardList className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm">Nenhuma questão respondida ainda.</p>
-                </div>
-              ) : (
-                renderGroupedTasks(groupedCompletedTasks, "completed", true)
-              )}
-            </TabsContent>
-          </Tabs>
+          {allQuizQuestions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <ClipboardList className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm">Nenhuma questão disponível.</p>
+            </div>
+          ) : (
+            <SequentialQuizCard
+              questions={allQuizQuestions}
+              groupLabel="Questões"
+            />
+          )}
         </CardContent>
       </Card>
     </div>
