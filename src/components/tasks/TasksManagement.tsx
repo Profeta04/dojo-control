@@ -166,12 +166,11 @@ export function TasksManagement() {
 
           return (
             <Collapsible key={studentId} defaultOpen={sortedGroups.length <= 5}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                <div className="pl-3" onClick={(e) => e.stopPropagation()}>
                   <Checkbox
                     checked={allStudentSelected}
-                    onCheckedChange={(e) => {
-                      e; // prevent propagation handled by stopPropagation
+                    onCheckedChange={() => {
                       const ids = group.tasks.map(t => t.id);
                       setSelectedIds(prev => {
                         const next = new Set(prev);
@@ -179,17 +178,20 @@ export function TasksManagement() {
                         return next;
                       });
                     }}
-                    onClick={(e) => e.stopPropagation()}
                     aria-label={`Selecionar todas de ${group.name}`}
                   />
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">{group.name}</span>
-                  <Badge variant="secondary" className="text-xs">
-                    {studentCompleted}/{studentTotal}
-                  </Badge>
                 </div>
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-              </CollapsibleTrigger>
+                <CollapsibleTrigger className="flex items-center justify-between flex-1 p-3 pl-0 group cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium text-sm">{group.name}</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {studentCompleted}/{studentTotal}
+                    </Badge>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+              </div>
               <CollapsibleContent className="pl-4 pt-2 space-y-2">
                 {group.tasks.map(task => (
                   <div key={task.id} className="flex items-start gap-2">
