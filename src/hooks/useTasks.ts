@@ -199,11 +199,43 @@ export function useTasks() {
     },
   });
 
+  // Bulk delete tasks mutation
+  const deleteBatchTasks = useMutation({
+    mutationFn: async (taskIds: string[]) => {
+      const { error } = await supabase
+        .from("tasks")
+        .delete()
+        .in("id", taskIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
+  // Delete all tasks for a specific student
+  const deleteTasksByStudent = useMutation({
+    mutationFn: async (studentId: string) => {
+      const { error } = await supabase
+        .from("tasks")
+        .delete()
+        .eq("assigned_to", studentId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+
   return {
     tasks,
     isLoading,
     createTask,
     updateTaskStatus,
     deleteTask,
+    deleteBatchTasks,
+    deleteTasksByStudent,
   };
 }
