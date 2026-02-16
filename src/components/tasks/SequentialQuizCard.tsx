@@ -98,15 +98,23 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
         }, 300);
       }, 1200);
     } else {
-      toast.error("Resposta incorreta. Tente novamente!");
+      toast.error("Você errou! Vamos para a próxima questão.");
+
+      // Move to next question, leaving current as pending for retry later
+      setTimeout(() => {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setCurrentIndex(prev => prev + 1);
+          setSelectedOption(null);
+          setHasAnswered(false);
+          setIsCorrect(false);
+          setIsTransitioning(false);
+        }, 300);
+      }, 1000);
     }
   };
 
-  const handleRetry = () => {
-    setSelectedOption(null);
-    setHasAnswered(false);
-    setIsCorrect(false);
-  };
+  // handleRetry removed — wrong answers skip to next question
 
   if (allDone) {
     return (
@@ -180,12 +188,12 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
           value={selectedOption ?? undefined}
           onValueChange={setSelectedOption}
           className="space-y-2"
-          disabled={hasAnswered && isCorrect}
+          disabled={hasAnswered}
         >
           {currentQuestion.options.map((option, index) => {
             const isSelected = selectedOption === String(index);
-            const isCorrectOption = index === currentQuestion.correctOption;
             const showResult = hasAnswered;
+            const isWrongSelected = showResult && isSelected && !isCorrect;
 
             return (
               <div
@@ -194,8 +202,8 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
                   "flex items-center space-x-3 px-3 py-2.5 rounded-lg border transition-all duration-200 cursor-pointer",
                   !showResult && isSelected && "border-primary bg-primary/5 shadow-sm",
                   !showResult && !isSelected && "border-border hover:border-primary/40 hover:bg-muted/50",
-                  showResult && isCorrectOption && "border-success bg-success/5",
-                  showResult && isSelected && !isCorrectOption && "border-destructive bg-destructive/5",
+                  showResult && isCorrect && isSelected && "border-success bg-success/5",
+                  isWrongSelected && "border-destructive bg-destructive/5",
                 )}
               >
                 <RadioGroupItem
@@ -203,24 +211,24 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
                   id={`${currentQuestion.task.id}-option-${index}`}
                   className={cn(
                     "flex-shrink-0",
-                    showResult && isCorrectOption && "border-success text-success",
-                    showResult && isSelected && !isCorrectOption && "border-destructive text-destructive"
+                    showResult && isCorrect && isSelected && "border-success text-success",
+                    isWrongSelected && "border-destructive text-destructive"
                   )}
                 />
                 <Label
                   htmlFor={`${currentQuestion.task.id}-option-${index}`}
                   className={cn(
                     "flex-1 cursor-pointer text-sm leading-snug",
-                    showResult && isCorrectOption && "text-success font-medium",
-                    showResult && isSelected && !isCorrectOption && "text-destructive"
+                    showResult && isCorrect && isSelected && "text-success font-medium",
+                    isWrongSelected && "text-destructive"
                   )}
                 >
                   {option}
                 </Label>
-                {showResult && isCorrectOption && (
+                {showResult && isCorrect && isSelected && (
                   <CheckCircle2 className="h-4 w-4 text-success flex-shrink-0" />
                 )}
-                {showResult && isSelected && !isCorrectOption && (
+                {isWrongSelected && (
                   <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                 )}
               </div>
@@ -236,14 +244,14 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
                 Próxima questão em breve...
               </span>
             )}
+            {hasAnswered && !isCorrect && (
+              <span className="flex items-center gap-1.5 text-destructive font-medium">
+                <XCircle className="h-3.5 w-3.5" />
+                Avançando para a próxima...
+              </span>
+            )}
           </div>
           <div className="flex gap-2">
-            {hasAnswered && !isCorrect && (
-              <Button variant="outline" size="sm" onClick={handleRetry} className="gap-1.5">
-                <RotateCcw className="h-3.5 w-3.5" />
-                Tentar Novamente
-              </Button>
-            )}
             {!hasAnswered && (
               <Button
                 onClick={handleSubmit}
@@ -256,7 +264,7 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                Verificar Resposta
+                Confirmar Resposta
               </Button>
             )}
           </div>
