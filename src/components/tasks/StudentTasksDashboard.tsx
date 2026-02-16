@@ -63,7 +63,19 @@ export function StudentTasksDashboard() {
     return acc;
   }, {} as Record<string, { options: string[] | null; correctOption: number | null }>);
 
-  const filteredTasks = tasks.filter(t => categoryFilter === "all" || t.category === categoryFilter);
+  // Deduplicate tasks by title first (prefer completed over pending)
+  const deduplicatedTasks = useMemo(() => {
+    const byTitle = new Map<string, TaskWithAssignee>();
+    const sorted = [...tasks].sort((a, b) => 
+      a.status === "concluida" ? -1 : b.status === "concluida" ? 1 : 0
+    );
+    for (const task of sorted) {
+      if (!byTitle.has(task.title)) byTitle.set(task.title, task);
+    }
+    return Array.from(byTitle.values());
+  }, [tasks]);
+
+  const filteredTasks = deduplicatedTasks.filter(t => categoryFilter === "all" || t.category === categoryFilter);
   const pendingTasks = filteredTasks.filter(t => t.status === "pendente");
   const completedTasks = filteredTasks.filter(t => t.status === "concluida");
   const overdueTasks = pendingTasks.filter(t => t.due_date && new Date(t.due_date) < new Date());
@@ -71,15 +83,10 @@ export function StudentTasksDashboard() {
   const totalTasks = filteredTasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Build flat quiz questions list (mixed themes, shuffled per student, deduplicated by title)
+  // Build flat quiz questions list (mixed themes, shuffled per student)
   const allQuizQuestions = useMemo(() => {
-    const seenTitles = new Set<string>();
     const questions = filteredTasks
       .map(task => {
-        // Deduplicate by title — keep first occurrence (prefer completed)
-        if (seenTitles.has(task.title)) return null;
-        seenTitles.add(task.title);
-
         const taskData = templateDataMap[task.title];
         if (!taskData?.options || taskData.correctOption === null) return null;
         return {
