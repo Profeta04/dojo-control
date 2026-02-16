@@ -14,6 +14,7 @@ import {
   Building,
   CalendarDays,
   ClipboardList,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
@@ -75,7 +77,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   // Group items into sections
   const mainItems = filteredNavItems.filter(i => 
-    ["/dashboard", "/perfil", "/tarefas", "/students", "/senseis", "/classes", "/agenda"].includes(i.href)
+    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/agenda"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
     ["/payments", "/mensalidade", "/graduations"].includes(i.href)
