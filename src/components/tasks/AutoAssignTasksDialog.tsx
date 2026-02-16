@@ -85,19 +85,28 @@ export function AutoAssignTasksDialog() {
     enabled: open,
   });
 
-  // Fetch task templates
+  // Fetch task templates (paginated to avoid 1000-row limit)
   const { data: templates = [], isLoading: loadingTemplates } = useQuery({
     queryKey: ["task-templates", selectedMartialArt],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("task_templates")
-        .select("*")
-        .eq("martial_art", selectedMartialArt)
-        .order("belt_level")
-        .order("category");
-      
-      if (error) throw error;
-      return data as TaskTemplate[];
+      const allTemplates: TaskTemplate[] = [];
+      let from = 0;
+      const PAGE_SIZE = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from("task_templates")
+          .select("*")
+          .eq("martial_art", selectedMartialArt)
+          .order("belt_level")
+          .order("category")
+          .range(from, from + PAGE_SIZE - 1);
+        
+        if (error) throw error;
+        if (data) allTemplates.push(...(data as TaskTemplate[]));
+        if (!data || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return allTemplates;
     },
     enabled: open,
   });
@@ -175,10 +184,17 @@ export function AutoAssignTasksDialog() {
         throw new Error("Nenhuma tarefa correspondente às faixas dos alunos selecionados");
       }
       
-      const { error } = await supabase.from("tasks").insert(tasksToCreate);
-      if (error) throw error;
+      // Insert in batches of 500 to avoid payload limits
+      const BATCH_SIZE = 500;
+      let inserted = 0;
+      for (let i = 0; i < tasksToCreate.length; i += BATCH_SIZE) {
+        const batch = tasksToCreate.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase.from("tasks").insert(batch);
+        if (error) throw error;
+        inserted += batch.length;
+      }
       
-      return tasksToCreate.length;
+      return inserted;
     },
     onSuccess: (count) => {
       toast.success(`${count} tarefas atribuídas com sucesso!`);
