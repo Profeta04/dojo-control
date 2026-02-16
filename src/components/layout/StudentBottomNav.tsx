@@ -13,6 +13,7 @@ import {
   UserCog,
   MoreHorizontal,
   TrendingUp,
+  ScanLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -42,7 +43,7 @@ interface MoreItem {
 const studentTabs: TabItem[] = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
-  { title: "Config", href: "/config", icon: Settings, isProfile: true },
+  { title: "Presença", href: "/scanner", icon: ScanLine, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
 ];
@@ -137,6 +138,7 @@ export function StudentBottomNav() {
 
             // Profile/Config tab shows avatar - ELEVATED and BIGGER
             if (tab.isProfile) {
+              const isScanner = tab.href === "/scanner";
               return (
                 <Link
                   key={tab.href}
@@ -148,12 +150,18 @@ export function StudentBottomNav() {
                     className={cn(
                       "w-[3.5rem] h-[3.5rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
                       "shadow-lg border-[3px] border-sidebar",
+                      isScanner && "bg-accent",
                       isActive
                         ? "ring-2 ring-accent ring-offset-2 ring-offset-sidebar scale-110"
                         : "ring-1 ring-sidebar-border hover:scale-105"
                     )}
                   >
-                    {avatarUrl ? (
+                    {isScanner ? (
+                      <ScanLine className={cn(
+                        "h-7 w-7",
+                        isActive ? "text-accent-foreground" : "text-accent-foreground/90"
+                      )} />
+                    ) : avatarUrl ? (
                       <img
                         src={avatarUrl}
                         alt={profile?.name || "Avatar"}
@@ -168,10 +176,18 @@ export function StudentBottomNav() {
                       </span>
                     )}
                   </div>
-                  {profile?.belt_grade && (
+                  {!isScanner && profile?.belt_grade && (
                     <div className="mt-0.5 animate-scale-in">
                       <BeltBadge grade={profile.belt_grade as any} size="sm" />
                     </div>
+                  )}
+                  {isScanner && (
+                    <span className={cn(
+                      "text-[0.65rem] font-semibold mt-0.5",
+                      isActive ? "text-accent" : "text-sidebar-foreground/60"
+                    )}>
+                      {tab.title}
+                    </span>
                   )}
                 </Link>
               );
