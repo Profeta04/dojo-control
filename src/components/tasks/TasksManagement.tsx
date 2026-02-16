@@ -2,14 +2,11 @@ import { useState, useMemo } from "react";
 import { useTasks, TaskCategory, CATEGORY_CONFIG } from "@/hooks/useTasks";
 import { TaskCard } from "./TaskCard";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter, Trash2, UserX, ChevronDown } from "lucide-react";
+import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -25,23 +22,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { cn } from "@/lib/utils";
 
 export function TasksManagement() {
-  const { tasks, isLoading, updateTaskStatus, deleteTask, deleteBatchTasks, deleteTasksByStudent } = useTasks();
+  const { tasks, isLoading, updateTaskStatus, deleteTask } = useTasks();
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [showBatchDeleteDialog, setShowBatchDeleteDialog] = useState(false);
-  const [showStudentDeleteDialog, setShowStudentDeleteDialog] = useState(false);
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-
-  // Unique students from tasks
-  const students = useMemo(() => {
-    const map = new Map<string, string>();
-    tasks.forEach(t => {
-      if (!map.has(t.assigned_to)) map.set(t.assigned_to, t.assignee_name || "Desconhecido");
-    });
-    return Array.from(map.entries()).sort((a, b) => a[1].localeCompare(b[1]));
-  }, [tasks]);
 
   const filteredTasks = tasks.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -55,24 +39,6 @@ export function TasksManagement() {
   const overdueTasks = pendingTasks.filter(t =>
     t.due_date && new Date(t.due_date) < new Date()
   );
-
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleSelectAll = (taskList: typeof filteredTasks) => {
-    const allIds = taskList.map(t => t.id);
-    const allSelected = allIds.every(id => selectedIds.has(id));
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      allIds.forEach(id => allSelected ? next.delete(id) : next.add(id));
-      return next;
-    });
-  };
 
   const handleStatusChange = async (taskId: string, status: "pendente" | "concluida" | "cancelada") => {
     try {
@@ -91,32 +57,6 @@ export function TasksManagement() {
       setDeleteTaskId(null);
     } catch {
       toast.error("Erro ao excluir tarefa");
-    }
-  };
-
-  const handleBatchDelete = async () => {
-    try {
-      await deleteBatchTasks.mutateAsync(Array.from(selectedIds));
-      toast.success(`${selectedIds.size} tarefas excluídas`);
-      setSelectedIds(new Set());
-      setShowBatchDeleteDialog(false);
-    } catch (err) {
-      console.error("Erro ao excluir tarefas em lote:", err);
-      toast.error("Erro ao excluir tarefas em lote");
-    }
-  };
-
-  const handleStudentDelete = async () => {
-    if (!selectedStudentId) return;
-    try {
-      await deleteTasksByStudent.mutateAsync(selectedStudentId);
-      const name = students.find(([id]) => id === selectedStudentId)?.[1] || "aluno";
-      toast.success(`Todas as tarefas de ${name} foram excluídas`);
-      setSelectedStudentId("");
-      setShowStudentDeleteDialog(false);
-    } catch (err) {
-      console.error("Erro ao excluir tarefas do aluno:", err);
-      toast.error("Erro ao excluir tarefas do aluno");
     }
   };
 
@@ -150,66 +90,31 @@ export function TasksManagement() {
 
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2 px-1 mb-2">
-          <Checkbox
-            checked={taskList.every(t => selectedIds.has(t.id))}
-            onCheckedChange={() => toggleSelectAll(taskList)}
-            aria-label="Selecionar todos"
-          />
-          <span className="text-xs text-muted-foreground">Selecionar todos</span>
-        </div>
-
         {sortedGroups.map(([studentId, group]) => {
           const studentCompleted = group.tasks.filter(t => t.status === "concluida").length;
           const studentTotal = group.tasks.length;
-          const allStudentSelected = group.tasks.every(t => selectedIds.has(t.id));
 
           return (
             <Collapsible key={studentId} defaultOpen={sortedGroups.length <= 5}>
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                <div className="pl-3" onClick={(e) => e.stopPropagation()}>
-                  <Checkbox
-                    checked={allStudentSelected}
-                    onCheckedChange={() => {
-                      const ids = group.tasks.map(t => t.id);
-                      setSelectedIds(prev => {
-                        const next = new Set(prev);
-                        ids.forEach(id => allStudentSelected ? next.delete(id) : next.add(id));
-                        return next;
-                      });
-                    }}
-                    aria-label={`Selecionar todas de ${group.name}`}
-                  />
+              <CollapsibleTrigger className="flex items-center justify-between w-full rounded-lg bg-muted/50 hover:bg-muted transition-colors p-3 group cursor-pointer">
+                <div className="flex items-center gap-3">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">{group.name}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {studentCompleted}/{studentTotal}
+                  </Badge>
                 </div>
-                <CollapsibleTrigger className="flex items-center justify-between flex-1 p-3 pl-0 group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-sm">{group.name}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {studentCompleted}/{studentTotal}
-                    </Badge>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                </CollapsibleTrigger>
-              </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
               <CollapsibleContent className="pl-4 pt-2 space-y-2">
                 {group.tasks.map(task => (
-                  <div key={task.id} className="flex items-start gap-2">
-                    <Checkbox
-                      checked={selectedIds.has(task.id)}
-                      onCheckedChange={() => toggleSelect(task.id)}
-                      className="mt-4"
-                      aria-label={`Selecionar ${task.title}`}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <TaskCard
-                        task={task}
-                        onStatusChange={handleStatusChange}
-                        onDelete={(id) => setDeleteTaskId(id)}
-                        showAssignee={false}
-                      />
-                    </div>
-                  </div>
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatusChange={handleStatusChange}
+                    onDelete={(id) => setDeleteTaskId(id)}
+                    showAssignee={false}
+                  />
                 ))}
               </CollapsibleContent>
             </Collapsible>
@@ -221,7 +126,7 @@ export function TasksManagement() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Create Button */}
+      {/* Header */}
       <div>
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <ClipboardList className="h-5 w-5" />
@@ -258,13 +163,13 @@ export function TasksManagement() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Concluídas</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent><div className="text-2xl font-bold">{completedTasks.length}</div></CardContent>
         </Card>
       </div>
 
-      {/* Bulk Actions Bar */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
         <Input
           placeholder="Buscar por título ou aluno..."
@@ -297,39 +202,6 @@ export function TasksManagement() {
               {CATEGORY_CONFIG[cat].label}
             </Badge>
           ))}
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto">
-          {selectedIds.size > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowBatchDeleteDialog(true)}
-              className="gap-1.5"
-            >
-              <Trash2 className="h-4 w-4" />
-              Excluir {selectedIds.size} selecionada{selectedIds.size > 1 ? "s" : ""}
-            </Button>
-          )}
-
-          <Select value={selectedStudentId} onValueChange={(val) => {
-            setSelectedStudentId(val);
-            setShowStudentDeleteDialog(true);
-          }}>
-            <SelectTrigger className="w-auto min-w-[200px] h-9 text-sm">
-              <div className="flex items-center gap-1.5">
-                <UserX className="h-4 w-4 text-destructive" />
-                <SelectValue placeholder="Excluir por aluno..." />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              {students.map(([id, name]) => (
-                <SelectItem key={id} value={id}>
-                  {name} ({tasks.filter(t => t.assigned_to === id).length} tarefas)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -383,54 +255,6 @@ export function TasksManagement() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Batch Delete Confirmation */}
-      <AlertDialog open={showBatchDeleteDialog} onOpenChange={setShowBatchDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir {selectedIds.size} Tarefas</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir {selectedIds.size} tarefa{selectedIds.size > 1 ? "s" : ""} selecionada{selectedIds.size > 1 ? "s" : ""}? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBatchDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir {selectedIds.size} Tarefa{selectedIds.size > 1 ? "s" : ""}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Student Delete Confirmation */}
-      <AlertDialog open={showStudentDeleteDialog} onOpenChange={(open) => {
-        setShowStudentDeleteDialog(open);
-        if (!open) setSelectedStudentId("");
-      }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Tarefas do Aluno</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir <strong>todas</strong> as tarefas de{" "}
-              <strong>{students.find(([id]) => id === selectedStudentId)?.[1]}</strong>?
-              Isso inclui {tasks.filter(t => t.assigned_to === selectedStudentId).length} tarefas. 
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleStudentDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Excluir Todas
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
