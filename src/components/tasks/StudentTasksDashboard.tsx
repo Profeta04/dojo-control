@@ -47,15 +47,28 @@ export function StudentTasksDashboard() {
   const { user } = useAuth();
   const [categoryFilter, setCategoryFilter] = useState<TaskCategory | "all">("all");
 
+  // Fetch only templates matching the student's task titles to avoid 1000-row limit
+  const taskTitles = useMemo(() => tasks.map(t => t.title), [tasks]);
+
   const { data: templates = [] } = useQuery({
-    queryKey: ["task-templates-options"],
+    queryKey: ["task-templates-options", taskTitles],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("task_templates")
-        .select("id, title, options, correct_option");
-      if (error) throw error;
-      return data as TaskTemplate[];
+      if (taskTitles.length === 0) return [];
+      // Batch in chunks of 100 to avoid URL length issues with .in()
+      const allTemplates: TaskTemplate[] = [];
+      const uniqueTitles = [...new Set(taskTitles)];
+      for (let i = 0; i < uniqueTitles.length; i += 100) {
+        const batch = uniqueTitles.slice(i, i + 100);
+        const { data, error } = await supabase
+          .from("task_templates")
+          .select("id, title, options, correct_option")
+          .in("title", batch);
+        if (error) throw error;
+        if (data) allTemplates.push(...(data as TaskTemplate[]));
+      }
+      return allTemplates;
     },
+    enabled: taskTitles.length > 0,
   });
 
   const templateDataMap = templates.reduce((acc, t) => {
