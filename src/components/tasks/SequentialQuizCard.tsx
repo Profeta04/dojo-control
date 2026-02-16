@@ -5,18 +5,20 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, XCircle, BookOpen, Loader2, RotateCcw, Sparkles, Zap, ChevronRight } from "lucide-react";
+import { CheckCircle2, XCircle, BookOpen, Loader2, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTasks, TaskWithAssignee } from "@/hooks/useTasks";
+import { TaskWithAssignee } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useSeasons } from "@/hooks/useSeasons";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import { XPNotification } from "@/components/gamification/XPNotification";
 
 interface QuizQuestion {
-  task: TaskWithAssignee;
+  task: TaskWithAssignee & { _templateId?: string; _needsTaskRecord?: boolean };
   options: string[];
   correctOption: number;
   xpValue: number;
@@ -25,11 +27,12 @@ interface QuizQuestion {
 interface SequentialQuizCardProps {
   questions: QuizQuestion[];
   groupLabel: string;
+  onQuestionAnswered?: () => void;
 }
 
-export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCardProps) {
+export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }: SequentialQuizCardProps) {
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(() => {
-    // Start at first pending (non-completed) question
     const firstPending = questions.findIndex(q => q.task.status !== "concluida");
     return firstPending === -1 ? questions.length : firstPending;
   });
@@ -37,9 +40,9 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [xpNotif, setXpNotif] = useState<{ amount: number; multiplier: number; leveledUp: boolean; newLevel: number } | null>(null);
 
-  const { updateTaskStatus } = useTasks();
   const { grantXP, currentStreak, totalXp } = useXP();
   const { checkAndUnlock } = useAchievements();
   const { grantSeasonXP } = useSeasons();
@@ -52,65 +55,97 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
   const currentQuestion = allDone ? null : questions[currentIndex];
 
   const handleSubmit = async () => {
-    if (selectedOption === null || !currentQuestion) return;
+    if (selectedOption === null || !currentQuestion || !user) return;
 
+    setIsSubmitting(true);
     const selectedIndex = parseInt(selectedOption);
     const correct = selectedIndex === currentQuestion.correctOption;
 
     setIsCorrect(correct);
     setHasAnswered(true);
 
-    if (correct) {
-      fireConfetti();
-      toast.success("Resposta correta! 🎉");
+    try {
+      if (correct) {
+        fireConfetti();
+        toast.success("Resposta correta! 🎉");
 
-      try {
-        const result = await grantXP.mutateAsync({ baseXP: currentQuestion.xpValue, reason: "quiz" });
-        grantSeasonXP.mutate({ baseXP: currentQuestion.xpValue });
-        setXpNotif({
-          amount: result.xpGranted,
-          multiplier: result.multiplier,
-          leveledUp: result.leveledUp,
-          newLevel: result.newLevel,
-        });
-        const completedCount = (await import("@/integrations/supabase/client")).supabase
-          .from("tasks").select("id", { count: "exact" })
-          .eq("assigned_to", currentQuestion.task.assigned_to).eq("status", "concluida");
-        const count = (await completedCount).count || 0;
-        checkAndUnlock.mutate({ tasksCompleted: count + 1, currentStreak, totalXp: result.newTotal });
-      } catch {}
+        // Create or update the task record as completed
+        if (currentQuestion.task._needsTaskRecord) {
+          // No existing task record — create one as completed
+          await supabase.from("tasks").insert({
+            title: currentQuestion.task.title,
+            description: currentQuestion.task.description,
+            assigned_to: user.id,
+            assigned_by: user.id,
+            category: currentQuestion.task.category || "outra",
+            priority: "normal",
+            status: "concluida",
+            completed_at: new Date().toISOString(),
+            template_id: currentQuestion.task._templateId || null,
+          });
+        } else {
+          // Existing task record — update to completed
+          await supabase.from("tasks")
+            .update({ status: "concluida", completed_at: new Date().toISOString() })
+            .eq("id", currentQuestion.task.id);
+        }
 
-      updateTaskStatus.mutate({ taskId: currentQuestion.task.id, status: "concluida" });
+        // Grant XP
+        try {
+          const result = await grantXP.mutateAsync({ baseXP: currentQuestion.xpValue, reason: "quiz" });
+          grantSeasonXP.mutate({ baseXP: currentQuestion.xpValue });
+          setXpNotif({
+            amount: result.xpGranted,
+            multiplier: result.multiplier,
+            leveledUp: result.leveledUp,
+            newLevel: result.newLevel,
+          });
 
-      // Transition to next question after delay
-      setTimeout(() => {
-        setIsTransitioning(true);
-        setTimeout(() => {
-          setCurrentIndex(prev => prev + 1);
-          setSelectedOption(null);
-          setHasAnswered(false);
-          setIsCorrect(false);
-          setIsTransitioning(false);
-        }, 300);
-      }, 1200);
-    } else {
-      toast.error("Você errou! Vamos para a próxima questão.");
+          const { count } = await supabase
+            .from("tasks")
+            .select("id", { count: "exact", head: true })
+            .eq("assigned_to", user.id)
+            .eq("status", "concluida");
 
-      // Move to next question, leaving current as pending for retry later
-      setTimeout(() => {
-        setIsTransitioning(true);
-        setTimeout(() => {
-          setCurrentIndex(prev => prev + 1);
-          setSelectedOption(null);
-          setHasAnswered(false);
-          setIsCorrect(false);
-          setIsTransitioning(false);
-        }, 300);
-      }, 1000);
+          checkAndUnlock.mutate({ tasksCompleted: (count || 0), currentStreak, totalXp: result.newTotal });
+        } catch {}
+      } else {
+        toast.error("Você errou! Vamos para a próxima questão.");
+
+        // Create a pending task record if none exists (so it reappears)
+        if (currentQuestion.task._needsTaskRecord) {
+          await supabase.from("tasks").insert({
+            title: currentQuestion.task.title,
+            description: currentQuestion.task.description,
+            assigned_to: user.id,
+            assigned_by: user.id,
+            category: currentQuestion.task.category || "outra",
+            priority: "normal",
+            status: "pendente",
+            template_id: currentQuestion.task._templateId || null,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error handling quiz answer:", err);
+    } finally {
+      setIsSubmitting(false);
     }
-  };
 
-  // handleRetry removed — wrong answers skip to next question
+    // Advance to next question after delay
+    const delay = correct ? 1200 : 1000;
+    setTimeout(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIndex(prev => prev + 1);
+        setSelectedOption(null);
+        setHasAnswered(false);
+        setIsCorrect(false);
+        setIsTransitioning(false);
+        onQuestionAnswered?.();
+      }, 300);
+    }, delay);
+  };
 
   if (allDone) {
     return (
@@ -139,18 +174,16 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
       hasAnswered && !isCorrect && "ring-2 ring-destructive/40",
       isTransitioning && "opacity-0 scale-95"
     )}>
-      {/* Accent bar */}
       <div className={cn(
         "h-1 w-full",
         hasAnswered && isCorrect ? "bg-success" : hasAnswered && !isCorrect ? "bg-destructive" : "bg-primary"
       )} />
 
       <CardHeader className="pb-3 pt-4">
-        {/* Progress indicator */}
         <div className="flex items-center gap-3 mb-3">
           <Progress value={progressPercent} className="flex-1 h-2" />
           <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-            {currentIndex + 1} de {totalCount}
+            {completedCount} de {totalCount}
           </span>
         </div>
 
@@ -252,10 +285,10 @@ export function SequentialQuizCard({ questions, groupLabel }: SequentialQuizCard
               <Button
                 onClick={handleSubmit}
                 size="sm"
-                disabled={selectedOption === null || updateTaskStatus.isPending}
+                disabled={selectedOption === null || isSubmitting}
                 className="gap-1.5"
               >
-                {updateTaskStatus.isPending ? (
+                {isSubmitting ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
