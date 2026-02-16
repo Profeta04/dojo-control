@@ -86,7 +86,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Tasks Section */}
+      {/* Student Progress Section */}
       <div className="mt-6">
         {isStudentOnly ? (
           <StudentTasksDashboard />
