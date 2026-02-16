@@ -149,38 +149,6 @@ export function StudentTasksDashboard() {
               Minhas Questões
             </CardTitle>
           </div>
-
-          {/* Category Filters */}
-          <div className="flex items-center gap-2 flex-wrap mt-3" role="group" aria-label="Filtros de categoria">
-            <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-            <button
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200",
-                categoryFilter === "all"
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
-              )}
-              onClick={() => setCategoryFilter("all")}
-              aria-pressed={categoryFilter === "all"}
-            >
-              Todas
-            </button>
-            {(Object.keys(CATEGORY_CONFIG) as TaskCategory[]).map((cat) => (
-              <button
-                key={cat}
-                className={cn(
-                  "px-3 py-1 rounded-full text-xs font-medium transition-all duration-200",
-                  categoryFilter === cat
-                    ? cn(CATEGORY_CONFIG[cat].bgColor, CATEGORY_CONFIG[cat].color, "shadow-sm")
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                )}
-                onClick={() => setCategoryFilter(cat)}
-                aria-pressed={categoryFilter === cat}
-              >
-                {CATEGORY_CONFIG[cat].label}
-              </button>
-            ))}
-          </div>
         </CardHeader>
 
         <CardContent>
