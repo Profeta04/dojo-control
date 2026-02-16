@@ -85,12 +85,12 @@ serve(async (req) => {
     });
   }
 
-  // Generate in sub-batches of 10
+  // Generate in sub-batches of 10, single batch per call to avoid timeout
   let totalCreated = 0;
   const errors: string[] = [];
   const batchSize = 10;
 
-  for (let batch = 0; batch < Math.ceil(toGenerate / batchSize); batch++) {
+  for (let batch = 0; batch < Math.min(1, Math.ceil(toGenerate / batchSize)); batch++) {
     const count = Math.min(batchSize, toGenerate - batch * batchSize);
     const quizCount = Math.round(count * 0.6);
     const vfCount = count - quizCount;
@@ -133,7 +133,7 @@ Retorne APENAS um array JSON válido sem markdown:
         const errText = await aiResp.text();
         errors.push(`AI batch ${batch}: ${aiResp.status} - ${errText.substring(0, 100)}`);
         if (aiResp.status === 429) {
-          await new Promise(r => setTimeout(r, 5000));
+          await new Promise(r => setTimeout(r, 3000));
         }
         continue;
       }
@@ -172,7 +172,7 @@ Retorne APENAS um array JSON válido sem markdown:
     }
 
     // Delay between batches
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 2000));
   }
 
   return new Response(
