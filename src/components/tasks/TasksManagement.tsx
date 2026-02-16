@@ -4,7 +4,7 @@ import { TaskCard } from "./TaskCard";
 import { CreateTaskDialog } from "./CreateTaskDialog";
 import { AutoAssignTasksDialog } from "./AutoAssignTasksDialog";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter, Trash2, UserX } from "lucide-react";
+import { ClipboardList, Users, CheckCircle2, Clock, AlertTriangle, Filter, Trash2, UserX, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 export function TasksManagement() {
@@ -133,36 +134,85 @@ export function TasksManagement() {
       );
     }
 
-    const allSelected = taskList.every(t => selectedIds.has(t.id));
+    // Group tasks by student
+    const grouped = new Map<string, { name: string; tasks: typeof taskList }>();
+    taskList.forEach(task => {
+      const key = task.assigned_to;
+      if (!grouped.has(key)) {
+        grouped.set(key, { name: task.assignee_name || "Desconhecido", tasks: [] });
+      }
+      grouped.get(key)!.tasks.push(task);
+    });
+
+    const sortedGroups = Array.from(grouped.entries()).sort((a, b) =>
+      a[1].name.localeCompare(b[1].name)
+    );
 
     return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1 mb-2">
           <Checkbox
-            checked={allSelected}
+            checked={taskList.every(t => selectedIds.has(t.id))}
             onCheckedChange={() => toggleSelectAll(taskList)}
             aria-label="Selecionar todos"
           />
           <span className="text-xs text-muted-foreground">Selecionar todos</span>
         </div>
-        {taskList.map(task => (
-          <div key={task.id} className="flex items-start gap-2">
-            <Checkbox
-              checked={selectedIds.has(task.id)}
-              onCheckedChange={() => toggleSelect(task.id)}
-              className="mt-4"
-              aria-label={`Selecionar ${task.title}`}
-            />
-            <div className="flex-1 min-w-0">
-              <TaskCard
-                task={task}
-                onStatusChange={handleStatusChange}
-                onDelete={(id) => setDeleteTaskId(id)}
-                showAssignee
-              />
-            </div>
-          </div>
-        ))}
+
+        {sortedGroups.map(([studentId, group]) => {
+          const studentCompleted = group.tasks.filter(t => t.status === "concluida").length;
+          const studentTotal = group.tasks.length;
+          const allStudentSelected = group.tasks.every(t => selectedIds.has(t.id));
+
+          return (
+            <Collapsible key={studentId} defaultOpen={sortedGroups.length <= 5}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={allStudentSelected}
+                    onCheckedChange={(e) => {
+                      e; // prevent propagation handled by stopPropagation
+                      const ids = group.tasks.map(t => t.id);
+                      setSelectedIds(prev => {
+                        const next = new Set(prev);
+                        ids.forEach(id => allStudentSelected ? next.delete(id) : next.add(id));
+                        return next;
+                      });
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Selecionar todas de ${group.name}`}
+                  />
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">{group.name}</span>
+                  <Badge variant="secondary" className="text-xs">
+                    {studentCompleted}/{studentTotal}
+                  </Badge>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pl-4 pt-2 space-y-2">
+                {group.tasks.map(task => (
+                  <div key={task.id} className="flex items-start gap-2">
+                    <Checkbox
+                      checked={selectedIds.has(task.id)}
+                      onCheckedChange={() => toggleSelect(task.id)}
+                      className="mt-4"
+                      aria-label={`Selecionar ${task.title}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <TaskCard
+                        task={task}
+                        onStatusChange={handleStatusChange}
+                        onDelete={(id) => setDeleteTaskId(id)}
+                        showAssignee={false}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
       </div>
     );
   };
