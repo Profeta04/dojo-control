@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import dojoLogo from "@/assets/dojo-control-logo.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,9 @@ function calculateAge(birthDateStr: string): number | null {
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, signIn, loading: authLoading } = useAuth();
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -181,9 +183,9 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/dashboard");
+      navigate(redirectTo);
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, redirectTo]);
 
   // Reset guardian fields when not a minor
   useEffect(() => {

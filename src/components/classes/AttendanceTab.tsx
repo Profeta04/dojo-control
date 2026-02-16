@@ -25,7 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, CheckCircle2, XCircle, Users, Clock, Loader2, Save, CalendarDays } from "lucide-react";
+import { Calendar, CheckCircle2, XCircle, Users, Clock, Loader2, Save, CalendarDays, QrCode, Smartphone } from "lucide-react";
 import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -62,6 +62,7 @@ interface Attendance {
   notes: string | null;
   marked_by: string | null;
   created_at: string;
+  self_checked_in: boolean;
 }
 
 interface ScheduleWithDetails extends ClassSchedule {
@@ -74,6 +75,7 @@ interface StudentAttendance {
   student: Profile;
   present: boolean;
   notes: string;
+  selfCheckedIn: boolean;
 }
 
 export function AttendanceTab() {
@@ -206,6 +208,7 @@ export function AttendanceTab() {
         student,
         present: existing?.present ?? false,
         notes: existing?.notes || "",
+        selfCheckedIn: existing?.self_checked_in ?? false,
       };
     });
     
@@ -216,7 +219,7 @@ export function AttendanceTab() {
   const toggleAttendance = (studentId: string) => {
     setAttendanceList((prev) =>
       prev.map((item) =>
-        item.student.user_id === studentId
+        item.student.user_id === studentId && !item.selfCheckedIn
           ? { ...item, present: !item.present }
           : item
       )
@@ -245,19 +248,37 @@ export function AttendanceTab() {
     setFormLoading(true);
 
     try {
-      await supabase
-        .from("attendance")
-        .delete()
-        .eq("class_id", selectedSchedule.class_id)
-        .eq("date", selectedDate);
+      // Only delete non-self-checked attendance records
+      const selfCheckedStudentIds = attendanceList
+        .filter((a) => a.selfCheckedIn)
+        .map((a) => a.student.user_id);
 
-      const attendanceRecords = attendanceList.map((item) => ({
+      // Delete existing manual attendance only
+      const { data: existingManual } = await supabase
+        .from("attendance")
+        .select("id, self_checked_in")
+        .eq("class_id", selectedSchedule.class_id)
+        .eq("date", selectedDate)
+        .eq("self_checked_in", false);
+
+      if (existingManual && existingManual.length > 0) {
+        await supabase
+          .from("attendance")
+          .delete()
+          .in("id", existingManual.map((r) => r.id));
+      }
+
+      // Only insert records for students who did NOT self-checkin
+      const attendanceRecords = attendanceList
+        .filter((item) => !item.selfCheckedIn)
+        .map((item) => ({
         class_id: selectedSchedule.class_id,
         student_id: item.student.user_id,
         date: selectedDate,
         present: item.present,
         notes: item.notes || null,
         marked_by: user.id,
+        self_checked_in: false,
       }));
 
       const { error } = await supabase.from("attendance").insert(attendanceRecords);
@@ -456,10 +477,11 @@ export function AttendanceTab() {
                       id={`attendance-${item.student.user_id}`}
                       checked={item.present}
                       onCheckedChange={() => toggleAttendance(item.student.user_id)}
+                      disabled={item.selfCheckedIn}
                     />
                     <label
                       htmlFor={`attendance-${item.student.user_id}`}
-                      className="flex-1 cursor-pointer"
+                      className={`flex-1 ${item.selfCheckedIn ? 'cursor-default' : 'cursor-pointer'}`}
                     >
                       <span className="font-medium">{item.student.name}</span>
                       {item.student.belt_grade && (
@@ -467,9 +489,19 @@ export function AttendanceTab() {
                           {item.student.belt_grade.replace("_", " ")}
                         </Badge>
                       )}
+                      {item.selfCheckedIn && (
+                        <Badge variant="secondary" className="ml-2 text-xs gap-1">
+                          <Smartphone className="h-3 w-3" />
+                          QR
+                        </Badge>
+                      )}
                     </label>
                     {item.present ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      item.selfCheckedIn ? (
+                        <QrCode className="h-5 w-5 text-accent" />
+                      ) : (
+                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                      )
                     ) : (
                       <XCircle className="h-5 w-5 text-muted-foreground" />
                     )}

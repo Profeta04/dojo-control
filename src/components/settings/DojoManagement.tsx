@@ -16,6 +16,7 @@ import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCo
 import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
+import { DojoQRCode } from "./DojoQRCode";
 
 interface DojoFormData {
   name: string;
@@ -136,7 +137,7 @@ export function DojoManagement() {
 
   const renderFormFields = (isEdit = false) => (
     <div className="space-y-6">
-      {/* Logo Upload */}
+      {/* Logo Upload & QR Code */}
       {isEdit && editingDojo && (
         <div className="space-y-4">
           <h4 className="text-sm font-medium flex items-center gap-2">
@@ -147,6 +148,12 @@ export function DojoManagement() {
             currentLogoUrl={formData.logo_url}
             dojoId={editingDojo.id}
             onUploadComplete={(url) => setFormData({ ...formData, logo_url: url })}
+          />
+          <DojoQRCode
+            dojoId={editingDojo.id}
+            dojoName={editingDojo.name}
+            checkinToken={(editingDojo as any).checkin_token}
+            logoUrl={formData.logo_url}
           />
         </div>
       )}
