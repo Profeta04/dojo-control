@@ -71,10 +71,15 @@ export function StudentTasksDashboard() {
   const totalTasks = filteredTasks.length;
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Build flat quiz questions list (mixed themes, shuffled per student)
+  // Build flat quiz questions list (mixed themes, shuffled per student, deduplicated by title)
   const allQuizQuestions = useMemo(() => {
+    const seenTitles = new Set<string>();
     const questions = filteredTasks
       .map(task => {
+        // Deduplicate by title — keep first occurrence (prefer completed)
+        if (seenTitles.has(task.title)) return null;
+        seenTitles.add(task.title);
+
         const taskData = templateDataMap[task.title];
         if (!taskData?.options || taskData.correctOption === null) return null;
         return {
