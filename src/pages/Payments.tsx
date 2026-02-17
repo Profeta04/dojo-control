@@ -56,10 +56,12 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 };
 
 export default function PaymentsPage() {
-  const { user, canManageStudents, isAdmin, loading: authLoading } = useAuth();
+  const { user, profile, canManageStudents, isAdmin, loading: authLoading } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navMode = localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom";
+  const useBottomNav = navMode === "bottom";
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [batchDialogOpen, setBatchDialogOpen] = useState(false);
@@ -803,7 +805,7 @@ export default function PaymentsPage() {
 
       {/* Full Payment History - Mobile only (on desktop, use /payment-history) */}
       {canManageStudents && (
-        <div className="lg:hidden space-y-4 mb-4">
+        <div className={`${useBottomNav ? '' : 'hidden'} space-y-4 mb-4`}>
           {/* Stats */}
           <PaymentStatsCards stats={stats} formatCurrency={formatCurrency} variant="admin" />
 
