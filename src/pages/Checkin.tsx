@@ -347,16 +347,21 @@ export default function Checkin() {
       </Dialog>
 
       {/* Success dialog */}
-      <Dialog open={!!successClass} onOpenChange={(open) => !open && setSuccessClass(null)}>
+      <Dialog open={!!successClass} onOpenChange={(open) => {
+        if (!open) {
+          setSuccessClass(null);
+          navigate(-1);
+        }
+      }}>
         <DialogContent className="max-w-sm text-center">
           <div className="flex flex-col items-center gap-4 py-4">
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200 }}
-              className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
+              className="h-20 w-20 rounded-full bg-accent/10 flex items-center justify-center"
             >
-              <ShieldCheck className="h-10 w-10 text-green-600 dark:text-green-400" />
+              <ShieldCheck className="h-10 w-10 text-accent" />
             </motion.div>
             <div className="space-y-1">
               <h3 className="text-xl font-bold text-foreground">Presença Confirmada! 🎉</h3>
@@ -372,7 +377,7 @@ export default function Checkin() {
                 Seu sensei já pode ver sua presença registrada.
               </p>
             </div>
-            <Button onClick={() => setSuccessClass(null)} className="w-full mt-2">
+            <Button onClick={() => { setSuccessClass(null); navigate(-1); }} className="w-full mt-2">
               OK
             </Button>
           </div>
