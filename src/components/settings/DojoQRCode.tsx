@@ -85,17 +85,26 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     });
   }, [checkinUrl, logoUrl, dojoName]);
 
+  // Read current CSS variable as HSL and convert to hex
+  const cssVarToHex = (varName: string, fallback: string): string => {
+    const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    return val ? toHex(val, fallback) : fallback;
+  };
+
   const handleDownload = (mode: "light" | "dark") => {
     const qrCanvas = canvasRef.current;
     if (!qrCanvas) return;
 
     const isDark = mode === "dark";
-    const bg = isDark ? "#1a1a2e" : "#ffffff";
-    const cardBg = isDark ? "#16213e" : "#ffffff";
-    const textMain = isDark ? "#e0e0e0" : "#333333";
-    const textSub = isDark ? "#b0b0b0" : "#444444";
-    const textFooter = isDark ? "#666666" : "#aaaaaa";
-    const shadowColor = isDark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.1)";
+    
+    // Use theme-derived colors based on mode
+    // For the current mode, read live CSS vars; for the other, use known defaults
+    const bg = isDark ? toHex("220 15% 8%", "#1a1a2e") : toHex("220 15% 96%", "#f2f3f5");
+    const cardBg = isDark ? toHex("220 15% 12%", "#1c2333") : "#ffffff";
+    const textMain = isDark ? toHex("220 10% 93%", "#eaeced") : toHex("220 15% 10%", "#1a1d24");
+    const textSub = isDark ? toHex("220 10% 65%", "#9da3ad") : toHex("220 10% 40%", "#5c6370");
+    const textFooter = isDark ? toHex("220 10% 35%", "#525861") : toHex("220 10% 70%", "#aab0b8");
+    const shadowColor = isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)";
     const stepsBg = isDark ? primary + "1A" : primary + "0D";
 
     const posterW = 800;
