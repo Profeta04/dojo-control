@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, RefreshCw, Loader2 } from "lucide-react";
+import { Download, RefreshCw, Loader2, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -85,9 +85,18 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     });
   }, [checkinUrl, logoUrl, dojoName]);
 
-  const handleDownload = () => {
+  const handleDownload = (mode: "light" | "dark") => {
     const qrCanvas = canvasRef.current;
     if (!qrCanvas) return;
+
+    const isDark = mode === "dark";
+    const bg = isDark ? "#1a1a2e" : "#ffffff";
+    const cardBg = isDark ? "#16213e" : "#ffffff";
+    const textMain = isDark ? "#e0e0e0" : "#333333";
+    const textSub = isDark ? "#b0b0b0" : "#444444";
+    const textFooter = isDark ? "#666666" : "#aaaaaa";
+    const shadowColor = isDark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.1)";
+    const stepsBg = isDark ? primary + "1A" : primary + "0D";
 
     const posterW = 800;
     const posterH = 1100;
@@ -97,8 +106,8 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     const ctx = poster.getContext("2d");
     if (!ctx) return;
 
-    // White background
-    ctx.fillStyle = "#ffffff";
+    // Background
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, posterW, posterH);
 
     // Top accent bar with dojo primary color
@@ -124,7 +133,7 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     ctx.stroke();
 
     // Instruction text
-    ctx.fillStyle = "#333333";
+    ctx.fillStyle = textMain;
     ctx.font = "600 28px system-ui, -apple-system, sans-serif";
     ctx.fillText("Escaneie o QR Code abaixo", posterW / 2, 165);
     ctx.fillStyle = primary;
@@ -137,10 +146,10 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     const qrY = 250;
 
     // QR card with primary border
-    ctx.shadowColor = "rgba(0,0,0,0.1)";
+    ctx.shadowColor = shadowColor;
     ctx.shadowBlur = 24;
     ctx.shadowOffsetY = 6;
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = cardBg;
     ctx.beginPath();
     roundRect(ctx, qrX - 24, qrY - 24, qrSize + 48, qrSize + 48, 20);
     ctx.fill();
@@ -159,14 +168,18 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     roundRect(ctx, qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 14);
     ctx.stroke();
 
-    // Draw QR
+    // Draw QR (always white bg for readability)
+    if (isDark) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(qrX, qrY, qrSize, qrSize);
+    }
     ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
 
     // Steps section
     const stepsY = qrY + qrSize + 70;
 
     // Steps background pill
-    ctx.fillStyle = primary + "0D"; // 5% opacity
+    ctx.fillStyle = stepsBg;
     ctx.beginPath();
     roundRect(ctx, posterW * 0.12, stepsY - 30, posterW * 0.76, 170, 16);
     ctx.fill();
@@ -181,14 +194,14 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
       "3.  Confirme sua presença no app",
     ];
 
-    ctx.fillStyle = "#444444";
+    ctx.fillStyle = textSub;
     ctx.font = "500 20px system-ui, -apple-system, sans-serif";
     steps.forEach((step, i) => {
       ctx.fillText(step, posterW / 2, stepsY + 40 + i * 36);
     });
 
     // Footer
-    ctx.fillStyle = "#aaaaaa";
+    ctx.fillStyle = textFooter;
     ctx.font = "400 14px system-ui, -apple-system, sans-serif";
     ctx.fillText("Presença registrada automaticamente • Dojo Control", posterW / 2, posterH - 50);
 
@@ -200,7 +213,7 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
 
     // Download
     const link = document.createElement("a");
-    link.download = `cartaz-presenca-${dojoName.toLowerCase().replace(/\s+/g, "-")}.png`;
+    link.download = `cartaz-presenca-${mode}-${dojoName.toLowerCase().replace(/\s+/g, "-")}.png`;
     link.href = poster.toDataURL("image/png");
     link.click();
   };
@@ -242,10 +255,14 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-1.5" />
-            Baixar Cartaz
+        <div className="flex gap-2 flex-wrap justify-center">
+          <Button variant="outline" size="sm" onClick={() => handleDownload("light")}>
+            <Sun className="h-4 w-4 mr-1.5" />
+            Cartaz Claro
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleDownload("dark")}>
+            <Moon className="h-4 w-4 mr-1.5" />
+            Cartaz Escuro
           </Button>
           <Button
             variant="outline"
