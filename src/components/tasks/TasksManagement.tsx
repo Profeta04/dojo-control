@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
-import { ClipboardList, Users, CheckCircle2 } from "lucide-react";
+import { Users, CheckCircle2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -104,15 +104,6 @@ export function TasksManagement() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold flex items-center gap-2">
-          <ClipboardList className="h-5 w-5" />
-          Progresso dos Alunos
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          Acompanhe o progresso dos alunos nas questões
-        </p>
-      </div>
 
       <Input
         placeholder="Buscar aluno..."
