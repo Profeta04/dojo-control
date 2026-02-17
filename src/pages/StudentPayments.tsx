@@ -19,8 +19,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CreditCard, CheckCircle2, Clock, AlertTriangle, Copy, QrCode, Mail,
-  Upload, Loader2, FileImage, DollarSign, CalendarClock, TrendingUp, Tag
+  Upload, Loader2, FileImage, DollarSign, CalendarClock, TrendingUp, Tag, History
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ReceiptProgress } from "@/components/payments/ReceiptProgress";
@@ -272,255 +273,270 @@ export default function StudentPaymentsPage() {
   return (
     <RequireApproval>
     <DashboardLayout>
-      <PageHeader title="Mensalidade" description="Informações sobre seus pagamentos" />
+      <Tabs defaultValue="pagamentos" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pagamentos" className="gap-1.5">
+            <CreditCard className="h-4 w-4" />
+            Pagamentos
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="gap-1.5">
+            <History className="h-4 w-4" />
+            Histórico
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Stats Cards */}
-      <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
+        <TabsContent value="pagamentos" className="space-y-6 mt-0">
+          {/* Stats Cards */}
+          <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
 
-      {/* Highlight Cards: Total com taxas + Próximo vencimento */}
-      <div className="grid gap-4 mb-6 sm:grid-cols-2">
-        {/* Total com taxas acumuladas */}
-        {statsWithFees.totalWithFees > 0 && (
-          <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="pb-2 relative">
-              <div className="flex items-center justify-between">
-                <CardDescription className="text-destructive font-medium flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4" />
-                  Total Devido (com taxas)
-                </CardDescription>
-              </div>
-              <CardTitle className="text-3xl font-bold text-destructive">
-                {formatCurrency(statsWithFees.totalWithFees)}
-              </CardTitle>
-              {statsWithFees.totalWithFees > statsWithFees.totalPendente && (
-                <p className="text-xs text-destructive/70 mt-1">
-                  Inclui {formatCurrency(statsWithFees.totalWithFees - statsWithFees.totalPendente)} em multas e juros
-                </p>
-              )}
-            </CardHeader>
-          </Card>
-        )}
-
-        {/* Próximo vencimento */}
-        {nextDuePayment && (
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <CardHeader className="pb-2 relative">
-              <div className="flex items-center justify-between">
-                <CardDescription className="text-primary font-medium flex items-center gap-1.5">
-                  <CalendarClock className="h-4 w-4" />
-                  Próximo Vencimento
-                </CardDescription>
-              </div>
-              <CardTitle className="text-2xl font-bold text-foreground">
-                {format(parseISO(nextDuePayment.due_date), "dd 'de' MMMM", { locale: ptBR })}
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant="outline" className="text-xs">
-                  {PAYMENT_CATEGORY_LABELS[nextDuePayment.category as PaymentCategory] || nextDuePayment.category}
-                </Badge>
-                <span className="text-sm font-semibold">{formatCurrency(nextDuePayment.amount)}</span>
-              </div>
-            </CardHeader>
-          </Card>
-        )}
-      </div>
-
-      {/* Pix Payment Card */}
-      <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm hover-scale animate-fade-in overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <CardHeader className="relative">
-          <CardTitle className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <QrCode className="h-5 w-5 text-primary" />
-            </div>
-            Pagar via Pix
-          </CardTitle>
-          <CardDescription>
-            Use a chave Pix abaixo para realizar o pagamento
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 relative">
-          <div className="flex items-center gap-3 p-4 bg-muted/60 backdrop-blur-sm rounded-xl border border-border/50">
-            <div className="p-2 rounded-lg bg-muted">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <code className="flex-1 text-sm font-mono break-all text-foreground/80">
-              {pixKey}
-            </code>
-            <Button
-              variant={copied ? "default" : "outline"}
-              size="sm"
-              onClick={handleCopyPix}
-              className={`flex-shrink-0 transition-all duration-300 ${copied ? "scale-105" : ""}`}
-            >
-              {copied ? (
-                <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado!</>
-              ) : (
-                <><Copy className="h-4 w-4 mr-1" /> Copiar</>
-              )}
-            </Button>
-          </div>
-
-          <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl">
-            <p className="text-sm text-warning-foreground">
-              <strong>Importante:</strong> Após o pagamento, envie o comprovante abaixo.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sectioned Payments */}
-      {payments && payments.length > 0 ? (
-        <div className="space-y-6">
-          {SECTION_CONFIG.map((section, sectionIdx) => {
-            const sectionPayments = groupedPayments[section.key];
-            if (sectionPayments.length === 0) return null;
-            const SectionIcon = section.icon;
-
-            return (
-              <div key={section.key} className="animate-fade-in" style={{ animationDelay: `${sectionIdx * 100}ms` }}>
-                {/* Section Header */}
-                <div className={`flex items-center justify-between p-4 rounded-t-xl border border-b-0 ${section.borderColor} ${section.headerBg}`}>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${section.bgColor} shadow-sm`}>
-                      <SectionIcon className={`h-5 w-5 ${section.color}`} />
-                    </div>
-                    <div>
-                      <h3 className={`font-semibold text-sm sm:text-base ${section.color}`}>{section.label}</h3>
-                      <p className="text-xs text-muted-foreground">{section.subtitle}</p>
-                    </div>
+          {/* Highlight Cards: Total com taxas + Próximo vencimento */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Total com taxas acumuladas */}
+            {statsWithFees.totalWithFees > 0 && (
+              <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <CardHeader className="pb-2 relative">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-destructive font-medium flex items-center gap-1.5">
+                      <TrendingUp className="h-4 w-4" />
+                      Total Devido (com taxas)
+                    </CardDescription>
                   </div>
-                  <Badge variant="secondary" className={`text-xs font-semibold px-2.5 py-1 ${section.bgColor} ${section.color} border-0`}>
-                    {sectionPayments.length}
-                  </Badge>
+                  <CardTitle className="text-3xl font-bold text-destructive">
+                    {formatCurrency(statsWithFees.totalWithFees)}
+                  </CardTitle>
+                  {statsWithFees.totalWithFees > statsWithFees.totalPendente && (
+                    <p className="text-xs text-destructive/70 mt-1">
+                      Inclui {formatCurrency(statsWithFees.totalWithFees - statsWithFees.totalPendente)} em multas e juros
+                    </p>
+                  )}
+                </CardHeader>
+              </Card>
+            )}
+
+            {/* Próximo vencimento */}
+            {nextDuePayment && (
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                <CardHeader className="pb-2 relative">
+                  <div className="flex items-center justify-between">
+                    <CardDescription className="text-primary font-medium flex items-center gap-1.5">
+                      <CalendarClock className="h-4 w-4" />
+                      Próximo Vencimento
+                    </CardDescription>
+                  </div>
+                  <CardTitle className="text-2xl font-bold text-foreground">
+                    {format(parseISO(nextDuePayment.due_date), "dd 'de' MMMM", { locale: ptBR })}
+                  </CardTitle>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline" className="text-xs">
+                      {PAYMENT_CATEGORY_LABELS[nextDuePayment.category as PaymentCategory] || nextDuePayment.category}
+                    </Badge>
+                    <span className="text-sm font-semibold">{formatCurrency(nextDuePayment.amount)}</span>
+                  </div>
+                </CardHeader>
+              </Card>
+            )}
+          </div>
+
+          {/* Pix Payment Card */}
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm hover-scale animate-fade-in overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <CardHeader className="relative">
+              <CardTitle className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <QrCode className="h-5 w-5 text-primary" />
                 </div>
+                Pagar via Pix
+              </CardTitle>
+              <CardDescription>
+                Use a chave Pix abaixo para realizar o pagamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 relative">
+              <div className="flex items-center gap-3 p-4 bg-muted/60 backdrop-blur-sm rounded-xl border border-border/50">
+                <div className="p-2 rounded-lg bg-muted">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <code className="flex-1 text-sm font-mono break-all text-foreground/80">
+                  {pixKey}
+                </code>
+                <Button
+                  variant={copied ? "default" : "outline"}
+                  size="sm"
+                  onClick={handleCopyPix}
+                  className={`flex-shrink-0 transition-all duration-300 ${copied ? "scale-105" : ""}`}
+                >
+                  {copied ? (
+                    <><CheckCircle2 className="h-4 w-4 mr-1" /> Copiado!</>
+                  ) : (
+                    <><Copy className="h-4 w-4 mr-1" /> Copiar</>
+                  )}
+                </Button>
+              </div>
 
-                {/* Section Table */}
-                <Card className={`shadow-sm border ${section.borderColor} rounded-t-none`}>
-                  <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-muted/20">
-                            <TableHead>Referência</TableHead>
-                            <TableHead className="hidden sm:table-cell">Categoria</TableHead>
-                            <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
-                            <TableHead>Valor</TableHead>
-                            <TableHead className="text-right">Comprovante</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {sectionPayments.map((payment, index) => {
-                            const lateFees = calculateLateFees(payment);
+              <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl">
+                <p className="text-sm text-warning-foreground">
+                  <strong>Importante:</strong> Após o pagamento, envie o comprovante na aba Histórico.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                            return (
-                              <TableRow 
-                                key={payment.id}
-                                className="hover:bg-muted/30 transition-colors animate-fade-in"
-                                style={{ animationDelay: `${index * 50}ms` }}
-                              >
-                                <TableCell>
-                                  <div>
-                                    <p className="capitalize font-medium text-sm">
-                                      {formatMonth(payment.reference_month)}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground sm:hidden">
-                                      {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                                    </p>
-                                  </div>
-                                </TableCell>
-                                <TableCell className="hidden sm:table-cell">
-                                  <Badge variant="outline" className="text-xs gap-1">
-                                    <Tag className="h-3 w-3" />
-                                    {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                                  {format(parseISO(payment.due_date), "dd/MM/yyyy")}
-                                </TableCell>
-                                <TableCell>
-                                  <div>
-                                    <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
-                                    {lateFees && (
-                                      <div className="text-xs space-y-0.5 mt-1">
-                                        {lateFees.fee > 0 && (
-                                          <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
-                                        )}
-                                        {lateFees.interest > 0 && (
-                                          <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
-                                        )}
-                                        <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
+        <TabsContent value="historico" className="space-y-6 mt-0">
+          {/* Sectioned Payments */}
+          {payments && payments.length > 0 ? (
+            <div className="space-y-6">
+              {SECTION_CONFIG.map((section, sectionIdx) => {
+                const sectionPayments = groupedPayments[section.key];
+                if (sectionPayments.length === 0) return null;
+                const SectionIcon = section.icon;
+
+                return (
+                  <div key={section.key} className="animate-fade-in" style={{ animationDelay: `${sectionIdx * 100}ms` }}>
+                    {/* Section Header */}
+                    <div className={`flex items-center justify-between p-4 rounded-t-xl border border-b-0 ${section.borderColor} ${section.headerBg}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl ${section.bgColor} shadow-sm`}>
+                          <SectionIcon className={`h-5 w-5 ${section.color}`} />
+                        </div>
+                        <div>
+                          <h3 className={`font-semibold text-sm sm:text-base ${section.color}`}>{section.label}</h3>
+                          <p className="text-xs text-muted-foreground">{section.subtitle}</p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className={`text-xs font-semibold px-2.5 py-1 ${section.bgColor} ${section.color} border-0`}>
+                        {sectionPayments.length}
+                      </Badge>
+                    </div>
+
+                    {/* Section Table */}
+                    <Card className={`shadow-sm border ${section.borderColor} rounded-t-none`}>
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/20">
+                                <TableHead>Referência</TableHead>
+                                <TableHead className="hidden sm:table-cell">Categoria</TableHead>
+                                <TableHead className="hidden sm:table-cell">Vencimento</TableHead>
+                                <TableHead>Valor</TableHead>
+                                <TableHead className="text-right">Comprovante</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sectionPayments.map((payment, index) => {
+                                const lateFees = calculateLateFees(payment);
+
+                                return (
+                                  <TableRow 
+                                    key={payment.id}
+                                    className="hover:bg-muted/30 transition-colors animate-fade-in"
+                                    style={{ animationDelay: `${index * 50}ms` }}
+                                  >
+                                    <TableCell>
+                                      <div>
+                                        <p className="capitalize font-medium text-sm">
+                                          {formatMonth(payment.reference_month)}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground sm:hidden">
+                                          {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                                        </p>
                                       </div>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <div className="flex flex-col items-end gap-1.5">
-                                    {payment.receipt_url ? (
-                                      <>
-                                        <ReceiptProgress 
-                                          status={payment.receipt_status as any} 
-                                          hasReceipt={!!payment.receipt_url} 
-                                        />
-                                        <div className="flex items-center gap-1.5">
-                                          <ReceiptStatusBadge status={payment.receipt_status as any} />
-                                          <ReceiptViewButton receiptUrl={payment.receipt_url} />
-                                        </div>
-                                        {payment.receipt_status === "rejeitado" && (
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell">
+                                      <Badge variant="outline" className="text-xs gap-1">
+                                        <Tag className="h-3 w-3" />
+                                        {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+                                      {format(parseISO(payment.due_date), "dd/MM/yyyy")}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div>
+                                        <p className="font-semibold text-sm">{formatCurrency(payment.amount)}</p>
+                                        {lateFees && (
+                                          <div className="text-xs space-y-0.5 mt-1">
+                                            {lateFees.fee > 0 && (
+                                              <p className="text-destructive">+ {formatCurrency(lateFees.fee)} multa</p>
+                                            )}
+                                            {lateFees.interest > 0 && (
+                                              <p className="text-destructive">+ {formatCurrency(lateFees.interest)} juros ({lateFees.daysLate}d)</p>
+                                            )}
+                                            <p className="font-bold text-destructive">{formatCurrency(lateFees.total)}</p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                      <div className="flex flex-col items-end gap-1.5">
+                                        {payment.receipt_url ? (
+                                          <>
+                                            <ReceiptProgress 
+                                              status={payment.receipt_status as any} 
+                                              hasReceipt={!!payment.receipt_url} 
+                                            />
+                                            <div className="flex items-center gap-1.5">
+                                              <ReceiptStatusBadge status={payment.receipt_status as any} />
+                                              <ReceiptViewButton receiptUrl={payment.receipt_url} />
+                                            </div>
+                                            {payment.receipt_status === "rejeitado" && (
+                                              <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openUploadDialog(payment)}
+                                                className="text-xs animate-fade-in border-destructive/30 text-destructive hover:bg-destructive/10"
+                                              >
+                                                <Upload className="h-3 w-3 mr-1" />
+                                                Reenviar
+                                              </Button>
+                                            )}
+                                          </>
+                                        ) : payment.status !== "pago" ? (
                                           <Button
                                             variant="outline"
                                             size="sm"
                                             onClick={() => openUploadDialog(payment)}
-                                            className="text-xs animate-fade-in border-destructive/30 text-destructive hover:bg-destructive/10"
+                                            className="hover-scale"
                                           >
-                                            <Upload className="h-3 w-3 mr-1" />
-                                            Reenviar
+                                            <Upload className="h-4 w-4 mr-1" />
+                                            Enviar
                                           </Button>
+                                        ) : (
+                                          <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/20">
+                                            <CheckCircle2 className="h-3 w-3" />
+                                            Confirmado
+                                          </Badge>
                                         )}
-                                      </>
-                                    ) : payment.status !== "pago" ? (
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => openUploadDialog(payment)}
-                                        className="hover-scale"
-                                      >
-                                        <Upload className="h-4 w-4 mr-1" />
-                                        Enviar
-                                      </Button>
-                                    ) : (
-                                      <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/20">
-                                        <CheckCircle2 className="h-3 w-3" />
-                                        Confirmado
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="shadow-sm animate-fade-in">
-          <CardContent className="text-center py-16">
-            <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
-              <CreditCard className="h-10 w-10 text-muted-foreground/50" />
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                );
+              })}
             </div>
-            <p className="text-muted-foreground font-medium">Nenhuma mensalidade registrada.</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Seus pagamentos aparecerão aqui.</p>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <Card className="shadow-sm animate-fade-in">
+              <CardContent className="text-center py-16">
+                <div className="p-4 rounded-full bg-muted/50 w-fit mx-auto mb-4">
+                  <CreditCard className="h-10 w-10 text-muted-foreground/50" />
+                </div>
+                <p className="text-muted-foreground font-medium">Nenhuma mensalidade registrada.</p>
+                <p className="text-xs text-muted-foreground/70 mt-1">Seus pagamentos aparecerão aqui.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Upload Dialog */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
