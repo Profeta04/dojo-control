@@ -9,7 +9,6 @@ import { GraduationTimeline } from "@/components/student/GraduationTimeline";
 import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
-import { XPBar } from "@/components/gamification/XPBar";
 import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 
 export default function StudentProfile() {
@@ -30,9 +29,6 @@ export default function StudentProfile() {
         <div className="mt-6 space-y-6">
           {/* 1. Profile card with avatar, belt, federation status */}
           <StudentProfileCard />
-
-          {/* XP Progress */}
-          <XPBar />
 
           {/* 2. Upcoming trainings - most actionable info first */}
           <UpcomingTrainingsCard />
