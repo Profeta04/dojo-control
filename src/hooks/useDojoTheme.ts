@@ -108,7 +108,7 @@ function generateDerivedColors(theme: DojoTheme) {
     accent: effectiveAccent,
     
     // Background & foreground
-    background: isDark ? "220 15% 8%" : "220 15% 98%",
+    background: isDark ? "220 15% 8%" : "220 15% 96%",
     foreground: isDark ? "220 10% 93%" : "220 15% 10%",
     
     // Card
