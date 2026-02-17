@@ -532,7 +532,7 @@ export function AttendanceTab() {
                   {!item.present && (
                     <div className="mt-2 pl-[4.5rem]">
                       <Textarea
-                        placeholder="Observação (opcional)"
+                        placeholder="Justificativa (opcional)"
                         value={item.notes}
                         onChange={(e) => updateNotes(item.student.user_id, e.target.value)}
                         rows={1}
