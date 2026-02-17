@@ -54,7 +54,7 @@ export default function Scanner() {
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 10, qrbox: { width: 220, height: 220 } },
         (decodedText) => {
           const match = decodedText.match(/\/checkin\/([a-f0-9-]+)/i);
           if (match) {
@@ -82,7 +82,7 @@ export default function Scanner() {
   }, [cameraReady, navigate, toast]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 pb-24">
+    <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-4 pb-24">
       {/* Back button */}
       <div className="absolute top-4 left-4 safe-area-inset-top z-20">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="bg-background/80 backdrop-blur-sm">
@@ -90,7 +90,7 @@ export default function Scanner() {
         </Button>
       </div>
 
-      <div className="max-w-sm w-full space-y-6">
+      <div className="w-full max-w-[min(22rem,85vw)] space-y-5">
         {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -151,27 +151,31 @@ export default function Scanner() {
             animate={{ opacity: 1, scale: 1 }}
             className="relative"
           >
-            <div className="relative w-72 h-72 mx-auto">
+            {/* Square scanner viewport - uses aspect-ratio to stay square */}
+            <div className="relative w-full aspect-square mx-auto overflow-hidden rounded-2xl">
+              {/* html5-qrcode mounts here */}
               <div
                 id="qr-reader-video"
-                className="absolute inset-0 rounded-2xl overflow-hidden"
+                className="absolute inset-0 [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_video]:!rounded-2xl [&>div]:!border-none [&_img]:!hidden"
               />
 
+              {/* Overlay with corners and scan line */}
               <div className="absolute inset-0 rounded-2xl pointer-events-none z-10">
-                <div className="absolute inset-0 rounded-2xl border-2 border-accent/60" />
+                <div className="absolute inset-0 rounded-2xl border-2 border-accent/50" />
 
                 {started && !scanSuccess && (
                   <motion.div
-                    animate={{ y: [0, 260, 0] }}
+                    animate={{ y: ["0%", "95%", "0%"] }}
                     transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute left-2 right-2 h-0.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]"
-                    style={{ top: 4 }}
+                    className="absolute left-3 right-3 h-0.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]"
+                    style={{ top: "2.5%" }}
                   />
                 )}
 
                 <ScanCorners />
               </div>
 
+              {/* Loading overlay */}
               {!started && (
                 <div className="absolute inset-0 rounded-2xl bg-muted/80 flex items-center justify-center z-20">
                   <motion.div
@@ -183,6 +187,7 @@ export default function Scanner() {
                 </div>
               )}
 
+              {/* Success overlay */}
               <AnimatePresence>
                 {scanSuccess && (
                   <motion.div
@@ -213,23 +218,25 @@ export default function Scanner() {
 }
 
 function ScanCorners() {
-  const cornerSize = 24;
-  const strokeWidth = 3;
   const color = "hsl(var(--accent))";
 
   return (
     <>
-      <svg className="absolute top-4 left-4" width={cornerSize} height={cornerSize}>
-        <path d={`M0 ${cornerSize} L0 0 L${cornerSize} 0`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Top-left */}
+      <svg className="absolute top-3 left-3" width="24" height="24">
+        <path d="M0 24 L0 0 L24 0" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
       </svg>
-      <svg className="absolute top-4 right-4" width={cornerSize} height={cornerSize}>
-        <path d={`M0 0 L${cornerSize} 0 L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Top-right */}
+      <svg className="absolute top-3 right-3" width="24" height="24">
+        <path d="M0 0 L24 0 L24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
       </svg>
-      <svg className="absolute bottom-4 left-4" width={cornerSize} height={cornerSize}>
-        <path d={`M0 0 L0 ${cornerSize} L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Bottom-left */}
+      <svg className="absolute bottom-3 left-3" width="24" height="24">
+        <path d="M0 0 L0 24 L24 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
       </svg>
-      <svg className="absolute bottom-4 right-4" width={cornerSize} height={cornerSize}>
-        <path d={`M${cornerSize} 0 L${cornerSize} ${cornerSize} L0 ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
+      {/* Bottom-right */}
+      <svg className="absolute bottom-3 right-3" width="24" height="24">
+        <path d="M24 0 L24 24 L0 24" fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
       </svg>
     </>
   );
