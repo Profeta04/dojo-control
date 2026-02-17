@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
@@ -12,20 +12,41 @@ export default function Scanner() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [started, setStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
   const [scanSuccess, setScanSuccess] = useState(false);
+
+  const initScanner = useCallback(() => {
+    if (cameraReady || scannerRef.current) return;
+    setCameraReady(true);
+  }, [cameraReady]);
+
+  // Auto-check camera permission on mount
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const result = await navigator.permissions.query({ name: "camera" as PermissionName });
+        if (result.state === "granted") {
+          initScanner();
+        }
+      } catch {
+        // permissions API not supported
+      }
+    };
+    check();
+  }, [initScanner]);
 
   const requestCameraAndStart = async () => {
     try {
       await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      setPermissionGranted(true);
+      initScanner();
     } catch {
       setError("Permissão da câmera negada. Habilite nas configurações do navegador.");
     }
   };
 
+  // Start html5-qrcode when camera is ready
   useEffect(() => {
-    if (!permissionGranted) return;
+    if (!cameraReady) return;
 
     const scanner = new Html5Qrcode("qr-reader-video");
     scannerRef.current = scanner;
@@ -58,7 +79,7 @@ export default function Scanner() {
     return () => {
       scanner.stop().catch(() => {});
     };
-  }, [permissionGranted, navigate, toast]);
+  }, [cameraReady, navigate, toast]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 pb-24">
@@ -92,17 +113,16 @@ export default function Scanner() {
               <Camera className="h-10 w-10 text-destructive/60" />
             </div>
             <p className="text-sm text-destructive">{error}</p>
-            <Button variant="outline" onClick={() => { setError(null); setPermissionGranted(false); }}>
+            <Button variant="outline" onClick={() => { setError(null); setCameraReady(false); }}>
               Tentar novamente
             </Button>
           </motion.div>
-        ) : !permissionGranted ? (
+        ) : !cameraReady ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center space-y-6 py-8"
           >
-            {/* Animated camera icon */}
             <div className="relative w-24 h-24 mx-auto">
               <motion.div
                 animate={{ scale: [1, 1.1, 1] }}
@@ -111,7 +131,6 @@ export default function Scanner() {
               >
                 <Camera className="h-12 w-12 text-accent" />
               </motion.div>
-              {/* Pulsing ring */}
               <motion.div
                 animate={{ scale: [1, 1.4], opacity: [0.4, 0] }}
                 transition={{ duration: 2, repeat: Infinity }}
@@ -132,20 +151,15 @@ export default function Scanner() {
             animate={{ opacity: 1, scale: 1 }}
             className="relative"
           >
-            {/* Scanner viewport - circular */}
             <div className="relative w-72 h-72 mx-auto">
-              {/* Video feed (controlled by html5-qrcode) */}
               <div
                 id="qr-reader-video"
                 className="absolute inset-0 rounded-2xl overflow-hidden"
               />
 
-              {/* Circular overlay border */}
               <div className="absolute inset-0 rounded-2xl pointer-events-none z-10">
-                {/* Border */}
                 <div className="absolute inset-0 rounded-2xl border-2 border-accent/60" />
 
-                {/* Scanning animation */}
                 {started && !scanSuccess && (
                   <motion.div
                     animate={{ y: [0, 260, 0] }}
@@ -155,11 +169,9 @@ export default function Scanner() {
                   />
                 )}
 
-                {/* Corner markers */}
                 <ScanCorners />
               </div>
 
-              {/* Loading spinner before camera starts */}
               {!started && (
                 <div className="absolute inset-0 rounded-2xl bg-muted/80 flex items-center justify-center z-20">
                   <motion.div
@@ -171,7 +183,6 @@ export default function Scanner() {
                 </div>
               )}
 
-              {/* Success overlay */}
               <AnimatePresence>
                 {scanSuccess && (
                   <motion.div
@@ -191,7 +202,6 @@ export default function Scanner() {
               </AnimatePresence>
             </div>
 
-            {/* Helper text below scanner */}
             <p className="text-center text-xs text-muted-foreground mt-4">
               {scanSuccess ? "Presença detectada!" : "Posicione o QR Code dentro do quadro"}
             </p>
@@ -209,19 +219,15 @@ function ScanCorners() {
 
   return (
     <>
-      {/* Top-left */}
       <svg className="absolute top-4 left-4" width={cornerSize} height={cornerSize}>
         <path d={`M0 ${cornerSize} L0 0 L${cornerSize} 0`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       </svg>
-      {/* Top-right */}
       <svg className="absolute top-4 right-4" width={cornerSize} height={cornerSize}>
         <path d={`M0 0 L${cornerSize} 0 L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       </svg>
-      {/* Bottom-left */}
       <svg className="absolute bottom-4 left-4" width={cornerSize} height={cornerSize}>
         <path d={`M0 0 L0 ${cornerSize} L${cornerSize} ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       </svg>
-      {/* Bottom-right */}
       <svg className="absolute bottom-4 right-4" width={cornerSize} height={cornerSize}>
         <path d={`M${cornerSize} 0 L${cornerSize} ${cornerSize} L0 ${cornerSize}`} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" />
       </svg>
