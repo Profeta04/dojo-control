@@ -46,7 +46,7 @@ const studentTabs: TabItem[] = [
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
-  { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
+  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
 // Admin/Dono: 4 main tabs + "Mais"
