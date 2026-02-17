@@ -165,10 +165,9 @@ export default function Scanner() {
 
                 {started && !scanSuccess && (
                   <motion.div
-                    animate={{ y: ["0%", "95%", "0%"] }}
+                    animate={{ top: ["5%", "90%", "5%"] }}
                     transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
                     className="absolute left-3 right-3 h-0.5 bg-accent rounded-full shadow-[0_0_8px_hsl(var(--accent))]"
-                    style={{ top: "2.5%" }}
                   />
                 )}
 

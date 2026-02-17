@@ -97,15 +97,14 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
 
     const isDark = mode === "dark";
     
-    // Use theme-derived colors based on mode
-    // For the current mode, read live CSS vars; for the other, use known defaults
-    const bg = isDark ? toHex("220 15% 8%", "#1a1a2e") : toHex("220 15% 96%", "#f2f3f5");
-    const cardBg = isDark ? toHex("220 15% 12%", "#1c2333") : "#ffffff";
-    const textMain = isDark ? toHex("220 10% 93%", "#eaeced") : toHex("220 15% 10%", "#1a1d24");
-    const textSub = isDark ? toHex("220 10% 65%", "#9da3ad") : toHex("220 10% 40%", "#5c6370");
-    const textFooter = isDark ? toHex("220 10% 35%", "#525861") : toHex("220 10% 70%", "#aab0b8");
-    const shadowColor = isDark ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0.1)";
-    const stepsBg = isDark ? primary + "1A" : primary + "0D";
+    // High-contrast colors for each mode
+    const bg = isDark ? "#111827" : "#ffffff";
+    const cardBg = isDark ? "#1f2937" : "#ffffff";
+    const textMain = isDark ? "#f3f4f6" : "#111827";
+    const textSub = isDark ? "#d1d5db" : "#374151";
+    const textFooter = isDark ? "#6b7280" : "#9ca3af";
+    const shadowColor = isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.1)";
+    const stepsBg = isDark ? primary + "25" : primary + "0D";
 
     const posterW = 800;
     const posterH = 1100;

@@ -215,9 +215,6 @@ export function StudentBottomNav() {
                       isActive && "scale-110"
                     )}
                   />
-                  {isActive && (
-                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-scale-in" />
-                  )}
                 </div>
                 <span className={cn(
                   "text-xs font-medium transition-all duration-200",
@@ -241,11 +238,8 @@ export function StudentBottomNav() {
                       : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
                   )}
                 >
-                  <div className="relative">
+                    <div className="relative">
                     <MoreHorizontal className={cn("h-6 w-6", isMoreActive && "scale-110")} />
-                    {isMoreActive && (
-                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-accent animate-scale-in" />
-                    )}
                   </div>
                   <span className={cn(
                     "text-xs font-medium",
