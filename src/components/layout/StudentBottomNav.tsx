@@ -15,6 +15,7 @@ import {
   TrendingUp,
   ScanLine,
   ClipboardCheck,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -58,6 +59,7 @@ const adminTabs: TabItem[] = [
 ];
 
 const adminMoreItems: MoreItem[] = [
+  { title: "Histórico", href: "/payment-history", icon: History },
   { title: "Progresso", href: "/progresso", icon: TrendingUp },
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
@@ -75,6 +77,7 @@ const senseiTabs: TabItem[] = [
 ];
 
 const senseiMoreItems: MoreItem[] = [
+  { title: "Histórico", href: "/payment-history", icon: History },
   { title: "Progresso", href: "/progresso", icon: TrendingUp },
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },

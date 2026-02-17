@@ -18,6 +18,7 @@ import Classes from "./pages/Classes";
 import StudentAgenda from "./pages/StudentAgenda";
 import Graduations from "./pages/Graduations";
 import Payments from "./pages/Payments";
+import PaymentHistory from "./pages/PaymentHistory";
 import StudentPayments from "./pages/StudentPayments";
 import Settings from "./pages/Settings";
 import StudentProfile from "./pages/StudentProfile";
@@ -47,6 +48,7 @@ function AnimatedRoutes() {
         <Route path="/agenda" element={<PageTransition><StudentAgenda /></PageTransition>} />
         <Route path="/payments" element={<PageTransition><Payments /></PageTransition>} />
         <Route path="/mensalidade" element={<PageTransition><StudentPayments /></PageTransition>} />
+        <Route path="/payment-history" element={<PageTransition><PaymentHistory /></PageTransition>} />
         <Route path="/graduations" element={<PageTransition><Graduations /></PageTransition>} />
         <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
         <Route path="/perfil" element={<PageTransition><StudentProfile /></PageTransition>} />
