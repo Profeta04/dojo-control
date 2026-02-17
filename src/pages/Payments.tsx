@@ -699,6 +699,228 @@ export default function PaymentsPage() {
         </Collapsible>
       )}
 
+      {/* Pending Receipts Section - Desktop only */}
+      {canManageStudents && groupedPayments.pendente_verificacao.length > 0 && (
+        <div className="hidden lg:block mb-4 animate-fade-in">
+          <Collapsible defaultOpen>
+            <CollapsibleTrigger asChild>
+              <div className="flex items-center justify-between p-4 rounded-t-xl border border-b-0 border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent cursor-pointer hover:bg-muted/20 transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/10 shadow-sm">
+                    <Receipt className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm sm:text-base text-primary">Comprovantes para Verificar</h3>
+                    <p className="text-xs text-muted-foreground">Aguardando sua análise</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Subtotal</p>
+                    <p className="font-bold text-sm text-primary">
+                      {formatCurrency(groupedPayments.pendente_verificacao.reduce((acc, p) => acc + p.amount, 0))}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-1 bg-primary/10 text-primary border-0">
+                    {groupedPayments.pendente_verificacao.length}
+                  </Badge>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                </div>
+              </div>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <Card className="shadow-sm border border-primary/30 rounded-t-none">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/20">
+                          <TableHead className="min-w-[140px]">Aluno</TableHead>
+                          <TableHead className="hidden lg:table-cell">Categoria</TableHead>
+                          <TableHead className="hidden sm:table-cell">Referência</TableHead>
+                          <TableHead className="hidden md:table-cell">Vencimento</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Comprov.</TableHead>
+                          <TableHead className="text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {groupedPayments.pendente_verificacao.map((payment) => {
+                          const status = getPaymentStatus(payment);
+                          const StatusIcon = STATUS_STYLES[status].icon;
+                          const lateFee = calculateLateFee(payment);
+                          return (
+                            <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center">
+                                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="font-medium text-sm truncate block max-w-[120px]">{payment.studentName}</span>
+                                    {payment.studentBlocked && (
+                                      <Badge variant="destructive" className="text-[10px] h-4 px-1 gap-0.5"><ShieldAlert className="h-2.5 w-2.5" />Bloq.</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden lg:table-cell">
+                                <Badge variant="outline" className="text-[10px] gap-0.5"><Tag className="h-2.5 w-2.5" />{PAYMENT_CATEGORY_LABELS[((payment as any).category as PaymentCategory) || "mensalidade"]}</Badge>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell text-sm capitalize">{formatMonth(payment.reference_month)}</TableCell>
+                              <TableCell className="hidden md:table-cell text-sm">{format(parseISO(payment.due_date), "dd/MM/yyyy")}</TableCell>
+                              <TableCell>
+                                <div>
+                                  <span className="font-semibold text-sm">{formatCurrency(payment.amount)}</span>
+                                  {lateFee.daysLate > 0 && (
+                                    <span className="text-[10px] text-destructive block">+{formatCurrency(lateFee.fee + lateFee.interest)}</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {payment.receipt_url ? (
+                                  <div className="flex items-center gap-1">
+                                    <ReceiptViewButton receiptUrl={payment.receipt_url} />
+                                    <ReceiptStatusBadge status={payment.receipt_status as ReceiptStatus} />
+                                  </div>
+                                ) : <span className="text-xs text-muted-foreground">Sem comprovante</span>}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button variant="ghost" size="sm" onClick={() => openEditDialog(payment)} className="text-xs h-7 px-2">Editar</Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
+      {/* Full Payment History - Mobile only (on desktop, use /payment-history) */}
+      {canManageStudents && (
+        <div className="lg:hidden space-y-4 mb-4">
+          {/* Stats */}
+          <PaymentStatsCards stats={stats} formatCurrency={formatCurrency} variant="admin" />
+
+          {/* Filters */}
+          <div className="flex gap-2 flex-wrap">
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as PaymentStatus | "all")}>
+              <SelectTrigger className="w-[130px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pendente">Pendentes</SelectItem>
+                <SelectItem value="atrasado">Atrasados</SelectItem>
+                <SelectItem value="pago">Pagos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={receiptFilter} onValueChange={setReceiptFilter}>
+              <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Comprovante" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pendente_verificacao">📎 Pendentes verif.</SelectItem>
+                <SelectItem value="com_comprovante">Com comprovante</SelectItem>
+                <SelectItem value="sem_comprovante">Sem comprovante</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Grouped Sections */}
+          {filteredPayments && filteredPayments.length > 0 ? (
+            <div className="space-y-6">
+              {SECTION_CONFIG.map((section, sectionIdx) => {
+                const sectionPayments = groupedPayments[section.key];
+                if (sectionPayments.length === 0) return null;
+                const SectionIcon = section.icon;
+                return (
+                  <Collapsible key={section.key} defaultOpen={section.key !== "pago"} className="animate-fade-in" style={{ animationDelay: `${sectionIdx * 100}ms` }}>
+                    <CollapsibleTrigger asChild>
+                      <div className={`flex items-center justify-between p-4 rounded-t-xl border border-b-0 ${section.borderColor} ${section.headerBg} cursor-pointer hover:bg-muted/20 transition-colors group`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-xl ${section.bgColor} shadow-sm`}>
+                            <SectionIcon className={`h-5 w-5 ${section.color}`} />
+                          </div>
+                          <div>
+                            <h3 className={`font-semibold text-sm ${section.color}`}>{section.label}</h3>
+                            <p className="text-xs text-muted-foreground">{section.subtitle}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className={`text-xs font-semibold px-2.5 py-1 ${section.bgColor} ${section.color} border-0`}>
+                            {sectionPayments.length}
+                          </Badge>
+                          <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <Card className={`shadow-sm border ${section.borderColor} rounded-t-none`}>
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="bg-muted/20">
+                                  <TableHead className="min-w-[120px]">Aluno</TableHead>
+                                  <TableHead>Valor</TableHead>
+                                  <TableHead>Comprov.</TableHead>
+                                  <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {sectionPayments.map((payment) => {
+                                  const lateFee = calculateLateFee(payment);
+                                  return (
+                                    <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
+                                      <TableCell>
+                                        <div className="min-w-0">
+                                          <span className="font-medium text-sm truncate block max-w-[100px]">{payment.studentName}</span>
+                                          <span className="text-[10px] text-muted-foreground capitalize">{formatMonth(payment.reference_month)}</span>
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <div>
+                                          <span className="font-semibold text-sm">{formatCurrency(payment.amount)}</span>
+                                          {lateFee.daysLate > 0 && (
+                                            <span className="text-[10px] text-destructive block">+{formatCurrency(lateFee.fee + lateFee.interest)}</span>
+                                          )}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        {payment.receipt_url ? (
+                                          <div className="flex items-center gap-1">
+                                            <ReceiptViewButton receiptUrl={payment.receipt_url} />
+                                          </div>
+                                        ) : <span className="text-[10px] text-muted-foreground">—</span>}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(payment)} className="text-xs h-7 px-2">Editar</Button>
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="p-8 text-center">
+              <CreditCard className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+              <p className="text-muted-foreground text-sm">Nenhum pagamento encontrado</p>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Create Payment Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-md">
