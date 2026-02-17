@@ -107,11 +107,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   </Button>
                 </Link>
               )}
-              <Link to="/config">
-                <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent">
-                  <Settings className="h-5 w-5" />
-                </Button>
-              </Link>
               <NotificationBell />
             </div>
           </div>
