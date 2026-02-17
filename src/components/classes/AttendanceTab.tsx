@@ -462,7 +462,7 @@ export function AttendanceTab() {
             </div>
 
             {/* Student list */}
-            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2">
               {attendanceList.map((item) => (
                 <div
                   key={item.student.user_id}
