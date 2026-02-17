@@ -44,7 +44,7 @@ interface MoreItem {
 const studentTabs: TabItem[] = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
-  { title: "Presença", href: "/scanner", icon: ScanLine, isProfile: true },
+  { title: "Config", href: "/config", icon: Settings, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Mensalidade", href: "/mensalidade", icon: CreditCard },
 ];

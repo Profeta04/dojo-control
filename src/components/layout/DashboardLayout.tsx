@@ -8,7 +8,7 @@ import { useDojoContext } from "@/hooks/useDojoContext";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Menu, X, Building, Settings } from "lucide-react";
+import { Menu, X, Building, Settings, ScanLine } from "lucide-react";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BlockedStudentScreen } from "@/components/auth/BlockedStudentScreen";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +99,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
+              {isStudent && !canManageStudents && (
+                <Link to="/scanner">
+                  <Button variant="ghost" size="icon" className="relative text-accent hover:bg-accent/10">
+                    <ScanLine className="h-5 w-5" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  </Button>
+                </Link>
+              )}
               <Link to="/config">
                 <Button variant="ghost" size="icon" className="text-sidebar-foreground hover:bg-sidebar-accent">
                   <Settings className="h-5 w-5" />
