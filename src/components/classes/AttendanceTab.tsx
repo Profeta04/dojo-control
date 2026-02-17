@@ -462,7 +462,7 @@ export function AttendanceTab() {
             </div>
 
             {/* Student list */}
-            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
               {attendanceList.map((item) => (
                 <div
                   key={item.student.user_id}
@@ -472,42 +472,65 @@ export function AttendanceTab() {
                       : "bg-muted/30"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id={`attendance-${item.student.user_id}`}
-                      checked={item.present}
-                      onCheckedChange={() => toggleAttendance(item.student.user_id)}
-                      disabled={item.selfCheckedIn}
-                    />
-                    <label
-                      htmlFor={`attendance-${item.student.user_id}`}
-                      className={`flex-1 ${item.selfCheckedIn ? 'cursor-default' : 'cursor-pointer'}`}
-                    >
-                      <span className="font-medium">{item.student.name}</span>
+                  <div className="flex items-center gap-2">
+                    {/* P and F buttons */}
+                    {item.selfCheckedIn ? (
+                      <Badge variant="secondary" className="text-xs gap-1 px-2 py-1">
+                        <Smartphone className="h-3 w-3" />
+                        QR
+                      </Badge>
+                    ) : (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!item.present) toggleAttendance(item.student.user_id);
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                            item.present
+                              ? "bg-success text-success-foreground shadow-sm scale-110"
+                              : "bg-muted/50 text-muted-foreground hover:bg-success/20 hover:text-success"
+                          }`}
+                          aria-label={`Marcar ${item.student.name} como presente`}
+                        >
+                          P
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (item.present) toggleAttendance(item.student.user_id);
+                          }}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                            !item.present
+                              ? "bg-destructive text-destructive-foreground shadow-sm scale-110"
+                              : "bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"
+                          }`}
+                          aria-label={`Marcar ${item.student.name} como falta`}
+                        >
+                          F
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm truncate block">{item.student.name}</span>
                       {item.student.belt_grade && (
-                        <Badge variant="outline" className="ml-2 text-xs capitalize">
+                        <Badge variant="outline" className="text-[10px] capitalize mt-0.5">
                           {item.student.belt_grade.replace("_", " ")}
                         </Badge>
                       )}
-                      {item.selfCheckedIn && (
-                        <Badge variant="secondary" className="ml-2 text-xs gap-1">
-                          <Smartphone className="h-3 w-3" />
-                          QR
-                        </Badge>
-                      )}
-                    </label>
+                    </div>
                     {item.present ? (
                       item.selfCheckedIn ? (
-                        <QrCode className="h-5 w-5 text-accent" />
+                        <QrCode className="h-5 w-5 text-accent flex-shrink-0" />
                       ) : (
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
                       )
                     ) : (
-                      <XCircle className="h-5 w-5 text-muted-foreground" />
+                      <XCircle className="h-5 w-5 text-destructive flex-shrink-0" />
                     )}
                   </div>
                   {!item.present && (
-                    <div className="mt-2 pl-7">
+                    <div className="mt-2 pl-[4.5rem]">
                       <Textarea
                         placeholder="Observação (opcional)"
                         value={item.notes}
