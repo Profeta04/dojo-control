@@ -701,7 +701,7 @@ export default function PaymentsPage() {
 
       {/* Pending Receipts Section - Desktop only */}
       {canManageStudents && groupedPayments.pendente_verificacao.length > 0 && (
-        <div className="hidden lg:block mb-4 animate-fade-in">
+        <div className="mb-4 animate-fade-in">
           <Collapsible defaultOpen>
             <CollapsibleTrigger asChild>
               <div className="flex items-center justify-between p-4 rounded-t-xl border border-b-0 border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent cursor-pointer hover:bg-muted/20 transition-colors group">
