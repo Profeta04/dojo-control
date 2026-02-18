@@ -34,6 +34,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap } from "lucide-react";
+import { BELT_LABELS, BeltGrade } from "@/lib/constants";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +59,7 @@ export default function Students() {
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
   const [scholarshipConfirm, setScholarshipConfirm] = useState<Profile | null>(null);
+  const [approvalBelt, setApprovalBelt] = useState<BeltGrade>("branca");
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
@@ -163,13 +166,14 @@ export default function Students() {
     setActionLoading(true);
 
     try {
-      // Update profile status
+      // Update profile status with selected belt
       await (supabase
         .from("profiles")
         .update({
           registration_status: "aprovado",
           approved_at: new Date().toISOString(),
           approved_by: user!.id,
+          belt_grade: approvalBelt,
         } as any)
         .eq("user_id", selectedStudent.user_id) as any);
 
@@ -634,7 +638,7 @@ export default function Students() {
       </Tabs>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!actionType} onOpenChange={() => { setActionType(null); setSelectedStudent(null); }}>
+      <AlertDialog open={!!actionType} onOpenChange={() => { setActionType(null); setSelectedStudent(null); setApprovalBelt("branca"); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -646,6 +650,29 @@ export default function Students() {
                 : `Tem certeza que deseja rejeitar o cadastro de ${selectedStudent?.name}?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+
+          {/* Belt selector - only on approve */}
+          {actionType === "approve" && (
+            <div className="space-y-2 py-2">
+              <label className="text-sm font-medium">Faixa inicial</label>
+              <Select value={approvalBelt} onValueChange={(v) => setApprovalBelt(v as BeltGrade)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BELT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Selecione a faixa atual do aluno. Padrão: Branca.
+              </p>
+            </div>
+          )}
+
           <AlertDialogFooter>
             <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
