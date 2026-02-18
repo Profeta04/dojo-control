@@ -38,7 +38,7 @@ const initialFormData: DojoFormData = {
   pix_key: "",
 };
 
-export function DojoManagement() {
+export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolean }) {
   const { data: dojos, isLoading } = useDojos();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -272,6 +272,7 @@ export function DojoManagement() {
               Gerencie os dojos e suas configurações
             </CardDescription>
           </div>
+          {!isSenseiView && (
           <Dialog open={isCreateOpen} onOpenChange={(open) => {
             setIsCreateOpen(open);
             if (!open) setFormData(initialFormData);
@@ -302,6 +303,7 @@ export function DojoManagement() {
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </CardHeader>
         <CardContent>
           {!dojos || dojos.length === 0 ? (
@@ -340,26 +342,30 @@ export function DojoManagement() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setOwnersDojoId(dojo.id)}
-                            title="Gerenciar donos"
-                            aria-label="Gerenciar donos"
-                          >
-                            <Users className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setSenseisDojoId(dojo.id)}
-                            title="Gerenciar senseis"
-                            aria-label="Gerenciar senseis"
-                          >
-                            <Users className="h-4 w-4 text-primary" />
-                          </Button>
+                          {!isSenseiView && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setOwnersDojoId(dojo.id)}
+                              title="Gerenciar donos"
+                              aria-label="Gerenciar donos"
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {!isSenseiView && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => setSenseisDojoId(dojo.id)}
+                              title="Gerenciar senseis"
+                              aria-label="Gerenciar senseis"
+                            >
+                              <Users className="h-4 w-4 text-primary" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -369,16 +375,18 @@ export function DojoManagement() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => deleteDojoMutation.mutate(dojo.id)}
-                            disabled={deleteDojoMutation.isPending}
-                            aria-label="Excluir dojo"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {!isSenseiView && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => deleteDojoMutation.mutate(dojo.id)}
+                              disabled={deleteDojoMutation.isPending}
+                              aria-label="Excluir dojo"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
