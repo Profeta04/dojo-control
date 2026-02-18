@@ -32,18 +32,37 @@ export default function Settings() {
     );
   }
 
-  // Sensei can only see theme settings
-  if (isSensei && !isAdmin && !isDono) {
+  const isSenseiOnly = isSensei && !isAdmin && !isDono;
+
+  // Sensei sees dojo info + theme; Admin/Dono sees all tabs
+  if (isSenseiOnly) {
     return (
       <RequireApproval>
       <DashboardLayout>
         <PageHeader
-          title="Configurações"
-          description="Personalize o tema do sistema"
+          title="Dojo"
+          description="Gerencie as informações e o tema do dojo"
         />
-        <div className="mt-6">
-          <DojoThemeSettings />
-        </div>
+        <Tabs defaultValue="dojos" className="mt-6 space-y-6">
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="dojos" className="gap-2">
+              <Building2 className="h-4 w-4" aria-hidden="true" />
+              Informações
+            </TabsTrigger>
+            <TabsTrigger value="theme" className="gap-2">
+              <Palette className="h-4 w-4" aria-hidden="true" />
+              Tema
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dojos" className="space-y-6">
+            <DojoManagement isSenseiView />
+          </TabsContent>
+
+          <TabsContent value="theme" className="space-y-6">
+            <DojoThemeSettings />
+          </TabsContent>
+        </Tabs>
       </DashboardLayout>
       </RequireApproval>
     );
@@ -53,8 +72,8 @@ export default function Settings() {
     <RequireApproval>
     <DashboardLayout>
       <PageHeader
-        title="Configurações"
-        description="Personalize as configurações do sistema"
+        title="Dojo"
+        description="Gerencie as configurações do sistema"
       />
 
       <Tabs defaultValue="dojos" className="mt-6 space-y-6">

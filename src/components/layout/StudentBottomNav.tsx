@@ -64,7 +64,7 @@ const adminMoreItems: MoreItem[] = [
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Senseis", href: "/senseis", icon: UserCog },
   { title: "Graduações", href: "/graduations", icon: Trophy },
-  { title: "Configurações", href: "/settings", icon: Settings },
+  { title: "Dojo", href: "/settings", icon: Settings },
 ];
 
 const senseiMoreItems: MoreItem[] = [
@@ -72,7 +72,7 @@ const senseiMoreItems: MoreItem[] = [
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Graduações", href: "/graduations", icon: Trophy },
-  { title: "Configurações", href: "/settings", icon: Settings },
+  { title: "Dojo", href: "/settings", icon: Settings },
 ];
 
 // Sensei: 4 main tabs + "Mais"

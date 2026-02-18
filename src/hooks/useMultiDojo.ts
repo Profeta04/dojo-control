@@ -39,7 +39,7 @@ export interface DojoSensei {
 }
 
 export function useDojos() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isSensei } = useAuth();
 
   return useQuery({
     queryKey: ["dojos", user?.id],
@@ -52,7 +52,7 @@ export function useDojos() {
       if (error) throw error;
       return data as Dojo[];
     },
-    enabled: !!user && isAdmin,
+    enabled: !!user && (isAdmin || isSensei),
   });
 }
 
