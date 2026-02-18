@@ -17,14 +17,6 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   pago: "Pago", pendente: "Pendente", atrasado: "Atrasado",
 };
 
-const TASK_STATUS_LABELS: Record<string, string> = {
-  pending: "Pendente", pendente: "Pendente", in_progress: "Em Andamento",
-  completed: "Concluída", concluida: "Concluída", cancelada: "Cancelada",
-};
-
-const TASK_CATEGORY_LABELS: Record<string, string> = {
-  tecnica: "Técnica", fisica: "Física", administrativa: "Administrativa", outra: "Outra",
-};
 
 export interface StudentReportData {
   dojoInfo: PdfDojoInfo;
@@ -55,15 +47,13 @@ export interface StudentReportData {
     due_date: string;
     paid_date: string | null;
   }>;
-  tasks: Array<{
-    title: string;
-    description: string | null;
-    status: string;
-    priority: string;
-    category: string;
-    due_date: string | null;
-    completed_at: string | null;
-  }>;
+  gamification: {
+    totalXp: number;
+    level: number;
+    currentStreak: number;
+    longestStreak: number;
+    achievements: Array<{ name: string; rarity: string; unlockedAt: string }>;
+  };
 }
 
 export function generateStudentReport(data: StudentReportData, logoBase64?: string | null) {
@@ -225,30 +215,38 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
 
   if (yPos > 200) { doc.addPage(); yPos = 20; }
 
-  // ── Tarefas ──
-  sectionTitle("Tarefas Atribuídas");
-  if (data.tasks.length > 0) {
-    const completedTasks = data.tasks.filter((t) => t.status === "completed").length;
-    doc.setFontSize(10); doc.setTextColor(80, 80, 80);
-    doc.text(`Tarefas concluídas: ${completedTasks}/${data.tasks.length}`, 20, yPos);
-    yPos += 6;
+  // ── Pontos & Conquistas ──
+  sectionTitle("Pontos & Conquistas");
+  const gam = data.gamification;
 
+  autoTable(doc, {
+    startY: yPos,
+    head: [["Métrica", "Valor"]],
+    body: [
+      ["Pontos Totais", `${gam.totalXp} pts`],
+      ["Nível", `${gam.level}`],
+      ["Streak Atual", `${gam.currentStreak} dias`],
+      ["Maior Streak", `${gam.longestStreak} dias`],
+      ["Conquistas Desbloqueadas", `${gam.achievements.length}`],
+    ],
+    ...tableDefaults,
+  });
+  yPos = (doc as any).lastAutoTable.finalY + 8;
+
+  if (gam.achievements.length > 0) {
+    const RARITY_LABELS: Record<string, string> = {
+      common: "Comum", rare: "Rara", epic: "Épica", legendary: "Lendária",
+    };
     autoTable(doc, {
       startY: yPos,
-      head: [["Título", "Categoria", "Prioridade", "Status", "Prazo", "Conclusão"]],
-      body: data.tasks.map((t) => [
-        t.title,
-        TASK_CATEGORY_LABELS[t.category] || t.category || "Outra",
-        t.priority === "high" || t.priority === "alta" ? "Alta" : t.priority === "medium" || t.priority === "normal" ? "Normal" : "Baixa",
-        TASK_STATUS_LABELS[t.status] || t.status,
-        t.due_date ? format(new Date(t.due_date), "dd/MM/yyyy", { locale: ptBR }) : "-",
-        t.completed_at ? format(new Date(t.completed_at), "dd/MM/yyyy", { locale: ptBR }) : "-",
+      head: [["Conquista", "Raridade", "Data"]],
+      body: gam.achievements.map((a) => [
+        a.name,
+        RARITY_LABELS[a.rarity] || a.rarity,
+        format(new Date(a.unlockedAt), "dd/MM/yyyy", { locale: ptBR }),
       ]),
       ...smallTableDefaults,
     });
-  } else {
-    doc.setFontSize(10); doc.setTextColor(120, 120, 120);
-    doc.text("Nenhuma tarefa atribuída.", 20, yPos);
   }
 
   // ── Footer ──
