@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useDojos, Dojo } from "@/hooks/useMultiDojo";
+import { useAuth } from "@/hooks/useAuth";
+import { Dojo } from "@/hooks/useMultiDojo";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +16,16 @@ import { DojoQRCode } from "./DojoQRCode";
 import { Building2, Save, Loader2, Mail, Phone, MapPin, QrCode, Image as ImageIcon } from "lucide-react";
 
 export function SenseiDojoEdit() {
-  const { data: dojos, isLoading } = useDojos();
+  const { user } = useAuth();
+  const { data: dojos, isLoading } = useQuery({
+    queryKey: ["sensei-dojos", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_user_dojos", { _user_id: user!.id });
+      if (error) throw error;
+      return data as Dojo[];
+    },
+    enabled: !!user,
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
