@@ -8,6 +8,7 @@ import { AttendanceStatsCard } from "@/components/student/AttendanceStatsCard";
 import { GraduationTimeline } from "@/components/student/GraduationTimeline";
 import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
+import { StudentXPCard } from "@/components/student/StudentXPCard";
 import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 
@@ -26,24 +27,27 @@ export default function StudentProfile() {
           title="Dashboard" 
           description="Seus dados, frequência e evolução no judô" 
         />
-        <div className="mt-6 space-y-6">
-          {/* 1. Profile card with avatar, belt, federation status */}
-          <StudentProfileCard />
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left column - Identity */}
+          <div className="space-y-6">
+            <StudentProfileCard />
+            <GuardianInfoCard />
+            <GraduationTimeline />
+          </div>
 
-          {/* 2. Upcoming trainings - most actionable info first */}
-          <UpcomingTrainingsCard />
+          {/* Right column - Activity */}
+          <div className="space-y-6">
+            <UpcomingTrainingsCard />
+            <AttendanceStatsCard />
+            <StudentXPCard />
+          </div>
 
-          {/* 3. Attendance stats */}
-          <AttendanceStatsCard />
-
-          {/* 4. Guardian info */}
-          <GuardianInfoCard />
-
-          {/* 5. Graduation history */}
-          <GraduationTimeline />
-
-          {/* 6. Guardian area (if has minors) */}
-          {hasMinors && <GuardianDashboard />}
+          {/* Full width - Guardian area */}
+          {hasMinors && (
+            <div className="lg:col-span-2">
+              <GuardianDashboard />
+            </div>
+          )}
         </div>
       </DashboardLayout>
     </RequireApproval>
