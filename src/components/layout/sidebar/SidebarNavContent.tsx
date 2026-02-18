@@ -12,6 +12,7 @@ import {
   UserCog,
   Settings,
   Building,
+  Landmark,
   CalendarDays,
   ClipboardList,
   TrendingUp,
@@ -55,7 +56,7 @@ const navItems: NavItem[] = [
   { title: "Histórico", href: "/payment-history", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
-  { title: "Dojo", href: "/settings", icon: <Settings className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
 ];
 
 interface SidebarNavContentProps {

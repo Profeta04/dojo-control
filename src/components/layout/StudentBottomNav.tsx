@@ -16,6 +16,7 @@ import {
   ScanLine,
   ClipboardCheck,
   History,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -64,7 +65,7 @@ const adminMoreItems: MoreItem[] = [
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Senseis", href: "/senseis", icon: UserCog },
   { title: "Graduações", href: "/graduations", icon: Trophy },
-  { title: "Dojo", href: "/settings", icon: Settings },
+  { title: "Dojo", href: "/settings", icon: Landmark },
 ];
 
 const senseiMoreItems: MoreItem[] = [
@@ -72,7 +73,7 @@ const senseiMoreItems: MoreItem[] = [
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Graduações", href: "/graduations", icon: Trophy },
-  { title: "Dojo", href: "/settings", icon: Settings },
+  { title: "Dojo", href: "/settings", icon: Landmark },
 ];
 
 // Sensei: 4 main tabs + "Mais"
