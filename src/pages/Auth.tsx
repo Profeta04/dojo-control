@@ -9,7 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Calendar, UserPlus, Building, User, Eye, EyeOff } from "lucide-react";
+import { Loader2, Calendar, UserPlus, Building, User, Eye, EyeOff, Award } from "lucide-react";
+import { BeltSelectorDialog } from "@/components/auth/BeltSelectorDialog";
+import { BeltBadge } from "@/components/shared/BeltBadge";
+import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -99,6 +102,8 @@ export default function Auth() {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [signupBelt, setSignupBelt] = useState<BeltGrade>("branca");
+  const [beltDialogOpen, setBeltDialogOpen] = useState(false);
 
   const isMinor = useMemo(() => {
     if (!signupBirthDate) return false;
@@ -395,6 +400,7 @@ export default function Auth() {
             guardian_user_id: guardianUserId,
             guardian_email: isMinor && addGuardian ? guardianEmail : null,
             dojo_id: selectedDojoId || null,
+            belt_grade: signupBelt,
           })
           .eq("user_id", studentData.user.id);
 
@@ -422,6 +428,7 @@ export default function Auth() {
       setGuardianPassword("");
       setGuardianConfirmPassword("");
       setAddGuardian(false);
+      setSignupBelt("branca");
 
     } catch (error) {
       console.error("Signup error:", error);
@@ -620,6 +627,23 @@ export default function Auth() {
                   )}
                 </div>
 
+                {/* Belt Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Award className="h-4 w-4" />
+                    Faixa atual
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full h-10 justify-start gap-2"
+                    onClick={() => setBeltDialogOpen(true)}
+                  >
+                    <BeltBadge grade={signupBelt} size="sm" />
+                    <span>{BELT_LABELS[signupBelt]}</span>
+                  </Button>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
@@ -814,6 +838,14 @@ export default function Auth() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Belt Selector Dialog */}
+      <BeltSelectorDialog
+        open={beltDialogOpen}
+        onOpenChange={setBeltDialogOpen}
+        selectedBelt={signupBelt}
+        onSelectBelt={setSignupBelt}
+      />
     </div>
   );
 }
