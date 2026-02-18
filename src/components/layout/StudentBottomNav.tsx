@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { BeltBadge } from "@/components/shared/BeltBadge";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
   ClipboardList,
@@ -198,33 +199,42 @@ export function StudentBottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
       aria-label="Navegação principal"
     >
-      <div className="flex items-end justify-around px-1 pt-2 pb-3">
-        {/* Page 2: show back arrow first */}
-        {hasPagination && page === 1 && (
-          <button
-            onClick={() => setPage(0)}
-            className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
-            aria-label="Voltar"
-          >
-            <ChevronLeft className="h-6 w-6" />
-            <span className="text-[0.6rem] font-medium">Voltar</span>
-          </button>
-        )}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={page}
+          initial={{ opacity: 0, x: page === 1 ? 40 : -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="flex items-end justify-around w-full px-1 pt-2 pb-3"
+        >
+          {/* Page 2: show back arrow first */}
+          {hasPagination && page === 1 && (
+            <button
+              onClick={() => setPage(0)}
+              className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              aria-label="Voltar"
+            >
+              <ChevronLeft className="h-6 w-6" />
+              <span className="text-[0.6rem] font-medium">Voltar</span>
+            </button>
+          )}
 
-        {currentTabs.map((tab, i) => renderTab(tab, i))}
+          {currentTabs.map((tab, i) => renderTab(tab, i))}
 
-        {/* Page 1: show forward arrow last */}
-        {hasPagination && page === 0 && (
-          <button
-            onClick={() => setPage(1)}
-            className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
-            aria-label="Mais opções"
-          >
-            <ChevronRight className="h-6 w-6" />
-            <span className="text-[0.6rem] font-medium">Mais</span>
-          </button>
-        )}
-      </div>
+          {/* Page 1: show forward arrow last */}
+          {hasPagination && page === 0 && (
+            <button
+              onClick={() => setPage(1)}
+              className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              aria-label="Mais opções"
+            >
+              <ChevronRight className="h-6 w-6" />
+              <span className="text-[0.6rem] font-medium">Mais</span>
+            </button>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </nav>
   );
 }
