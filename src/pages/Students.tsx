@@ -429,6 +429,7 @@ export default function Students() {
                       className="text-success hover:text-success/80 hover:bg-success/10 h-8 px-2 sm:px-3"
                       onClick={() => {
                         setSelectedStudent(student);
+                        setApprovalBelt((student.belt_grade as BeltGrade) || "branca");
                         setActionType("approve");
                       }}
                     >
