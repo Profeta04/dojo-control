@@ -56,16 +56,25 @@ export function StudentReportDialog() {
         .from("profiles").select("*").eq("user_id", selectedStudentId).single();
       if (profileError) throw profileError;
 
-      const [graduationsRes, attendanceRes, paymentsRes, tasksRes] = await Promise.all([
+      const [graduationsRes, attendanceRes, paymentsRes, xpRes, achievementsRes] = await Promise.all([
         supabase.from("graduation_history").select("from_belt, to_belt, graduation_date, notes")
           .eq("student_id", selectedStudentId).order("graduation_date", { ascending: false }),
         supabase.from("attendance").select("date, present, notes, classes (name)")
           .eq("student_id", selectedStudentId).order("date", { ascending: false }),
         supabase.from("payments").select("reference_month, amount, status, due_date, paid_date")
           .eq("student_id", selectedStudentId).order("due_date", { ascending: false }),
-        supabase.from("tasks").select("title, description, status, priority, category, due_date, completed_at")
-          .eq("assigned_to", selectedStudentId).order("created_at", { ascending: false }),
+        supabase.from("student_xp").select("total_xp, level, current_streak, longest_streak")
+          .eq("user_id", selectedStudentId).maybeSingle(),
+        supabase.from("student_achievements").select("unlocked_at, achievements (name, rarity)")
+          .eq("user_id", selectedStudentId).order("unlocked_at", { ascending: false }),
       ]);
+
+      const xpData = xpRes.data;
+      const achievementsList = (achievementsRes.data || []).map((sa: any) => ({
+        name: sa.achievements?.name || "Conquista",
+        rarity: sa.achievements?.rarity || "common",
+        unlockedAt: sa.unlocked_at,
+      }));
 
       const reportData: StudentReportData = {
         dojoInfo: {
@@ -96,7 +105,13 @@ export function StudentReportDialog() {
           notes: a.notes,
         })),
         payments: paymentsRes.data || [],
-        tasks: tasksRes.data || [],
+        gamification: {
+          totalXp: xpData?.total_xp || 0,
+          level: xpData?.level || 1,
+          currentStreak: xpData?.current_streak || 0,
+          longestStreak: xpData?.longest_streak || 0,
+          achievements: achievementsList,
+        },
       };
 
       const logoBase64 = await fetchLogoAsBase64(currentDojo?.logo_url);
@@ -127,7 +142,7 @@ export function StudentReportDialog() {
             Gerar Relatório Individual
           </DialogTitle>
           <DialogDescription>
-            Selecione um aluno para gerar um PDF com seu histórico completo: graduações, presenças, pagamentos e tarefas.
+            Selecione um aluno para gerar um PDF com seu histórico completo: graduações, presenças, pagamentos e pontos.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
