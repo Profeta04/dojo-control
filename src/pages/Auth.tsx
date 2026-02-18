@@ -374,6 +374,8 @@ export default function Auth() {
         let message = "Erro ao criar conta";
         if (studentError.message.includes("already registered")) {
           message = "Este email já está cadastrado";
+        } else if (studentError.message.includes("weak_password") || studentError.message.includes("weak and easy to guess")) {
+          message = "A senha é muito fraca. Escolha uma senha mais segura (evite senhas comuns como '123456', 'teste123', etc.)";
         }
         toast({
           title: "Erro",
