@@ -67,6 +67,14 @@ const adminMoreItems: MoreItem[] = [
   { title: "Configurações", href: "/settings", icon: Settings },
 ];
 
+const senseiMoreItems: MoreItem[] = [
+  { title: "Progresso", href: "/progresso", icon: TrendingUp },
+  { title: "Turmas", href: "/classes", icon: GraduationCap },
+  { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
+  { title: "Graduações", href: "/graduations", icon: Trophy },
+  { title: "Configurações", href: "/settings", icon: Settings },
+];
+
 // Sensei: 4 main tabs + "Mais"
 const senseiTabs: TabItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -75,12 +83,6 @@ const senseiTabs: TabItem[] = [
   { title: "Pagamentos", href: "/payments", icon: CreditCard },
 ];
 
-const senseiMoreItems: MoreItem[] = [
-  { title: "Progresso", href: "/progresso", icon: TrendingUp },
-  { title: "Turmas", href: "/classes", icon: GraduationCap },
-  { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
-  { title: "Graduações", href: "/graduations", icon: Trophy },
-];
 
 export function StudentBottomNav() {
   const location = useLocation();
