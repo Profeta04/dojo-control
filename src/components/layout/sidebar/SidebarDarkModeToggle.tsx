@@ -43,26 +43,56 @@ export function SidebarDarkModeToggle() {
   if (!profile) return null;
 
   return (
-    <div className="px-3.5 py-2">
-      <button
-        onClick={toggleDarkMode}
-        className={cn(
-          "group flex items-center gap-3.5 w-full px-3.5 py-3 rounded-lg text-sm font-medium",
-          "transition-all duration-200 ease-out",
-          "text-sidebar-foreground/65 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-          "active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-        )}
-        aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
-      >
-        <span className="flex-shrink-0 text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80 transition-all duration-200">
-          {isDarkMode ? (
-            <Sun className="h-[1.35rem] w-[1.35rem] transition-transform duration-300 group-hover:rotate-45" />
-          ) : (
-            <Moon className="h-[1.35rem] w-[1.35rem] transition-transform duration-300 group-hover:-rotate-12" />
+    <div className="px-4 py-2.5">
+      <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/30">
+        <div className="flex items-center gap-2.5">
+          <span className={cn(
+            "flex-shrink-0 transition-all duration-300",
+            isDarkMode ? "text-amber-400" : "text-sidebar-foreground/50"
+          )}>
+            {isDarkMode ? (
+              <Moon className="h-4 w-4" />
+            ) : (
+              <Sun className="h-4 w-4" />
+            )}
+          </span>
+          <span className="text-xs font-medium text-sidebar-foreground/70">
+            {isDarkMode ? "Escuro" : "Claro"}
+          </span>
+        </div>
+
+        {/* Pill toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className={cn(
+            "relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-1 focus-visible:ring-offset-sidebar",
+            isDarkMode
+              ? "bg-sidebar-primary"
+              : "bg-sidebar-foreground/20"
           )}
-        </span>
-        <span>{isDarkMode ? "Modo Claro" : "Modo Escuro"}</span>
-      </button>
+          role="switch"
+          aria-checked={isDarkMode}
+          aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
+        >
+          {/* Sun icon on left */}
+          <Sun className={cn(
+            "absolute left-1 h-3 w-3 transition-opacity duration-200",
+            isDarkMode ? "opacity-0" : "opacity-60 text-amber-500"
+          )} />
+          {/* Moon icon on right */}
+          <Moon className={cn(
+            "absolute right-1 h-3 w-3 transition-opacity duration-200",
+            isDarkMode ? "opacity-80 text-sidebar-primary-foreground" : "opacity-0"
+          )} />
+          {/* Thumb */}
+          <span
+            className={cn(
+              "inline-block h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-300 ease-out",
+              isDarkMode ? "translate-x-[22px]" : "translate-x-[3px]"
+            )}
+          />
+        </button>
+      </div>
     </div>
   );
 }
