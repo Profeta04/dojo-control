@@ -33,7 +33,7 @@ export function PendingApprovalScreen() {
         {/* Message */}
         <div className="bg-card border border-border rounded-lg p-6 space-y-3">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Seu cadastro foi recebido e está sendo analisado por um <strong className="text-foreground">Sensei</strong> ou <strong className="text-foreground">Administrador</strong> do dojo.
+            Seu cadastro foi recebido e está sendo analisado por um <strong className="text-foreground">Sensei</strong> do dojo.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Você receberá acesso ao sistema assim que sua conta for aprovada.
