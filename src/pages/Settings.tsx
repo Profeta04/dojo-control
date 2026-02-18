@@ -9,6 +9,7 @@ import { Building2, Palette, Sparkles } from "lucide-react";
 import { DojoManagement } from "@/components/settings/DojoManagement";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
 import { SeasonsManagement } from "@/components/settings/SeasonsManagement";
+import { SenseiDojoEdit } from "@/components/settings/SenseiDojoEdit";
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ export default function Settings() {
           </TabsList>
 
           <TabsContent value="dojos" className="space-y-6">
-            <DojoManagement isSenseiView />
+            <SenseiDojoEdit />
           </TabsContent>
 
           <TabsContent value="theme" className="space-y-6">
