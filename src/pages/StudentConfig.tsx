@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { Save, User, Sun, Moon, PanelLeft, PanelBottom, Shield, ShieldOff, LogOut, Phone, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { SenseiDojoEdit } from "@/components/settings/SenseiDojoEdit";
+import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
 
 export default function StudentConfig() {
   const { profile, user, signOut, isDono, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
@@ -212,6 +214,18 @@ export default function StudentConfig() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dojo Config for Sensei */}
+        {isSensei && (
+          <>
+            <Separator className="my-2" />
+            <PageHeader title="Configurações do Dojo" description="Informações e logo do dojo" />
+            <SenseiDojoEdit />
+            <Separator className="my-2" />
+            <PageHeader title="Tema do Dojo" description="Personalize as cores do dojo" />
+            <DojoThemeSettings />
+          </>
+        )}
 
         {/* Sign Out */}
         <Button variant="outline" className="w-full text-destructive hover:text-destructive" onClick={handleSignOut}>
