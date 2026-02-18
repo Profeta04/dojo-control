@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
   { title: "Histórico", href: "/payment-history", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Mensalidade", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
-  { title: "Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
 ];
 
 interface SidebarNavContentProps {
@@ -218,7 +218,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
           {adminItems.length > 0 && (
             <div>
               <p className="px-3.5 mb-2 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-                Administração
+                Configurações
               </p>
               <div className="space-y-1">
                 {adminItems.map((item, i) => renderNavItem(item, mainItems.length + financeItems.length + i))}
