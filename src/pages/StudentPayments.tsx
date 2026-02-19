@@ -329,8 +329,8 @@ export default function StudentPaymentsPage() {
 
       {/* Highlight Cards: Total com taxas + Próximo vencimento */}
       <div className="grid gap-4 mb-6 sm:grid-cols-2">
-        {/* Total com taxas acumuladas */}
-        {statsWithFees.totalWithFees > 0 && (
+        {/* Total devido - estilo intimidador só quando há atraso */}
+        {statsWithFees.atrasado > 0 && statsWithFees.totalWithFees > 0 && (
           <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
             <div className="absolute top-0 right-0 w-24 h-24 bg-destructive/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <CardHeader className="pb-2 relative">
@@ -348,6 +348,23 @@ export default function StudentPaymentsPage() {
                   Inclui {formatCurrency(statsWithFees.totalWithFees - statsWithFees.totalPendente)} em multas e juros
                 </p>
               )}
+            </CardHeader>
+          </Card>
+        )}
+        {/* Total devido - estilo neutro quando só há pendentes */}
+        {statsWithFees.atrasado === 0 && statsWithFees.totalPendente > 0 && (
+          <Card className="border-border/40 bg-gradient-to-br from-muted/50 via-muted/20 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-muted/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+            <CardHeader className="pb-2 relative">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-muted-foreground font-medium flex items-center gap-1.5">
+                  <CreditCard className="h-4 w-4" />
+                  Total Pendente
+                </CardDescription>
+              </div>
+              <CardTitle className="text-3xl font-bold text-foreground">
+                {formatCurrency(statsWithFees.totalPendente)}
+              </CardTitle>
             </CardHeader>
           </Card>
         )}
