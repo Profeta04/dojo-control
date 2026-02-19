@@ -22,8 +22,8 @@ export default function StudentTasks() {
     <RequireApproval>
       <DashboardLayout>
         <PageHeader 
-          title="Missões" 
-          description="Complete missões, ganhe XP e suba no ranking!" 
+          title="Tarefas" 
+          description="Complete tarefas, ganhe XP e suba no ranking!" 
         />
         
         {/* XP Bar */}
@@ -36,7 +36,7 @@ export default function StudentTasks() {
           <TabsList className="grid w-full grid-cols-3 h-11">
             <TabsTrigger value="missions" className="flex items-center gap-2 text-sm">
               <Swords className="h-4 w-4" />
-              Missões
+              Tarefas
             </TabsTrigger>
             <TabsTrigger value="achievements" className="flex items-center gap-2 text-sm">
               <Trophy className="h-4 w-4" />

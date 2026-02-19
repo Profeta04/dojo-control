@@ -211,7 +211,7 @@ export default function StudentMyProgress() {
             />
             <StatCard
               icon={Target}
-              label="Missões concluídas"
+              label="Tarefas concluídas"
               value={tasksCount}
               sub={`Nível ${xpData?.level || 1} • ${xpData?.total_xp || 0} XP`}
             />

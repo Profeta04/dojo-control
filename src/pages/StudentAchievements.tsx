@@ -36,7 +36,7 @@ export default function StudentAchievements() {
       <DashboardLayout>
         <PageHeader 
           title="Conquistas" 
-          description="Desbloqueie conquistas completando missões e evoluindo no dojo" 
+          description="Desbloqueie conquistas completando tarefas e evoluindo no dojo" 
         />
         
         <div className="mt-4 space-y-5">
