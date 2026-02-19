@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { TaskWithAssignee } from "@/hooks/useTasks";
 import { useXP } from "@/hooks/useXP";
 import { useAchievements } from "@/hooks/useAchievements";
-import { useSeasons } from "@/hooks/useSeasons";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -45,7 +45,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
 
   const { grantXP, currentStreak, totalXp } = useXP();
   const { checkAndUnlock } = useAchievements();
-  const { grantSeasonXP } = useSeasons();
+  
 
   const totalCount = questions.length;
   const completedCount = questions.filter(q => q.task.status === "concluida").length;
@@ -93,7 +93,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
         // Grant XP
         try {
           const result = await grantXP.mutateAsync({ baseXP: currentQuestion.xpValue, reason: "quiz" });
-          grantSeasonXP.mutate({ baseXP: currentQuestion.xpValue });
+          
           setXpNotif({
             amount: result.xpGranted,
             multiplier: result.multiplier,
