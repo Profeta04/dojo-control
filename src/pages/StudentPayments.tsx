@@ -324,8 +324,8 @@ export default function StudentPaymentsPage() {
         </div>
       )}
 
-      {/* Stats Cards (bottom nav mode) */}
-      {!isSidebarMode && <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />}
+      {/* Stats Cards */}
+      <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
 
       {/* Highlight Cards: Total com taxas + Próximo vencimento */}
       <div className="grid gap-4 mb-6 sm:grid-cols-2">
