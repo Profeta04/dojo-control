@@ -108,7 +108,7 @@ export function SenseiAnalytics() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-accent" />
-        Análise de Questões & Gamificação
+        Análise de Tarefas & Gamificação
       </h2>
 
       {/* Stats row - only completion rate and total acertos */}
