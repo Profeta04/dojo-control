@@ -9,7 +9,7 @@ import { LeaderboardPanel } from "@/components/gamification/LeaderboardPanel";
 import { XPBar } from "@/components/gamification/XPBar";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Swords, Trophy, Crown } from "lucide-react";
+import { Trophy, Crown, ClipboardList } from "lucide-react";
 
 export default function StudentTasks() {
   const { loading: authLoading } = useAuth();
@@ -21,10 +21,10 @@ export default function StudentTasks() {
   return (
     <RequireApproval>
       <DashboardLayout>
-        <PageHeader 
-          title="Tarefas" 
-          description="Complete tarefas, ganhe XP e suba no ranking!" 
-        />
+        <PageHeader
+          title="Tarefas"
+          description="Complete tarefas, ganhe XP e suba no ranking!" />
+
         
         {/* XP Bar */}
         <div className="mt-4 mb-6">
@@ -35,7 +35,7 @@ export default function StudentTasks() {
         <Tabs defaultValue="missions" className="w-full">
           <TabsList className="grid w-full grid-cols-3 h-11">
             <TabsTrigger value="missions" className="flex items-center gap-2 text-sm">
-              <Swords className="h-4 w-4" />
+              <ClipboardList className="h-4 w-4" />
               Tarefas
             </TabsTrigger>
             <TabsTrigger value="achievements" className="flex items-center gap-2 text-sm">
@@ -61,6 +61,6 @@ export default function StudentTasks() {
           </TabsContent>
         </Tabs>
       </DashboardLayout>
-    </RequireApproval>
-  );
+    </RequireApproval>);
+
 }
