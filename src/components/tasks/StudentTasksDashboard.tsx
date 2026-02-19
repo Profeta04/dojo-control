@@ -238,7 +238,7 @@ export function StudentTasksDashboard() {
   if (isLoading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6" role="region" aria-label="Centro de Questões">
+    <div className="space-y-6" role="region" aria-label="Centro de Tarefas">
       {/* Progress Overview */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="overflow-hidden">
@@ -278,7 +278,7 @@ export function StudentTasksDashboard() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <ClipboardList className="h-5 w-5 text-primary" />
-            Questões
+    Tarefas
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -293,8 +293,8 @@ export function StudentTasksDashboard() {
               </div>
               <p className="text-sm">
                 {totalCompleted === totalQuestions && totalQuestions > 0
-                  ? "Parabéns! Você completou todas as questões! 🏆"
-                  : "Nenhuma questão disponível. Verifique se você está matriculado em uma turma."}
+                  ? "Parabéns! Você completou todas as tarefas! 🏆"
+                  : "Nenhuma tarefa disponível. Verifique se você está matriculado em uma turma."}
               </p>
             </div>
           ) : (
