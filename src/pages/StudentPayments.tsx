@@ -493,6 +493,17 @@ export default function StudentPaymentsPage() {
                                     <p className="capitalize font-medium text-sm">
                                       {formatMonth(payment.reference_month)}
                                     </p>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 sm:hidden">
+                                        <Tag className="h-2.5 w-2.5" />
+                                        {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                                      </Badge>
+                                    </div>
+                                    {payment.description && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                        {payment.description}
+                                      </p>
+                                    )}
                                     <p className="text-xs text-muted-foreground sm:hidden">
                                       {format(parseISO(payment.due_date), "dd/MM/yyyy")}
                                     </p>
