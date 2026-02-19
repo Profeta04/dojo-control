@@ -15,7 +15,7 @@ export default function StudentProgress() {
     <DashboardLayout>
       <PageHeader
         title="Progresso dos Alunos"
-        description="Acompanhe o desempenho dos alunos nas questões"
+        description="Acompanhe o desempenho dos alunos nas tarefas"
       />
       <div className="mt-4">
         <TasksManagement />
