@@ -18,7 +18,6 @@ import {
   TrendingUp,
   ClipboardCheck,
   Receipt,
-  ScanLine,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -52,9 +51,8 @@ const navItems: NavItem[] = [
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
-  { title: "Scanner", href: "/scanner", icon: <ScanLine className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
-  { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
-  { title: "Conquistas", href: "/tarefas?tab=achievements", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Meu Progresso", href: "/meu-progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Conquistas", href: "/conquistas", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Histórico", href: "/payment-history", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
@@ -86,8 +84,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   // Group items into sections
   const mainItems = filteredNavItems.filter(i => 
-    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/scanner"].includes(i.href) ||
-    i.href.startsWith("/tarefas?")
+    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
     ["/payments", "/payment-history", "/mensalidade", "/graduations"].includes(i.href)
@@ -97,7 +94,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
   );
 
   const renderNavItem = (item: NavItem, index: number) => {
-    const isActive = location.pathname === item.href || (item.href.includes("?") && location.pathname + location.search === item.href);
+    const isActive = location.pathname === item.href;
     return (
       <Link
         key={item.href}
