@@ -126,12 +126,19 @@ export default function StudentPaymentHistory() {
                   <TableBody>
                     {payments.map((payment) => (
                       <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell>
+                         <TableCell>
                           <div>
                             <p className="capitalize font-medium text-sm">
                               {formatMonth(payment.reference_month)}
                             </p>
-                            <p className="text-xs text-muted-foreground sm:hidden">
+                            <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 mt-1 sm:hidden w-fit">
+                              <Tag className="h-2.5 w-2.5" />
+                              {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                            </Badge>
+                            {payment.description && (
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{payment.description}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground sm:hidden mt-0.5">
                               {payment.paid_date
                                 ? format(parseISO(payment.paid_date), "dd/MM/yyyy")
                                 : "—"}
@@ -139,10 +146,15 @@ export default function StudentPaymentHistory() {
                           </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Tag className="h-3 w-3" />
-                            {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className="text-xs gap-1 w-fit">
+                              <Tag className="h-3 w-3" />
+                              {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
+                            </Badge>
+                            {payment.description && (
+                              <p className="text-xs text-muted-foreground line-clamp-2">{payment.description}</p>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
                           {payment.paid_date
