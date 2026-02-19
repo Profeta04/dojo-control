@@ -30,6 +30,7 @@ import Scanner from "./pages/Scanner";
 import Attendance from "./pages/Attendance";
 import StudentAchievements from "./pages/StudentAchievements";
 import StudentMyProgress from "./pages/StudentMyProgress";
+import StudentPaymentHistory from "./pages/StudentPaymentHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ function AnimatedRoutes() {
         <Route path="/attendance" element={<PageTransition><Attendance /></PageTransition>} />
         <Route path="/conquistas" element={<PageTransition><StudentAchievements /></PageTransition>} />
         <Route path="/meu-progresso" element={<PageTransition><StudentMyProgress /></PageTransition>} />
+        <Route path="/historico-pagamentos" element={<PageTransition><StudentPaymentHistory /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

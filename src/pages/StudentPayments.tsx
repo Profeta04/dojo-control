@@ -246,10 +246,13 @@ export default function StudentPaymentsPage() {
     };
   }, [payments]);
 
+  const navMode = localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom";
+  const isSidebarMode = navMode === "sidebar";
+
   const SECTION_CONFIG = [
     { key: "atrasado" as const, label: "Pagamentos Atrasados", subtitle: "Regularize sua situação", icon: AlertTriangle, color: "text-destructive", bgColor: "bg-destructive/10", borderColor: "border-destructive/30", headerBg: "bg-gradient-to-r from-destructive/10 via-destructive/5 to-transparent" },
     { key: "pendente" as const, label: "Pagamentos Pendentes", subtitle: "Aguardando pagamento", icon: Clock, color: "text-warning-foreground", bgColor: "bg-warning/10", borderColor: "border-warning/30", headerBg: "bg-gradient-to-r from-warning/10 via-warning/5 to-transparent" },
-    { key: "pago" as const, label: "Pagamentos Confirmados", subtitle: "Pagamentos realizados", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/30", headerBg: "bg-gradient-to-r from-success/10 via-success/5 to-transparent" },
+    ...(!isSidebarMode ? [{ key: "pago" as const, label: "Pagamentos Confirmados", subtitle: "Pagamentos realizados", icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10", borderColor: "border-success/30", headerBg: "bg-gradient-to-r from-success/10 via-success/5 to-transparent" }] : []),
   ];
 
   if (authLoading || paymentsLoading) {

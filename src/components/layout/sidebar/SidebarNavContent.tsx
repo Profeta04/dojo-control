@@ -57,6 +57,7 @@ const navItems: NavItem[] = [
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Histórico", href: "/payment-history", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Pagamentos", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Histórico", href: "/historico-pagamentos", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
 ];
@@ -87,7 +88,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
-    ["/payments", "/payment-history", "/mensalidade", "/graduations"].includes(i.href)
+    ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
     ["/settings"].includes(i.href)
