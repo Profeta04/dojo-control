@@ -277,8 +277,55 @@ export default function StudentPaymentsPage() {
     <DashboardLayout>
       <PageHeader title="Pagamentos" description="Informações sobre seus pagamentos" />
 
-      {/* Stats Cards */}
-      <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
+      {/* Summary Card for Sidebar Mode */}
+      {isSidebarMode && (statsWithFees.pendente > 0 || statsWithFees.atrasado > 0) && (
+        <div className="grid gap-4 mb-6 sm:grid-cols-2">
+          {statsWithFees.atrasado > 0 && (
+            <Card className="border-destructive/30 overflow-hidden">
+              <div className="h-1 bg-destructive" />
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Atrasados</p>
+                    <p className="text-2xl font-bold text-destructive mt-1">{statsWithFees.atrasado}</p>
+                    <p className="text-xs text-destructive/70 mt-0.5">
+                      {formatCurrency(groupedPayments.atrasado.reduce((sum, p) => {
+                        const fees = calculateLateFees(p);
+                        return sum + (fees ? fees.total : p.amount);
+                      }, 0))}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-destructive/10">
+                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          {statsWithFees.pendente > 0 && (
+            <Card className="border-warning/30 overflow-hidden">
+              <div className="h-1 bg-warning" />
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Pendentes</p>
+                    <p className="text-2xl font-bold text-warning-foreground mt-1">{statsWithFees.pendente}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatCurrency(groupedPayments.pendente.reduce((sum, p) => sum + p.amount, 0))}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-xl bg-warning/10">
+                    <Clock className="h-5 w-5 text-warning-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Stats Cards (bottom nav mode) */}
+      {!isSidebarMode && <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />}
 
       {/* Highlight Cards: Total com taxas + Próximo vencimento */}
       <div className="grid gap-4 mb-6 sm:grid-cols-2">
