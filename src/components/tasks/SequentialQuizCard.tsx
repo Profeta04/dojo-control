@@ -110,7 +110,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
           checkAndUnlock.mutate({ tasksCompleted: (count || 0), currentStreak, totalXp: result.newTotal });
         } catch {}
       } else {
-        toast.error("Você errou! Vamos para a próxima questão.");
+        toast.error("Você errou! Vamos para a próxima tarefa.");
 
         // Create a pending task record if none exists (so it reappears)
         if (currentQuestion.task._needsTaskRecord) {
@@ -157,7 +157,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
           </div>
           <h4 className="font-semibold text-sm">{groupLabel} — Completo!</h4>
           <p className="text-xs text-muted-foreground mt-1">
-            Todas as {totalCount} questões foram respondidas! 🏆
+            Todas as {totalCount} tarefas foram respondidas! 🏆
           </p>
           <Progress value={100} className="mt-3 h-1.5" />
         </CardContent>
@@ -264,7 +264,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
             {hasAnswered && isCorrect && (
               <span className="flex items-center gap-1.5 text-success font-medium">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Próxima questão em breve...
+                Próxima tarefa em breve...
               </span>
             )}
             {hasAnswered && !isCorrect && (
