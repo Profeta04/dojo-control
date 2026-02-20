@@ -409,8 +409,19 @@ export default function Auth() {
         }
       }
 
+      // Notify senseis about new student registration (fire-and-forget)
+      if (selectedDojoId) {
+        void supabase.functions.invoke("notify-new-student-registration", {
+          body: { studentName: signupName, dojoId: selectedDojoId },
+        });
+      }
+
       toast({
         title: "Conta criada com sucesso!",
+        description: isMinor && addGuardian 
+          ? "Seu cadastro e do responsável estão pendentes de aprovação."
+          : "Seu cadastro está pendente de aprovação pelo Sensei.",
+      });
         description: isMinor && addGuardian 
           ? "Seu cadastro e do responsável estão pendentes de aprovação." 
           : "Seu cadastro está pendente de aprovação por um Sensei.",

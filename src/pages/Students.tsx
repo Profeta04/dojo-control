@@ -183,6 +183,24 @@ export default function Students() {
         _role: "student",
       });
 
+      // Send push notification to the approved student
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          userId: selectedStudent.user_id,
+          title: "🎉 Cadastro Aprovado!",
+          body: `Bem-vindo ao dojo, ${selectedStudent.name}! Seu cadastro foi aprovado. Vamos treinar!`,
+          url: "/dashboard",
+        },
+      }).catch(() => {}); // fire-and-forget
+
+      // In-app notification for the student (fire-and-forget)
+      void supabase.from("notifications").insert({
+        user_id: selectedStudent.user_id,
+        title: "🎉 Cadastro Aprovado!",
+        message: `Seu cadastro foi aprovado! Bem-vindo ao dojo.`,
+        type: "info",
+      });
+
       toast({
         title: "Aluno aprovado!",
         description: `${selectedStudent.name} foi aprovado com sucesso.`,
