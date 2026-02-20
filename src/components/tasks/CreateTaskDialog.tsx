@@ -94,6 +94,25 @@ export function CreateTaskDialog() {
         priority: data.priority as TaskPriority,
         category: data.category as TaskCategory,
       });
+
+      // Push notification for the assigned student (fire-and-forget)
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          userId: data.assigned_to,
+          title: "📋 Nova Tarefa Atribuída",
+          body: `Você recebeu uma nova tarefa: "${data.title}". Confira no app!`,
+          url: "/tarefas",
+        },
+      }).catch(() => {});
+
+      // In-app notification
+      void supabase.from("notifications").insert({
+        user_id: data.assigned_to,
+        title: "📋 Nova Tarefa Atribuída",
+        message: `Você recebeu uma nova tarefa: "${data.title}".`,
+        type: "task",
+      });
+
       toast.success("Tarefa criada com sucesso!");
       form.reset();
       setOpen(false);
