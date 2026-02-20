@@ -12,3 +12,12 @@ verify_jwt = false
 [functions.generate-quizzes]
 verify_jwt = false
 
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.notify-overdue-payments]
+verify_jwt = false
+
+[functions.get-vapid-public-key]
+verify_jwt = false
+

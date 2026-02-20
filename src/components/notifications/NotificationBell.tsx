@@ -14,6 +14,7 @@ import { Bell, Check, CreditCard, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { PushNotificationToggle } from "./PushNotificationToggle";
 
 interface Notification {
   id: string;
@@ -117,16 +118,20 @@ export function NotificationBell() {
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between p-4 border-b">
           <h4 className="font-semibold">Notificações</h4>
-          {unreadCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs h-auto py-1"
-              onClick={handleMarkAllAsRead}
-            >
-              Marcar todas como lidas
-            </Button>
-          )}
+          <div className="flex items-center gap-1">
+            <PushNotificationToggle />
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-auto py-1"
+                onClick={handleMarkAllAsRead}
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Todas lidas
+              </Button>
+            )}
+          </div>
         </div>
         <ScrollArea className="h-[300px]">
           {notifications && notifications.length > 0 ? (
