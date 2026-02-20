@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
-
+import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 import { LeaderboardPanel } from "@/components/gamification/LeaderboardPanel";
 import { XPBar } from "@/components/gamification/XPBar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Crown, ClipboardList } from "lucide-react";
+import { Trophy, Crown, ClipboardList } from "lucide-react";
 
 export default function StudentTasks() {
   const { loading: authLoading } = useAuth();
