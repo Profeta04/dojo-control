@@ -6,11 +6,28 @@ const corsHeaders = {
 };
 
 // Manual VAPID implementation using Web Crypto API
-async function importVapidPrivateKey(privateKeyBase64url: string): Promise<CryptoKey> {
-  const keyBytes = base64urlToBytes(privateKeyBase64url);
+// VAPID private keys are 32-byte raw EC scalars encoded as base64url.
+// We must wrap them in a JWK to import via Web Crypto API.
+async function importVapidPrivateKey(privateKeyBase64url: string, publicKeyBase64url: string): Promise<CryptoKey> {
+  const jwk = {
+    kty: 'EC',
+    crv: 'P-256',
+    d: privateKeyBase64url,
+    x: publicKeyBase64url.slice(0, 43),  // approximate x (will be overridden below)
+    y: publicKeyBase64url.slice(43),
+    ext: true,
+    key_ops: ['sign'],
+  };
+  // Derive x and y from the uncompressed public key bytes
+  const pubBytes = base64urlToBytes(publicKeyBase64url);
+  // pubBytes[0] == 0x04 (uncompressed), then 32 bytes x, 32 bytes y
+  if (pubBytes.length === 65 && pubBytes[0] === 0x04) {
+    jwk.x = bytesToBase64url(pubBytes.slice(1, 33));
+    jwk.y = bytesToBase64url(pubBytes.slice(33, 65));
+  }
   return await crypto.subtle.importKey(
-    'pkcs8',
-    keyBytes,
+    'jwk',
+    jwk,
     { name: 'ECDSA', namedCurve: 'P-256' },
     false,
     ['sign']
@@ -39,20 +56,8 @@ async function createVapidAuthHeader(endpoint: string, subject: string, publicKe
   const encode = (obj: object) => bytesToBase64url(new TextEncoder().encode(JSON.stringify(obj)));
   const signingInput = `${encode(header)}.${encode(payload)}`;
 
-  let privateKey: CryptoKey;
-  try {
-    // Try importing as raw EC private key (most common VAPID format)
-    const rawBytes = base64urlToBytes(privateKeyBase64url);
-    privateKey = await crypto.subtle.importKey(
-      'raw',
-      rawBytes,
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false,
-      ['sign']
-    );
-  } catch {
-    privateKey = await importVapidPrivateKey(privateKeyBase64url);
-  }
+  // Import VAPID private key as JWK (required by Deno's Web Crypto for EC keys)
+  const privateKey = await importVapidPrivateKey(privateKeyBase64url, publicKeyBase64url);
 
   const signature = await crypto.subtle.sign(
     { name: 'ECDSA', hash: 'SHA-256' },
