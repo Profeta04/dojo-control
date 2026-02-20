@@ -96,8 +96,7 @@ export function usePushNotifications() {
         keys: { p256dh: string; auth: string };
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any).from("push_subscriptions").upsert(
+      const { error } = await supabase.from("push_subscriptions").upsert(
         {
           user_id: user.id,
           endpoint: subJSON.endpoint,
@@ -107,7 +106,10 @@ export function usePushNotifications() {
         { onConflict: "user_id,endpoint" }
       );
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving push subscription to DB:", error);
+        throw error;
+      }
 
       setIsSubscribed(true);
       return true;
@@ -129,8 +131,7 @@ export function usePushNotifications() {
       if (pm) {
         const subscription = await pm.getSubscription();
         if (subscription) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any)
+          await supabase
             .from("push_subscriptions")
             .delete()
             .eq("user_id", user.id)
