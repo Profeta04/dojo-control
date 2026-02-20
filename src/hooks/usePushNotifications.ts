@@ -82,6 +82,10 @@ export function usePushNotifications() {
         return false;
       }
 
+      // Unsubscribe from any existing (possibly stale) subscription first
+      const existingSub = await pm.getSubscription();
+      if (existingSub) await existingSub.unsubscribe();
+
       const subscription = await pm.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
