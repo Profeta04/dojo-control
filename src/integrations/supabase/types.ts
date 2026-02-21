@@ -295,6 +295,56 @@ export type Database = {
           },
         ]
       }
+      dojo_subscriptions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          dojo_id: string
+          expires_at: string | null
+          id: string
+          receipt_submitted_at: string | null
+          receipt_url: string | null
+          status: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          dojo_id: string
+          expires_at?: string | null
+          id?: string
+          receipt_submitted_at?: string | null
+          receipt_url?: string | null
+          status?: string
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          dojo_id?: string
+          expires_at?: string | null
+          id?: string
+          receipt_submitted_at?: string | null
+          receipt_url?: string | null
+          status?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_subscriptions_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dojo_users: {
         Row: {
           created_at: string | null
