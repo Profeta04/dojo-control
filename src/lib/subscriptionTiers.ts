@@ -1,4 +1,4 @@
-// Stripe product/price mapping for Dojo Control subscription tiers
+// Subscription tiers for Dojo Control (PIX-based, no Stripe)
 
 export type FeatureKey =
   | "qr_checkin"
@@ -9,8 +9,6 @@ export const SUBSCRIPTION_TIERS = {
   basico: {
     name: "Básico",
     description: "Ideal para dojos iniciantes",
-    price_id: "price_1T3483A48Ser2h87UDzJMzBo",
-    product_id: "prod_U16KdvJiiiNbXo",
     price_brl: 39,
     price_per_student: false as const,
     max_students: 15,
@@ -27,8 +25,6 @@ export const SUBSCRIPTION_TIERS = {
   pro: {
     name: "Pro",
     description: "Para dojos em crescimento",
-    price_id: "price_1T348VA48Ser2h87HjtZz31g",
-    product_id: "prod_U16LFtXYsaNSSI",
     price_brl: 99,
     price_per_student: false as const,
     max_students: 30,
@@ -42,8 +38,6 @@ export const SUBSCRIPTION_TIERS = {
   premium: {
     name: "Premium",
     description: "Sem limites para seu dojo",
-    price_id: "price_1T34LJA48Ser2h87dHNZkV6R",
-    product_id: "prod_U16YrAoCGL1xqW",
     price_brl: 7,
     price_per_student: true as const,
     max_students: Infinity,
@@ -59,13 +53,6 @@ export const SUBSCRIPTION_TIERS = {
 } as const;
 
 export type SubscriptionTierKey = keyof typeof SUBSCRIPTION_TIERS;
-
-export function getTierByProductId(productId: string): SubscriptionTierKey | null {
-  for (const [key, tier] of Object.entries(SUBSCRIPTION_TIERS)) {
-    if (tier.product_id === productId) return key as SubscriptionTierKey;
-  }
-  return null;
-}
 
 /**
  * Check if a specific feature is available for a given tier.
