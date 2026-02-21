@@ -13,6 +13,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { BlockedStudentScreen } from "@/components/auth/BlockedStudentScreen";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentBottomNav } from "./StudentBottomNav";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const navMode = localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom";
   const useBottomNav = navMode === "bottom";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const { allowed: qrAllowed } = useFeatureGate("qr_checkin");
 
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
@@ -99,7 +101,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {isStudent && !canManageStudents && (
+              {isStudent && !canManageStudents && qrAllowed && (
                 <Link to="/scanner">
                   <Button variant="ghost" size="icon" className="relative text-accent hover:bg-accent/10">
                     <ScanLine className="h-5 w-5" />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Crown, Loader2, ExternalLink } from "lucide-react";
+import { Check, Crown, Loader2, ExternalLink, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +57,23 @@ export function SubscriptionPlans() {
     );
   }
 
+  const formatPrice = (tier: typeof SUBSCRIPTION_TIERS[SubscriptionTierKey]) => {
+    if (tier.price_per_student) {
+      return (
+        <>
+          <span className="text-4xl font-bold text-foreground">R${tier.price_brl}</span>
+          <span className="text-muted-foreground">/aluno/mês</span>
+        </>
+      );
+    }
+    return (
+      <>
+        <span className="text-4xl font-bold text-foreground">R${tier.price_brl}</span>
+        <span className="text-muted-foreground">/mês</span>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Current subscription status */}
@@ -94,7 +111,7 @@ export function SubscriptionPlans() {
       )}
 
       {/* Pricing cards */}
-      <div className="grid gap-6 md:grid-cols-2 max-w-3xl">
+      <div className="grid gap-6 md:grid-cols-3 max-w-5xl">
         {(Object.entries(SUBSCRIPTION_TIERS) as [SubscriptionTierKey, typeof SUBSCRIPTION_TIERS[SubscriptionTierKey]][]).map(
           ([key, tier]) => {
             const isCurrentPlan = subscribed && currentTier === key;
@@ -105,12 +122,13 @@ export function SubscriptionPlans() {
                 key={key}
                 className={cn(
                   "relative flex flex-col",
-                  isPopular && "border-primary shadow-lg",
+                  isPopular && "border-primary shadow-lg scale-[1.02]",
                   isCurrentPlan && "ring-2 ring-primary"
                 )}
               >
                 {isPopular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground gap-1">
+                    <Star className="h-3 w-3" />
                     Mais popular
                   </Badge>
                 )}
@@ -124,10 +142,7 @@ export function SubscriptionPlans() {
                   <CardTitle className="text-xl">{tier.name}</CardTitle>
                   <CardDescription>{tier.description}</CardDescription>
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-foreground">
-                      R${tier.price_brl}
-                    </span>
-                    <span className="text-muted-foreground">/mês</span>
+                    {formatPrice(tier)}
                   </div>
                 </CardHeader>
 
@@ -164,6 +179,57 @@ export function SubscriptionPlans() {
           }
         )}
       </div>
+
+      {/* Feature comparison */}
+      <Card className="max-w-5xl">
+        <CardHeader>
+          <CardTitle className="text-lg">Comparação de funcionalidades</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left py-2 pr-4 font-medium">Funcionalidade</th>
+                  <th className="text-center py-2 px-3 font-medium">Básico</th>
+                  <th className="text-center py-2 px-3 font-medium">Pro</th>
+                  <th className="text-center py-2 px-3 font-medium">Premium</th>
+                </tr>
+              </thead>
+              <tbody className="text-muted-foreground">
+                {[
+                  { name: "Limite de alunos", basico: "15", pro: "30", premium: "Ilimitado" },
+                  { name: "Gestão de turmas", basico: true, pro: true, premium: true },
+                  { name: "Controle de presenças", basico: true, pro: true, premium: true },
+                  { name: "Pagamentos e cobranças", basico: true, pro: true, premium: true },
+                  { name: "Notificações push", basico: true, pro: true, premium: true },
+                  { name: "Gamificação (XP/Conquistas)", basico: true, pro: true, premium: true },
+                  { name: "QR Code check-in", basico: false, pro: true, premium: true },
+                  { name: "Relatórios PDF", basico: false, pro: false, premium: true },
+                  { name: "Multi-dojo", basico: false, pro: false, premium: true },
+                ].map((row) => (
+                  <tr key={row.name} className="border-b last:border-0">
+                    <td className="py-2 pr-4 text-foreground">{row.name}</td>
+                    {(["basico", "pro", "premium"] as const).map((plan) => (
+                      <td key={plan} className="text-center py-2 px-3">
+                        {typeof row[plan] === "boolean" ? (
+                          row[plan] ? (
+                            <Check className="h-4 w-4 text-primary mx-auto" />
+                          ) : (
+                            <span className="text-muted-foreground/40">—</span>
+                          )
+                        ) : (
+                          <span className="font-medium text-foreground">{row[plan]}</span>
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Refresh button */}
       <div className="flex justify-center">

@@ -14,6 +14,7 @@ import { StudentProfileCard } from "@/components/student/StudentProfileCard";
 import { SenseiAnalytics } from "@/components/dashboard/SenseiAnalytics";
 import { XPBar } from "@/components/gamification/XPBar";
 import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -53,7 +54,11 @@ export default function Dashboard() {
             title={`Olá, ${profile?.name?.split(" ")[0] || "Judoca"}! 🥋`}
             description="Bem-vindo ao sistema de gestão do dojo"
           />
-          {canManageStudents && <ExportReportButton />}
+          {canManageStudents && (
+            <FeatureGate feature="pdf_reports" hideIfBlocked>
+              <ExportReportButton />
+            </FeatureGate>
+          )}
         </div>
       </div>
 

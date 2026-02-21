@@ -14,6 +14,7 @@ import { generateFinancialReport, FinancialReportData } from "@/lib/generateFina
 import { format, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 
 type Payment = Tables<"payments">;
 
@@ -109,6 +110,7 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
   };
 
   return (
+    <FeatureGate feature="pdf_reports" hideIfBlocked>
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
@@ -144,5 +146,6 @@ export function ExportFinancialReportButton({ payments }: ExportFinancialReportB
         </div>
       </DialogContent>
     </Dialog>
+    </FeatureGate>
   );
 }

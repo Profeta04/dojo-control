@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, Loader2, Download } from "lucide-react";
 import { generateStudentReport, StudentReportData } from "@/lib/generateStudentReport";
 import { useDojoContext } from "@/hooks/useDojoContext";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 
 export function StudentReportDialog() {
   const [open, setOpen] = useState(false);
@@ -128,6 +129,7 @@ export function StudentReportDialog() {
   };
 
   return (
+    <FeatureGate feature="pdf_reports" hideIfBlocked>
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
@@ -169,5 +171,6 @@ export function StudentReportDialog() {
         </div>
       </DialogContent>
     </Dialog>
+    </FeatureGate>
   );
 }

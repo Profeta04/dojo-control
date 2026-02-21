@@ -9,6 +9,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Building } from "lucide-react";
+import { useFeatureGate } from "@/hooks/useFeatureGate";
 
 export function DojoSelector() {
   const { 
@@ -19,9 +20,15 @@ export function DojoSelector() {
     filterByDojo,
     setFilterByDojo,
   } = useDojoContext();
+  const { allowed: multiDojoAllowed } = useFeatureGate("multi_dojo");
 
   // Don't show if user has no dojos or only one dojo
   if (isLoadingDojos || userDojos.length <= 1) {
+    return null;
+  }
+
+  // Don't show if multi-dojo is not allowed by subscription
+  if (!multiDojoAllowed) {
     return null;
   }
 
