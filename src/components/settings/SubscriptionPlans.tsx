@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, Crown, Loader2, ExternalLink, Star } from "lucide-react";
+import { useState, useRef } from "react";
+import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,72 +10,123 @@ import { useQuery } from "@tanstack/react-query";
 import { SUBSCRIPTION_TIERS, SubscriptionTierKey } from "@/lib/subscriptionTiers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 export function SubscriptionPlans() {
-  const { subscribed, tier: currentTier, subscriptionEnd, loading, refresh } = useSubscription();
+  const { subscribed, tier: currentTier, subscriptionEnd, status, loading, refresh } = useSubscription();
   const { currentDojoId } = useDojoContext();
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<SubscriptionTierKey | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Count approved students in the current dojo for Premium per-student pricing
+  // Get dojo's PIX key
+  const { data: dojo } = useQuery({
+    queryKey: ["dojo-pix", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return null;
+      const { data } = await supabase
+        .from("dojos")
+        .select("pix_key, name")
+        .eq("id", currentDojoId)
+        .single();
+      return data;
+    },
+    enabled: !!currentDojoId,
+  });
+
+  // Count approved students for Premium pricing
   const { data: studentCount = 1 } = useQuery({
     queryKey: ["dojo-student-count", currentDojoId],
     queryFn: async () => {
       if (!currentDojoId) return 1;
-      // Count only students (exclude senseis/admins) with approved status
       const { data: studentProfiles } = await supabase
         .from("profiles")
-        .select("user_id", { count: "exact", head: false })
+        .select("user_id")
         .eq("dojo_id", currentDojoId)
         .eq("registration_status", "aprovado");
-      
       if (!studentProfiles) return 1;
-      
-      // Filter to only users with 'student' role
       const { data: studentRoles } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "student")
         .in("user_id", studentProfiles.map(p => p.user_id));
-      
       return Math.max(studentRoles?.length ?? 1, 1);
     },
     enabled: !!currentDojoId,
   });
 
-  const handleCheckout = async (tierKey: SubscriptionTierKey) => {
-    setCheckoutLoading(tierKey);
-    try {
-      const tier = SUBSCRIPTION_TIERS[tierKey];
-      const quantity = tier.price_per_student ? studentCount : 1;
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId: tier.price_id, quantity },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao iniciar checkout");
-    } finally {
-      setCheckoutLoading(null);
+  // Get the admin PIX key (from settings or hardcoded)
+  const { data: adminPixKey } = useQuery({
+    queryKey: ["admin-pix-key"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("settings")
+        .select("value")
+        .eq("key", "admin_pix_key")
+        .maybeSingle();
+      return data?.value || null;
+    },
+  });
+
+  const getPrice = (tierKey: SubscriptionTierKey) => {
+    const tier = SUBSCRIPTION_TIERS[tierKey];
+    if (tier.price_per_student) {
+      return tier.price_brl * studentCount;
     }
+    return tier.price_brl;
   };
 
-  const handleManageSubscription = async () => {
-    setPortalLoading(true);
+  const handleSelectPlan = (tierKey: SubscriptionTierKey) => {
+    if (!adminPixKey) {
+      toast.error("Chave PIX do administrador não configurada. Entre em contato com o suporte.");
+      return;
+    }
+    setSelectedTier(tierKey);
+  };
+
+  const handleCopyPixKey = async () => {
+    if (!adminPixKey) return;
+    await navigator.clipboard.writeText(adminPixKey);
+    setCopied(true);
+    toast.success("Chave PIX copiada!");
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  const handleUploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedTier || !currentDojoId) return;
+
+    setUploading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
+      const filePath = `${currentDojoId}/${Date.now()}-${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("subscription-receipts")
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { error: insertError } = await supabase
+        .from("dojo_subscriptions")
+        .insert({
+          dojo_id: currentDojoId,
+          tier: selectedTier,
+          status: "pendente",
+          receipt_url: filePath,
+          receipt_submitted_at: new Date().toISOString(),
+        });
+      if (insertError) throw insertError;
+
+      toast.success("Comprovante enviado! Aguarde a aprovação do administrador.");
+      setSelectedTier(null);
+      refresh();
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao abrir portal de assinatura");
+      toast.error("Erro ao enviar comprovante");
     } finally {
-      setPortalLoading(false);
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -122,24 +173,26 @@ export function SubscriptionPlans() {
                 </p>
                 {subscriptionEnd && (
                   <p className="text-sm text-muted-foreground">
-                    Renova em {new Date(subscriptionEnd).toLocaleDateString("pt-BR")}
+                    Válido até {new Date(subscriptionEnd).toLocaleDateString("pt-BR")}
                   </p>
                 )}
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleManageSubscription}
-              disabled={portalLoading}
-            >
-              {portalLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <ExternalLink className="h-4 w-4 mr-2" />
-              )}
-              Gerenciar Assinatura
-            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pending approval notice */}
+      {status === "pendente" && !subscribed && (
+        <Card className="border-accent/30 bg-accent/5">
+          <CardContent className="flex items-center gap-3 pt-6">
+            <Loader2 className="h-5 w-5 animate-spin text-accent" />
+            <div>
+              <p className="font-semibold text-foreground">Comprovante em análise</p>
+              <p className="text-sm text-muted-foreground">
+                Seu comprovante de pagamento está sendo verificado. Você será notificado quando aprovado.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -198,13 +251,11 @@ export function SubscriptionPlans() {
                     <Button
                       className="w-full"
                       variant={isPopular ? "default" : "outline"}
-                      onClick={() => handleCheckout(key)}
-                      disabled={!!checkoutLoading}
+                      onClick={() => handleSelectPlan(key)}
+                      disabled={status === "pendente"}
                     >
-                      {checkoutLoading === key ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : null}
-                      {subscribed ? "Trocar plano" : "Assinar agora"}
+                      <QrCode className="h-4 w-4 mr-2" />
+                      {subscribed ? "Trocar plano" : "Assinar via PIX"}
                     </Button>
                   )}
                 </CardContent>
@@ -271,6 +322,79 @@ export function SubscriptionPlans() {
           Atualizar status da assinatura
         </Button>
       </div>
+
+      {/* PIX Payment Dialog */}
+      <Dialog open={!!selectedTier} onOpenChange={(open) => !open && setSelectedTier(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Pagamento via PIX
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTier && (
+                <>
+                  Plano {SUBSCRIPTION_TIERS[selectedTier].name} — <strong>R${getPrice(selectedTier)}/mês</strong>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* PIX Key */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Chave PIX (aleatória):</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all">
+                  {adminPixKey || "Não configurada"}
+                </code>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyPixKey}
+                  disabled={!adminPixKey}
+                >
+                  {copied ? <CheckCircle className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="bg-muted/50 rounded-lg p-3 space-y-1">
+              <p className="text-sm font-medium">Como pagar:</p>
+              <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Copie a chave PIX acima</li>
+                <li>Abra seu app de banco e faça um PIX de <strong>R${selectedTier ? getPrice(selectedTier) : 0}</strong></li>
+                <li>Envie o comprovante abaixo</li>
+                <li>Aguarde a aprovação (até 24h)</li>
+              </ol>
+            </div>
+
+            {/* Upload receipt */}
+            <div className="space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleUploadReceipt}
+                className="hidden"
+              />
+              <Button
+                className="w-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                {uploading ? "Enviando..." : "Enviar comprovante"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
