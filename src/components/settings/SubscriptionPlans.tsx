@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
-import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle } from "lucide-react";
+import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDojoContext } from "@/hooks/useDojoContext";
-import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SUBSCRIPTION_TIERS, SubscriptionTierKey } from "@/lib/subscriptionTiers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -17,9 +19,14 @@ import {
 export function SubscriptionPlans() {
   const { subscribed, tier: currentTier, subscriptionEnd, status, loading, refresh } = useSubscription();
   const { currentDojoId } = useDojoContext();
+  const { isAdmin, isDono } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedTier, setSelectedTier] = useState<SubscriptionTierKey | null>(null);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [editingPixKey, setEditingPixKey] = useState(false);
+  const [pixKeyInput, setPixKeyInput] = useState("");
+  const [savingPixKey, setSavingPixKey] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get dojo's PIX key
@@ -159,8 +166,71 @@ export function SubscriptionPlans() {
     );
   };
 
+  const handleSavePixKey = async () => {
+    setSavingPixKey(true);
+    try {
+      const { error } = await supabase
+        .from("settings")
+        .upsert({ key: "admin_pix_key", value: pixKeyInput }, { onConflict: "key" });
+      if (error) throw error;
+      toast.success("Chave PIX salva com sucesso!");
+      setEditingPixKey(false);
+      queryClient.invalidateQueries({ queryKey: ["admin-pix-key"] });
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao salvar chave PIX");
+    } finally {
+      setSavingPixKey(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Admin PIX key configuration */}
+      {(isAdmin || isDono) && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Settings className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">Chave PIX para receber assinaturas</p>
+                  <p className="text-xs text-muted-foreground">
+                    {adminPixKey ? `Configurada: ${adminPixKey.slice(0, 12)}...` : "Não configurada"}
+                  </p>
+                </div>
+              </div>
+              {editingPixKey ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={pixKeyInput}
+                    onChange={(e) => setPixKeyInput(e.target.value)}
+                    placeholder="Cole sua chave PIX"
+                    className="w-64"
+                  />
+                  <Button size="sm" onClick={handleSavePixKey} disabled={savingPixKey || !pixKeyInput}>
+                    {savingPixKey ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditingPixKey(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setPixKeyInput(adminPixKey || "");
+                    setEditingPixKey(true);
+                  }}
+                >
+                  {adminPixKey ? "Alterar" : "Configurar"}
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Current subscription status */}
       {subscribed && currentTier && (
         <Card className="border-primary/30 bg-primary/5">
