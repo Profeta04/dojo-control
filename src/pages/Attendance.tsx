@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ClipboardCheck, QrCode } from "lucide-react";
+import { FeatureGate } from "@/components/shared/FeatureGate";
 
 export default function Attendance() {
   const { loading: authLoading, canManageStudents } = useAuth();
@@ -67,18 +68,20 @@ export default function Attendance() {
           </TabsContent>
 
           <TabsContent value="qrcode" className="mt-4">
-            {currentDojo ? (
-              <DojoQRCode
-                dojoId={currentDojo.id}
-                dojoName={currentDojo.name}
-                checkinToken={currentDojo.checkin_token}
-                logoUrl={logoUrl}
-                colorPrimary={currentDojo.color_primary}
-                colorAccent={currentDojo.color_accent}
-              />
-            ) : (
-              <p className="text-muted-foreground text-sm">Nenhum dojo selecionado.</p>
-            )}
+            <FeatureGate feature="qr_checkin">
+              {currentDojo ? (
+                <DojoQRCode
+                  dojoId={currentDojo.id}
+                  dojoName={currentDojo.name}
+                  checkinToken={currentDojo.checkin_token}
+                  logoUrl={logoUrl}
+                  colorPrimary={currentDojo.color_primary}
+                  colorAccent={currentDojo.color_accent}
+                />
+              ) : (
+                <p className="text-muted-foreground text-sm">Nenhum dojo selecionado.</p>
+              )}
+            </FeatureGate>
           </TabsContent>
         </Tabs>
       </DashboardLayout>
