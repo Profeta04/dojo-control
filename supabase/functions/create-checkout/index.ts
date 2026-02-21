@@ -17,7 +17,8 @@ Deno.serve(async (req) => {
 
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
     );
 
     const authHeader = req.headers.get("Authorization")!;
@@ -26,7 +27,7 @@ Deno.serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { priceId } = await req.json();
+    const { priceId, quantity } = await req.json();
     if (!priceId) throw new Error("priceId is required");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -42,7 +43,8 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: priceId, quantity: 1 }],
+      payment_method_types: ["card", "pix"],
+      line_items: [{ price: priceId, quantity: quantity ?? 1 }],
       mode: "subscription",
       success_url: `${origin}/settings?tab=planos&status=success`,
       cancel_url: `${origin}/settings?tab=planos&status=cancelled`,

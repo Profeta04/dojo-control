@@ -5,21 +5,40 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useDojoContext } from "@/hooks/useDojoContext";
+import { useQuery } from "@tanstack/react-query";
 import { SUBSCRIPTION_TIERS, SubscriptionTierKey } from "@/lib/subscriptionTiers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function SubscriptionPlans() {
   const { subscribed, tier: currentTier, subscriptionEnd, loading, refresh } = useSubscription();
+  const { currentDojoId } = useDojoContext();
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+
+  // Count approved students in the current dojo for Premium per-student pricing
+  const { data: studentCount = 1 } = useQuery({
+    queryKey: ["dojo-student-count", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return 1;
+      const { count } = await supabase
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("dojo_id", currentDojoId)
+        .eq("registration_status", "aprovado");
+      return Math.max(count ?? 1, 1);
+    },
+    enabled: !!currentDojoId,
+  });
 
   const handleCheckout = async (tierKey: SubscriptionTierKey) => {
     setCheckoutLoading(tierKey);
     try {
       const tier = SUBSCRIPTION_TIERS[tierKey];
+      const quantity = tier.price_per_student ? studentCount : 1;
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { priceId: tier.price_id },
+        body: { priceId: tier.price_id, quantity },
       });
       if (error) throw error;
       if (data?.url) {
@@ -57,12 +76,16 @@ export function SubscriptionPlans() {
     );
   }
 
-  const formatPrice = (tier: typeof SUBSCRIPTION_TIERS[SubscriptionTierKey]) => {
+  const formatPrice = (tier: typeof SUBSCRIPTION_TIERS[SubscriptionTierKey], tierKey: SubscriptionTierKey) => {
     if (tier.price_per_student) {
+      const total = tier.price_brl * studentCount;
       return (
         <>
           <span className="text-4xl font-bold text-foreground">R${tier.price_brl}</span>
           <span className="text-muted-foreground">/aluno/mês</span>
+          <p className="text-sm text-muted-foreground mt-1">
+            {studentCount} aluno{studentCount !== 1 ? "s" : ""} = <span className="font-semibold text-foreground">R${total}/mês</span>
+          </p>
         </>
       );
     }
@@ -142,7 +165,7 @@ export function SubscriptionPlans() {
                   <CardTitle className="text-xl">{tier.name}</CardTitle>
                   <CardDescription>{tier.description}</CardDescription>
                   <div className="mt-4">
-                    {formatPrice(tier)}
+                    {formatPrice(tier, key)}
                   </div>
                 </CardHeader>
 
