@@ -21,3 +21,9 @@ verify_jwt = false
 [functions.get-vapid-public-key]
 verify_jwt = false
 
+[functions.notify-new-student-registration]
+verify_jwt = false
+
+[functions.notify-training-reminder]
+verify_jwt = false
+
