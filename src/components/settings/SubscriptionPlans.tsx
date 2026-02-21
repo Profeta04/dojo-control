@@ -1,5 +1,6 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle, Settings } from "lucide-react";
+import QRCodeLib from "qrcode";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ export function SubscriptionPlans() {
   const [pixKeyInput, setPixKeyInput] = useState("");
   const [savingPixKey, setSavingPixKey] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const qrCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Get dojo's PIX key
   const { data: dojo } = useQuery({
@@ -85,6 +87,17 @@ export function SubscriptionPlans() {
     }
     return tier.price_brl;
   };
+
+  // Generate QR Code when dialog opens
+  useEffect(() => {
+    if (selectedTier && adminPixKey && qrCanvasRef.current) {
+      QRCodeLib.toCanvas(qrCanvasRef.current, adminPixKey, {
+        width: 200,
+        margin: 2,
+        color: { dark: "#000000", light: "#ffffff" },
+      });
+    }
+  }, [selectedTier, adminPixKey]);
 
   const handleSelectPlan = (tierKey: SubscriptionTierKey) => {
     if (!adminPixKey) {
@@ -411,6 +424,16 @@ export function SubscriptionPlans() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* PIX QR Code */}
+            {adminPixKey && (
+              <div className="flex justify-center">
+                <canvas
+                  ref={qrCanvasRef}
+                  className="rounded-lg border"
+                />
+              </div>
+            )}
+
             {/* PIX Key */}
             <div className="space-y-2">
               <p className="text-sm font-medium">Chave PIX (aleatória):</p>
