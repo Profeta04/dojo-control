@@ -22,12 +22,23 @@ export function SubscriptionPlans() {
     queryKey: ["dojo-student-count", currentDojoId],
     queryFn: async () => {
       if (!currentDojoId) return 1;
-      const { count } = await supabase
+      // Count only students (exclude senseis/admins) with approved status
+      const { data: studentProfiles } = await supabase
         .from("profiles")
-        .select("*", { count: "exact", head: true })
+        .select("user_id", { count: "exact", head: false })
         .eq("dojo_id", currentDojoId)
         .eq("registration_status", "aprovado");
-      return Math.max(count ?? 1, 1);
+      
+      if (!studentProfiles) return 1;
+      
+      // Filter to only users with 'student' role
+      const { data: studentRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "student")
+        .in("user_id", studentProfiles.map(p => p.user_id));
+      
+      return Math.max(studentRoles?.length ?? 1, 1);
     },
     enabled: !!currentDojoId,
   });
