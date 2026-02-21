@@ -422,10 +422,6 @@ export default function Auth() {
           ? "Seu cadastro e do responsável estão pendentes de aprovação."
           : "Seu cadastro está pendente de aprovação pelo Sensei.",
       });
-        description: isMinor && addGuardian 
-          ? "Seu cadastro e do responsável estão pendentes de aprovação." 
-          : "Seu cadastro está pendente de aprovação por um Sensei.",
-      });
 
       // Clear form
       setSignupName("");
