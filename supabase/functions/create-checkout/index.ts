@@ -43,7 +43,6 @@ Deno.serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      payment_method_types: ["card", "pix"],
       line_items: [{ price: priceId, quantity: quantity ?? 1 }],
       mode: "subscription",
       success_url: `${origin}/settings?tab=planos&status=success`,
