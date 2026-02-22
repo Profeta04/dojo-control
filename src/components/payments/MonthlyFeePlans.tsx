@@ -10,15 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { CalendarClock, Plus, Loader2, Edit2, Trash2, GraduationCap, Play, ChevronDown } from "lucide-react";
+import { CalendarClock, Plus, Loader2, Edit2, Trash2, Play, ChevronDown } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 interface FeePlan {
   id: string;
   name: string;
@@ -27,8 +28,14 @@ interface FeePlan {
   is_active: boolean;
   dojo_id: string;
   created_by: string;
-  monthly_fee_plan_classes: { class_id: string }[];
+  martial_art_type: string;
 }
+
+const MARTIAL_ART_LABELS: Record<string, string> = {
+  judo: "Judô",
+  bjj: "Jiu-Jitsu (BJJ)",
+  judo_bjj: "Judô + BJJ",
+};
 
 export function MonthlyFeePlans() {
   const { user } = useAuth();
@@ -47,7 +54,7 @@ export function MonthlyFeePlans() {
     name: "",
     amount: "",
     due_day: "10",
-    selectedClasses: [] as string[],
+    martial_art_type: "judo" as string,
   });
 
   const { data: plans, isLoading: plansLoading } = useQuery({
@@ -56,7 +63,7 @@ export function MonthlyFeePlans() {
       if (!currentDojoId) return [];
       const { data, error } = await supabase
         .from("monthly_fee_plans")
-        .select("*, monthly_fee_plan_classes(class_id)")
+        .select("*")
         .eq("dojo_id", currentDojoId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -65,24 +72,8 @@ export function MonthlyFeePlans() {
     enabled: !!currentDojoId,
   });
 
-  const { data: classes } = useQuery({
-    queryKey: ["classes-for-plans", currentDojoId],
-    queryFn: async () => {
-      if (!currentDojoId) return [];
-      const { data, error } = await supabase
-        .from("classes")
-        .select("id, name")
-        .eq("dojo_id", currentDojoId)
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!currentDojoId,
-  });
-
   const resetForm = () => {
-    setFormData({ name: "", amount: "", due_day: "10", selectedClasses: [] });
+    setFormData({ name: "", amount: "", due_day: "10", martial_art_type: "judo" });
     setEditingPlan(null);
   };
 
@@ -97,44 +88,29 @@ export function MonthlyFeePlans() {
       name: plan.name,
       amount: String(plan.amount),
       due_day: String(plan.due_day),
-      selectedClasses: plan.monthly_fee_plan_classes.map((pc) => pc.class_id),
+      martial_art_type: plan.martial_art_type || "judo",
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
     if (!formData.name || !formData.amount || !currentDojoId || !user) return;
-    if (formData.selectedClasses.length === 0) {
-      toast({ title: "Selecione ao menos uma turma", variant: "destructive" });
-      return;
-    }
     setSaving(true);
     try {
       if (editingPlan) {
-        // Update plan
         const { error } = await supabase
           .from("monthly_fee_plans")
           .update({
             name: formData.name,
             amount: parseFloat(formData.amount),
             due_day: parseInt(formData.due_day),
+            martial_art_type: formData.martial_art_type,
           })
           .eq("id", editingPlan.id);
         if (error) throw error;
-
-        // Update classes: delete old, insert new
-        await supabase.from("monthly_fee_plan_classes").delete().eq("plan_id", editingPlan.id);
-        const classInserts = formData.selectedClasses.map((classId) => ({
-          plan_id: editingPlan.id,
-          class_id: classId,
-        }));
-        const { error: classError } = await supabase.from("monthly_fee_plan_classes").insert(classInserts);
-        if (classError) throw classError;
-
         toast({ title: "Plano atualizado!" });
       } else {
-        // Create plan
-        const { data: newPlan, error } = await supabase
+        const { error } = await supabase
           .from("monthly_fee_plans")
           .insert({
             dojo_id: currentDojoId,
@@ -142,19 +118,9 @@ export function MonthlyFeePlans() {
             amount: parseFloat(formData.amount),
             due_day: parseInt(formData.due_day),
             created_by: user.id,
-          })
-          .select("id")
-          .single();
+            martial_art_type: formData.martial_art_type,
+          });
         if (error) throw error;
-
-        // Insert classes
-        const classInserts = formData.selectedClasses.map((classId) => ({
-          plan_id: newPlan.id,
-          class_id: classId,
-        }));
-        const { error: classError } = await supabase.from("monthly_fee_plan_classes").insert(classInserts);
-        if (classError) throw classError;
-
         toast({ title: "Plano criado com sucesso!" });
       }
 
@@ -216,15 +182,6 @@ export function MonthlyFeePlans() {
     }
   };
 
-  const toggleClass = (classId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      selectedClasses: prev.selectedClasses.includes(classId)
-        ? prev.selectedClasses.filter((id) => id !== classId)
-        : [...prev.selectedClasses, classId],
-    }));
-  };
-
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
@@ -243,7 +200,7 @@ export function MonthlyFeePlans() {
                   </div>
                   <div>
                     <CardTitle className="text-base">Mensalidades Programadas</CardTitle>
-                    <CardDescription>Cobranças automáticas geradas mensalmente</CardDescription>
+                    <CardDescription>Cobranças por arte marcial geradas mensalmente</CardDescription>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -280,10 +237,13 @@ export function MonthlyFeePlans() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-sm truncate">{plan.name}</span>
+                            <Badge variant="outline" className="text-[10px]">
+                              {MARTIAL_ART_LABELS[plan.martial_art_type] || plan.martial_art_type}
+                            </Badge>
                             {!plan.is_active && <Badge variant="secondary" className="text-[10px]">Pausado</Badge>}
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatCurrency(plan.amount)} • Vencimento dia {plan.due_day} • {plan.monthly_fee_plan_classes.length} turma(s)
+                            {formatCurrency(plan.amount)} • Vencimento dia {plan.due_day}
                           </p>
                         </div>
                       </div>
@@ -318,7 +278,7 @@ export function MonthlyFeePlans() {
               {editingPlan ? "Editar Plano" : "Novo Plano de Mensalidade"}
             </DialogTitle>
             <DialogDescription>
-              Defina o valor, dia de vencimento e turmas que receberão a cobrança mensal.
+              Defina o valor, dia de vencimento e a arte marcial para a cobrança mensal.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -327,8 +287,29 @@ export function MonthlyFeePlans() {
               <Input
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ex: Mensalidade Infantil"
+                placeholder="Ex: Mensalidade Judô"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Arte Marcial</Label>
+              <Select
+                value={formData.martial_art_type}
+                onValueChange={(value) => setFormData({ ...formData, martial_art_type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a arte" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="judo">🥋 Judô</SelectItem>
+                  <SelectItem value="bjj">🥋 Jiu-Jitsu (BJJ)</SelectItem>
+                  <SelectItem value="judo_bjj">🥋 Judô + BJJ (multi-arte)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {formData.martial_art_type === "judo_bjj"
+                  ? "Será gerada apenas para alunos matriculados em turmas de AMBAS as artes."
+                  : `Será gerada para todos os alunos em turmas de ${MARTIAL_ART_LABELS[formData.martial_art_type] || formData.martial_art_type}.`}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -354,35 +335,10 @@ export function MonthlyFeePlans() {
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Turmas</Label>
-              <div className="border rounded-lg p-3 space-y-2 max-h-[200px] overflow-y-auto">
-                {classes && classes.length > 0 ? (
-                  classes.map((cls) => (
-                    <label
-                      key={cls.id}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1.5 rounded-md transition-colors"
-                    >
-                      <Checkbox
-                        checked={formData.selectedClasses.includes(cls.id)}
-                        onCheckedChange={() => toggleClass(cls.id)}
-                      />
-                      <span className="text-sm">{cls.name}</span>
-                    </label>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhuma turma ativa encontrada.</p>
-                )}
-              </div>
-              {formData.selectedClasses.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {formData.selectedClasses.length} turma(s) selecionada(s)
-                </p>
-              )}
-            </div>
             <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
               <p className="text-xs text-muted-foreground">
-                💡 A mensalidade será gerada automaticamente todo mês para os alunos das turmas selecionadas. Alunos bolsistas são ignorados.
+                💡 A mensalidade será gerada automaticamente todo mês. Alunos bolsistas são ignorados. 
+                {formData.martial_art_type === "judo_bjj" && " Mensalidades individuais de Judô/BJJ serão substituídas pela combinada."}
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -391,7 +347,7 @@ export function MonthlyFeePlans() {
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={!formData.name || !formData.amount || formData.selectedClasses.length === 0 || saving}
+                disabled={!formData.name || !formData.amount || saving}
               >
                 {saving ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando...</>
@@ -430,7 +386,7 @@ export function MonthlyFeePlans() {
           <AlertDialogHeader>
             <AlertDialogTitle>Gerar mensalidades agora?</AlertDialogTitle>
             <AlertDialogDescription>
-              As mensalidades do mês atual serão geradas para todos os alunos elegíveis dos planos ativos. Alunos bolsistas e que já possuem mensalidade neste mês serão ignorados.
+              As mensalidades do mês atual serão geradas por arte marcial. Alunos em Judô+BJJ receberão apenas a mensalidade combinada (substituindo individuais). Bolsistas e pagamentos existentes são ignorados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

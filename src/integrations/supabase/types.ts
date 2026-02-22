@@ -573,6 +573,7 @@ export type Database = {
           due_day: number
           id: string
           is_active: boolean
+          martial_art_type: string
           name: string
           updated_at: string
         }
@@ -584,6 +585,7 @@ export type Database = {
           due_day?: number
           id?: string
           is_active?: boolean
+          martial_art_type?: string
           name: string
           updated_at?: string
         }
@@ -595,6 +597,7 @@ export type Database = {
           due_day?: number
           id?: string
           is_active?: boolean
+          martial_art_type?: string
           name?: string
           updated_at?: string
         }
