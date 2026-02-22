@@ -77,7 +77,8 @@ export default function Students() {
   const [actionLoading, setActionLoading] = useState(false);
   const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
   const [scholarshipConfirm, setScholarshipConfirm] = useState<Profile | null>(null);
-  const [approvalBelt, setApprovalBelt] = useState<BeltGrade>("branca");
+  const [approvalBelts, setApprovalBelts] = useState<{ martial_art: string; belt_grade: BeltGrade }[]>([]);
+  const [loadingBelts, setLoadingBelts] = useState(false);
 
   // Student management dialogs
   const [editStudent, setEditStudent] = useState<Profile | null>(null);
@@ -190,21 +191,59 @@ export default function Students() {
     return null;
   }
 
+  const fetchStudentBelts = async (studentId: string) => {
+    setLoadingBelts(true);
+    try {
+      const { data } = await supabase
+        .from("student_belts")
+        .select("martial_art, belt_grade")
+        .eq("user_id", studentId);
+      if (data && data.length > 0) {
+        setApprovalBelts(data.map((b: any) => ({ martial_art: b.martial_art, belt_grade: b.belt_grade as BeltGrade })));
+      } else {
+        // Fallback: use profile belt_grade
+        const student = students?.find((s) => s.user_id === studentId);
+        setApprovalBelts([{ martial_art: "judo", belt_grade: (student?.belt_grade as BeltGrade) || "branca" }]);
+      }
+    } catch {
+      setApprovalBelts([{ martial_art: "judo", belt_grade: "branca" }]);
+    } finally {
+      setLoadingBelts(false);
+    }
+  };
+
+  const MARTIAL_ART_LABELS: Record<string, string> = {
+    judo: "Judô",
+    bjj: "Jiu-Jitsu",
+  };
+
   const handleApprove = async () => {
     if (!selectedStudent) return;
     setActionLoading(true);
 
     try {
-      // Update profile status with selected belt
+      // Use the first belt as profile belt_grade
+      const primaryBelt = approvalBelts[0]?.belt_grade || "branca";
+
+      // Update profile status
       await (supabase
         .from("profiles")
         .update({
           registration_status: "aprovado",
           approved_at: new Date().toISOString(),
           approved_by: user!.id,
-          belt_grade: approvalBelt,
+          belt_grade: primaryBelt,
         } as any)
         .eq("user_id", selectedStudent.user_id) as any);
+
+      // Update each student_belt record
+      for (const belt of approvalBelts) {
+        await supabase
+          .from("student_belts")
+          .update({ belt_grade: belt.belt_grade } as any)
+          .eq("user_id", selectedStudent.user_id)
+          .eq("martial_art", belt.martial_art);
+      }
 
       // Assign student role
       await supabase.rpc("assign_user_role", {
@@ -550,7 +589,7 @@ export default function Students() {
                       className="text-success hover:text-success/80 hover:bg-success/10 h-8 px-2 sm:px-3"
                       onClick={() => {
                         setSelectedStudent(student);
-                        setApprovalBelt((student.belt_grade as BeltGrade) || "branca");
+                        fetchStudentBelts(student.user_id);
                         setActionType("approve");
                       }}
                     >
@@ -800,7 +839,7 @@ export default function Students() {
       </Tabs>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!actionType} onOpenChange={() => { setActionType(null); setSelectedStudent(null); setApprovalBelt("branca"); }}>
+      <AlertDialog open={!!actionType} onOpenChange={() => { setActionType(null); setSelectedStudent(null); setApprovalBelts([]); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -815,22 +854,44 @@ export default function Students() {
 
           {/* Belt selector - only on approve */}
           {actionType === "approve" && (
-            <div className="space-y-2 py-2">
-              <label className="text-sm font-medium">Faixa inicial</label>
-              <Select value={approvalBelt} onValueChange={(v) => setApprovalBelt(v as BeltGrade)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(BELT_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-3 py-2">
+              <label className="text-sm font-medium">Confirmação de Faixa(s)</label>
+              {loadingBelts ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando faixas...
+                </div>
+              ) : approvalBelts.length > 0 ? (
+                approvalBelts.map((belt, idx) => (
+                  <div key={belt.martial_art} className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">
+                      🥋 {MARTIAL_ART_LABELS[belt.martial_art] || belt.martial_art}
+                    </label>
+                    <Select
+                      value={belt.belt_grade}
+                      onValueChange={(v) => {
+                        setApprovalBelts((prev) =>
+                          prev.map((b, i) => i === idx ? { ...b, belt_grade: v as BeltGrade } : b)
+                        );
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(BELT_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">Nenhuma faixa registrada.</p>
+              )}
               <p className="text-xs text-muted-foreground">
-                Selecione a faixa atual do aluno. Padrão: Branca.
+                Confirme a(s) faixa(s) do aluno antes de aprovar.
               </p>
             </div>
           )}
