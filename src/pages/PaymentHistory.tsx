@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   CheckCircle2, Clock, AlertTriangle, Receipt, User, ShieldAlert, Tag,
-  ChevronDown, Loader2, CreditCard, DollarSign,
+  ChevronDown, Loader2, CreditCard, DollarSign, Trash2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
@@ -614,6 +614,33 @@ export default function PaymentHistoryPage() {
                     Atrasado
                   </Button>
                 </div>
+              </div>
+
+              {/* Delete */}
+              <div className="pt-4 border-t">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async () => {
+                    if (!selectedPayment) return;
+                    setFormLoading(true);
+                    try {
+                      const { error } = await supabase.from("payments").delete().eq("id", selectedPayment.id);
+                      if (error) throw error;
+                      toast({ title: "Pagamento excluído com sucesso" });
+                      setEditDialogOpen(false);
+                      queryClient.invalidateQueries({ queryKey: ["payments"] });
+                    } catch (error: any) {
+                      toast({ title: "Erro", description: error.message || "Erro ao excluir pagamento", variant: "destructive" });
+                    } finally {
+                      setFormLoading(false);
+                    }
+                  }}
+                  disabled={formLoading}
+                  className="w-full"
+                >
+                  {formLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Trash2 className="h-4 w-4 mr-2" />Excluir Pagamento</>}
+                </Button>
               </div>
             </div>
           )}
