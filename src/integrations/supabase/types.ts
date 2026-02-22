@@ -1038,6 +1038,60 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_promotions: {
+        Row: {
+          applicable_tiers: string[] | null
+          code: string | null
+          created_at: string
+          created_by: string | null
+          current_uses: number
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          name: string
+          type: string
+          updated_at: string
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_tiers?: string[] | null
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          name: string
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_tiers?: string[] | null
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_uses?: number
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          name?: string
+          type?: string
+          updated_at?: string
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       task_templates: {
         Row: {
           belt_level: string
