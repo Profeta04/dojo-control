@@ -398,7 +398,7 @@ export default function GraduationsPage() {
         <PageHeader title="Graduações" description="Registro de promoções de faixa" />
 
         {/* Students by Class Tabs */}
-        <section className="mb-6 sm:mb-8">
+        <section className="mb-6 sm:mb-8" data-tour="graduation-form">
           <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
             <Award className="h-5 w-5 text-accent" />
             Alunos por Turma

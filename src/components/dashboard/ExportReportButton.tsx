@@ -207,7 +207,7 @@ export function ExportReportButton() {
     }
   };
 
-  return (
+  return (<div data-tour="export-report">
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
@@ -256,5 +256,6 @@ export function ExportReportButton() {
         </div>
       </DialogContent>
     </Dialog>
+    </div>
   );
 }

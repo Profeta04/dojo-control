@@ -236,7 +236,7 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
   return (
     <div className="space-y-6">
       {/* Primary Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" data-tour="stats-cards">
         {canManageStudents && (
           <Link to="/students">
             <Card className="hover:border-accent/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:shadow-lg">

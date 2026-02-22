@@ -158,28 +158,14 @@ const senseiTutorials: Record<string, TabTutorial> = {
     title: "Gestão de Alunos",
     summary:
       "Veja alunos aprovados e pendentes. Aprove novos cadastros definindo faixa e turma.",
-    tip: "Use a busca para encontrar alunos rapidamente.",
+    tip: "Use as abas para filtrar alunos por status.",
     steps: [
-      {
-        selector: '[data-tour="student-search"]',
-        title: "Busca de Alunos",
-        description:
-          "Digite o nome do aluno para filtrar a lista rapidamente.",
-        position: "bottom",
-      },
       {
         selector: '[role="tablist"]',
         title: "Abas de Status",
         description:
-          "Alterne entre alunos Aprovados, Pendentes e Rejeitados.",
+          "Alterne entre alunos Pendentes, Aprovados, Rejeitados e Responsáveis.",
         position: "bottom",
-      },
-      {
-        selector: '[data-tour="student-list"]',
-        title: "Lista de Alunos",
-        description:
-          "Toque em um aluno para ver perfil, editar dados, graduar ou gerenciar pagamentos.",
-        position: "top",
       },
     ],
   },

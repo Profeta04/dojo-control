@@ -440,7 +440,7 @@ export default function StudentPaymentsPage() {
 
       {/* Sectioned Payments */}
       {payments && payments.length > 0 ? (
-        <div className="space-y-6">
+        <div className="space-y-6" data-tour="payment-list">
           {SECTION_CONFIG.map((section, sectionIdx) => {
             const sectionPayments = groupedPayments[section.key];
             if (sectionPayments.length === 0) return null;

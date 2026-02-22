@@ -450,7 +450,7 @@ export function ClassesTab() {
         <div className="flex justify-end">
           <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
             <DialogTrigger asChild>
-              <Button className="bg-accent hover:bg-accent/90">
+              <Button className="bg-accent hover:bg-accent/90" data-tour="create-class">
                 <Plus className="h-4 w-4 mr-2" />
                 Nova Turma
               </Button>

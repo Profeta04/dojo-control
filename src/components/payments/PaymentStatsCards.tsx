@@ -63,7 +63,7 @@ export function PaymentStatsCards({ stats, formatCurrency, variant = "admin" }: 
   }
 
   return (
-    <div className={`grid gap-3 ${variant === "admin" && stats.pendingReceipts ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"} mb-6`}>
+    <div data-tour="payment-stats" className={`grid gap-3 ${variant === "admin" && stats.pendingReceipts ? "grid-cols-2 sm:grid-cols-5" : "grid-cols-2 sm:grid-cols-4"} mb-6`}>
       {cards.map((card) => {
         const Icon = card.icon;
         return (

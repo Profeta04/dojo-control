@@ -38,7 +38,7 @@ export function XPBar({ compact = false }: XPBarProps) {
   }
 
   return (
-    <Card className="overflow-hidden border-accent/20">
+    <Card className="overflow-hidden border-accent/20" data-tour="xp-bar">
       <div className="h-1 bg-gradient-to-r from-accent via-accent/80 to-accent/50" />
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
