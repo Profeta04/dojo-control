@@ -21,9 +21,17 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
   const [rect, setRect] = useState<SpotlightRect | null>(null);
   const [ready, setReady] = useState(false);
 
-  const step = steps[currentStep];
+  // Filter to only steps whose elements exist in the DOM
+  const [visibleSteps, setVisibleSteps] = useState<TourStep[]>([]);
+
+  useEffect(() => {
+    const available = steps.filter((s) => document.querySelector(s.selector));
+    setVisibleSteps(available.length > 0 ? available : steps);
+  }, [steps]);
+
+  const step = visibleSteps[currentStep];
   const isFirst = currentStep === 0;
-  const isLast = currentStep === steps.length - 1;
+  const isLast = currentStep === visibleSteps.length - 1;
 
   const measure = useCallback(() => {
     if (!step) return;
@@ -153,7 +161,7 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
           <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{step?.description}</p>
 
           <div className="flex items-center justify-between mt-4">
-            <span className="text-xs text-muted-foreground">{currentStep + 1} / {steps.length}</span>
+            <span className="text-xs text-muted-foreground">{currentStep + 1} / {visibleSteps.length}</span>
             <div className="flex gap-2">
               {!isFirst && (
                 <Button size="sm" variant="ghost" onClick={handlePrev} className="h-7 px-2 text-xs">
