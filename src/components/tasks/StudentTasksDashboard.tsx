@@ -162,13 +162,15 @@ export function StudentTasksDashboard() {
     return allTemplates
       .filter(t => t.options && t.correct_option !== null)
       .sort((a, b) => {
-        // Infantil questions first
+        // 1. Infantil (simpler language) always first
         const audDiff = (AUDIENCE_ORDER[a.audience] ?? 1) - (AUDIENCE_ORDER[b.audience] ?? 1);
         if (audDiff !== 0) return audDiff;
-        const beltDiff = (BELT_ORDER[a.belt_level] ?? 99) - (BELT_ORDER[b.belt_level] ?? 99);
-        if (beltDiff !== 0) return beltDiff;
+        // 2. Difficulty: easy → medium → hard
         const diffDiff = (DIFFICULTY_ORDER[a.difficulty] ?? 1) - (DIFFICULTY_ORDER[b.difficulty] ?? 1);
         if (diffDiff !== 0) return diffDiff;
+        // 3. Belt as tiebreaker within same difficulty
+        const beltDiff = (BELT_ORDER[a.belt_level] ?? 99) - (BELT_ORDER[b.belt_level] ?? 99);
+        if (beltDiff !== 0) return beltDiff;
         return a.title.localeCompare(b.title);
       });
   }, [allTemplates]);
