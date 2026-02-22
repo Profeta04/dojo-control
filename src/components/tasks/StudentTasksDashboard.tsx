@@ -44,6 +44,12 @@ const MARTIAL_ART_LABELS: Record<string, string> = {
   bjj: "Jiu-Jitsu",
 };
 
+// Map class martial_art values to task_template martial_art values
+const CLASS_TO_TEMPLATE_ART: Record<string, string> = {
+  judo: "judo",
+  bjj: "jiu-jitsu",
+};
+
 export function StudentTasksDashboard() {
   const { user } = useAuth();
   const [selectedArt, setSelectedArt] = useState<string | null>(null);
@@ -75,10 +81,11 @@ export function StudentTasksDashboard() {
   const isMultiArt = studentMartialArts.length > 1;
 
   // 2. Fetch ALL templates for the selected martial art, paginated
+  const templateArt = activeArt ? (CLASS_TO_TEMPLATE_ART[activeArt] || activeArt) : null;
   const { data: allTemplates = [], isLoading: loadingTemplates } = useQuery({
-    queryKey: ["progressive-templates", activeArt],
+    queryKey: ["progressive-templates", templateArt],
     queryFn: async () => {
-      if (!activeArt) return [];
+      if (!templateArt) return [];
       const templates: TaskTemplate[] = [];
       let from = 0;
       const PAGE = 1000;
@@ -86,7 +93,7 @@ export function StudentTasksDashboard() {
         const { data, error } = await supabase
           .from("task_templates")
           .select("id, title, description, options, correct_option, belt_level, difficulty, martial_art, category")
-          .eq("martial_art", activeArt)
+          .eq("martial_art", templateArt)
           .range(from, from + PAGE - 1);
         if (error) throw error;
         if (data) templates.push(...(data as TaskTemplate[]));
@@ -95,7 +102,7 @@ export function StudentTasksDashboard() {
       }
       return templates;
     },
-    enabled: !!activeArt,
+    enabled: !!templateArt,
   });
 
   // 3. Fetch student's existing task records (completion tracking)
