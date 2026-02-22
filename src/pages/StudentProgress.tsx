@@ -33,6 +33,33 @@ export default function StudentProgress() {
 
       const studentIds = profiles.map(p => p.user_id);
 
+      // Get each student's martial art via class enrollment
+      const { data: enrollments } = await supabase
+        .from("class_students")
+        .select("student_id, class_id, classes(martial_art)")
+        .in("student_id", studentIds);
+
+      // Map student -> martial art (first enrolled class)
+      const studentMartialArt = new Map<string, string>();
+      const martialArts = new Set<string>();
+      (enrollments || []).forEach((e: any) => {
+        const ma = e.classes?.martial_art || "judo";
+        if (!studentMartialArt.has(e.student_id)) {
+          studentMartialArt.set(e.student_id, ma);
+        }
+        martialArts.add(ma);
+      });
+
+      // Count total templates per martial art
+      const templateCounts = new Map<string, number>();
+      for (const ma of martialArts) {
+        const { count } = await supabase
+          .from("task_templates")
+          .select("id", { count: "exact", head: true })
+          .eq("martial_art", ma);
+        templateCounts.set(ma, count || 0);
+      }
+
       const [tasksRes, xpRes] = await Promise.all([
         supabase.from("tasks").select("assigned_to, status").in("assigned_to", studentIds),
         supabase.from("student_xp").select("user_id, total_xp, level").in("user_id", studentIds),
@@ -45,7 +72,8 @@ export default function StudentProgress() {
       return profiles.map(p => {
         const studentTasks = tasks.filter(t => t.assigned_to === p.user_id);
         const completed = studentTasks.filter(t => t.status === "concluida").length;
-        const total = studentTasks.length;
+        const ma = studentMartialArt.get(p.user_id) || "judo";
+        const total = templateCounts.get(ma) || 0;
         const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
         const xp = xpMap.get(p.user_id);
 
