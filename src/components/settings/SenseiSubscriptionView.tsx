@@ -567,8 +567,8 @@ export function SenseiSubscriptionView() {
                   { name: "Pagamentos e cobranças", basico: true, pro: true, premium: true },
                   { name: "Notificações push", basico: true, pro: true, premium: true },
                   { name: "Gamificação (XP/Conquistas)", basico: true, pro: true, premium: true },
-                  { name: "QR Code check-in", basico: false, pro: true, premium: true },
-                  { name: "Relatórios PDF", basico: false, pro: false, premium: true },
+                  { name: "Relatórios PDF", basico: false, pro: true, premium: true },
+                  { name: "QR Code check-in", basico: false, pro: false, premium: true },
                   { name: "Multi-dojo", basico: false, pro: false, premium: true },
                 ].map((row) => (
                   <tr key={row.name} className="border-b last:border-0">
