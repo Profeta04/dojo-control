@@ -421,6 +421,7 @@ export type Database = {
           from_belt: string | null
           graduation_date: string
           id: string
+          martial_art: string
           notes: string | null
           student_id: string
           to_belt: string
@@ -431,6 +432,7 @@ export type Database = {
           from_belt?: string | null
           graduation_date: string
           id?: string
+          martial_art?: string
           notes?: string | null
           student_id: string
           to_belt: string
@@ -441,6 +443,7 @@ export type Database = {
           from_belt?: string | null
           graduation_date?: string
           id?: string
+          martial_art?: string
           notes?: string | null
           student_id?: string
           to_belt?: string
@@ -1001,6 +1004,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      student_belts: {
+        Row: {
+          belt_grade: string
+          id: string
+          martial_art: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          belt_grade?: string
+          id?: string
+          martial_art?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          belt_grade?: string
+          id?: string
+          martial_art?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       student_xp: {
         Row: {

@@ -3,13 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Building2, MapPin } from "lucide-react";
+import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Building2, MapPin, Swords } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { AvatarUpload } from "./AvatarUpload";
+
+const MARTIAL_ART_LABELS: Record<string, string> = {
+  judo: "Judô",
+  bjj: "Jiu-Jitsu",
+};
 
 export function StudentProfileCard() {
   const { profile, user } = useAuth();
@@ -59,7 +64,23 @@ export function StudentProfileCard() {
     enabled: !!user?.id,
   });
 
+  // Fetch student belts (multi-art)
+  const { data: studentBelts = [] } = useQuery({
+    queryKey: ["student-belts", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("student_belts")
+        .select("martial_art, belt_grade")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   const lastGraduation = graduationHistory?.[0];
+  const hasMultipleBelts = studentBelts.length > 1;
 
   if (!profile) {
     return (
@@ -91,10 +112,19 @@ export function StudentProfileCard() {
           {/* Avatar */}
           <AvatarUpload />
 
-          {/* Belt */}
-          {profile.belt_grade && (
+          {/* Belts */}
+          {studentBelts.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {studentBelts.map((sb) => (
+                <div key={sb.martial_art} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/50">
+                  <BeltBadge grade={sb.belt_grade as any} size="sm" />
+                  <span className="text-xs text-muted-foreground">{MARTIAL_ART_LABELS[sb.martial_art] || sb.martial_art}</span>
+                </div>
+              ))}
+            </div>
+          ) : profile.belt_grade ? (
             <BeltBadge grade={profile.belt_grade as any} size="lg" />
-          )}
+          ) : null}
 
           {/* Federated badge */}
           <Badge variant={isFederated ? "default" : "secondary"} className="flex items-center gap-1">

@@ -53,10 +53,15 @@ interface GraduationWithStudent extends GraduationHistory {
 }
 
 const BELT_ORDER: BeltGrade[] = [
-  "branca", "cinza", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
+  "branca", "bordo", "cinza", "azul_escura", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
   "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan",
   "preta_6dan", "preta_7dan", "preta_8dan", "preta_9dan", "preta_10dan",
 ];
+
+const MARTIAL_ART_LABELS: Record<string, string> = {
+  judo: "Judô",
+  bjj: "Jiu-Jitsu",
+};
 
 export default function GraduationsPage() {
   const { user, canManageStudents, isAdmin, loading: authLoading } = useAuth();
@@ -228,6 +233,22 @@ export default function GraduationsPage() {
     setFormLoading(true);
 
     try {
+      // Determine martial art from the selected tab (class)
+      // Find the class this student is in from the current tab
+      const currentTab = tabs.find(t => {
+        return t.students.some(s => s.user_id === selectedStudent.user_id);
+      });
+      // Get class martial art
+      let martialArt = "judo";
+      if (currentTab && currentTab.id !== "no-class") {
+        const { data: classData } = await supabase
+          .from("classes")
+          .select("martial_art")
+          .eq("id", currentTab.id)
+          .single();
+        if (classData) martialArt = classData.martial_art;
+      }
+
       const { error: historyError } = await supabase.from("graduation_history").insert({
         student_id: selectedStudent.user_id,
         from_belt: selectedStudent.belt_grade,
@@ -235,10 +256,24 @@ export default function GraduationsPage() {
         approved_by: user.id,
         notes: notes || null,
         graduation_date: new Date().toISOString().split("T")[0],
+        martial_art: martialArt,
       });
 
       if (historyError) throw historyError;
 
+      // Update student_belts table
+      const { error: beltError } = await supabase
+        .from("student_belts")
+        .upsert({
+          user_id: selectedStudent.user_id,
+          martial_art: martialArt,
+          belt_grade: newBelt,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,martial_art" });
+
+      if (beltError) throw beltError;
+
+      // Also update profiles.belt_grade as legacy fallback
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ belt_grade: newBelt })
@@ -248,7 +283,7 @@ export default function GraduationsPage() {
 
       toast({
         title: "Graduação registrada!",
-        description: `${selectedStudent.name} foi promovido(a) para ${BELT_LABELS[newBelt]}.`,
+        description: `${selectedStudent.name} foi promovido(a) para ${BELT_LABELS[newBelt]} (${MARTIAL_ART_LABELS[martialArt] || martialArt}).`,
       });
 
       setPromotionDialogOpen(false);
