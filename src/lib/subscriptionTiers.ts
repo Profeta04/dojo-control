@@ -49,9 +49,9 @@ export const SUBSCRIPTION_TIERS = {
     features: [
       "Até 30 alunos",
       "Tudo do Básico",
-      "QR Code check-in automático",
+      "Relatórios avançados (PDF)",
     ],
-    blocked_features: ["pdf_reports", "multi_dojo"] as FeatureKey[],
+    blocked_features: ["qr_checkin", "multi_dojo"] as FeatureKey[],
   },
   premium: {
     name: "Premium",
@@ -64,7 +64,7 @@ export const SUBSCRIPTION_TIERS = {
       "Mínimo 20 alunos (R$7/aluno)",
       "Alunos ilimitados",
       "Tudo do Pro",
-      "Relatórios avançados (PDF)",
+      "QR Code check-in automático",
       "Multi-dojo",
     ],
     blocked_features: [] as FeatureKey[],
