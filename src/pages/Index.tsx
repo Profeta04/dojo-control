@@ -47,7 +47,7 @@ const Index = () => {
   const currentDojo = userDojos.length > 0 ? userDojos[0] : null;
   const subtitle = user && settings.welcome_message
     ? settings.welcome_message
-    : "Sistema completo de gestão para seu dojo de judô";
+    : "Sistema completo de gestão para seu dojo";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -112,7 +112,7 @@ const Index = () => {
 
       {/* Footer */}
       <footer className="py-4 sm:py-6 text-center text-xs sm:text-sm text-muted-foreground border-t border-border/60 px-4 safe-area-inset-bottom">
-        <p>© {new Date().getFullYear()} Dojo Control - Sistema de Gestão de Judô</p>
+        <p>© {new Date().getFullYear()} Dojo Control - Sistema de Gestão</p>
       </footer>
     </div>
   );
