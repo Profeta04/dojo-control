@@ -326,7 +326,7 @@ export function AttendanceTab() {
       <div className="flex items-center gap-2">
         <Label htmlFor="date-select" className="sr-only">Selecionar data</Label>
         <Select value={selectedDate} onValueChange={setSelectedDate}>
-          <SelectTrigger className="w-[200px]" id="date-select">
+          <SelectTrigger className="w-[200px]" id="date-select" data-tour="attendance-date">
             <Calendar className="h-4 w-4 mr-2" />
             <SelectValue />
           </SelectTrigger>
@@ -350,7 +350,7 @@ export function AttendanceTab() {
       </div>
 
       {schedules && schedules.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" data-tour="attendance-class-select">
           {schedules.map((schedule) => {
             const status = getAttendanceStatus(schedule);
             const stats = getAttendanceStats(schedule);
