@@ -44,7 +44,7 @@ export function GraduationTimeline() {
   }
 
   return (
-    <Card>
+    <Card data-tour="graduation-timeline">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <Award className="h-5 w-5 text-accent" />

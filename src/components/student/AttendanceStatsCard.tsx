@@ -53,8 +53,8 @@ export function AttendanceStatsCard() {
   });
 
   if (isLoading) {
-    return (
-      <Card>
+  return (
+    <Card data-tour="attendance-stats">
         <CardHeader className="pb-3">
           <Skeleton className="h-5 w-40" />
         </CardHeader>
@@ -82,7 +82,7 @@ export function AttendanceStatsCard() {
   };
 
   return (
-    <Card>
+    <Card data-tour="attendance-stats">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <CalendarCheck className="h-5 w-5 text-accent" />

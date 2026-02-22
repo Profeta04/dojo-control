@@ -26,8 +26,22 @@ const studentTutorials: Record<string, TabTutorial> = {
         selector: '[data-tour="profile-card"]',
         title: "Card de Perfil",
         description:
-          "Seu card pessoal com nome, faixa e informações de contato. Toque no avatar para trocar sua foto.",
+          "Seu card pessoal com nome, faixa, turmas e informações de contato. Toque no avatar para trocar sua foto.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="guardian-card"]',
+        title: "Dados do Responsável",
+        description:
+          "Informações do seu responsável cadastrado, como nome, e-mail e telefone.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="graduation-timeline"]',
+        title: "Histórico de Graduações",
+        description:
+          "Linha do tempo com todas as suas graduações de faixa registradas pelo sensei.",
+        position: "top",
       },
       {
         selector: '[data-tour="schedule-list"]',
@@ -35,6 +49,20 @@ const studentTutorials: Record<string, TabTutorial> = {
         description:
           "Veja os próximos treinos agendados com dia, horário e turma.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="attendance-stats"]',
+        title: "Estatísticas de Presença",
+        description:
+          "Acompanhe sua frequência: total de aulas, presenças, faltas e sua sequência atual.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="xp-card"]',
+        title: "XP e Conquistas",
+        description:
+          "Veja seu nível, barra de XP e as conquistas desbloqueadas. Continue treinando para subir de nível!",
+        position: "top",
       },
     ],
   },
