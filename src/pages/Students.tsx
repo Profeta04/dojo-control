@@ -33,12 +33,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock, Plus } from "lucide-react";
 import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,6 +91,12 @@ export default function Students() {
   const [blockReason, setBlockReason] = useState("");
 
   const [deleteStudent, setDeleteStudent] = useState<Profile | null>(null);
+
+  // Enrollment after approval
+  const [enrollStudent, setEnrollStudent] = useState<Profile | null>(null);
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<Set<string>>(new Set());
+  const [enrollLoading, setEnrollLoading] = useState(false);
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
@@ -276,16 +283,60 @@ export default function Students() {
 
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+
+      // Fetch available classes for enrollment dialog
+      const approvedStudent = selectedStudent;
+      setActionLoading(false);
+      setSelectedStudent(null);
+      setActionType(null);
+
+      try {
+        let classQuery = supabase.from("classes").select("id, name, martial_art").eq("is_active", true) as any;
+        if (currentDojoId) classQuery = classQuery.eq("dojo_id", currentDojoId);
+        const { data: classes } = await classQuery;
+        if (classes && classes.length > 0) {
+          setAvailableClasses(classes);
+          setSelectedClassIds(new Set());
+          setEnrollStudent(approvedStudent);
+        }
+      } catch {}
     } catch (error) {
       toast({
         title: "Erro",
         description: "Erro ao aprovar aluno",
         variant: "destructive",
       });
-    } finally {
       setActionLoading(false);
       setSelectedStudent(null);
       setActionType(null);
+    }
+  };
+
+  const MARTIAL_ART_CLASS_LABELS: Record<string, string> = {
+    judo: "Judô",
+    bjj: "Jiu-Jitsu",
+  };
+
+  const handleEnrollAfterApproval = async () => {
+    if (!enrollStudent || selectedClassIds.size === 0) return;
+    setEnrollLoading(true);
+    try {
+      for (const classId of selectedClassIds) {
+        await supabase.from("class_students").insert({
+          class_id: classId,
+          student_id: enrollStudent.user_id,
+        });
+      }
+      toast({
+        title: "Aluno matriculado!",
+        description: `${enrollStudent.name} foi adicionado a ${selectedClassIds.size} turma(s).`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao matricular aluno", variant: "destructive" });
+    } finally {
+      setEnrollLoading(false);
+      setEnrollStudent(null);
     }
   };
 
@@ -1037,6 +1088,61 @@ export default function Students() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Enrollment After Approval Dialog */}
+      <Dialog open={!!enrollStudent} onOpenChange={(open) => { if (!open) setEnrollStudent(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              Matricular em Turma
+            </DialogTitle>
+            <DialogDescription>
+              {enrollStudent?.name} foi aprovado! Selecione as turmas para matriculá-lo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2 max-h-[300px] overflow-y-auto">
+            {availableClasses.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma turma disponível.</p>
+            ) : (
+              availableClasses.map((cls) => (
+                <label
+                  key={cls.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/60 hover:bg-muted/30 cursor-pointer transition-colors"
+                >
+                  <Checkbox
+                    checked={selectedClassIds.has(cls.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedClassIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(cls.id);
+                        else next.delete(cls.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <div>
+                    <p className="text-sm font-medium">{cls.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {MARTIAL_ART_CLASS_LABELS[cls.martial_art] || cls.martial_art}
+                    </p>
+                  </div>
+                </label>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEnrollStudent(null)}>Pular</Button>
+            <Button
+              onClick={handleEnrollAfterApproval}
+              disabled={enrollLoading || selectedClassIds.size === 0}
+            >
+              {enrollLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Matricular ({selectedClassIds.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
     </RequireApproval>
   );
