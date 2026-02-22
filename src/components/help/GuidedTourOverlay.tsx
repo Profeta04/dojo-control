@@ -79,66 +79,33 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
     if (!isFirst) setCurrentStep((s) => s - 1);
   };
 
-  // Clamp tooltip so it doesn't overflow viewport
   const getTooltipStyle = (): React.CSSProperties => {
     if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)", position: "fixed" };
-    const pos = step?.position || "bottom";
-    const gap = 14;
-    const tooltipW = 320;
+
+    const gap = 12;
+    const margin = 8;
     const viewW = window.innerWidth;
     const viewH = window.innerHeight;
+    const tooltipH = 160;
 
-    let top = 0;
-    let left = 0;
-
-    switch (pos) {
-      case "top":
-        top = rect.top - gap;
-        left = rect.left + rect.width / 2;
-        // Check if tooltip fits above
-        if (top < 120) {
-          top = rect.top + rect.height + gap;
-        } else {
-          top = rect.top - gap;
-        }
-        break;
-      case "left":
-        top = rect.top + rect.height / 2;
-        left = rect.left - gap - tooltipW;
-        if (left < 8) left = rect.left + rect.width + gap;
-        break;
-      case "right":
-        top = rect.top + rect.height / 2;
-        left = rect.left + rect.width + gap;
-        if (left + tooltipW > viewW - 8) left = rect.left - gap - tooltipW;
-        break;
-      default: // bottom
-        top = rect.top + rect.height + gap;
-        left = rect.left + rect.width / 2;
-        // If goes below viewport, show above
-        if (top + 160 > viewH) {
-          top = rect.top - gap - 160;
-        }
-        break;
+    // Always position below or above the element
+    let top: number;
+    const spaceBelow = viewH - (rect.top + rect.height + gap);
+    if (spaceBelow >= tooltipH) {
+      top = rect.top + rect.height + gap;
+    } else {
+      top = Math.max(margin, rect.top - gap - tooltipH);
     }
 
-    // Clamp horizontal
-    const halfW = tooltipW / 2;
-    if (pos === "top" || pos === "bottom") {
-      left = Math.max(halfW + 8, Math.min(left, viewW - halfW - 8));
-      return {
-        position: "fixed",
-        top,
-        left,
-        transform: pos === "top" && rect.top - gap >= 120 ? "translate(-50%, -100%)" : "translateX(-50%)",
-      };
-    }
+    // Center horizontally but clamp to viewport with margins
+    const tooltipW = Math.min(viewW - margin * 2, 320);
+    let left = Math.max(margin, Math.min(rect.left + rect.width / 2 - tooltipW / 2, viewW - tooltipW - margin));
 
     return {
       position: "fixed",
       top,
       left,
-      transform: "translateY(-50%)",
+      width: tooltipW,
     };
   };
 
@@ -198,9 +165,7 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.92 }}
           transition={{ duration: 0.18 }}
-          className={cn(
-            "fixed z-[10000] w-72 sm:w-80 bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border p-4"
-          )}
+          className="fixed z-[10000] bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border p-4"
           style={getTooltipStyle()}
         >
           {/* Close */}
