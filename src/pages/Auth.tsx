@@ -263,8 +263,14 @@ export default function Auth() {
         toast({ title: "Email do responsável inválido", variant: "destructive" });
         return false;
       }
-      if (guardianPassword.length < 6) {
-        toast({ title: "Senha do responsável deve ter pelo menos 6 caracteres", variant: "destructive" });
+      if (guardianPassword.length < 8) {
+        toast({ title: "Senha do responsável deve ter pelo menos 8 caracteres", variant: "destructive" });
+        return false;
+      }
+      const gHasLetter = /[a-zA-Z]/.test(guardianPassword);
+      const gHasNumber = /[0-9]/.test(guardianPassword);
+      if (!gHasLetter || !gHasNumber) {
+        toast({ title: "Senha do responsável deve conter letras e números", variant: "destructive" });
         return false;
       }
       if (guardianPassword !== guardianConfirmPassword) {
@@ -301,8 +307,15 @@ export default function Auth() {
       toast({ title: "Email inválido", variant: "destructive" });
       return;
     }
-    if (signupPassword.length < 6) {
-      toast({ title: "Senha deve ter pelo menos 6 caracteres", variant: "destructive" });
+    if (signupPassword.length < 8) {
+      toast({ title: "Senha deve ter pelo menos 8 caracteres", variant: "destructive" });
+      return;
+    }
+    // Basic strength check
+    const hasLetter = /[a-zA-Z]/.test(signupPassword);
+    const hasNumber = /[0-9]/.test(signupPassword);
+    if (!hasLetter || !hasNumber) {
+      toast({ title: "Senha deve conter letras e números", variant: "destructive" });
       return;
     }
     if (signupPassword !== signupConfirmPassword) {
@@ -316,37 +329,61 @@ export default function Auth() {
 
     setLoading(true);
     try {
+      // Determine belt_grade
+      const ma = dojoInfo?.martial_arts;
+      let beltGrade: string = "branca";
+      if (ma === "judo" || (ma === "judo_bjj" && !skipJudo)) beltGrade = judoBelt as string;
+      else if (ma === "bjj" || (ma === "judo_bjj" && skipJudo && !skipBjj)) beltGrade = bjjBelt as string;
+
       let guardianUserId: string | null = null;
 
       // Create guardian account first if minor
       if (isMinor) {
+        // Sign out any existing session first
+        await supabase.auth.signOut();
+
         const { data: guardianData, error: guardianError } = await supabase.auth.signUp({
           email: guardianEmail,
           password: guardianPassword,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
-            data: { name: `Responsável de ${signupName}` },
+            data: { name: `Responsável de ${signupName}`, is_guardian: true },
           },
         });
+
         if (guardianError) {
           let message = "Erro ao criar conta do responsável";
           if (guardianError.message.includes("already registered")) {
             message = "O email do responsável já está cadastrado";
+          } else if (guardianError.message.includes("weak") || guardianError.message.includes("password")) {
+            message = "Senha do responsável é muito fraca. Use pelo menos 8 caracteres com letras e números.";
           }
           toast({ title: "Erro", description: message, variant: "destructive" });
           setLoading(false);
           return;
         }
+
         guardianUserId = guardianData.user?.id || null;
+
+        // Sign out guardian session immediately to not mix sessions
+        await supabase.auth.signOut();
       }
 
-      // Create student account
+      // Create student account - pass all data via metadata so the trigger handles it
+      // This way dojo_id, birth_date, etc. are set even without an authenticated session
       const { data: studentData, error: studentError } = await supabase.auth.signUp({
         email: signupEmail,
         password: signupPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
-          data: { name: signupName },
+          data: {
+            name: signupName,
+            dojo_id: dojoInfo?.id || "",
+            birth_date: signupBirthDate || "",
+            guardian_email: isMinor ? guardianEmail : "",
+            guardian_user_id: guardianUserId || "",
+            belt_grade: beltGrade,
+          },
         },
       });
 
@@ -354,44 +391,28 @@ export default function Auth() {
         let message = "Erro ao criar conta";
         if (studentError.message.includes("already registered")) {
           message = "Este email já está cadastrado";
-        } else if (studentError.message.includes("weak_password") || studentError.message.includes("weak and easy to guess")) {
-          message = "A senha é muito fraca. Escolha uma senha mais segura";
+        } else if (studentError.message.includes("weak") || studentError.message.includes("password") || studentError.message.includes("Password")) {
+          message = "A senha é muito fraca. Use pelo menos 8 caracteres com letras e números.";
         }
         toast({ title: "Erro", description: message, variant: "destructive" });
         setLoading(false);
         return;
       }
 
-      if (studentData.user) {
-        // Determine belt_grade for profile (first non-skipped belt)
-        const ma = dojoInfo?.martial_arts;
-        let beltGrade: string = "branca";
-        if (ma === "judo" || (ma === "judo_bjj" && !skipJudo)) beltGrade = judoBelt as string;
-        else if (ma === "bjj" || (ma === "judo_bjj" && skipJudo && !skipBjj)) beltGrade = bjjBelt as string;
-
-        await supabase
-          .from("profiles")
-          .update({
-            birth_date: signupBirthDate,
-            guardian_user_id: guardianUserId,
-            guardian_email: isMinor ? guardianEmail : null,
-            dojo_id: dojoInfo?.id || null,
-            belt_grade: beltGrade,
-          })
-          .eq("user_id", studentData.user.id);
-
-        // Save belt records in student_belts
-        const beltInserts: { user_id: string; martial_art: string; belt_grade: string }[] = [];
-        if ((ma === "judo" || ma === "judo_bjj") && !skipJudo) {
-          beltInserts.push({ user_id: studentData.user.id, martial_art: "judo", belt_grade: judoBelt as string });
-        }
-        if ((ma === "bjj" || ma === "judo_bjj") && !skipBjj) {
-          beltInserts.push({ user_id: studentData.user.id, martial_art: "bjj", belt_grade: bjjBelt as string });
-        }
-        if (beltInserts.length > 0) {
-          await supabase.from("student_belts").insert(beltInserts);
-        }
+      // Double check: if user was created but there's a weak password indicator
+      if (!studentData.user) {
+        toast({ title: "Erro", description: "Erro ao criar conta. Tente novamente.", variant: "destructive" });
+        setLoading(false);
+        return;
       }
+
+      // Sign out student session immediately - student must wait for approval
+      await supabase.auth.signOut();
+
+      // Save belt records in student_belts using an edge function or just try it
+      // Since we signed out, we need to handle this differently
+      // The belt inserts need auth - we'll handle this via a separate mechanism
+      // For now, belts will be set during approval by the sensei
 
       // Notify
       if (dojoInfo?.id) {
@@ -404,6 +425,9 @@ export default function Auth() {
         title: "Conta criada com sucesso!",
         description: "Seu cadastro está pendente de aprovação pelo Sensei.",
       });
+
+      // Switch to login mode
+      setSearchParams({ mode: "login" });
 
       // Reset
       setSignupStep(1);
