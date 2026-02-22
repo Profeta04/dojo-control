@@ -33,12 +33,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock } from "lucide-react";
 import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type Profile = Tables<"profiles"> | any;
 
@@ -60,6 +78,17 @@ export default function Students() {
   const [expandedGuardians, setExpandedGuardians] = useState<Set<string>>(new Set());
   const [scholarshipConfirm, setScholarshipConfirm] = useState<Profile | null>(null);
   const [approvalBelt, setApprovalBelt] = useState<BeltGrade>("branca");
+
+  // Student management dialogs
+  const [editStudent, setEditStudent] = useState<Profile | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editBelt, setEditBelt] = useState<BeltGrade>("branca");
+
+  const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
+  const [blockReason, setBlockReason] = useState("");
+
+  const [deleteStudent, setDeleteStudent] = useState<Profile | null>(null);
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
@@ -348,7 +377,73 @@ export default function Students() {
     handleToggleScholarship(student, false);
   };
 
-  const StudentTable = ({ data, showActions = false }: { data: Profile[]; showActions?: boolean }) => (
+  const handleEditStudent = async () => {
+    if (!editStudent) return;
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name: editName, phone: editPhone, belt_grade: editBelt } as any)
+        .eq("user_id", editStudent.user_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({ title: "Aluno atualizado", description: `${editName} foi atualizado com sucesso.` });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao atualizar aluno", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setEditStudent(null);
+    }
+  };
+
+  const handleBlockStudent = async () => {
+    if (!blockStudent) return;
+    setActionLoading(true);
+    const isCurrentlyBlocked = blockStudent.is_blocked;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          is_blocked: !isCurrentlyBlocked,
+          blocked_reason: isCurrentlyBlocked ? null : (blockReason || "Bloqueado pelo administrador"),
+        } as any)
+        .eq("user_id", blockStudent.user_id);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({
+        title: isCurrentlyBlocked ? "Aluno desbloqueado" : "Aluno bloqueado",
+        description: `${blockStudent.name} foi ${isCurrentlyBlocked ? "desbloqueado" : "bloqueado"}.`,
+      });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setBlockStudent(null);
+      setBlockReason("");
+    }
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!deleteStudent) return;
+    setActionLoading(true);
+    try {
+      // Soft delete: set status to 'rejeitado' and remove student role
+      await supabase
+        .from("profiles")
+        .update({ registration_status: "rejeitado" } as any)
+        .eq("user_id", deleteStudent.user_id);
+      await supabase.rpc("remove_user_role", { _user_id: deleteStudent.user_id, _role: "student" });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({ title: "Aluno removido", description: `${deleteStudent.name} foi removido do sistema.` });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao remover aluno", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setDeleteStudent(null);
+    }
+  };
+
+  const StudentTable = ({ data, showActions = false, showManage = false }: { data: Profile[]; showActions?: boolean; showManage?: boolean }) => (
     <div className="overflow-x-auto -mx-4 sm:mx-0">
       <Table>
         <TableHeader>
@@ -359,15 +454,20 @@ export default function Students() {
             <TableHead className="hidden md:table-cell">Federado</TableHead>
             <TableHead className="hidden md:table-cell">Bolsista</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
-            {showActions && <TableHead className="text-right">Ações</TableHead>}
+            {(showActions || showManage) && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {data.map((student) => (
-            <TableRow key={student.user_id}>
+            <TableRow key={student.user_id} className={student.is_blocked ? "opacity-60" : ""}>
               <TableCell>
                 <div>
-                  <p className="font-medium">{student.name}</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-medium">{student.name}</p>
+                    {student.is_blocked && (
+                      <Ban className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground sm:hidden">{student.email}</p>
                   <div className="sm:hidden mt-1">
                     <RegistrationStatusBadge status={student.registration_status || "pendente"} />
@@ -437,6 +537,9 @@ export default function Students() {
                 </div>
               </TableCell>
               <TableCell className="hidden sm:table-cell">
+                {student.is_blocked && (
+                  <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
+                )}
               </TableCell>
               {showActions && (
                 <TableCell className="text-right">
@@ -467,6 +570,46 @@ export default function Students() {
                       <span className="hidden sm:inline">Rejeitar</span>
                     </Button>
                   </div>
+                </TableCell>
+              )}
+              {showManage && (
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setEditStudent(student);
+                        setEditName(student.name);
+                        setEditPhone(student.phone || "");
+                        setEditBelt((student.belt_grade as BeltGrade) || "branca");
+                      }}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setBlockStudent(student);
+                        setBlockReason(student.blocked_reason || "");
+                      }}>
+                        {student.is_blocked ? (
+                          <><Unlock className="h-4 w-4 mr-2" />Desbloquear</>
+                        ) : (
+                          <><Ban className="h-4 w-4 mr-2" />Bloquear</>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => setDeleteStudent(student)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Excluir do sistema
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               )}
             </TableRow>
@@ -551,7 +694,7 @@ export default function Students() {
             </CardHeader>
             <CardContent>
               {approvedStudents.length > 0 ? (
-                <StudentTable data={approvedStudents} />
+                <StudentTable data={approvedStudents} showManage />
               ) : (
                 <EmptyState message="Nenhum aluno aprovado ainda." />
               )}
@@ -728,6 +871,107 @@ export default function Students() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Cancelar pendentes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Student Dialog */}
+      <Dialog open={!!editStudent} onOpenChange={(open) => { if (!open) setEditStudent(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Aluno</DialogTitle>
+            <DialogDescription>Atualize as informações do aluno.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-2">
+              <Label>Faixa</Label>
+              <Select value={editBelt} onValueChange={(v) => setEditBelt(v as BeltGrade)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(BELT_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditStudent(null)}>Cancelar</Button>
+            <Button onClick={handleEditStudent} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block Student Dialog */}
+      <AlertDialog open={!!blockStudent} onOpenChange={(open) => { if (!open) { setBlockStudent(null); setBlockReason(""); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {blockStudent?.is_blocked ? "Desbloquear Aluno" : "Bloquear Aluno"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {blockStudent?.is_blocked
+                ? `Deseja desbloquear ${blockStudent?.name}? O aluno poderá acessar o sistema novamente.`
+                : `Deseja bloquear ${blockStudent?.name}? O aluno não poderá acessar o sistema.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {!blockStudent?.is_blocked && (
+            <div className="space-y-2 py-2">
+              <Label>Motivo do bloqueio (opcional)</Label>
+              <Textarea
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                placeholder="Ex: Inadimplência, indisciplina..."
+                rows={2}
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlockStudent}
+              disabled={actionLoading}
+              className={blockStudent?.is_blocked ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}
+            >
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {blockStudent?.is_blocked ? "Desbloquear" : "Bloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Student Dialog */}
+      <AlertDialog open={!!deleteStudent} onOpenChange={(open) => { if (!open) setDeleteStudent(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Aluno</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir {deleteStudent?.name} do sistema? O aluno será movido para a aba de rejeitados e perderá o acesso.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteStudent}
+              disabled={actionLoading}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
