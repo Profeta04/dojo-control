@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode } from "lucide-react";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
@@ -25,6 +26,8 @@ interface DojoFormData {
   description: string;
   logo_url: string;
   pix_key: string;
+  martial_arts: string;
+  signup_code: string;
 }
 
 const initialFormData: DojoFormData = {
@@ -35,6 +38,8 @@ const initialFormData: DojoFormData = {
   description: "",
   logo_url: "",
   pix_key: "",
+  martial_arts: "judo",
+  signup_code: "",
 };
 
 export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolean }) {
@@ -56,6 +61,8 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
         description: data.description || null,
         logo_url: data.logo_url || null,
         pix_key: data.pix_key || null,
+        martial_arts: data.martial_arts,
+        signup_code: data.signup_code || data.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "").toUpperCase(),
       });
       if (error) throw error;
     },
@@ -80,6 +87,8 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
         description: data.description || null,
         logo_url: data.logo_url || null,
         pix_key: data.pix_key || null,
+        martial_arts: data.martial_arts,
+        signup_code: data.signup_code,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -129,6 +138,8 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
       description: dojo.description || "",
       logo_url: dojo.logo_url || "",
       pix_key: (dojo as any).pix_key || "",
+      martial_arts: (dojo as any).martial_arts || "judo",
+      signup_code: (dojo as any).signup_code || "",
     });
     setEditingDojo(dojo);
   };
@@ -207,7 +218,40 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
         </div>
       </div>
 
-      {/* Description */}
+      {/* Martial Arts & Signup Code */}
+      <div className="space-y-4">
+        <h4 className="text-sm font-medium flex items-center gap-2">
+          🥋 Arte Marcial & Código de Cadastro
+        </h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-martial_arts`}>Artes Marciais *</Label>
+            <Select value={formData.martial_arts} onValueChange={(v) => setFormData({ ...formData, martial_arts: v })}>
+              <SelectTrigger id={`${isEdit ? 'edit' : 'create'}-martial_arts`} className="h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="judo">Judô</SelectItem>
+                <SelectItem value="bjj">Jiu-Jitsu</SelectItem>
+                <SelectItem value="judo_bjj">Judô + Jiu-Jitsu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${isEdit ? 'edit' : 'create'}-signup_code`}>Código de Cadastro</Label>
+            <Input
+              id={`${isEdit ? 'edit' : 'create'}-signup_code`}
+              value={formData.signup_code}
+              onChange={(e) => setFormData({ ...formData, signup_code: e.target.value.toUpperCase().replace(/\s/g, '') })}
+              placeholder="Gerado automaticamente"
+              className="h-10 font-mono"
+            />
+            <p className="text-xs text-muted-foreground">
+              Código que os alunos usam para se cadastrar. Se vazio, será gerado do nome.
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor={`${isEdit ? 'edit' : 'create'}-description`}>Descrição / Mensagem da Sidebar</Label>
