@@ -51,8 +51,28 @@ const CLASS_TO_TEMPLATE_ART: Record<string, string> = {
   bjj: "jiu-jitsu",
 };
 
+// Simple deterministic hash from string
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+// Seeded pseudo-random number generator
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
 export function StudentTasksDashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedArt, setSelectedArt] = useState<string | null>(null);
 
   // 1. Fetch student's enrolled class martial arts
@@ -80,6 +100,22 @@ export function StudentTasksDashboard() {
   // Set default selected art
   const activeArt = selectedArt || studentMartialArts[0] || null;
   const isMultiArt = studentMartialArts.length > 1;
+
+  // 1b. Fetch student's belt for the active martial art
+  const { data: studentBelt = "branca" } = useQuery({
+    queryKey: ["student-belt-for-art", user?.id, activeArt],
+    queryFn: async () => {
+      if (!user || !activeArt) return "branca";
+      const { data } = await supabase
+        .from("student_belts")
+        .select("belt_grade")
+        .eq("user_id", user.id)
+        .eq("martial_art", activeArt)
+        .maybeSingle();
+      return data?.belt_grade || profile?.belt_grade || "branca";
+    },
+    enabled: !!user && !!activeArt,
+  });
 
   // 2. Fetch ALL templates for the selected martial art, paginated
   const templateArt = activeArt ? (CLASS_TO_TEMPLATE_ART[activeArt] || activeArt) : null;
@@ -157,29 +193,40 @@ export function StudentTasksDashboard() {
   });
 
   // 5. Sort templates by belt order + difficulty, filter only quiz-capable
+  // 5. Filter by student belt level (+2 ahead max) and shuffle deterministically
   const sortedTemplates = useMemo(() => {
-    const AUDIENCE_ORDER: Record<string, number> = { infantil: 0, geral: 1 };
-    return allTemplates
-      .filter(t => t.options && t.correct_option !== null)
-      .sort((a, b) => {
-        // 1. Infantil (simpler language) always first
-        const audDiff = (AUDIENCE_ORDER[a.audience] ?? 1) - (AUDIENCE_ORDER[b.audience] ?? 1);
-        if (audDiff !== 0) return audDiff;
-        // 2. Difficulty: easy → medium → hard
-        const diffDiff = (DIFFICULTY_ORDER[a.difficulty] ?? 1) - (DIFFICULTY_ORDER[b.difficulty] ?? 1);
-        if (diffDiff !== 0) return diffDiff;
-        // 3. Belt as tiebreaker within same difficulty
-        const beltDiff = (BELT_ORDER[a.belt_level] ?? 99) - (BELT_ORDER[b.belt_level] ?? 99);
-        if (beltDiff !== 0) return beltDiff;
-        return a.title.localeCompare(b.title);
+    const studentBeltIndex = BELT_ORDER[studentBelt] ?? 0;
+    const maxBeltIndex = studentBeltIndex + 2; // Allow up to 2 belts ahead
+
+    const eligible = allTemplates
+      .filter(t => {
+        if (!t.options || t.correct_option === null) return false;
+        const templateBeltIndex = BELT_ORDER[t.belt_level] ?? 99;
+        return templateBeltIndex <= maxBeltIndex;
       });
-  }, [allTemplates]);
+
+    // Deterministic shuffle based on user ID
+    const seed = hashCode(user?.id || "default");
+    const rng = seededRandom(seed);
+
+    // Shuffle eligible questions
+    const shuffled = [...eligible];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    // Within the shuffle, still prioritize infantil over geral
+    const infantil = shuffled.filter(t => t.audience === "infantil");
+    const geral = shuffled.filter(t => t.audience !== "infantil");
+
+    return [...infantil, ...geral];
+  }, [allTemplates, studentBelt, user?.id]);
 
   // 6. Build the progressive queue
-  const { quizQuestions, totalCompleted, totalQuestions, currentBelt } = useMemo(() => {
-    const completed: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number }[] = [];
-    let nextPending: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number } | null = null;
-    let currentBeltLevel = "branca";
+  const { quizQuestions, totalCompleted, totalQuestions } = useMemo(() => {
+    const completed: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number; difficulty: string }[] = [];
+    let nextPending: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number; difficulty: string } | null = null;
 
     for (const template of sortedTemplates) {
       const isCompleted = completedTitles.has(template.title);
@@ -208,13 +255,13 @@ export function StudentTasksDashboard() {
         options: template.options as string[],
         correctOption: template.correct_option!,
         xpValue: 10,
+        difficulty: template.difficulty,
       };
 
       if (isCompleted) {
         completed.push(question);
       } else if (!nextPending) {
         nextPending = question;
-        currentBeltLevel = template.belt_level;
       }
     }
 
@@ -224,7 +271,6 @@ export function StudentTasksDashboard() {
       quizQuestions: questions,
       totalCompleted: completed.length,
       totalQuestions: sortedTemplates.length,
-      currentBelt: currentBeltLevel,
     };
   }, [sortedTemplates, completedTitles, pendingTaskMap, user?.id]);
 

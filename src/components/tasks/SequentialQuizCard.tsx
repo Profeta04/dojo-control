@@ -22,7 +22,14 @@ interface QuizQuestion {
   options: string[];
   correctOption: number;
   xpValue: number;
+  difficulty?: string;
 }
+
+const DIFFICULTY_LABELS: Record<string, { label: string; color: string }> = {
+  easy: { label: "Fácil", color: "bg-success/15 text-success border-success/30" },
+  medium: { label: "Médio", color: "bg-warning/15 text-warning border-warning/30" },
+  hard: { label: "Difícil", color: "bg-destructive/15 text-destructive border-destructive/30" },
+};
 
 interface SequentialQuizCardProps {
   questions: QuizQuestion[];
@@ -199,10 +206,17 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
               )}
             </div>
           </div>
-          <Badge variant="secondary" className="text-xs font-medium flex items-center gap-1 flex-shrink-0">
-            <Zap className="h-3 w-3 text-accent" />
-            {currentQuestion.xpValue} XP
-          </Badge>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {currentQuestion.difficulty && DIFFICULTY_LABELS[currentQuestion.difficulty] && (
+              <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-5 border", DIFFICULTY_LABELS[currentQuestion.difficulty].color)}>
+                {DIFFICULTY_LABELS[currentQuestion.difficulty].label}
+              </Badge>
+            )}
+            <Badge variant="secondary" className="text-xs font-medium flex items-center gap-1">
+              <Zap className="h-3 w-3 text-accent" />
+              {currentQuestion.xpValue} XP
+            </Badge>
+          </div>
         </div>
       </CardHeader>
 
