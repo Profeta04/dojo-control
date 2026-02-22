@@ -8,21 +8,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Crown, Medal, Flame, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { SeasonAvatarBorder } from "@/components/gamification/SeasonAvatarBorder";
+
 
 function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | null; name: string; userId?: string }) {
   const publicUrl = avatarUrl
     ? supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl
     : null;
   return (
-    <SeasonAvatarBorder userId={userId} size="sm">
-      <Avatar className="h-8 w-8 border border-border">
-        <AvatarImage src={publicUrl || undefined} alt={name} />
-        <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
-          {name.charAt(0).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
-    </SeasonAvatarBorder>
+    <Avatar className="h-8 w-8 border border-border">
+      <AvatarImage src={publicUrl || undefined} alt={name} />
+      <AvatarFallback className="text-xs font-bold bg-primary/10 text-primary">
+        {name.charAt(0).toUpperCase()}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 

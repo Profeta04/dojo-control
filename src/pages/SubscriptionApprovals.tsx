@@ -14,7 +14,12 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Loader2, CheckCircle, XCircle, Eye, FileText, Crown } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, Eye, FileText, Crown, Pencil } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { SUBSCRIPTION_TIERS, SubscriptionTierKey } from "@/lib/subscriptionTiers";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -64,6 +69,8 @@ export default function SubscriptionApprovals() {
   const [selectedSub, setSelectedSub] = useState<SubscriptionRow | null>(null);
   const [processing, setProcessing] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const [editingSub, setEditingSub] = useState<SubscriptionRow | null>(null);
+  const [editForm, setEditForm] = useState({ tier: "", status: "", expires_at: "" });
 
   const { data: subscriptions = [], isLoading } = useQuery({
     queryKey: ["subscription-approvals"],
@@ -142,6 +149,43 @@ export default function SubscriptionApprovals() {
     } catch (err) {
       console.error(err);
       toast.error("Erro ao rejeitar assinatura");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const openEditSub = (sub: SubscriptionRow) => {
+    setEditingSub(sub);
+    setEditForm({
+      tier: sub.tier,
+      status: sub.status,
+      expires_at: sub.expires_at ? sub.expires_at.slice(0, 10) : "",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingSub) return;
+    setProcessing(true);
+    try {
+      const updateData: any = {
+        tier: editForm.tier,
+        status: editForm.status,
+      };
+      if (editForm.expires_at) {
+        updateData.expires_at = new Date(editForm.expires_at).toISOString();
+      }
+      if (editForm.status === "ativo" && !editingSub.approved_at) {
+        updateData.approved_at = new Date().toISOString();
+        updateData.approved_by = user?.id;
+      }
+      const { error } = await supabase.from("dojo_subscriptions").update(updateData).eq("id", editingSub.id);
+      if (error) throw error;
+      toast.success("Assinatura atualizada!");
+      setEditingSub(null);
+      queryClient.invalidateQueries({ queryKey: ["subscription-approvals"] });
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao atualizar assinatura");
     } finally {
       setProcessing(false);
     }
@@ -273,9 +317,10 @@ export default function SubscriptionApprovals() {
                           <TableRow>
                             <TableHead>Dojo</TableHead>
                             <TableHead>Plano</TableHead>
-                            <TableHead>Aprovado em</TableHead>
+                             <TableHead>Aprovado em</TableHead>
                             <TableHead>Expira em</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Ações</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -290,6 +335,11 @@ export default function SubscriptionApprovals() {
                                 {sub.expires_at ? new Date(sub.expires_at).toLocaleDateString("pt-BR") : "—"}
                               </TableCell>
                               <TableCell>{statusBadge(sub.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <Button size="sm" variant="ghost" onClick={() => openEditSub(sub)}>
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -421,6 +471,51 @@ export default function SubscriptionApprovals() {
                 )}
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Subscription Dialog */}
+        <Dialog open={!!editingSub} onOpenChange={(open) => { if (!open) setEditingSub(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Assinatura</DialogTitle>
+              <DialogDescription>{editingSub?.dojo_name}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Plano</Label>
+                <Select value={editForm.tier} onValueChange={(v) => setEditForm(p => ({ ...p, tier: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).map(k => (
+                      <SelectItem key={k} value={k}>{SUBSCRIPTION_TIERS[k].name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm(p => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="rejeitado">Rejeitado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Data de expiração</Label>
+                <Input type="date" value={editForm.expires_at} onChange={(e) => setEditForm(p => ({ ...p, expires_at: e.target.value }))} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="ghost" onClick={() => setEditingSub(null)}>Cancelar</Button>
+                <Button onClick={handleSaveEdit} disabled={processing}>
+                  {processing ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
+                  Salvar
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </RequireApproval>

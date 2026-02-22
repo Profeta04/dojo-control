@@ -36,18 +36,11 @@ Deno.serve(async (req) => {
       .eq('dojo_id', dojoId);
     senseis?.forEach(s => staffUserIds.add(s.sensei_id));
 
-    // Dojo owners
-    const { data: owners } = await supabaseAdmin
-      .from('dojo_owners')
-      .select('user_id')
-      .eq('dojo_id', dojoId);
-    owners?.forEach(o => staffUserIds.add(o.user_id));
-
     // Admins (all admins get notified)
     const { data: admins } = await supabaseAdmin
       .from('user_roles')
       .select('user_id')
-      .in('role', ['admin', 'dono']);
+      .eq('role', 'admin');
     admins?.forEach(a => staffUserIds.add(a.user_id));
 
     if (staffUserIds.size === 0) {
