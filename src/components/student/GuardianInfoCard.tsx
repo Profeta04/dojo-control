@@ -44,7 +44,7 @@ export function GuardianInfoCard() {
   }
 
   return (
-    <Card>
+    <Card data-tour="guardian-card">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <Users className="h-5 w-5 text-accent" />
