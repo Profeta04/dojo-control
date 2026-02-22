@@ -201,11 +201,11 @@ export function MonthlyFeePlans() {
     try {
       const { data, error } = await supabase.functions.invoke("generate-monthly-payments");
       if (error) throw error;
-      const result = data as { generated: number; message: string };
+      const result = data as { generated: number; replaced?: number; message: string };
       toast({
         title: "Mensalidades geradas!",
         description: result.generated > 0
-          ? `${result.generated} pagamento(s) criado(s) com sucesso.`
+          ? `${result.generated} pagamento(s) criado(s)${result.replaced ? `, ${result.replaced} substituído(s) por multi-arte` : ""}.`
           : "Nenhum novo pagamento gerado (todos já existem ou não há alunos elegíveis).",
       });
       queryClient.invalidateQueries({ queryKey: ["payments"] });
