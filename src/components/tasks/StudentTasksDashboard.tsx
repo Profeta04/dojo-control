@@ -25,6 +25,7 @@ interface TaskTemplate {
   difficulty: string;
   martial_art: string;
   category: string;
+  audience: string;
 }
 
 // Belt difficulty order (easiest to hardest)
@@ -92,7 +93,7 @@ export function StudentTasksDashboard() {
       while (true) {
         const { data, error } = await supabase
           .from("task_templates")
-          .select("id, title, description, options, correct_option, belt_level, difficulty, martial_art, category")
+          .select("id, title, description, options, correct_option, belt_level, difficulty, martial_art, category, audience")
           .eq("martial_art", templateArt)
           .range(from, from + PAGE - 1);
         if (error) throw error;
@@ -157,9 +158,13 @@ export function StudentTasksDashboard() {
 
   // 5. Sort templates by belt order + difficulty, filter only quiz-capable
   const sortedTemplates = useMemo(() => {
+    const AUDIENCE_ORDER: Record<string, number> = { infantil: 0, geral: 1 };
     return allTemplates
       .filter(t => t.options && t.correct_option !== null)
       .sort((a, b) => {
+        // Infantil questions first
+        const audDiff = (AUDIENCE_ORDER[a.audience] ?? 1) - (AUDIENCE_ORDER[b.audience] ?? 1);
+        if (audDiff !== 0) return audDiff;
         const beltDiff = (BELT_ORDER[a.belt_level] ?? 99) - (BELT_ORDER[b.belt_level] ?? 99);
         if (beltDiff !== 0) return beltDiff;
         const diffDiff = (DIFFICULTY_ORDER[a.difficulty] ?? 1) - (DIFFICULTY_ORDER[b.difficulty] ?? 1);
