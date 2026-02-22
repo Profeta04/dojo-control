@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { SeasonAvatarBorder } from "@/components/gamification/SeasonAvatarBorder";
+
 
 export function AvatarUpload() {
   const { user, profile } = useAuth();
@@ -76,8 +76,7 @@ export function AvatarUpload() {
 
   return (
     <div className="relative group">
-      <SeasonAvatarBorder size="lg">
-        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-primary/20">
+      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-primary/10 flex items-center justify-center ring-4 ring-primary/20">
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -88,7 +87,6 @@ export function AvatarUpload() {
             <span className="text-4xl sm:text-5xl font-bold text-primary">{initials}</span>
           )}
         </div>
-      </SeasonAvatarBorder>
 
       <button
         onClick={() => fileInputRef.current?.click()}

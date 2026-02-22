@@ -181,6 +181,35 @@ export function SenseiSubscriptionView() {
         } catch {}
       }
 
+      // Notify all admins about pending subscription
+      try {
+        const { data: admins } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        const { data: dojo } = await supabase
+          .from("dojos")
+          .select("name")
+          .eq("id", currentDojoId)
+          .single();
+
+        const dojoName = dojo?.name || "Dojo";
+        const tierName = SUBSCRIPTION_TIERS[selectedTier]?.name || selectedTier;
+
+        if (admins && admins.length > 0) {
+          const notifications = admins.map(a => ({
+            user_id: a.user_id,
+            title: "📋 Nova assinatura pendente",
+            message: `O dojo "${dojoName}" enviou um comprovante para o plano ${tierName}. Acesse Aprovação de Assinaturas para revisar.`,
+            type: "info",
+          }));
+          await supabase.from("notifications").insert(notifications);
+        }
+      } catch (notifyErr) {
+        console.error("Error notifying admins:", notifyErr);
+      }
+
       toast.success("Comprovante enviado! Aguarde a aprovação do administrador.");
       setSelectedTier(null);
       setAppliedPromo(null);

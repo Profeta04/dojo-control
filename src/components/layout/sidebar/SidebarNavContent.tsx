@@ -51,7 +51,7 @@ const navItems: NavItem[] = [
   { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
-  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Conquistas", href: "/conquistas", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
@@ -145,7 +145,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
       <div className="p-4 lg:p-5">
         <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-sidebar-border/50">
-            {logoUrl ? (
+            {currentDojoId && logoUrl ? (
               <img
                 src={logoUrl}
                 alt={`Logo ${currentDojo?.name || settings.dojo_name}`}
@@ -159,10 +159,10 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="font-bold text-base text-sidebar-foreground truncate leading-tight">
-              {currentDojo?.name || settings.dojo_name}
+              {currentDojoId ? (currentDojo?.name || settings.dojo_name) : "Dojo Control"}
             </h1>
             <p className="text-xs text-sidebar-foreground/50 truncate mt-0.5">
-              {currentDojo?.description || "Sistema de Gestão"}
+              {currentDojoId ? (currentDojo?.description || "Sistema de Gestão") : "Todos os dojos"}
             </p>
           </div>
         </div>
