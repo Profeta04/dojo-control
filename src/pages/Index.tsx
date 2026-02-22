@@ -86,7 +86,7 @@ const Index = () => {
                   <Link to="/auth">Entrar</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="h-12 sm:h-11 text-base font-semibold w-full sm:w-auto border-border/80">
-                  <Link to="/auth">Criar Conta</Link>
+                  <Link to="/auth?mode=signup">Criar Conta</Link>
                 </Button>
               </>
             )}
