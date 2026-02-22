@@ -228,6 +228,14 @@ export default function Auth() {
     if (user && !authLoading) navigate(redirectTo);
   }, [user, authLoading, navigate, redirectTo]);
 
+  // Validate password strength client-side
+  const validatePassword = (password: string, label: string): string | null => {
+    if (password.length < 8) return `${label} deve ter pelo menos 8 caracteres`;
+    if (!/[a-zA-Z]/.test(password)) return `${label} deve conter letras`;
+    if (!/[0-9]/.test(password)) return `${label} deve conter números`;
+    return null;
+  };
+
   // Validation per step
   const validateStep = (step: number): boolean => {
     if (step === 1) {
@@ -263,18 +271,34 @@ export default function Auth() {
         toast({ title: "Email do responsável inválido", variant: "destructive" });
         return false;
       }
-      if (guardianPassword.length < 8) {
-        toast({ title: "Senha do responsável deve ter pelo menos 8 caracteres", variant: "destructive" });
-        return false;
-      }
-      const gHasLetter = /[a-zA-Z]/.test(guardianPassword);
-      const gHasNumber = /[0-9]/.test(guardianPassword);
-      if (!gHasLetter || !gHasNumber) {
-        toast({ title: "Senha do responsável deve conter letras e números", variant: "destructive" });
+      const gPwdErr = validatePassword(guardianPassword, "Senha do responsável");
+      if (gPwdErr) {
+        toast({ title: gPwdErr, variant: "destructive" });
         return false;
       }
       if (guardianPassword !== guardianConfirmPassword) {
         toast({ title: "Senhas do responsável não coincidem", variant: "destructive" });
+        return false;
+      }
+      return true;
+    }
+    if (step === credentialsStep) {
+      const emailResult = z.string().email().safeParse(signupEmail);
+      if (!emailResult.success) {
+        toast({ title: "Email do aluno inválido", variant: "destructive" });
+        return false;
+      }
+      const pwdErr = validatePassword(signupPassword, "Senha");
+      if (pwdErr) {
+        toast({ title: pwdErr, variant: "destructive" });
+        return false;
+      }
+      if (signupPassword !== signupConfirmPassword) {
+        toast({ title: "Senhas não coincidem", variant: "destructive" });
+        return false;
+      }
+      if (isMinor && guardianEmail === signupEmail) {
+        toast({ title: "Email do aluno deve ser diferente do responsável", variant: "destructive" });
         return false;
       }
       return true;
@@ -301,30 +325,14 @@ export default function Auth() {
   };
 
   const handleSignup = async () => {
-    // Validate credentials
-    const emailResult = z.string().email().safeParse(signupEmail);
-    if (!emailResult.success) {
-      toast({ title: "Email inválido", variant: "destructive" });
-      return;
-    }
-    if (signupPassword.length < 8) {
-      toast({ title: "Senha deve ter pelo menos 8 caracteres", variant: "destructive" });
-      return;
-    }
-    // Basic strength check
-    const hasLetter = /[a-zA-Z]/.test(signupPassword);
-    const hasNumber = /[0-9]/.test(signupPassword);
-    if (!hasLetter || !hasNumber) {
-      toast({ title: "Senha deve conter letras e números", variant: "destructive" });
-      return;
-    }
-    if (signupPassword !== signupConfirmPassword) {
-      toast({ title: "Senhas não coincidem", variant: "destructive" });
-      return;
-    }
-    if (isMinor && guardianEmail === signupEmail) {
-      toast({ title: "Email do aluno deve ser diferente do responsável", variant: "destructive" });
-      return;
+    // Re-validate all steps before submitting
+    for (let s = 1; s <= totalSteps; s++) {
+      // Skip guardian step if not minor
+      if (s === guardianStep && !isMinor) continue;
+      if (!validateStep(s)) {
+        setSignupStep(s);
+        return;
+      }
     }
 
     setLoading(true);
