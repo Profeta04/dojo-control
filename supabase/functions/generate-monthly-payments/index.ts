@@ -33,6 +33,10 @@ Deno.serve(async (req) => {
     const now = new Date();
     const referenceMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
     let totalGenerated = 0;
+    let totalReplaced = 0;
+
+    // Build a map: studentId -> list of plans they belong to
+    const studentPlansMap = new Map<string, typeof plans>();
 
     for (const plan of plans) {
       const classIds = (plan.monthly_fee_plan_classes || []).map(
@@ -40,7 +44,6 @@ Deno.serve(async (req) => {
       );
       if (classIds.length === 0) continue;
 
-      // Get students enrolled in these classes
       const { data: enrollments, error: enrollError } = await supabase
         .from("class_students")
         .select("student_id")
@@ -52,79 +55,161 @@ Deno.serve(async (req) => {
       }
 
       const studentIds = [...new Set((enrollments || []).map((e: any) => e.student_id))];
-      if (studentIds.length === 0) continue;
+      for (const sid of studentIds) {
+        const existing = studentPlansMap.get(sid) || [];
+        // Avoid duplicate plans for same student
+        if (!existing.find((p: any) => p.id === plan.id)) {
+          existing.push(plan);
+          studentPlansMap.set(sid, existing);
+        }
+      }
+    }
 
-      // Exclude scholarship students
-      const { data: scholarshipStudents } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .in("user_id", studentIds)
-        .eq("is_scholarship", true);
-
-      const scholarshipIds = new Set(
-        (scholarshipStudents || []).map((s: any) => s.user_id)
+    if (studentPlansMap.size === 0) {
+      return new Response(
+        JSON.stringify({ message: "No students enrolled in active plans", generated: 0 }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-      const eligibleStudents = studentIds.filter(
-        (id: string) => !scholarshipIds.has(id)
-      );
-      if (eligibleStudents.length === 0) continue;
+    }
 
-      // Check for existing mensalidade payments this month
-      const { data: existingPayments } = await supabase
+    const allStudentIds = [...studentPlansMap.keys()];
+
+    // Exclude scholarship students
+    const { data: scholarshipStudents } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .in("user_id", allStudentIds)
+      .eq("is_scholarship", true);
+
+    const scholarshipIds = new Set(
+      (scholarshipStudents || []).map((s: any) => s.user_id)
+    );
+
+    // Get existing mensalidade payments this month for all students
+    const { data: existingPayments } = await supabase
+      .from("payments")
+      .select("id, student_id, description")
+      .in("student_id", allStudentIds)
+      .eq("reference_month", referenceMonth)
+      .eq("category", "mensalidade");
+
+    const existingByStudent = new Map<string, any[]>();
+    for (const p of existingPayments || []) {
+      const list = existingByStudent.get(p.student_id) || [];
+      list.push(p);
+      existingByStudent.set(p.student_id, list);
+    }
+
+    const paymentsToInsert: any[] = [];
+    const paymentsToDelete: string[] = [];
+    const notificationsToInsert: any[] = [];
+
+    for (const [studentId, studentPlans] of studentPlansMap.entries()) {
+      if (scholarshipIds.has(studentId)) continue;
+
+      // Calculate what the student should have
+      const totalAmount = studentPlans.reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+      const planNames = studentPlans.map((p: any) => p.name).sort().join(" + ");
+      const maxDueDay = Math.min(Math.max(...studentPlans.map((p: any) => p.due_day)), 28);
+      const dueDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(maxDueDay).padStart(2, "0")}`;
+
+      const existing = existingByStudent.get(studentId) || [];
+
+      if (studentPlans.length > 1) {
+        // Multi-plan student: check if they have the correct combined payment
+        const hasCombined = existing.some((p: any) => p.description === planNames);
+
+        if (hasCombined) {
+          // Already has the correct combined payment, skip
+          continue;
+        }
+
+        // Delete any existing single-plan payments for this month
+        for (const ep of existing) {
+          paymentsToDelete.push(ep.id);
+          totalReplaced++;
+        }
+
+        // Create combined payment
+        paymentsToInsert.push({
+          student_id: studentId,
+          category: "mensalidade",
+          reference_month: referenceMonth,
+          due_date: dueDate,
+          amount: totalAmount,
+          description: planNames,
+          status: "pendente",
+        });
+
+        notificationsToInsert.push({
+          user_id: studentId,
+          title: "💳 Nova Mensalidade",
+          message: `Sua mensalidade combinada de R$ ${totalAmount.toFixed(2)} (${planNames}) para ${new Date(now.getFullYear(), now.getMonth()).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} foi gerada. Vencimento: ${maxDueDay}/${String(now.getMonth() + 1).padStart(2, "0")}.`,
+          type: "payment",
+        });
+      } else {
+        // Single plan student
+        if (existing.length > 0) {
+          // Already has a payment, skip
+          continue;
+        }
+
+        const plan = studentPlans[0];
+        const dueDay = Math.min(plan.due_day, 28);
+        const singleDueDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(dueDay).padStart(2, "0")}`;
+
+        paymentsToInsert.push({
+          student_id: studentId,
+          category: "mensalidade",
+          reference_month: referenceMonth,
+          due_date: singleDueDate,
+          amount: plan.amount,
+          description: plan.name,
+          status: "pendente",
+        });
+
+        notificationsToInsert.push({
+          user_id: studentId,
+          title: "💳 Nova Mensalidade",
+          message: `Sua mensalidade de R$ ${Number(plan.amount).toFixed(2)} para ${new Date(now.getFullYear(), now.getMonth()).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} foi gerada. Vencimento: ${dueDay}/${String(now.getMonth() + 1).padStart(2, "0")}.`,
+          type: "payment",
+        });
+      }
+    }
+
+    // Delete old single-art payments that need to be replaced
+    if (paymentsToDelete.length > 0) {
+      const { error: deleteError } = await supabase
         .from("payments")
-        .select("student_id")
-        .in("student_id", eligibleStudents)
-        .eq("reference_month", referenceMonth)
-        .eq("category", "mensalidade");
+        .delete()
+        .in("id", paymentsToDelete);
+      if (deleteError) {
+        console.error("Error deleting old payments:", deleteError);
+      }
+    }
 
-      const existingIds = new Set(
-        (existingPayments || []).map((p: any) => p.student_id)
-      );
-      const newStudents = eligibleStudents.filter(
-        (id: string) => !existingIds.has(id)
-      );
-      if (newStudents.length === 0) continue;
-
-      // Calculate due date
-      const dueDay = Math.min(plan.due_day, 28);
-      const dueDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(dueDay).padStart(2, "0")}`;
-
-      const paymentsToInsert = newStudents.map((studentId: string) => ({
-        student_id: studentId,
-        category: "mensalidade",
-        reference_month: referenceMonth,
-        due_date: dueDate,
-        amount: plan.amount,
-        description: plan.name,
-        status: "pendente",
-      }));
-
+    // Insert new payments
+    if (paymentsToInsert.length > 0) {
       const { error: insertError } = await supabase
         .from("payments")
         .insert(paymentsToInsert);
-
       if (insertError) {
-        console.error(`Error inserting payments for plan ${plan.id}:`, insertError);
-        continue;
+        console.error("Error inserting payments:", insertError);
+        throw insertError;
       }
+      totalGenerated = paymentsToInsert.length;
+    }
 
-      totalGenerated += newStudents.length;
-
-      // Send notifications to students
-      const notifications = newStudents.map((studentId: string) => ({
-        user_id: studentId,
-        title: "💳 Nova Mensalidade",
-        message: `Sua mensalidade de R$ ${Number(plan.amount).toFixed(2)} para ${new Date(now.getFullYear(), now.getMonth()).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })} foi gerada. Vencimento: ${dueDay}/${String(now.getMonth() + 1).padStart(2, "0")}.`,
-        type: "payment",
-      }));
-
-      await supabase.from("notifications").insert(notifications);
+    // Send notifications
+    if (notificationsToInsert.length > 0) {
+      await supabase.from("notifications").insert(notificationsToInsert);
     }
 
     return new Response(
       JSON.stringify({
-        message: `Generated ${totalGenerated} payments`,
+        message: `Generated ${totalGenerated} payments, replaced ${totalReplaced} single-art payments`,
         generated: totalGenerated,
+        replaced: totalReplaced,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -27,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CreditCard, Plus, Loader2, DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent, ChevronDown
+  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent, ChevronDown, Trash2
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
@@ -899,7 +899,24 @@ export default function PaymentsPage() {
                                         ) : <span className="text-[10px] text-muted-foreground">—</span>}
                                       </TableCell>
                                       <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => openEditDialog(payment)} className="text-xs h-7 px-2">Editar</Button>
+                                        <div className="flex items-center justify-end gap-1">
+                                          <Button variant="ghost" size="sm" onClick={() => openEditDialog(payment)} className="text-xs h-7 px-2">Editar</Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              if (!confirm(`Excluir pagamento de ${payment.studentName}?`)) return;
+                                              const { error } = await supabase.from("payments").delete().eq("id", payment.id);
+                                              if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+                                              toast({ title: "Pagamento excluído!" });
+                                              queryClient.invalidateQueries({ queryKey: ["payments"] });
+                                            }}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </div>
                                       </TableCell>
                                     </TableRow>
                                   );
