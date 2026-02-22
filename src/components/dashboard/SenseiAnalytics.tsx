@@ -105,7 +105,7 @@ export function SenseiAnalytics() {
   if (isLoading || !data) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="analytics-chart">
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <BarChart3 className="h-5 w-5 text-accent" />
         Análise de Tarefas & Gamificação

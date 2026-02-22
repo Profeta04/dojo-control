@@ -559,7 +559,7 @@ export default function PaymentsPage() {
         <PageHeader title="Pagamentos" description="Controle financeiro do dojo" />
         
         {canManageStudents && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap" data-tour="generate-payments">
             <Button variant="outline" size="sm" onClick={handleSendNotifications} disabled={notifyLoading || (stats.pendente + stats.atrasado) === 0}>
               {notifyLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Bell className="h-4 w-4 mr-2" />}
               <span className="hidden sm:inline">Enviar</span> Cobranças

@@ -74,7 +74,7 @@ export function AchievementsPanel({ userId, compact = false, maxVisible }: Achie
   const annualAchievements = unlockedAchievements.filter(ua => ua.achievement?.is_annual);
 
   return (
-    <Card>
+    <Card data-tour="achievements-panel">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">

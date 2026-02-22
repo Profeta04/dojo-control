@@ -278,7 +278,7 @@ export function StudentTasksDashboard() {
   if (isLoading) return <LoadingSpinner />;
 
   return (
-    <div className="space-y-6" role="region" aria-label="Centro de Tarefas">
+    <div className="space-y-6" role="region" aria-label="Centro de Tarefas" data-tour="task-list">
       {/* Martial Art Tabs (only if multi-art) */}
       {isMultiArt && (
         <Tabs value={activeArt || ""} onValueChange={setSelectedArt}>

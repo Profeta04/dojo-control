@@ -80,7 +80,7 @@ export function UpcomingTrainingsCard() {
   };
 
   return (
-    <Card>
+    <Card data-tour="schedule-list">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <Calendar className="h-5 w-5 text-accent" />
