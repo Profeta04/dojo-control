@@ -201,9 +201,6 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
             </div>
             <div className="min-w-0">
               <h4 className="font-semibold text-sm leading-tight">{currentQuestion.task.title}</h4>
-              {currentQuestion.task.description && (
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{currentQuestion.task.description}</p>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
