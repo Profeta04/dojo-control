@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,13 +43,6 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
     const firstPending = questions.findIndex(q => q.task.status !== "concluida");
     return firstPending === -1 ? questions.length : firstPending;
   });
-
-  // Re-sync index when questions array changes (e.g. after refetch)
-  useEffect(() => {
-    const firstPending = questions.findIndex(q => q.task.status !== "concluida");
-    const newIndex = firstPending === -1 ? questions.length : firstPending;
-    setCurrentIndex(newIndex);
-  }, [questions]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);

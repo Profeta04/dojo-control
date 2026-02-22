@@ -226,7 +226,7 @@ export function StudentTasksDashboard() {
   // 6. Build the progressive queue
   const { quizQuestions, totalCompleted, totalQuestions } = useMemo(() => {
     const completed: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number; difficulty: string }[] = [];
-    let nextPending: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number; difficulty: string } | null = null;
+    const pending: { task: TaskWithAssignee; options: string[]; correctOption: number; xpValue: number; difficulty: string }[] = [];
 
     for (const template of sortedTemplates) {
       const isCompleted = completedTitles.has(template.title);
@@ -260,15 +260,13 @@ export function StudentTasksDashboard() {
 
       if (isCompleted) {
         completed.push(question);
-      } else if (!nextPending) {
-        nextPending = question;
+      } else {
+        pending.push(question);
       }
     }
 
-    const questions = nextPending ? [...completed, nextPending] : completed;
-
     return {
-      quizQuestions: questions,
+      quizQuestions: [...completed, ...pending],
       totalCompleted: completed.length,
       totalQuestions: sortedTemplates.length,
     };
