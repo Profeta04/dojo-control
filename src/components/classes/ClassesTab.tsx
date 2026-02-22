@@ -62,7 +62,7 @@ const classSchema = z.object({
 });
 
 export function ClassesTab() {
-  const { user, profile, canManageStudents, isDono, isAdmin, isSensei } = useAuth();
+  const { user, profile, canManageStudents, isAdmin, isSensei } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -92,7 +92,7 @@ export function ClassesTab() {
 
   // Fetch classes with details
   const { data: classes, isLoading } = useQuery({
-    queryKey: ["classes", user?.id, isSensei, isDono, isAdmin, currentDojoId],
+    queryKey: ["classes", user?.id, isSensei, isAdmin, currentDojoId],
     queryFn: async () => {
       let query = supabase
         .from("classes")
@@ -100,7 +100,7 @@ export function ClassesTab() {
         .order("name");
 
       // Senseis only see their own classes
-      if (isSensei && !isDono && !isAdmin) {
+      if (isSensei && !isAdmin) {
         query = query.eq("sensei_id", user!.id);
       }
 
@@ -194,7 +194,7 @@ export function ClassesTab() {
         .eq("registration_status", "aprovado");
 
       // Senseis can only enroll students from their dojo
-      if (isSensei && !isDono && !isAdmin && selectedClass.dojo_id) {
+      if (isSensei && !isAdmin && selectedClass.dojo_id) {
         profilesQuery = profilesQuery.eq("dojo_id", selectedClass.dojo_id);
       }
 

@@ -69,7 +69,7 @@ interface SidebarNavContentProps {
 
 export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentProps) {
   const location = useLocation();
-  const { canManageStudents, isStudent, isDono, isAdmin, isSensei } = useAuth();
+  const { canManageStudents, isStudent, isAdmin, isSensei } = useAuth();
   const { settings } = useDojoSettings();
   const { currentDojoId, setCurrentDojoId, userDojos } = useDojoContext();
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
@@ -77,7 +77,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   const filteredNavItems = navItems.filter((item) => {
     if (!item.adminOnly && !item.ownerOnly && !item.studentOnly) return true;
-    if (item.ownerOnly && (isDono || isAdmin)) return true;
+    if (item.ownerOnly && isAdmin) return true;
     if (item.adminOnly && canManageStudents) return true;
     if (item.studentOnly && isStudent && !canManageStudents) return true;
     return false;

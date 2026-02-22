@@ -15,7 +15,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  isDono: boolean;
   isAdmin: boolean;
   isSensei: boolean;
   isStudent: boolean;
@@ -34,13 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer Supabase calls with setTimeout to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
             fetchUserData(session.user.id);
@@ -53,7 +50,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -70,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -79,7 +74,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setProfile(profileData);
 
-      // Fetch roles
       const { data: rolesData } = await supabase
         .from("user_roles")
         .select("role")
@@ -127,11 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
   };
 
-  const isDono = roles.includes("dono" as AppRole);
   const isAdmin = roles.includes("admin");
   const isSensei = roles.includes("sensei");
   const isStudent = roles.includes("student");
-  const canManageStudents = isDono || isAdmin || isSensei;
+  const canManageStudents = isAdmin || isSensei;
   const isApproved = profile?.registration_status === "aprovado";
   const isPending = profile?.registration_status === "pendente";
 
@@ -146,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signUp,
         signOut,
-        isDono,
         isAdmin,
         isSensei,
         isStudent,

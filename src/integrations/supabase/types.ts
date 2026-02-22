@@ -237,35 +237,6 @@ export type Database = {
           },
         ]
       }
-      dojo_owners: {
-        Row: {
-          created_at: string | null
-          dojo_id: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          dojo_id: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          dojo_id?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "dojo_owners_dojo_id_fkey"
-            columns: ["dojo_id"]
-            isOneToOne: false
-            referencedRelation: "dojos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       dojo_senseis: {
         Row: {
           created_at: string | null

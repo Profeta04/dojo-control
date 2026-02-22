@@ -20,7 +20,7 @@ import {
 export function SubscriptionPlans() {
   const { subscribed, tier: currentTier, subscriptionEnd, status, loading, refresh } = useSubscription();
   const { currentDojoId } = useDojoContext();
-  const { isAdmin, isDono } = useAuth();
+  const { isAdmin, isSensei } = useAuth();
   const queryClient = useQueryClient();
   const [selectedTier, setSelectedTier] = useState<SubscriptionTierKey | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -191,7 +191,7 @@ export function SubscriptionPlans() {
   return (
     <div className="space-y-6">
       {/* Admin PIX key configuration */}
-      {(isAdmin || isDono) && (
+      {(isAdmin || isSensei) && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between gap-4">

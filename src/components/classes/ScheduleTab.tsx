@@ -55,7 +55,7 @@ interface ScheduleWithClass extends ClassSchedule {
 }
 
 export function ScheduleTab() {
-  const { user, canManageStudents, isSensei, isAdmin, isDono } = useAuth();
+  const { user, canManageStudents, isSensei, isAdmin } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -75,7 +75,7 @@ export function ScheduleTab() {
       let query = supabase.from("classes").select("*");
 
       // Senseis only see their own classes
-      if (isSensei && !isDono && !isAdmin) {
+      if (isSensei && !isAdmin) {
         query = query.eq("sensei_id", user!.id);
       }
 

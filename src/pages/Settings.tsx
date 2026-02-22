@@ -15,9 +15,9 @@ import { SubscriptionPlans } from "@/components/settings/SubscriptionPlans";
 export default function Settings() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isAdmin, isDono, isSensei, loading: authLoading } = useAuth();
+  const { isAdmin, isSensei, loading: authLoading } = useAuth();
 
-  const canAccessSettings = isAdmin || isDono || isSensei;
+  const canAccessSettings = isAdmin || isSensei;
   const defaultTab = searchParams.get("tab") || "dojos";
 
   if (!authLoading && !canAccessSettings) {
@@ -33,7 +33,7 @@ export default function Settings() {
     );
   }
 
-  const isSenseiOnly = isSensei && !isAdmin && !isDono;
+  const isSenseiOnly = isSensei && !isAdmin;
 
   if (isSenseiOnly) {
     return (

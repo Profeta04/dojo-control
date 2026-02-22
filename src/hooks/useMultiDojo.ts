@@ -24,13 +24,6 @@ export interface Dojo {
   updated_at: string | null;
 }
 
-export interface DojoOwner {
-  id: string;
-  dojo_id: string;
-  user_id: string;
-  created_at: string;
-}
-
 export interface DojoSensei {
   id: string;
   dojo_id: string;
@@ -56,24 +49,6 @@ export function useDojos() {
   });
 }
 
-export function useDojoOwners(dojoId?: string) {
-  return useQuery({
-    queryKey: ["dojo-owners", dojoId],
-    queryFn: async () => {
-      let query = supabase.from("dojo_owners").select("*");
-      
-      if (dojoId) {
-        query = query.eq("dojo_id", dojoId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as DojoOwner[];
-    },
-    enabled: !!dojoId,
-  });
-}
-
 export function useDojoSenseis(dojoId?: string) {
   return useQuery({
     queryKey: ["dojo-senseis", dojoId],
@@ -95,9 +70,4 @@ export function useDojoSenseis(dojoId?: string) {
 export function useIsAdmin() {
   const { isAdmin } = useAuth();
   return isAdmin;
-}
-
-export function useIsDono() {
-  const { roles } = useAuth();
-  return roles.includes("dono");
 }

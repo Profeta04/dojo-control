@@ -16,7 +16,7 @@ interface SidebarUserFooterProps {
 export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, isDono, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
+  const { profile, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const { getSignedUrl } = useSignedUrl();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [beltDialogOpen, setBeltDialogOpen] = useState(false);
@@ -46,7 +46,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
     navigate("/auth");
   };
 
-  const roleLabel = isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno";
+  const roleLabel = isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno";
 
   return (
     <>
