@@ -75,7 +75,7 @@ const BJJ_BELTS: { value: BeltGrade; label: string }[] = [
   { value: "preta_3dan", label: "Preta 3º Dan" },
 ];
 
-type DojoInfo = { id: string; name: string; martial_arts: string; logo_url: string | null };
+type DojoInfo = { id: string; name: string; martial_arts: string; logo_url: string | null; color_primary: string | null; color_secondary: string | null; color_accent: string | null };
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -187,23 +187,18 @@ export default function Auth() {
         } else {
           setDojoLogoUrl(null);
         }
-        // Fetch dojo theme colors and apply them
-        const { data: dojoData } = await supabase
-          .from("dojos")
-          .select("color_primary, color_secondary, color_accent")
-          .eq("id", d.id)
-          .single();
-        if (dojoData) {
-          const root = document.documentElement;
-          if (dojoData.color_accent) {
-            root.style.setProperty("--accent", dojoData.color_accent);
-          }
-          if (dojoData.color_primary) {
-            root.style.setProperty("--color-primary", dojoData.color_primary);
-          }
-          if (dojoData.color_secondary) {
-            root.style.setProperty("--color-secondary", dojoData.color_secondary);
-          }
+        // Apply dojo theme colors from RPC data
+        const root = document.documentElement;
+        if (d.color_accent) {
+          root.style.setProperty("--accent", d.color_accent);
+          root.style.setProperty("--ring", d.color_accent);
+          root.style.setProperty("--sidebar-primary", d.color_accent);
+        }
+        if (d.color_primary) {
+          root.style.setProperty("--sidebar-background", d.color_primary);
+        }
+        if (d.color_secondary) {
+          root.style.setProperty("--secondary", d.color_secondary);
         }
       } else {
         setDojoInfo(null);
