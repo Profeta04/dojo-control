@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Calendar, UserPlus, Building, User, Eye, EyeOff, Award, ArrowLeft, ArrowRight, CheckCircle2, Shield } from "lucide-react";
 import { BeltBadge } from "@/components/shared/BeltBadge";
@@ -79,9 +79,10 @@ type DojoInfo = { id: string; name: string; martial_arts: string; logo_url: stri
 
 export default function Auth() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, signIn, loading: authLoading } = useAuth();
   const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const mode = searchParams.get("mode") || "login";
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   
@@ -185,6 +186,24 @@ export default function Auth() {
           }
         } else {
           setDojoLogoUrl(null);
+        }
+        // Fetch dojo theme colors and apply them
+        const { data: dojoData } = await supabase
+          .from("dojos")
+          .select("color_primary, color_secondary, color_accent")
+          .eq("id", d.id)
+          .single();
+        if (dojoData) {
+          const root = document.documentElement;
+          if (dojoData.color_accent) {
+            root.style.setProperty("--accent", dojoData.color_accent);
+          }
+          if (dojoData.color_primary) {
+            root.style.setProperty("--color-primary", dojoData.color_primary);
+          }
+          if (dojoData.color_secondary) {
+            root.style.setProperty("--color-secondary", dojoData.color_secondary);
+          }
         }
       } else {
         setDojoInfo(null);
@@ -570,25 +589,20 @@ export default function Auth() {
       {/* Header */}
       <div className="text-center mb-6 sm:mb-8 relative z-10">
         <img
-          src={dojoLogoUrl || dojoLogo}
-          alt={dojoLogoUrl ? "Logo do Dojo" : "Dojo Control"}
+          src={(mode === "signup" && dojoLogoUrl) ? dojoLogoUrl : dojoLogo}
+          alt={(mode === "signup" && dojoLogoUrl) ? "Logo do Dojo" : "Dojo Control"}
           className="w-20 h-20 sm:w-24 sm:h-24 mb-2 border-2 border-border rounded-full mx-auto object-cover shadow-lg"
         />
         <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-          {dojoInfo?.name || "Dojo Control"}
+          {(mode === "signup" && dojoInfo?.name) ? dojoInfo.name : "Dojo Control"}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">Sistema de Gestão do Dojo</p>
       </div>
 
       <Card className="w-full max-w-md border-border shadow-xl relative z-10">
-        <Tabs defaultValue="login" className="w-full" onValueChange={() => setSignupStep(1)}>
-          <TabsList className="grid w-full grid-cols-2 h-11">
-            <TabsTrigger value="login" className="text-sm">Entrar</TabsTrigger>
-            <TabsTrigger value="signup" className="text-sm">Cadastrar</TabsTrigger>
-          </TabsList>
-          
-          {/* LOGIN TAB */}
-          <TabsContent value="login">
+        {/* LOGIN VIEW */}
+        {mode === "login" && (
+          <>
             <form onSubmit={handleLogin}>
               <CardHeader className="pb-4">
                 <CardTitle className="text-xl">Bem-vindo de volta</CardTitle>
@@ -614,12 +628,23 @@ export default function Auth() {
                 <Button type="button" variant="link" className="w-full text-muted-foreground text-sm" onClick={() => setForgotPasswordOpen(true)}>
                   Esqueci minha senha
                 </Button>
+                <div className="text-center">
+                  <button
+                    type="button"
+                    className="text-sm text-accent hover:underline"
+                    onClick={() => setSearchParams({ mode: "signup" })}
+                  >
+                    Não tem conta? Cadastre-se
+                  </button>
+                </div>
               </CardContent>
             </form>
-          </TabsContent>
-          
-          {/* SIGNUP TAB - Multi-step wizard */}
-          <TabsContent value="signup">
+          </>
+        )}
+
+        {/* SIGNUP VIEW - Multi-step wizard */}
+        {mode === "signup" && (
+          <>
             <CardHeader className="pb-2">
               <CardTitle className="text-xl">Cadastro de Aluno</CardTitle>
               <CardDescription>Preencha seus dados para se cadastrar</CardDescription>
@@ -685,6 +710,16 @@ export default function Auth() {
                   <Button type="button" className="w-full h-10 bg-accent hover:bg-accent/90" onClick={handleNext}>
                     Próximo <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
+
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      className="text-sm text-accent hover:underline"
+                      onClick={() => { setSearchParams({ mode: "login" }); setSignupStep(1); }}
+                    >
+                      Já tem conta? Entrar
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -815,8 +850,8 @@ export default function Auth() {
                 </div>
               )}
             </CardContent>
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </Card>
 
       {/* Forgot Password Dialog */}
