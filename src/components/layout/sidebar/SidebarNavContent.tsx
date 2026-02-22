@@ -62,6 +62,7 @@ const navItems: NavItem[] = [
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Assinaturas", href: "/subscription-approvals", icon: <Crown className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Planos", href: "/planos", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
 ];
 
 interface SidebarNavContentProps {
@@ -93,7 +94,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
-    ["/settings", "/subscription-approvals"].includes(i.href)
+    ["/settings", "/subscription-approvals", "/planos"].includes(i.href)
   );
 
   const renderNavItem = (item: NavItem, index: number) => {
