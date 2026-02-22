@@ -365,9 +365,11 @@ export type Database = {
           late_fee_fixed: number
           late_fee_percent: number
           logo_url: string | null
+          martial_arts: string
           name: string
           phone: string | null
           pix_key: string | null
+          signup_code: string
           updated_at: string | null
         }
         Insert: {
@@ -386,9 +388,11 @@ export type Database = {
           late_fee_fixed?: number
           late_fee_percent?: number
           logo_url?: string | null
+          martial_arts?: string
           name: string
           phone?: string | null
           pix_key?: string | null
+          signup_code: string
           updated_at?: string | null
         }
         Update: {
@@ -407,9 +411,11 @@ export type Database = {
           late_fee_fixed?: number
           late_fee_percent?: number
           logo_url?: string | null
+          martial_arts?: string
           name?: string
           phone?: string | null
           pix_key?: string | null
+          signup_code?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -1287,6 +1293,15 @@ export type Database = {
           name: string
         }[]
       }
+      get_dojo_by_signup_code: {
+        Args: { _code: string }
+        Returns: {
+          id: string
+          logo_url: string
+          martial_arts: string
+          name: string
+        }[]
+      }
       get_sensei_dojo_ids: { Args: { _user_id: string }; Returns: string[] }
       get_student_class_ids: {
         Args: { _student_id: string }
@@ -1312,9 +1327,11 @@ export type Database = {
           late_fee_fixed: number
           late_fee_percent: number
           logo_url: string | null
+          martial_arts: string
           name: string
           phone: string | null
           pix_key: string | null
+          signup_code: string
           updated_at: string | null
         }[]
         SetofOptions: {
