@@ -19,7 +19,7 @@ const studentTutorials: Record<string, TabTutorial> = {
     tabId: "perfil",
     title: "Seu Perfil",
     summary:
-      "Aqui você vê seu card de perfil, barra de XP e conquistas recentes. Toque no avatar para editar sua foto!",
+      "Aqui você vê seu card de perfil, próximos treinos, frequência e evolução. Toque no avatar para editar sua foto!",
     tip: "Mantenha seus dados atualizados para o sensei.",
     steps: [
       {
@@ -30,18 +30,11 @@ const studentTutorials: Record<string, TabTutorial> = {
         position: "bottom",
       },
       {
-        selector: '[data-tour="xp-bar"]',
-        title: "Barra de XP",
+        selector: '[data-tour="schedule-list"]',
+        title: "Próximos Treinos",
         description:
-          "Mostra seu nível atual e progresso até o próximo nível. Complete tarefas para ganhar XP!",
+          "Veja os próximos treinos agendados com dia, horário e turma.",
         position: "bottom",
-      },
-      {
-        selector: '[data-tour="achievements-panel"]',
-        title: "Conquistas Recentes",
-        description:
-          "Veja suas últimas conquistas desbloqueadas. Cada uma dá XP bônus!",
-        position: "top",
       },
     ],
   },
@@ -80,15 +73,7 @@ const studentTutorials: Record<string, TabTutorial> = {
     title: "Agenda de Treinos",
     summary:
       "Veja os próximos treinos da semana. Os horários são definidos pelo sensei da turma.",
-    steps: [
-      {
-        selector: '[data-tour="schedule-list"]',
-        title: "Próximos Treinos",
-        description:
-          "Lista dos treinos agendados com dia, horário e turma. Treinos cancelados aparecem riscados.",
-        position: "bottom",
-      },
-    ],
+    steps: [],
   },
   "/mensalidade": {
     tabId: "mensalidade",
@@ -98,11 +83,18 @@ const studentTutorials: Record<string, TabTutorial> = {
     tip: "Mantenha os pagamentos em dia para evitar bloqueios.",
     steps: [
       {
+        selector: '[data-tour="payment-stats"]',
+        title: "Resumo de Pagamentos",
+        description:
+          "Cards com total, pendentes, atrasados e pagos. Visão rápida da sua situação.",
+        position: "bottom",
+      },
+      {
         selector: '[data-tour="payment-list"]',
         title: "Lista de Pagamentos",
         description:
-          "Suas mensalidades com status (pendente, pago, atrasado). Toque para enviar comprovante.",
-        position: "bottom",
+          "Suas mensalidades com status. Toque para enviar comprovante.",
+        position: "top",
       },
     ],
   },
@@ -128,28 +120,28 @@ const senseiTutorials: Record<string, TabTutorial> = {
     tabId: "dashboard",
     title: "Dashboard",
     summary:
-      "Visão geral do dojo com estatísticas de alunos, presenças e pagamentos. Exporte relatórios em PDF.",
+      "Visão geral do dojo com estatísticas de alunos, presenças, pagamentos e análises de gamificação.",
     steps: [
       {
         selector: '[data-tour="stats-cards"]',
         title: "Cards de Estatísticas",
         description:
-          "Resumo rápido: total de alunos, presenças do mês, pagamentos pendentes e receita.",
+          "Resumo rápido: total de alunos, turmas ativas, aprovações pendentes e mais. Toque em um card para ir à seção correspondente.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="analytics-chart"]',
+        title: "Análise de Gamificação",
+        description:
+          "Estatísticas de tarefas concluídas, ranking dos alunos com mais pontos e evolução mensal.",
+        position: "top",
       },
       {
         selector: '[data-tour="export-report"]',
         title: "Exportar Relatório",
         description:
           "Gere um PDF completo com todas as estatísticas do dojo para compartilhar ou imprimir.",
-        position: "left",
-      },
-      {
-        selector: '[data-tour="analytics-chart"]',
-        title: "Gráficos Analíticos",
-        description:
-          "Visualize tendências de presenças e pagamentos ao longo do tempo.",
-        position: "top",
+        position: "bottom",
       },
     ],
   },
@@ -198,17 +190,17 @@ const senseiTutorials: Record<string, TabTutorial> = {
       "Registre a presença dos alunos por turma e data. Alunos podem fazer check-in via QR Code.",
     steps: [
       {
-        selector: '[data-tour="attendance-class-select"]',
-        title: "Selecionar Turma",
-        description: "Escolha a turma para registrar presenças.",
+        selector: '[data-tour="attendance-date"]',
+        title: "Selecionar Data",
+        description: "Escolha a data da aula. Por padrão mostra o dia de hoje.",
         position: "bottom",
       },
       {
-        selector: '[data-tour="attendance-date"]',
-        title: "Data da Aula",
+        selector: '[data-tour="attendance-class-select"]',
+        title: "Turmas do Dia",
         description:
-          "Selecione a data. Por padrão mostra o dia de hoje.",
-        position: "bottom",
+          "Veja as turmas com aula nesta data. Toque em uma para fazer a chamada.",
+        position: "top",
       },
     ],
   },
@@ -227,9 +219,9 @@ const senseiTutorials: Record<string, TabTutorial> = {
       },
       {
         selector: '[data-tour="generate-payments"]',
-        title: "Gerar Cobranças",
+        title: "Ações de Pagamento",
         description:
-          "Gere cobranças mensais automáticas para todos os alunos com plano ativo.",
+          "Notifique alunos com pagamentos pendentes, crie cobranças individuais ou em lote.",
         position: "bottom",
       },
     ],
@@ -242,9 +234,9 @@ const senseiTutorials: Record<string, TabTutorial> = {
     steps: [
       {
         selector: '[data-tour="graduation-form"]',
-        title: "Registrar Graduação",
+        title: "Alunos por Turma",
         description:
-          "Selecione o aluno e a nova faixa para registrar a graduação.",
+          "Selecione a turma e toque em 'Promover' para registrar a graduação do aluno.",
         position: "bottom",
       },
     ],
@@ -259,7 +251,7 @@ const senseiTutorials: Record<string, TabTutorial> = {
         selector: '[role="tablist"]',
         title: "Seções de Configuração",
         description:
-          "Navegue entre Dojos e Tema para personalizar seu dojo.",
+          "Navegue entre Dojos/Informações e Tema para personalizar seu dojo.",
         position: "bottom",
       },
     ],
