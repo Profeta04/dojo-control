@@ -33,27 +33,37 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
       const r = el.getBoundingClientRect();
       const padding = 6;
       setRect({
-        top: r.top - padding + window.scrollY,
+        top: r.top - padding,
         left: r.left - padding,
         width: r.width + padding * 2,
         height: r.height + padding * 2,
       });
-      // scroll element into view
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
     } else {
       setRect(null);
     }
   }, [step]);
 
   useEffect(() => {
-    updateRect();
-    const timer = setTimeout(updateRect, 300);
-    window.addEventListener("resize", updateRect);
-    window.addEventListener("scroll", updateRect, true);
+    if (!step) return;
+    // Scroll element into view first, then measure
+    const el = document.querySelector(step.selector);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Wait for scroll to settle before measuring
+      const timer = setTimeout(updateRect, 400);
+      return () => clearTimeout(timer);
+    } else {
+      setRect(null);
+    }
+  }, [currentStep, step]);
+
+  useEffect(() => {
+    const handleScrollResize = () => updateRect();
+    window.addEventListener("resize", handleScrollResize);
+    window.addEventListener("scroll", handleScrollResize, true);
     return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", updateRect);
-      window.removeEventListener("scroll", updateRect, true);
+      window.removeEventListener("resize", handleScrollResize);
+      window.removeEventListener("scroll", handleScrollResize, true);
     };
   }, [updateRect]);
 
@@ -69,99 +79,107 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
     if (!isFirst) setCurrentStep((s) => s - 1);
   };
 
-  // Tooltip position relative to spotlight
+  // Clamp tooltip so it doesn't overflow viewport
   const getTooltipStyle = (): React.CSSProperties => {
-    if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+    if (!rect) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)", position: "fixed" };
     const pos = step?.position || "bottom";
-    const gap = 16;
+    const gap = 14;
+    const tooltipW = 320;
+    const viewW = window.innerWidth;
+    const viewH = window.innerHeight;
+
+    let top = 0;
+    let left = 0;
 
     switch (pos) {
       case "top":
-        return {
-          top: rect.top - gap,
-          left: rect.left + rect.width / 2,
-          transform: "translate(-50%, -100%)",
-        };
-      case "bottom":
-        return {
-          top: rect.top + rect.height + gap,
-          left: rect.left + rect.width / 2,
-          transform: "translateX(-50%)",
-        };
+        top = rect.top - gap;
+        left = rect.left + rect.width / 2;
+        // Check if tooltip fits above
+        if (top < 120) {
+          top = rect.top + rect.height + gap;
+        } else {
+          top = rect.top - gap;
+        }
+        break;
       case "left":
-        return {
-          top: rect.top + rect.height / 2,
-          left: rect.left - gap,
-          transform: "translate(-100%, -50%)",
-        };
+        top = rect.top + rect.height / 2;
+        left = rect.left - gap - tooltipW;
+        if (left < 8) left = rect.left + rect.width + gap;
+        break;
       case "right":
-        return {
-          top: rect.top + rect.height / 2,
-          left: rect.left + rect.width + gap,
-          transform: "translateY(-50%)",
-        };
-      default:
-        return {
-          top: rect.top + rect.height + gap,
-          left: rect.left + rect.width / 2,
-          transform: "translateX(-50%)",
-        };
+        top = rect.top + rect.height / 2;
+        left = rect.left + rect.width + gap;
+        if (left + tooltipW > viewW - 8) left = rect.left - gap - tooltipW;
+        break;
+      default: // bottom
+        top = rect.top + rect.height + gap;
+        left = rect.left + rect.width / 2;
+        // If goes below viewport, show above
+        if (top + 160 > viewH) {
+          top = rect.top - gap - 160;
+        }
+        break;
     }
-  };
 
-  // Arrow pointing to the element
-  const getArrowClass = () => {
-    const pos = step?.position || "bottom";
-    switch (pos) {
-      case "bottom":
-        return "before:absolute before:-top-2 before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-b-popover";
-      case "top":
-        return "before:absolute before:-bottom-2 before:left-1/2 before:-translate-x-1/2 before:border-8 before:border-transparent before:border-t-popover";
-      case "left":
-        return "before:absolute before:top-1/2 before:-right-2 before:-translate-y-1/2 before:border-8 before:border-transparent before:border-l-popover";
-      case "right":
-        return "before:absolute before:top-1/2 before:-left-2 before:-translate-y-1/2 before:border-8 before:border-transparent before:border-r-popover";
-      default:
-        return "";
+    // Clamp horizontal
+    const halfW = tooltipW / 2;
+    if (pos === "top" || pos === "bottom") {
+      left = Math.max(halfW + 8, Math.min(left, viewW - halfW - 8));
+      return {
+        position: "fixed",
+        top,
+        left,
+        transform: pos === "top" && rect.top - gap >= 120 ? "translate(-50%, -100%)" : "translateX(-50%)",
+      };
     }
+
+    return {
+      position: "fixed",
+      top,
+      left,
+      transform: "translateY(-50%)",
+    };
   };
 
   return (
-    <div className="fixed inset-0 z-[9999]" onClick={(e) => e.stopPropagation()}>
-      {/* Dark overlay with cutout */}
-      <svg className="absolute inset-0 w-full h-full" style={{ height: document.documentElement.scrollHeight }}>
-        <defs>
-          <mask id="tour-spotlight-mask">
-            <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            {rect && (
-              <rect
-                x={rect.left}
-                y={rect.top}
-                width={rect.width}
-                height={rect.height}
-                rx="8"
-                fill="black"
-              />
-            )}
-          </mask>
-        </defs>
-        <rect
-          x="0"
-          y="0"
-          width="100%"
-          height="100%"
-          fill="rgba(0,0,0,0.6)"
-          mask="url(#tour-spotlight-mask)"
-        />
-      </svg>
+    <>
+      {/* Overlay that allows scroll-through via pointer-events */}
+      <div className="fixed inset-0 z-[9998] pointer-events-none">
+        <svg className="absolute inset-0 w-full h-full">
+          <defs>
+            <mask id="tour-spotlight-mask">
+              <rect x="0" y="0" width="100%" height="100%" fill="white" />
+              {rect && (
+                <rect
+                  x={rect.left}
+                  y={rect.top}
+                  width={rect.width}
+                  height={rect.height}
+                  rx="8"
+                  fill="black"
+                />
+              )}
+            </mask>
+          </defs>
+          <rect
+            x="0"
+            y="0"
+            width="100%"
+            height="100%"
+            fill="rgba(0,0,0,0.55)"
+            mask="url(#tour-spotlight-mask)"
+          />
+        </svg>
+      </div>
 
-      {/* Spotlight ring */}
+      {/* Spotlight ring - fixed position */}
       {rect && (
         <motion.div
           key={currentStep}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="absolute rounded-lg ring-2 ring-primary ring-offset-2 ring-offset-transparent pointer-events-none"
+          className="fixed rounded-lg ring-2 ring-accent ring-offset-2 ring-offset-transparent pointer-events-none z-[9999]"
           style={{
             top: rect.top,
             left: rect.left,
@@ -171,20 +189,19 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
         />
       )}
 
-      {/* Tooltip */}
+      {/* Tooltip - fixed, above overlay, interactive */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentStep}
           ref={tooltipRef}
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          transition={{ duration: 0.2 }}
+          exit={{ opacity: 0, scale: 0.92 }}
+          transition={{ duration: 0.18 }}
           className={cn(
-            "absolute z-[10000] w-72 sm:w-80 bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border p-4",
-            getArrowClass()
+            "fixed z-[10000] w-72 sm:w-80 bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border p-4"
           )}
-          style={{ ...getTooltipStyle(), position: "absolute" }}
+          style={getTooltipStyle()}
         >
           {/* Close */}
           <Button
@@ -213,7 +230,7 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
                   Anterior
                 </Button>
               )}
-              <Button size="sm" onClick={handleNext} className="h-7 px-3 text-xs">
+              <Button size="sm" onClick={handleNext} className="h-7 px-3 text-xs bg-accent text-accent-foreground hover:bg-accent/90">
                 {isLast ? "Concluir" : "Próximo"}
                 {!isLast && <ChevronRight className="h-3.5 w-3.5 ml-1" />}
               </Button>
@@ -221,6 +238,6 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
           </div>
         </motion.div>
       </AnimatePresence>
-    </div>
+    </>
   );
 }

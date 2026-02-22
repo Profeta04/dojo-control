@@ -75,17 +75,17 @@ export function InteractiveTutorialDialog({
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
         <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader className="text-center sm:text-center">
-            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Lightbulb className="h-6 w-6 text-primary" />
+            <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-accent/15 flex items-center justify-center">
+              <Lightbulb className="h-6 w-6 text-accent" />
             </div>
             <DialogTitle className="text-lg">{tutorial.title}</DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed mt-2">
+            <DialogDescription className="text-sm leading-relaxed mt-2 text-accent-foreground/70">
               {tutorial.summary}
             </DialogDescription>
           </DialogHeader>
 
           {tutorial.tip && (
-            <p className="text-xs text-primary/80 text-center mt-1">
+            <p className="text-xs text-accent text-center mt-1">
               💡 {tutorial.tip}
             </p>
           )}
