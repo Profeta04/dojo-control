@@ -18,6 +18,7 @@ import {
   TrendingUp,
   ClipboardCheck,
   Receipt,
+  Crown,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -50,7 +51,7 @@ const navItems: NavItem[] = [
   { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
-  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
+  { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Conquistas", href: "/conquistas", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
@@ -59,6 +60,7 @@ const navItems: NavItem[] = [
   { title: "Pagamentos", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Histórico", href: "/historico-pagamentos", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Graduações", href: "/graduations", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Assinaturas", href: "/subscription-approvals", icon: <Crown className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
 ];
 
@@ -91,7 +93,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
-    ["/settings"].includes(i.href)
+    ["/settings", "/subscription-approvals"].includes(i.href)
   );
 
   const renderNavItem = (item: NavItem, index: number) => {
