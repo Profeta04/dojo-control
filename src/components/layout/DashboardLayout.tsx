@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SidebarNavContent } from "./sidebar/SidebarNavContent";
+import { WelcomeOnboarding } from "@/components/help/WelcomeOnboarding";
+import { TabTutorialTooltip } from "@/components/help/TabTutorialTooltip";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
@@ -217,6 +219,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           className={cn("p-3 sm:p-4 lg:p-6", !useBottomNav && "safe-area-inset-bottom")}
           style={useBottomNav ? { paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" } : undefined}
         >
+          <WelcomeOnboarding />
+          <TabTutorialTooltip currentPath={location.pathname} />
           {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
             <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
           ) : (

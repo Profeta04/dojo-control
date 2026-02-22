@@ -33,6 +33,7 @@ import StudentMyProgress from "./pages/StudentMyProgress";
 import StudentPaymentHistory from "./pages/StudentPaymentHistory";
 import SubscriptionApprovals from "./pages/SubscriptionApprovals";
 import Plans from "./pages/Plans";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,7 @@ function AnimatedRoutes() {
         <Route path="/historico-pagamentos" element={<PageTransition><StudentPaymentHistory /></PageTransition>} />
         <Route path="/subscription-approvals" element={<PageTransition><SubscriptionApprovals /></PageTransition>} />
         <Route path="/planos" element={<PageTransition><Plans /></PageTransition>} />
+        <Route path="/ajuda" element={<PageTransition><Help /></PageTransition>} />
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
       </Routes>
     </AnimatePresence>

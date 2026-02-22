@@ -110,6 +110,39 @@ export type Database = {
           },
         ]
       }
+      bug_reports: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          screenshot_url: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          screenshot_url?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          screenshot_url?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       class_schedule: {
         Row: {
           class_id: string
@@ -1240,6 +1273,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_onboarding: {
+        Row: {
+          created_at: string
+          id: string
+          tabs_seen: Json
+          updated_at: string
+          user_id: string
+          welcome_seen: boolean
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tabs_seen?: Json
+          updated_at?: string
+          user_id: string
+          welcome_seen?: boolean
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tabs_seen?: Json
+          updated_at?: string
+          user_id?: string
+          welcome_seen?: boolean
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

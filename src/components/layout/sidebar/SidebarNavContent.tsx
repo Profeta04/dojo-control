@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   Receipt,
   Crown,
+  HelpCircle,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -63,6 +64,7 @@ const navItems: NavItem[] = [
   { title: "Assinaturas", href: "/subscription-approvals", icon: <Crown className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Planos", href: "/planos", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Ajuda", href: "/ajuda", icon: <HelpCircle className="h-[1.35rem] w-[1.35rem]" /> },
 ];
 
 interface SidebarNavContentProps {
@@ -94,7 +96,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
-    ["/planos", "/subscription-approvals", "/settings"].includes(i.href)
+    ["/planos", "/subscription-approvals", "/settings", "/ajuda"].includes(i.href)
   );
 
   const renderNavItem = (item: NavItem, index: number) => {

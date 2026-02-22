@@ -1,0 +1,69 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+
+interface OnboardingData {
+  welcome_seen: boolean;
+  tabs_seen: string[];
+}
+
+export function useOnboarding() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: onboarding, isLoading } = useQuery({
+    queryKey: ["user-onboarding", user?.id],
+    queryFn: async (): Promise<OnboardingData> => {
+      if (!user) return { welcome_seen: false, tabs_seen: [] };
+      const { data } = await supabase
+        .from("user_onboarding")
+        .select("welcome_seen, tabs_seen")
+        .eq("user_id", user.id)
+        .single();
+      if (!data) return { welcome_seen: false, tabs_seen: [] };
+      return {
+        welcome_seen: data.welcome_seen,
+        tabs_seen: (data.tabs_seen as string[]) || [],
+      };
+    },
+    enabled: !!user,
+  });
+
+  const markWelcomeSeen = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
+      await supabase
+        .from("user_onboarding")
+        .upsert(
+          { user_id: user.id, welcome_seen: true, tabs_seen: onboarding?.tabs_seen || [] },
+          { onConflict: "user_id" }
+        );
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user-onboarding"] }),
+  });
+
+  const markTabSeen = useMutation({
+    mutationFn: async (tabId: string) => {
+      if (!user) return;
+      const currentTabs = onboarding?.tabs_seen || [];
+      if (currentTabs.includes(tabId)) return;
+      const newTabs = [...currentTabs, tabId];
+      await supabase
+        .from("user_onboarding")
+        .upsert(
+          { user_id: user.id, welcome_seen: onboarding?.welcome_seen ?? true, tabs_seen: newTabs },
+          { onConflict: "user_id" }
+        );
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user-onboarding"] }),
+  });
+
+  return {
+    welcomeSeen: onboarding?.welcome_seen ?? false,
+    tabsSeen: onboarding?.tabs_seen ?? [],
+    isLoading,
+    markWelcomeSeen: () => markWelcomeSeen.mutate(),
+    markTabSeen: (tabId: string) => markTabSeen.mutate(tabId),
+    hasSeenTab: (tabId: string) => (onboarding?.tabs_seen ?? []).includes(tabId),
+  };
+}

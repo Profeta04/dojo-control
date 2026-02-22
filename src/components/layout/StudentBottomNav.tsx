@@ -19,6 +19,7 @@ import {
   Landmark,
   ChevronRight,
   ChevronLeft,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -53,6 +54,7 @@ const adminPage2: TabItem[] = [
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Graduações", href: "/graduations", icon: Trophy },
+  { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 const adminPage2WithSenseis: TabItem[] = [
