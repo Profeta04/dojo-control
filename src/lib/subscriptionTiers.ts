@@ -5,6 +5,24 @@ export type FeatureKey =
   | "pdf_reports"
   | "multi_dojo";
 
+export const TRIAL_TIER = {
+  name: "Teste",
+  description: "Experimente todas as funcionalidades por 5 dias",
+  price_brl: 0,
+  price_per_student: false as const,
+  max_students: Infinity,
+  duration_days: 5,
+  features: [
+    "Gratuito por 5 dias",
+    "Alunos ilimitados",
+    "Todas as funcionalidades Premium",
+    "QR Code check-in automático",
+    "Relatórios avançados (PDF)",
+    "Multi-dojo",
+  ],
+  blocked_features: [] as FeatureKey[],
+} as const;
+
 export const SUBSCRIPTION_TIERS = {
   basico: {
     name: "Básico",
@@ -44,6 +62,7 @@ export const SUBSCRIPTION_TIERS = {
     max_students: Infinity,
     features: [
       "Mínimo 20 alunos (R$7/aluno)",
+      "Alunos ilimitados",
       "Tudo do Pro",
       "Relatórios avançados (PDF)",
       "Multi-dojo",
@@ -59,8 +78,9 @@ export type SubscriptionTierKey = keyof typeof SUBSCRIPTION_TIERS;
  * Check if a specific feature is available for a given tier.
  * Returns true if the feature is NOT blocked.
  */
-export function isFeatureAvailable(tier: SubscriptionTierKey | null, feature: FeatureKey): boolean {
+export function isFeatureAvailable(tier: SubscriptionTierKey | "teste" | null, feature: FeatureKey): boolean {
   if (!tier) return false;
+  if (tier === "teste") return !TRIAL_TIER.blocked_features.includes(feature);
   const tierConfig = SUBSCRIPTION_TIERS[tier];
   return !tierConfig.blocked_features.includes(feature);
 }

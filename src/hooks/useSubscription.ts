@@ -6,7 +6,7 @@ import { SubscriptionTierKey } from "@/lib/subscriptionTiers";
 
 interface SubscriptionState {
   subscribed: boolean;
-  tier: SubscriptionTierKey | null;
+  tier: SubscriptionTierKey | "teste" | null;
   subscriptionEnd: string | null;
   status: string | null;
   loading: boolean;
@@ -42,13 +42,24 @@ export function useSubscription() {
       if (error) throw error;
 
       if (data) {
-        setState({
-          subscribed: true,
-          tier: data.tier as SubscriptionTierKey,
-          subscriptionEnd: data.expires_at,
-          status: data.status,
-          loading: false,
-        });
+        // Check if expired
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+          setState({
+            subscribed: false,
+            tier: null,
+            subscriptionEnd: data.expires_at,
+            status: "expirado",
+            loading: false,
+          });
+        } else {
+          setState({
+            subscribed: true,
+            tier: data.tier as SubscriptionTierKey | "teste",
+            subscriptionEnd: data.expires_at,
+            status: data.status,
+            loading: false,
+          });
+        }
       } else {
         // Check for pending subscriptions
         const { data: pending } = await supabase

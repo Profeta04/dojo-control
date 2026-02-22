@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle, Tag } from "lucide-react";
+import { useState, useRef } from "react";
+import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle, Tag, Sparkles, Clock } from "lucide-react";
 import pixQrCode from "@/assets/pix-qrcode.png";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useDojoContext } from "@/hooks/useDojoContext";
-import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SUBSCRIPTION_TIERS, SubscriptionTierKey } from "@/lib/subscriptionTiers";
+import { SUBSCRIPTION_TIERS, TRIAL_TIER, SubscriptionTierKey } from "@/lib/subscriptionTiers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +25,7 @@ export function SenseiSubscriptionView() {
   const [couponCode, setCouponCode] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ name: string; discount_type: string; discount_value: number } | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [activatingTrial, setActivatingTrial] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: adminPixKey } = useQuery({
@@ -47,6 +47,22 @@ export function SenseiSubscriptionView() {
         .from("user_roles").select("user_id").eq("role", "student")
         .in("user_id", studentProfiles.map(p => p.user_id));
       return Math.max(studentRoles?.length ?? 1, 1);
+    },
+    enabled: !!currentDojoId,
+  });
+
+  // Check if dojo already used trial
+  const { data: trialUsed = false } = useQuery({
+    queryKey: ["trial-used", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return false;
+      const { data } = await supabase
+        .from("dojo_subscriptions")
+        .select("id")
+        .eq("dojo_id", currentDojoId)
+        .eq("tier", "teste")
+        .limit(1);
+      return (data?.length ?? 0) > 0;
     },
     enabled: !!currentDojoId,
   });
@@ -74,7 +90,6 @@ export function SenseiSubscriptionView() {
 
   const getDiscountedPrice = (tierKey: SubscriptionTierKey) => {
     let price = getBasePrice(tierKey);
-    // Apply global promo
     const globalPromo = globalPromos.find(p =>
       !p.applicable_tiers || p.applicable_tiers.includes(tierKey)
     );
@@ -83,7 +98,6 @@ export function SenseiSubscriptionView() {
         ? price * (1 - globalPromo.discount_value / 100)
         : Math.max(0, price - globalPromo.discount_value);
     }
-    // Apply coupon
     if (appliedPromo) {
       price = appliedPromo.discount_type === "percent"
         ? price * (1 - appliedPromo.discount_value / 100)
@@ -96,7 +110,6 @@ export function SenseiSubscriptionView() {
     if (!couponCode.trim()) return;
     setApplyingCoupon(true);
     try {
-      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("subscription_promotions")
         .select("*")
@@ -137,6 +150,45 @@ export function SenseiSubscriptionView() {
     }
   };
 
+  const handleActivateTrial = async () => {
+    if (!currentDojoId) return;
+    setActivatingTrial(true);
+    try {
+      // Double-check trial not already used
+      const { data: existing } = await supabase
+        .from("dojo_subscriptions")
+        .select("id")
+        .eq("dojo_id", currentDojoId)
+        .eq("tier", "teste")
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        toast.error("Seu dojo já utilizou o período de teste.");
+        return;
+      }
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 5);
+
+      const { error } = await supabase.from("dojo_subscriptions").insert({
+        dojo_id: currentDojoId,
+        tier: "teste",
+        status: "ativo",
+        expires_at: expiresAt.toISOString(),
+      });
+
+      if (error) throw error;
+
+      toast.success("🎉 Plano de teste ativado! Aproveite 5 dias com todas as funcionalidades.");
+      refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao ativar plano de teste");
+    } finally {
+      setActivatingTrial(false);
+    }
+  };
+
   const handleSelectPlan = (tierKey: SubscriptionTierKey) => {
     if (!adminPixKey) {
       toast.error("Chave PIX do administrador não configurada. Entre em contato com o suporte.");
@@ -171,7 +223,6 @@ export function SenseiSubscriptionView() {
       });
       if (insertError) throw insertError;
 
-      // Increment coupon usage if applied
       if (appliedPromo && couponCode) {
         try {
           await supabase
@@ -181,19 +232,9 @@ export function SenseiSubscriptionView() {
         } catch {}
       }
 
-      // Notify all admins about pending subscription
       try {
-        const { data: admins } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin");
-
-        const { data: dojo } = await supabase
-          .from("dojos")
-          .select("name")
-          .eq("id", currentDojoId)
-          .single();
-
+        const { data: admins } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+        const { data: dojo } = await supabase.from("dojos").select("name").eq("id", currentDojoId).single();
         const dojoName = dojo?.name || "Dojo";
         const tierName = SUBSCRIPTION_TIERS[selectedTier]?.name || selectedTier;
 
@@ -271,8 +312,83 @@ export function SenseiSubscriptionView() {
     );
   };
 
+  const isTrialActive = subscribed && currentTier === "teste";
+  const canActivateTrial = !trialUsed && !subscribed && status !== "pendente";
+
   return (
     <div className="space-y-6">
+      {/* Trial Plan Card */}
+      {canActivateTrial && (
+        <Card className="border-2 border-dashed border-primary/50 bg-gradient-to-r from-primary/5 to-accent/5">
+          <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-primary/10 p-2">
+                <Sparkles className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-foreground">🎁 Experimente grátis por 5 dias</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Teste todas as funcionalidades do plano Premium sem compromisso. 
+                  Cadastre seus alunos, explore o sistema e descubra o melhor plano para você.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {["QR Check-in", "Relatórios PDF", "Multi-dojo", "Alunos ilimitados"].map(f => (
+                    <Badge key={f} variant="secondary" className="text-xs">
+                      <Check className="h-3 w-3 mr-1" />{f}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={handleActivateTrial}
+              disabled={activatingTrial}
+              className="whitespace-nowrap"
+              size="lg"
+            >
+              {activatingTrial ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Sparkles className="h-4 w-4 mr-2" />
+              )}
+              Ativar teste grátis
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {trialUsed && !subscribed && status !== "pendente" && (
+        <Card className="border-muted">
+          <CardContent className="flex items-center gap-3 pt-6">
+            <Clock className="h-5 w-5 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">
+              Seu período de teste já foi utilizado. Escolha um plano abaixo para continuar usando todas as funcionalidades.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active trial banner */}
+      {isTrialActive && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-6 w-6 text-primary" />
+              <div>
+                <p className="font-semibold text-foreground">
+                  Plano Teste ativo
+                </p>
+                {subscriptionEnd && (
+                  <p className="text-sm text-muted-foreground">
+                    Expira em {new Date(subscriptionEnd).toLocaleDateString("pt-BR")} — escolha um plano abaixo para continuar
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Active global promo banner */}
       {globalPromos.length > 0 && (
         <Card className="border-primary/30 bg-primary/5">
@@ -291,8 +407,8 @@ export function SenseiSubscriptionView() {
         </Card>
       )}
 
-      {/* Current subscription status */}
-      {subscribed && currentTier && (
+      {/* Current subscription status (non-trial) */}
+      {subscribed && currentTier && currentTier !== "teste" && (
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-6">
             <div className="flex items-center gap-3">
@@ -320,6 +436,20 @@ export function SenseiSubscriptionView() {
               <p className="font-semibold text-foreground">Comprovante em análise</p>
               <p className="text-sm text-muted-foreground">
                 Seu comprovante de pagamento está sendo verificado.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {status === "expirado" && !subscribed && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="flex items-center gap-3 pt-6">
+            <Clock className="h-5 w-5 text-destructive" />
+            <div>
+              <p className="font-semibold text-foreground">Assinatura expirada</p>
+              <p className="text-sm text-muted-foreground">
+                Sua assinatura expirou. Renove escolhendo um plano abaixo.
               </p>
             </div>
           </CardContent>
