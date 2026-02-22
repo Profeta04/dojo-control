@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 
 import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCode } from "lucide-react";
-import { DojoOwnersDialog } from "./DojoOwnersDialog";
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
 import { DojoQRCode } from "./DojoQRCode";
@@ -44,7 +43,6 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingDojo, setEditingDojo] = useState<Dojo | null>(null);
-  const [ownersDojoId, setOwnersDojoId] = useState<string | null>(null);
   const [senseisDojoId, setSenseisDojoId] = useState<string | null>(null);
   const [formData, setFormData] = useState<DojoFormData>(initialFormData);
 
@@ -347,18 +345,6 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8"
-                              onClick={() => setOwnersDojoId(dojo.id)}
-                              title="Gerenciar donos"
-                              aria-label="Gerenciar donos"
-                            >
-                              <Users className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {!isSenseiView && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
                               onClick={() => setSenseisDojoId(dojo.id)}
                               title="Gerenciar senseis"
                               aria-label="Gerenciar senseis"
@@ -420,12 +406,6 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Owners Dialog */}
-      <DojoOwnersDialog
-        dojoId={ownersDojoId}
-        onClose={() => setOwnersDojoId(null)}
-      />
 
       {/* Senseis Dialog */}
       <DojoSenseisDialog

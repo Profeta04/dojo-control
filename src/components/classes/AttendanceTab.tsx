@@ -79,7 +79,7 @@ interface StudentAttendance {
 }
 
 export function AttendanceTab() {
-  const { user, canManageStudents, isSensei, isAdmin, isDono } = useAuth();
+  const { user, canManageStudents, isSensei, isAdmin } = useAuth();
   const { currentDojoId } = useDojoContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -96,7 +96,7 @@ export function AttendanceTab() {
     queryFn: async () => {
       let query = supabase.from("classes").select("id");
 
-      if (isSensei && !isDono && !isAdmin) {
+      if (isSensei && !isAdmin) {
         query = query.eq("sensei_id", user!.id);
       }
 

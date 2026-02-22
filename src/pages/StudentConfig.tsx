@@ -21,7 +21,7 @@ import { SenseiDojoEdit } from "@/components/settings/SenseiDojoEdit";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
 
 export default function StudentConfig() {
-  const { profile, user, signOut, isDono, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
+  const { profile, user, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -103,7 +103,7 @@ export default function StudentConfig() {
     navigate("/auth");
   };
 
-  const roleLabel = isDono ? "Dono" : isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno";
+  const roleLabel = isAdmin ? "Admin" : isSensei ? "Sensei" : "Aluno";
   const isFederated = (profile as any)?.is_federated ?? false;
 
   return (

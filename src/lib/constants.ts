@@ -52,8 +52,8 @@ export const BELT_COLORS: Record<BeltGrade, string> = {
 };
 
 export const ROLE_LABELS: Record<AppRole, string> = {
-  super_admin: "Administrador", // Legacy, mapped to admin
-  dono: "Dono",
+  super_admin: "Administrador",
+  dono: "Sensei", // Legacy: migrated to sensei
   admin: "Administrador",
   sensei: "Sensei",
   student: "Aluno",

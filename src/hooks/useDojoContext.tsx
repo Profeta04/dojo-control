@@ -38,7 +38,7 @@ export function DojoProvider({ children }: { children: ReactNode }) {
         return data as Dojo[];
       }
 
-      // For other users, get dojos they're linked to via dojo_senseis or dojo_owners
+      // For other users, get dojos they're linked to via dojo_senseis
       const { data: dojoIds } = await supabase
         .rpc("get_user_dojos", { _user_id: user.id });
 

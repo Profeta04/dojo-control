@@ -66,12 +66,12 @@ const senseiPage2 = adminPage2;
 
 export function StudentBottomNav() {
   const location = useLocation();
-  const { profile, isStudent, canManageStudents, isSensei, isDono, isAdmin } = useAuth();
+  const { profile, isStudent, canManageStudents, isSensei, isAdmin } = useAuth();
   const { getSignedUrl } = useSignedUrl();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
-  const isAdminRole = isDono || isAdmin;
+  const isAdminRole = isAdmin;
   const isStaff = canManageStudents;
 
   // Determine which pages to use
