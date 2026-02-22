@@ -40,9 +40,10 @@ export const SUBSCRIPTION_TIERS = {
     description: "Sem limites para seu dojo",
     price_brl: 7,
     price_per_student: true as const,
+    min_students: 20,
     max_students: Infinity,
     features: [
-      "Alunos ilimitados (R$7/aluno)",
+      "Mínimo 20 alunos (R$7/aluno)",
       "Tudo do Pro",
       "Relatórios avançados (PDF)",
       "Multi-dojo",
