@@ -377,6 +377,10 @@ export default function Auth() {
         await supabase.auth.signOut();
       }
 
+      // Determine per-art belts for the trigger
+      const judoBeltValue = (ma === "judo" || ma === "judo_bjj") && !skipJudo ? (judoBelt as string) : "branca";
+      const bjjBeltValue = (ma === "bjj" || ma === "judo_bjj") && !skipBjj ? (bjjBelt as string) : "branca";
+
       // Create student account - pass all data via metadata so the trigger handles it
       // This way dojo_id, birth_date, etc. are set even without an authenticated session
       const { data: studentData, error: studentError } = await supabase.auth.signUp({
@@ -391,6 +395,8 @@ export default function Auth() {
             guardian_email: isMinor ? guardianEmail : "",
             guardian_user_id: guardianUserId || "",
             belt_grade: beltGrade,
+            judo_belt: judoBeltValue,
+            bjj_belt: bjjBeltValue,
           },
         },
       });
