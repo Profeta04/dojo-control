@@ -98,6 +98,19 @@ export default function Students() {
   const [selectedClassIds, setSelectedClassIds] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
 
+  // Fetch dojo info for martial_arts
+  const { data: dojoInfo } = useQuery({
+    queryKey: ["dojo-info", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return null;
+      const { data } = await supabase.from("dojos").select("martial_arts").eq("id", currentDojoId).single();
+      return data;
+    },
+    enabled: !!currentDojoId,
+  });
+
+  const isMultiArt = dojoInfo?.martial_arts === "judo_bjj";
+
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
     queryFn: async () => {
@@ -147,6 +160,27 @@ export default function Students() {
     },
     enabled: !!user && canManageStudents,
   });
+
+  // Fetch all student_belts for the dojo's students
+  const studentUserIds = students?.map((s: any) => s.user_id) || [];
+  const { data: allStudentBelts } = useQuery({
+    queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
+    queryFn: async () => {
+      if (studentUserIds.length === 0) return [];
+      const { data } = await supabase
+        .from("student_belts")
+        .select("user_id, martial_art, belt_grade")
+        .in("user_id", studentUserIds);
+      return data || [];
+    },
+    enabled: studentUserIds.length > 0,
+  });
+
+  // Helper: get belt for a student + martial_art
+  const getStudentBelt = (userId: string, martialArt: string): string | null => {
+    const belt = allStudentBelts?.find((b: any) => b.user_id === userId && b.martial_art === martialArt);
+    return belt?.belt_grade || null;
+  };
 
   // Fetch guardians with their minors
   const { data: guardiansWithMinors, isLoading: isLoadingGuardians } = useQuery({
@@ -540,7 +574,14 @@ export default function Students() {
           <TableRow>
             <TableHead className="min-w-[120px]">Nome</TableHead>
             <TableHead className="hidden sm:table-cell">Email</TableHead>
-            <TableHead>Faixa</TableHead>
+            {isMultiArt ? (
+              <>
+                <TableHead>Judô</TableHead>
+                <TableHead>BJJ</TableHead>
+              </>
+            ) : (
+              <TableHead>Faixa</TableHead>
+            )}
             <TableHead className="hidden md:table-cell">Federado</TableHead>
             <TableHead className="hidden md:table-cell">Bolsista</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
@@ -592,13 +633,32 @@ export default function Students() {
                   <span className="truncate max-w-[180px]">{student.email}</span>
                 </div>
               </TableCell>
-              <TableCell>
-                {student.belt_grade ? (
-                  <BeltBadge grade={student.belt_grade} size="sm" />
-                ) : (
-                  <span className="text-muted-foreground text-sm">Branca</span>
-                )}
-              </TableCell>
+              {isMultiArt ? (
+                <>
+                  <TableCell>
+                    {getStudentBelt(student.user_id, "judo") ? (
+                      <BeltBadge grade={getStudentBelt(student.user_id, "judo")!} size="sm" />
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {getStudentBelt(student.user_id, "bjj") ? (
+                      <BeltBadge grade={getStudentBelt(student.user_id, "bjj")!} size="sm" />
+                    ) : (
+                      <span className="text-muted-foreground text-sm">—</span>
+                    )}
+                  </TableCell>
+                </>
+              ) : (
+                <TableCell>
+                  {student.belt_grade ? (
+                    <BeltBadge grade={student.belt_grade} size="sm" />
+                  ) : (
+                    <span className="text-muted-foreground text-sm">Branca</span>
+                  )}
+                </TableCell>
+              )}
               <TableCell className="hidden md:table-cell">
                 <div className="flex items-center gap-2">
                   <Switch

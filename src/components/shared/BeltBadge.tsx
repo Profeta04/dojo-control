@@ -10,7 +10,9 @@ interface BeltBadgeProps {
 // Direct hex colors to avoid CSS variable conflicts with dojo theming
 const BELT_HEX_COLORS: Record<string, string> = {
   branca: "#FFFFFF",
+  bordo: "#800020",
   cinza: "#999999",
+  azul_escura: "#1A3A6B",
   azul: "#1A73E8",
   amarela: "#FFD600",
   laranja: "#FF6D00",
