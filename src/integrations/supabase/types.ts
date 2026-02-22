@@ -1163,6 +1163,7 @@ export type Database = {
       }
       task_templates: {
         Row: {
+          audience: string
           belt_level: string
           category: string
           correct_option: number | null
@@ -1176,6 +1177,7 @@ export type Database = {
           video_url: string | null
         }
         Insert: {
+          audience?: string
           belt_level: string
           category?: string
           correct_option?: number | null
@@ -1189,6 +1191,7 @@ export type Database = {
           video_url?: string | null
         }
         Update: {
+          audience?: string
           belt_level?: string
           category?: string
           correct_option?: number | null

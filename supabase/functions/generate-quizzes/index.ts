@@ -49,7 +49,8 @@ serve(async (req) => {
   }
 
   const body = await req.json();
-  const { martial_art, belt, theme_id, needed_count } = body;
+  const { martial_art, belt, theme_id, needed_count, audience } = body;
+  const targetAudience = audience || "geral";
 
   if (!martial_art || !belt || !theme_id) {
     return new Response(JSON.stringify({ error: "Required: martial_art, belt, theme_id" }), {
@@ -77,7 +78,8 @@ serve(async (req) => {
       .select("id", { count: "exact", head: true })
       .eq("martial_art", martial_art)
       .eq("belt_level", belt)
-      .eq("category", theme.category);
+      .eq("category", theme.category)
+      .eq("audience", targetAudience);
 
     const target = 25;
     toGenerate = Math.max(0, target - (existing || 0));
@@ -100,19 +102,26 @@ serve(async (req) => {
     .from("task_templates")
     .select("title")
     .eq("martial_art", martial_art)
-    .eq("belt_level", belt);
+    .eq("belt_level", belt)
+    .eq("audience", targetAudience);
   
   const existingTitles = new Set((existingTemplates || []).map(t => t.title));
 
   const quizCount = Math.round(toGenerate * 0.6);
   const vfCount = toGenerate - quizCount;
 
+  const isInfantil = targetAudience === "infantil";
+  const languageInstruction = isInfantil
+    ? "- Use linguagem MUITO SIMPLES, divertida e acessível para crianças de 5 a 12 anos\n- Evite termos técnicos complexos, use explicações curtas e claras\n- Use emojis nos títulos para tornar mais lúdico\n- Frases curtas e diretas"
+    : `${isKidBelt ? "- Linguagem simples, adequada para iniciantes" : "- Linguagem adequada ao nível da faixa"}`;
+
   const prompt = `Você é um especialista em ${artLabel}. Crie exatamente ${toGenerate} questões educativas sobre "${theme.label}" para alunos de faixa ${beltLabel}.
 
 REGRAS:
 - ${quizCount} questões tipo "Quiz:" com 4 alternativas
 - ${vfCount} questões tipo "V ou F:" com 2 alternativas ["Verdadeiro", "Falso"]
-- Dificuldade: ${difficulty}${isKidBelt ? " (linguagem simples, adequada para crianças/iniciantes)" : ""}
+- Dificuldade: ${difficulty}
+${languageInstruction}
 - Todas em português brasileiro
 - Título deve começar com "Quiz: " ou "V ou F: " e terminar com "?"
 - As perguntas devem ser ESPECÍFICAS de ${artLabel} para faixa ${beltLabel}
@@ -169,6 +178,7 @@ Retorne APENAS um array JSON válido sem markdown:
           belt_level: belt,
           category: theme.category,
           difficulty: difficulty,
+          audience: targetAudience,
         });
 
       if (insertErr) {
