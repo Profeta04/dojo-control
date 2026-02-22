@@ -1296,6 +1296,9 @@ export type Database = {
       get_dojo_by_signup_code: {
         Args: { _code: string }
         Returns: {
+          color_accent: string
+          color_primary: string
+          color_secondary: string
           id: string
           logo_url: string
           martial_arts: string
