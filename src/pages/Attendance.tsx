@@ -67,7 +67,7 @@ export default function Attendance() {
             <AttendanceTab />
           </TabsContent>
 
-          <TabsContent value="qrcode" className="mt-4">
+          <TabsContent value="qrcode" className="mt-4" data-tour="attendance-qrcode">
             <FeatureGate feature="qr_checkin">
               {currentDojo ? (
                 <DojoQRCode

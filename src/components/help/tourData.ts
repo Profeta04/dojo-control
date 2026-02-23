@@ -297,6 +297,13 @@ const senseiTutorials: Record<string, TabTutorial> = {
           "Veja as turmas com aula nesta data. Toque em uma para fazer a chamada.",
         position: "top",
       },
+      {
+        selector: '[data-tour="attendance-qrcode"]',
+        title: "QR Code de Presença",
+        description:
+          "Gere e imprima um cartaz com QR Code para que os alunos façam check-in automático pelo celular. Acesse pela aba 'QR Code'.",
+        position: "top",
+      },
     ],
   },
   "/payments": {
