@@ -4,17 +4,14 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
-import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 import { LeaderboardPanel } from "@/components/gamification/LeaderboardPanel";
 import { XPBar } from "@/components/gamification/XPBar";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Crown, ClipboardList } from "lucide-react";
+import { Crown, ClipboardList } from "lucide-react";
 
 export default function StudentTasks() {
   const { loading: authLoading } = useAuth();
-  const isMobile = useIsMobile();
 
   if (authLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
@@ -34,17 +31,11 @@ export default function StudentTasks() {
 
         {/* Tabbed content */}
         <Tabs defaultValue="missions" className="w-full">
-          <TabsList className={`grid w-full h-11 ${isMobile ? "grid-cols-3" : "grid-cols-2"}`}>
+          <TabsList className="grid w-full h-11 grid-cols-2">
             <TabsTrigger value="missions" className="flex items-center gap-2 text-sm">
               <ClipboardList className="h-4 w-4" />
               Tarefas
             </TabsTrigger>
-            {isMobile && (
-              <TabsTrigger value="achievements" className="flex items-center gap-2 text-sm">
-                <Trophy className="h-4 w-4" />
-                Conquistas
-              </TabsTrigger>
-            )}
             <TabsTrigger value="ranking" className="flex items-center gap-2 text-sm">
               <Crown className="h-4 w-4" />
               Ranking
@@ -54,12 +45,6 @@ export default function StudentTasks() {
           <TabsContent value="missions" className="mt-6">
             <StudentTasksDashboard />
           </TabsContent>
-
-          {isMobile && (
-            <TabsContent value="achievements" className="mt-6">
-              <AchievementsPanel />
-            </TabsContent>
-          )}
 
           <TabsContent value="ranking" className="mt-6">
             <LeaderboardPanel />
