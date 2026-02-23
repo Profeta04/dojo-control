@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { AvatarUpload } from "@/components/student/AvatarUpload";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { Badge } from "@/components/ui/badge";
+import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { toast } from "sonner";
 import { Save, User, Sun, Moon, PanelLeft, PanelBottom, Shield, ShieldOff, LogOut, Phone, Mail } from "lucide-react";
@@ -24,6 +25,7 @@ export default function StudentConfig() {
   const { profile, user, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { data: studentBelts = [] } = useStudentBelts(user?.id);
   const [saving, setSaving] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || "");
   const [email, setEmail] = useState(profile?.email || "");
@@ -120,9 +122,20 @@ export default function StudentConfig() {
           </CardHeader>
           <CardContent className="flex flex-col items-center gap-3">
             <AvatarUpload />
-            {profile?.belt_grade && (
+            {studentBelts.length > 0 ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {studentBelts.map((sb) => (
+                  <div key={sb.martial_art} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/50">
+                    <BeltBadge grade={sb.belt_grade as any} size="md" martialArt={sb.martial_art} degree={sb.degree || 0} />
+                    <span className="text-xs text-muted-foreground">
+                      {sb.martial_art === "judo" ? "Judô" : sb.martial_art === "bjj" ? "Jiu-Jitsu" : sb.martial_art}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : profile?.belt_grade ? (
               <BeltBadge grade={profile.belt_grade as any} size="lg" />
-            )}
+            ) : null}
             <Badge variant={isFederated ? "default" : "secondary"} className="flex items-center gap-1">
               {isFederated ? <><Shield className="h-3 w-3" /> Federado</> : <><ShieldOff className="h-3 w-3" /> Não federado</>}
             </Badge>

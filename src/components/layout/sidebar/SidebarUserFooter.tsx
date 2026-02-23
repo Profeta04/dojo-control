@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
+import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BeltBadge } from "@/components/shared/BeltBadge";
@@ -16,8 +17,9 @@ interface SidebarUserFooterProps {
 export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
+  const { profile, signOut, isAdmin, isSensei, isStudent, canManageStudents, user } = useAuth();
   const { getSignedUrl } = useSignedUrl();
+  const { data: studentBelts = [] } = useStudentBelts(user?.id);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [beltDialogOpen, setBeltDialogOpen] = useState(false);
 
@@ -73,8 +75,24 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
             <p className="text-sm font-semibold text-sidebar-foreground truncate leading-tight">
               {profile?.name || "Usuário"}
             </p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              {profile?.belt_grade && (
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              {studentBelts.length > 0 ? (
+                studentBelts.map((sb) => (
+                  isSensei ? (
+                    <button
+                      key={sb.martial_art}
+                      onClick={() => setBeltDialogOpen(true)}
+                      className="flex items-center gap-0.5 hover:opacity-80 transition-opacity"
+                      title="Alterar faixa"
+                    >
+                      <BeltBadge grade={sb.belt_grade as any} size="sm" martialArt={sb.martial_art} degree={sb.degree || 0} />
+                      <Pencil className="h-2.5 w-2.5 text-sidebar-foreground/40" />
+                    </button>
+                  ) : (
+                    <BeltBadge key={sb.martial_art} grade={sb.belt_grade as any} size="sm" martialArt={sb.martial_art} degree={sb.degree || 0} />
+                  )
+                ))
+              ) : profile?.belt_grade ? (
                 isSensei ? (
                   <button
                     onClick={() => setBeltDialogOpen(true)}
@@ -87,7 +105,7 @@ export function SidebarUserFooter({ onCloseMobile }: SidebarUserFooterProps) {
                 ) : (
                   <BeltBadge grade={profile.belt_grade as any} size="sm" />
                 )
-              )}
+              ) : null}
               <span className="text-xs text-sidebar-foreground/50 font-medium">{roleLabel}</span>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { Calendar, Award, Phone, Mail, Shield, ShieldOff, Building2, MapPin, Swords } from "lucide-react";
@@ -64,20 +65,8 @@ export function StudentProfileCard() {
     enabled: !!user?.id,
   });
 
-  // Fetch student belts (multi-art)
-  const { data: studentBelts = [] } = useQuery({
-    queryKey: ["student-belts", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from("student_belts")
-        .select("martial_art, belt_grade, degree")
-        .eq("user_id", user.id);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
+  // Fetch student belts (multi-art) using shared hook
+  const { data: studentBelts = [] } = useStudentBelts(user?.id);
 
   const lastGraduation = graduationHistory?.[0];
   const hasMultipleBelts = studentBelts.length > 1;

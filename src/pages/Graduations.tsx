@@ -72,6 +72,7 @@ export default function GraduationsPage() {
 
   const [promotionDialogOpen, setPromotionDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
+  const [selectedMartialArt, setSelectedMartialArt] = useState<string>("judo");
   const [newBelt, setNewBelt] = useState<BeltGrade | "">("");
   const [newDegree, setNewDegree] = useState<number>(0);
   const [notes, setNotes] = useState("");
@@ -108,6 +109,42 @@ export default function GraduationsPage() {
     },
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
+
+  // Fetch dojo info for martial_arts config
+  const { data: dojoInfo } = useQuery({
+    queryKey: ["dojo-info-martial", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return null;
+      const { data, error } = await supabase
+        .from("dojos")
+        .select("martial_arts")
+        .eq("id", currentDojoId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!currentDojoId,
+  });
+
+  // Fetch all student belts for display
+  const { data: allStudentBelts = [] } = useQuery({
+    queryKey: ["all-student-belts", currentDojoId],
+    queryFn: async () => {
+      const studentIds = students?.map(s => s.user_id) || [];
+      if (studentIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("student_belts")
+        .select("user_id, martial_art, belt_grade, degree")
+        .in("user_id", studentIds);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!students && students.length > 0,
+  });
+
+  const getStudentBelts = (userId: string) => allStudentBelts.filter(b => b.user_id === userId);
+  const isMultiArt = dojoInfo?.martial_arts === "judo_bjj";
+  const dojoArts = dojoInfo?.martial_arts === "bjj" ? ["bjj"] : dojoInfo?.martial_arts === "judo_bjj" ? ["judo", "bjj"] : ["judo"];
 
   // Fetch classes filtered by dojo
   const { data: classes, isLoading: classesLoading } = useQuery({
@@ -222,8 +259,9 @@ export default function GraduationsPage() {
     return BELT_ORDER.slice(currentIndex + 1);
   };
 
-  const openPromotionDialog = (student: Profile) => {
+  const openPromotionDialog = (student: Profile, martialArt?: string) => {
     setSelectedStudent(student);
+    setSelectedMartialArt(martialArt || dojoArts[0] || "judo");
     setNewBelt("");
     setNewDegree(0);
     setNotes("");
@@ -236,28 +274,17 @@ export default function GraduationsPage() {
     setFormLoading(true);
 
     try {
-      // Determine martial art from the selected tab (class)
-      // Find the class this student is in from the current tab
-      const currentTab = tabs.find(t => {
-        return t.students.some(s => s.user_id === selectedStudent.user_id);
-      });
-      // Get class martial art
-      let martialArt = "judo";
-      if (currentTab && currentTab.id !== "no-class") {
-        const { data: classData } = await supabase
-          .from("classes")
-          .select("martial_art")
-          .eq("id", currentTab.id)
-          .single();
-        if (classData) martialArt = classData.martial_art;
-      }
+      const martialArt = selectedMartialArt;
+
+      // Get current belt for this art
+      const currentBeltForArt = getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === martialArt);
 
       const { error: historyError } = await supabase.from("graduation_history").insert({
         student_id: selectedStudent.user_id,
-        from_belt: selectedStudent.belt_grade,
+        from_belt: currentBeltForArt?.belt_grade || selectedStudent.belt_grade,
         to_belt: newBelt,
         to_degree: martialArt === "bjj" ? newDegree : 0,
-        from_degree: 0,
+        from_degree: currentBeltForArt?.degree || 0,
         approved_by: user.id,
         notes: notes || null,
         graduation_date: new Date().toISOString().split("T")[0],
@@ -295,6 +322,8 @@ export default function GraduationsPage() {
       setPromotionDialogOpen(false);
       queryClient.invalidateQueries({ queryKey: ["approved-students"] });
       queryClient.invalidateQueries({ queryKey: ["graduation-history"] });
+      queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
+      queryClient.invalidateQueries({ queryKey: ["student-belts"] });
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -324,15 +353,46 @@ export default function GraduationsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-3 p-4 pt-0">
-          <div className="flex items-center gap-2">
-            {student.belt_grade ? (
+          {/* Show belts per martial art */}
+          {(() => {
+            const belts = getStudentBelts(student.user_id);
+            if (belts.length > 0) {
+              return (
+                <div className="space-y-1.5">
+                  {belts.map((sb) => (
+                    <div key={sb.martial_art} className="flex items-center gap-2">
+                      <BeltBadge grade={sb.belt_grade} size="sm" showLabel martialArt={sb.martial_art} degree={sb.degree || 0} />
+                      <span className="text-xs text-muted-foreground">
+                        {MARTIAL_ART_LABELS[sb.martial_art] || sb.martial_art}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+            return student.belt_grade ? (
               <BeltBadge grade={student.belt_grade} size="sm" showLabel />
             ) : (
               <span className="text-sm text-muted-foreground">Sem faixa</span>
-            )}
-          </div>
+            );
+          })()}
 
-          {canManageStudents && canPromote ? (
+          {canManageStudents && isMultiArt ? (
+            <div className="flex gap-2">
+              {dojoArts.map((art) => {
+                const beltForArt = getStudentBelts(student.user_id).find(b => b.martial_art === art);
+                const currentBelt = beltForArt?.belt_grade as BeltGrade | null;
+                const nextBelts = getNextBelts(currentBelt);
+                if (nextBelts.length === 0) return null;
+                return (
+                  <Button key={art} className="flex-1" size="sm" variant="outline" onClick={() => openPromotionDialog(student, art)}>
+                    <Plus className="h-3 w-3 mr-1" />
+                    {MARTIAL_ART_LABELS[art]}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : canManageStudents && canPromote ? (
             <Button className="w-full" size="sm" onClick={() => openPromotionDialog(student)}>
               <Plus className="h-4 w-4 mr-2" />
               Promover
@@ -538,14 +598,44 @@ export default function GraduationsPage() {
             </DialogHeader>
 
             <div className="space-y-4">
+              {/* Martial Art selector for multi-art dojos */}
+              {isMultiArt && (
+                <div className="space-y-2">
+                  <Label>Arte Marcial</Label>
+                  <div className="flex gap-2">
+                    {dojoArts.map((art) => (
+                      <button
+                        key={art}
+                        type="button"
+                        onClick={() => { setSelectedMartialArt(art); setNewBelt(""); setNewDegree(0); }}
+                        className={cn(
+                          "flex-1 py-2 px-3 rounded-md border text-sm font-medium transition-colors",
+                          selectedMartialArt === art
+                            ? "border-accent bg-accent/10 text-foreground"
+                            : "border-border hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {MARTIAL_ART_LABELS[art]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <Label className="text-sm text-muted-foreground">Faixa Atual</Label>
+                <Label className="text-sm text-muted-foreground">Faixa Atual ({MARTIAL_ART_LABELS[selectedMartialArt] || selectedMartialArt})</Label>
                 <div className="mt-1">
-                  {selectedStudent?.belt_grade ? (
-                    <BeltBadge grade={selectedStudent.belt_grade} size="md" showLabel />
-                  ) : (
-                    <span className="text-sm">Sem faixa</span>
-                  )}
+                  {(() => {
+                    const currentBelt = selectedStudent ? getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt) : null;
+                    if (currentBelt) {
+                      return <BeltBadge grade={currentBelt.belt_grade} size="md" showLabel martialArt={currentBelt.martial_art} degree={currentBelt.degree || 0} />;
+                    }
+                    return selectedStudent?.belt_grade ? (
+                      <BeltBadge grade={selectedStudent.belt_grade} size="md" showLabel />
+                    ) : (
+                      <span className="text-sm">Sem faixa</span>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -557,7 +647,10 @@ export default function GraduationsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {selectedStudent &&
-                      getNextBelts(selectedStudent.belt_grade as BeltGrade | null).map((belt) => (
+                      (() => {
+                        const currentBelt = getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt);
+                        return getNextBelts(currentBelt?.belt_grade as BeltGrade | null);
+                      })().map((belt) => (
                         <SelectItem key={belt} value={belt}>
                           <div className="flex items-center gap-2">
                             <BeltBadge grade={belt} size="sm" />
@@ -570,7 +663,7 @@ export default function GraduationsPage() {
               </div>
 
               {/* BJJ Degree selector */}
-              {newBelt && BJJ_DEGREE_BELTS.includes(newBelt) && (
+              {newBelt && selectedMartialArt === "bjj" && BJJ_DEGREE_BELTS.includes(newBelt) && (
                 <div className="space-y-2">
                   <Label>Grau (listras BJJ)</Label>
                   <div className="flex gap-2">
@@ -596,15 +689,17 @@ export default function GraduationsPage() {
 
               {newBelt && (
                 <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-                  <Label className="text-sm text-muted-foreground">Promoção</Label>
+                  <Label className="text-sm text-muted-foreground">Promoção ({MARTIAL_ART_LABELS[selectedMartialArt]})</Label>
                   <div className="flex items-center gap-2 mt-1">
-                    {selectedStudent?.belt_grade ? (
-                      <BeltBadge grade={selectedStudent.belt_grade} size="sm" />
-                    ) : (
-                      <span className="text-xs">—</span>
-                    )}
+                    {(() => {
+                      const currentBelt = selectedStudent ? getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt) : null;
+                      if (currentBelt) {
+                        return <BeltBadge grade={currentBelt.belt_grade} size="sm" martialArt={currentBelt.martial_art} degree={currentBelt.degree || 0} />;
+                      }
+                      return <span className="text-xs">—</span>;
+                    })()}
                     <ChevronRight className="h-4 w-4 text-accent" />
-                    <BeltBadge grade={newBelt} size="sm" showLabel martialArt={BJJ_DEGREE_BELTS.includes(newBelt) ? "bjj" : undefined} degree={newDegree} />
+                    <BeltBadge grade={newBelt} size="sm" showLabel martialArt={selectedMartialArt} degree={newDegree} />
                   </div>
                 </div>
               )}
