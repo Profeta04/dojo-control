@@ -33,12 +33,18 @@ interface TabItem {
   isProfile?: boolean;
 }
 
-const studentTabs: TabItem[] = [
+const studentPage1: TabItem[] = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
+];
+
+const studentPage2: TabItem[] = [
+  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
+  { title: "Conquistas", href: "/conquistas", icon: Trophy },
+  { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 // Admin/Dono pages
@@ -79,7 +85,7 @@ export function StudentBottomNav() {
   // Determine which pages to use
   const isStudentOnly = isStudent && !canManageStudents;
   const pages: TabItem[][] = isStudentOnly
-    ? [studentTabs]
+    ? [studentPage1, studentPage2]
     : isAdminRole
       ? [adminPage1, adminPage2WithSenseis]
       : [senseiPage1, senseiPage2];
