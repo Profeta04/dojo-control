@@ -164,12 +164,12 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
         <Link
           key={tab.href}
           to={tab.href}
-          className="flex flex-col items-center -mt-5 relative px-1 flex-1 min-w-0"
+          className="flex flex-col items-center -mt-6 relative px-1 flex-1 min-w-0"
           aria-current={isActive ? "page" : undefined}
         >
           <div
             className={cn(
-              "w-[3rem] h-[3rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+              "w-[3.5rem] h-[3.5rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
               "shadow-lg border-2 border-sidebar",
               isActive
                 ? "ring-2 ring-accent ring-offset-1 ring-offset-sidebar scale-110"
@@ -213,7 +213,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
         key={tab.href}
         to={tab.href}
         className={cn(
-          "flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1",
+          "flex flex-col items-center gap-1 py-1.5 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1",
           isActive
             ? "text-accent"
             : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
@@ -223,13 +223,13 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
         <div className="relative">
           <Icon
             className={cn(
-              "h-6 w-6 transition-all duration-200",
+              "h-7 w-7 transition-all duration-200",
               isActive && "scale-110"
             )}
           />
         </div>
         <span className={cn(
-          "text-[0.65rem] leading-tight font-medium transition-all duration-200 truncate max-w-full text-center",
+          "text-[0.7rem] leading-tight font-medium transition-all duration-200 truncate max-w-full text-center",
           isActive && "font-semibold"
         )}>
           {tab.title}
@@ -242,6 +242,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
     <nav
       id="student-bottom-nav"
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
+      style={{ minHeight: '4rem' }}
       aria-label="Navegação principal"
     >
       <AnimatePresence mode="wait">
@@ -251,7 +252,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
           transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="flex items-end justify-around w-full px-1 pt-2 pb-3"
+          className="flex items-end justify-around w-full px-2 pt-2.5 pb-4"
         >
           {/* Back arrow if not on first page */}
           {hasPagination && page > 0 && (
@@ -260,8 +261,8 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
               className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Voltar"
             >
-              <ChevronLeft className="h-5 w-5" />
-              <span className="text-[0.55rem] font-medium">←</span>
+              <ChevronLeft className="h-6 w-6" />
+              <span className="text-[0.6rem] font-medium">←</span>
             </button>
           )}
 
@@ -274,8 +275,8 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
               className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Mais opções"
             >
-              <ChevronRight className="h-5 w-5" />
-              <span className="text-[0.55rem] font-medium">→</span>
+              <ChevronRight className="h-6 w-6" />
+              <span className="text-[0.6rem] font-medium">→</span>
             </button>
           )}
         </motion.div>
