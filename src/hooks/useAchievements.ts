@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useEffect, useCallback } from "react";
 import { fireLegendaryConfetti } from "@/lib/confetti";
+import { playAchievement } from "@/lib/sounds";
 
 export interface Achievement {
   id: string;
@@ -185,11 +186,14 @@ export function useAchievements(targetUserId?: string) {
         }
       }
 
-      // Fire legendary confetti for epic/legendary achievements
-      for (const a of newlyUnlocked) {
-        if (a.rarity === "legendary" || a.rarity === "epic") {
-          fireLegendaryConfetti();
-          break;
+      // Play sounds and effects for achievements
+      if (newlyUnlocked.length > 0) {
+        playAchievement();
+        for (const a of newlyUnlocked) {
+          if (a.rarity === "legendary" || a.rarity === "epic") {
+            fireLegendaryConfetti();
+            break;
+          }
         }
       }
 
