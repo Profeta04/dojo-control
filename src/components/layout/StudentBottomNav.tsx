@@ -40,12 +40,12 @@ const studentPage1: TabItem[] = [
   { title: "Início", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
+  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
 const studentPage2: TabItem[] = [
   { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
-  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
