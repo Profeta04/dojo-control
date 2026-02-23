@@ -40,11 +40,11 @@ const studentPage1: TabItem[] = [
   { title: "Início", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
-  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
 const studentPage2: TabItem[] = [
+  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
@@ -239,45 +239,47 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
   };
 
   return (
-    <>
-      {/* Pagination arrows floating above the bar, at the corners */}
-      {hasPagination && page > 0 && (
-        <button
-          onClick={() => setPage(page - 1)}
-          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] left-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-2 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
-          aria-label="Voltar"
+    <nav
+      id="student-bottom-nav"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
+      aria-label="Navegação principal"
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={page}
+          initial={{ opacity: 0, x: page === 1 ? 40 : -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
+          className="flex items-end justify-around w-full px-1 pt-2 pb-3"
         >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-      )}
-      {hasPagination && page < pages.length - 1 && (
-        <button
-          onClick={() => setPage(page + 1)}
-          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] right-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-2 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
-          aria-label="Mais opções"
-        >
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      )}
+          {/* Back arrow if not on first page */}
+          {hasPagination && page > 0 && (
+            <button
+              onClick={() => setPage(page - 1)}
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              aria-label="Voltar"
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-[0.55rem] font-medium">←</span>
+            </button>
+          )}
 
-      <nav
-        id="student-bottom-nav"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
-        aria-label="Navegação principal"
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={page}
-            initial={{ opacity: 0, x: page === 1 ? 40 : -40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="flex items-end justify-around w-full px-1 pt-2 pb-3"
-          >
-            {currentTabs.map((tab, i) => renderTab(tab, i))}
-          </motion.div>
-        </AnimatePresence>
-      </nav>
-    </>
+          {currentTabs.map((tab, i) => renderTab(tab, i))}
+
+          {/* Forward arrow if not on last page */}
+          {hasPagination && page < pages.length - 1 && (
+            <button
+              onClick={() => setPage(page + 1)}
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              aria-label="Mais opções"
+            >
+              <ChevronRight className="h-5 w-5" />
+              <span className="text-[0.55rem] font-medium">→</span>
+            </button>
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </nav>
   );
 }
