@@ -28,6 +28,17 @@ export const BELT_LABELS: Record<BeltGrade, string> = {
   preta_10dan: "Faixa Preta 10º Dan",
 };
 
+// BJJ belts that support degrees (graus)
+export const BJJ_DEGREE_BELTS = ["branca", "azul", "roxa", "marrom", "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan"];
+
+export function getBjjBeltLabel(grade: string, degree: number): string {
+  const baseLabel = BELT_LABELS[grade as BeltGrade] || grade;
+  if (degree > 0 && degree <= 4) {
+    return `${baseLabel} - ${degree}º Grau`;
+  }
+  return baseLabel;
+}
+
 export const BELT_COLORS: Record<BeltGrade, string> = {
   branca: "bg-white border-2 border-foreground/40",
   bordo: "bg-red-900",

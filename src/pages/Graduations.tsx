@@ -39,10 +39,11 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Award, Plus, ChevronRight, History, Loader2, User, GraduationCap, UserX } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BeltGrade, BELT_LABELS } from "@/lib/constants";
+import { BeltGrade, BELT_LABELS, BJJ_DEGREE_BELTS, getBjjBeltLabel } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type GraduationHistory = Tables<"graduation_history">;
@@ -72,6 +73,7 @@ export default function GraduationsPage() {
   const [promotionDialogOpen, setPromotionDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [newBelt, setNewBelt] = useState<BeltGrade | "">("");
+  const [newDegree, setNewDegree] = useState<number>(0);
   const [notes, setNotes] = useState("");
   const [formLoading, setFormLoading] = useState(false);
 
@@ -223,6 +225,7 @@ export default function GraduationsPage() {
   const openPromotionDialog = (student: Profile) => {
     setSelectedStudent(student);
     setNewBelt("");
+    setNewDegree(0);
     setNotes("");
     setPromotionDialogOpen(true);
   };
@@ -253,6 +256,8 @@ export default function GraduationsPage() {
         student_id: selectedStudent.user_id,
         from_belt: selectedStudent.belt_grade,
         to_belt: newBelt,
+        to_degree: martialArt === "bjj" ? newDegree : 0,
+        from_degree: 0,
         approved_by: user.id,
         notes: notes || null,
         graduation_date: new Date().toISOString().split("T")[0],
@@ -268,6 +273,7 @@ export default function GraduationsPage() {
           user_id: selectedStudent.user_id,
           martial_art: martialArt,
           belt_grade: newBelt,
+          degree: martialArt === "bjj" ? newDegree : 0,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id,martial_art" });
 
@@ -545,7 +551,7 @@ export default function GraduationsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="new-belt">Nova Faixa</Label>
-                <Select value={newBelt} onValueChange={(v) => setNewBelt(v as BeltGrade)}>
+                <Select value={newBelt} onValueChange={(v) => { setNewBelt(v as BeltGrade); setNewDegree(0); }}>
                   <SelectTrigger id="new-belt">
                     <SelectValue placeholder="Selecionar nova faixa" />
                   </SelectTrigger>
@@ -563,6 +569,31 @@ export default function GraduationsPage() {
                 </Select>
               </div>
 
+              {/* BJJ Degree selector */}
+              {newBelt && BJJ_DEGREE_BELTS.includes(newBelt) && (
+                <div className="space-y-2">
+                  <Label>Grau (listras BJJ)</Label>
+                  <div className="flex gap-2">
+                    {[0, 1, 2, 3, 4].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setNewDegree(d)}
+                        className={cn(
+                          "flex-1 flex flex-col items-center gap-1.5 p-2 rounded-md border transition-colors",
+                          newDegree === d
+                            ? "border-accent bg-accent/10 text-foreground"
+                            : "border-border hover:bg-muted text-muted-foreground"
+                        )}
+                      >
+                        <BeltBadge grade={newBelt} size="sm" martialArt="bjj" degree={d} />
+                        <span className="text-xs">{d}º</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {newBelt && (
                 <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
                   <Label className="text-sm text-muted-foreground">Promoção</Label>
@@ -573,7 +604,7 @@ export default function GraduationsPage() {
                       <span className="text-xs">—</span>
                     )}
                     <ChevronRight className="h-4 w-4 text-accent" />
-                    <BeltBadge grade={newBelt} size="sm" showLabel />
+                    <BeltBadge grade={newBelt} size="sm" showLabel martialArt={BJJ_DEGREE_BELTS.includes(newBelt) ? "bjj" : undefined} degree={newDegree} />
                   </div>
                 </div>
               )}

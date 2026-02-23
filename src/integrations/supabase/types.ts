@@ -458,34 +458,40 @@ export type Database = {
           approved_by: string | null
           created_at: string | null
           from_belt: string | null
+          from_degree: number
           graduation_date: string
           id: string
           martial_art: string
           notes: string | null
           student_id: string
           to_belt: string
+          to_degree: number
         }
         Insert: {
           approved_by?: string | null
           created_at?: string | null
           from_belt?: string | null
+          from_degree?: number
           graduation_date: string
           id?: string
           martial_art?: string
           notes?: string | null
           student_id: string
           to_belt: string
+          to_degree?: number
         }
         Update: {
           approved_by?: string | null
           created_at?: string | null
           from_belt?: string | null
+          from_degree?: number
           graduation_date?: string
           id?: string
           martial_art?: string
           notes?: string | null
           student_id?: string
           to_belt?: string
+          to_degree?: number
         }
         Relationships: [
           {
@@ -1050,6 +1056,7 @@ export type Database = {
       student_belts: {
         Row: {
           belt_grade: string
+          degree: number
           id: string
           martial_art: string
           updated_at: string
@@ -1057,6 +1064,7 @@ export type Database = {
         }
         Insert: {
           belt_grade?: string
+          degree?: number
           id?: string
           martial_art?: string
           updated_at?: string
@@ -1064,6 +1072,7 @@ export type Database = {
         }
         Update: {
           belt_grade?: string
+          degree?: number
           id?: string
           martial_art?: string
           updated_at?: string

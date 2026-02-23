@@ -71,7 +71,7 @@ export function StudentProfileCard() {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("student_belts")
-        .select("martial_art, belt_grade")
+        .select("martial_art, belt_grade, degree")
         .eq("user_id", user.id);
       if (error) throw error;
       return data || [];
@@ -115,10 +115,13 @@ export function StudentProfileCard() {
           {/* Belts */}
           {studentBelts.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {studentBelts.map((sb) => (
+              {studentBelts.map((sb: any) => (
                 <div key={sb.martial_art} className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/50">
-                  <BeltBadge grade={sb.belt_grade as any} size="sm" />
-                  <span className="text-xs text-muted-foreground">{MARTIAL_ART_LABELS[sb.martial_art] || sb.martial_art}</span>
+                  <BeltBadge grade={sb.belt_grade as any} size="sm" martialArt={sb.martial_art} degree={sb.degree || 0} />
+                  <span className="text-xs text-muted-foreground">
+                    {MARTIAL_ART_LABELS[sb.martial_art] || sb.martial_art}
+                    {sb.martial_art === "bjj" && sb.degree > 0 ? ` ${sb.degree}º grau` : ""}
+                  </span>
                 </div>
               ))}
             </div>
