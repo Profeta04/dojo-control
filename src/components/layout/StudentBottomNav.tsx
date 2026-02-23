@@ -33,46 +33,47 @@ interface TabItem {
   isProfile?: boolean;
 }
 
+// Student pages — matching sidebar: Principal then Pagamentos
 const studentPage1: TabItem[] = [
   { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
-  { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
+  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
-  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
+  { title: "Agenda", href: "/agenda", icon: Calendar },
 ];
 
 const studentPage2: TabItem[] = [
-  { title: "Agenda", href: "/agenda", icon: Calendar },
-  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
+  { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
+  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-// Admin/Sensei pages — grouped by theme
+// Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)
 const staffPage1: TabItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Alunos", href: "/students", icon: Users },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
-  { title: "Turmas", href: "/classes", icon: GraduationCap },
+  { title: "Progresso", href: "/progresso", icon: TrendingUp },
 ];
 
 const staffPage2: TabItem[] = [
+  { title: "Turmas", href: "/classes", icon: GraduationCap },
+  { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Pagamentos", href: "/payments", icon: CreditCard },
   { title: "Histórico", href: "/payment-history", icon: History },
-  { title: "Planos", href: "/planos", icon: CreditCard },
-  { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
 ];
 
 const staffPage3: TabItem[] = [
-  { title: "Progresso", href: "/progresso", icon: TrendingUp },
   { title: "Graduações", href: "/graduations", icon: Trophy },
+  { title: "Planos", href: "/planos", icon: CreditCard },
   { title: "Config. Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 const staffPage3WithAdmin: TabItem[] = [
-  { title: "Progresso", href: "/progresso", icon: TrendingUp },
   { title: "Graduações", href: "/graduations", icon: Trophy },
   { title: "Senseis", href: "/senseis", icon: UserCog },
+  { title: "Planos", href: "/planos", icon: CreditCard },
   { title: "Config. Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
