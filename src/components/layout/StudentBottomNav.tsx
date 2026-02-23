@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { BeltBadge } from "@/components/shared/BeltBadge";
+import { BeltBadge, BELT_HEX_COLORS } from "@/components/shared/BeltBadge";
+import { StudentBelt } from "@/hooks/useStudentBelts";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -39,7 +40,7 @@ const studentPage1: TabItem[] = [
   { title: "Início", href: "/perfil", icon: LayoutDashboard },
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
-  { title: "Pagar", href: "/mensalidade", icon: CreditCard },
+  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
 const studentPage2: TabItem[] = [
@@ -79,8 +80,28 @@ const staffPage3WithAdmin: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-export function StudentBottomNav() {
-  const location = useLocation();
+/** Split belt badge: left half = first belt color, right half = second belt color, same size as sm BeltBadge */
+function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
+  const left = BELT_HEX_COLORS[belts[0]?.belt_grade] || "#CCCCCC";
+  const right = BELT_HEX_COLORS[belts[1]?.belt_grade] || "#CCCCCC";
+  const isLeftWhite = belts[0]?.belt_grade === "branca";
+  const isRightWhite = belts[1]?.belt_grade === "branca";
+
+  return (
+    <div
+      className={cn(
+        "h-3 w-12 rounded-sm overflow-hidden flex",
+        (isLeftWhite || isRightWhite) && "border border-foreground/40"
+      )}
+      title={`${belts[0]?.martial_art} / ${belts[1]?.martial_art}`}
+    >
+      <div className="w-1/2 h-full" style={{ backgroundColor: left }} />
+      <div className="w-1/2 h-full" style={{ backgroundColor: right }} />
+    </div>
+  );
+}
+
+  export function StudentBottomNav() {
   const { profile, isStudent, canManageStudents, isSensei, isAdmin } = useAuth();
   const { getSignedUrl } = useSignedUrl();
   const { data: studentBelts } = useStudentBelts(profile?.user_id);
@@ -170,11 +191,13 @@ export function StudentBottomNav() {
               </span>
             )}
           </div>
-          {studentBelts && studentBelts.length > 0 ? (
-            <div className="mt-0.5 flex gap-0.5 animate-scale-in">
-              {studentBelts.map((b) => (
-                <BeltBadge key={b.martial_art} grade={b.belt_grade as any} size="sm" />
-              ))}
+          {studentBelts && studentBelts.length > 1 ? (
+            <div className="mt-0.5 animate-scale-in">
+              <SplitBeltBadge belts={studentBelts} />
+            </div>
+          ) : studentBelts && studentBelts.length === 1 ? (
+            <div className="mt-0.5 animate-scale-in">
+              <BeltBadge grade={studentBelts[0].belt_grade as any} size="sm" />
             </div>
           ) : profile?.belt_grade ? (
             <div className="mt-0.5 animate-scale-in">
