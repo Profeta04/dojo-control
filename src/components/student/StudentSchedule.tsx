@@ -308,10 +308,10 @@ export function StudentSchedule() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-tour="agenda-container">
       {/* Today's Training Alert - at the top */}
       {upcomingToday.length > 0 && (
-        <Card className="border-2 border-accent bg-gradient-to-r from-accent/10 via-accent/5 to-transparent animate-pulse-subtle">
+        <Card data-tour="agenda-today" className="border-2 border-accent bg-gradient-to-r from-accent/10 via-accent/5 to-transparent animate-pulse-subtle">
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="h-14 w-14 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 ring-4 ring-accent/30">
@@ -343,7 +343,7 @@ export function StudentSchedule() {
       {/* Calendar Section */}
       <div className="grid gap-6 lg:grid-cols-[1fr_350px]">
         {/* Calendar */}
-        <Card>
+        <Card data-tour="agenda-calendar">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -403,7 +403,7 @@ export function StudentSchedule() {
         </Card>
 
         {/* Selected Date Details */}
-        <Card>
+        <Card data-tour="agenda-details">
           <CardHeader>
             <CardTitle className="text-lg">
               {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}

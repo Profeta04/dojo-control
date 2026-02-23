@@ -325,10 +325,12 @@ export default function StudentPaymentsPage() {
       )}
 
       {/* Stats Cards */}
-      <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
+      <div data-tour="payment-stats">
+        <PaymentStatsCards stats={statsWithFees} formatCurrency={formatCurrency} variant="student" />
+      </div>
 
       {/* Highlight Cards: Total com taxas + Próximo vencimento */}
-      <div className="grid gap-4 mb-6 sm:grid-cols-2">
+      <div className="grid gap-4 mb-6 sm:grid-cols-2" data-tour="payment-summary">
         {/* Total devido - estilo intimidador só quando há atraso */}
         {statsWithFees.atrasado > 0 && statsWithFees.totalWithFees > 0 && (
           <Card className="border-destructive/30 bg-gradient-to-br from-destructive/10 via-destructive/5 to-transparent shadow-sm animate-fade-in overflow-hidden relative">
@@ -395,7 +397,7 @@ export default function StudentPaymentsPage() {
       </div>
 
       {/* Pix Payment Card */}
-      <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm hover-scale animate-fade-in overflow-hidden relative">
+      <Card data-tour="pix-card" className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent shadow-sm hover-scale animate-fade-in overflow-hidden relative">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
         <CardHeader className="relative">
           <CardTitle className="flex items-center gap-2">
