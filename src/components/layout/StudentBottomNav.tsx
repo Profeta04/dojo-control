@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { playClick } from "@/lib/sounds";
 import { useAuth } from "@/hooks/useAuth";
 import { BeltBadge, BELT_HEX_COLORS } from "@/components/shared/BeltBadge";
 import { StudentBelt } from "@/hooks/useStudentBelts";
@@ -212,6 +213,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
       <Link
         key={tab.href}
         to={tab.href}
+        onClick={() => playClick()}
         className={cn(
           "flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1",
           isActive

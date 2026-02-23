@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Zap, ArrowUp } from "lucide-react";
 import { useEffect } from "react";
 import { fireConfetti } from "@/lib/confetti";
+import { playXP, playLevelUp } from "@/lib/sounds";
 
 interface XPNotificationProps {
   xpAmount: number;
@@ -15,10 +16,13 @@ interface XPNotificationProps {
 export function XPNotification({ xpAmount, multiplier, leveledUp, newLevel, show, onComplete }: XPNotificationProps) {
   useEffect(() => {
     if (show) {
+      playXP();
       if (leveledUp) {
-        // Big celebration for level up
         fireConfetti();
-        setTimeout(() => fireConfetti(), 300);
+        setTimeout(() => {
+          fireConfetti();
+          playLevelUp();
+        }, 300);
       }
       const timer = setTimeout(onComplete, 3000);
       return () => clearTimeout(timer);

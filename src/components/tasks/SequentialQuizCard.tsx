@@ -16,6 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fireConfetti } from "@/lib/confetti";
 import { XPNotification } from "@/components/gamification/XPNotification";
+import { playCorrect, playWrong, playXP, playLevelUp } from "@/lib/sounds";
 
 interface QuizQuestion {
   task: TaskWithAssignee & { _templateId?: string; _needsTaskRecord?: boolean };
@@ -74,6 +75,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
     try {
       if (correct) {
         fireConfetti();
+        playCorrect();
         toast.success("Resposta correta! 🎉");
 
         // Create or update the task record as completed
@@ -117,6 +119,7 @@ export function SequentialQuizCard({ questions, groupLabel, onQuestionAnswered }
           checkAndUnlock.mutate({ tasksCompleted: (count || 0), currentStreak, totalXp: result.newTotal });
         } catch {}
       } else {
+        playWrong();
         toast.error("Você errou! Vamos para a próxima tarefa.");
 
         // Create a pending task record if none exists (so it reappears)

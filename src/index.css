@@ -12,7 +12,7 @@
     --color-tertiary: 4 85% 50%;
     
     /* Derived colors - high contrast light mode */
-    --background: 220 15% 96%;
+    --background: 220 14% 95%;
     --foreground: 220 20% 10%;
 
     --card: 0 0% 100%;
@@ -24,10 +24,10 @@
     --primary: var(--color-primary);
     --primary-foreground: 0 0% 98%;
 
-    --secondary: var(--color-secondary);
+    --secondary: 220 12% 88%;
     --secondary-foreground: 220 15% 12%;
 
-    --muted: 220 10% 94%;
+    --muted: 220 10% 90%;
     --muted-foreground: 220 12% 38%;
 
     --accent: var(--color-tertiary);
@@ -40,11 +40,17 @@
     --info: 220 15% 40%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 13% 78%;
+    --border: 220 13% 82%;
     --input: 220 13% 80%;
     --ring: var(--color-tertiary);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Neumorphism shadows for light mode */
+    --neu-shadow: 6px 6px 14px hsl(220 15% 85% / 0.7), -6px -6px 14px hsl(0 0% 100% / 0.9);
+    --neu-shadow-sm: 3px 3px 8px hsl(220 15% 85% / 0.6), -3px -3px 8px hsl(0 0% 100% / 0.8);
+    --neu-shadow-inset: inset 2px 2px 6px hsl(220 15% 85% / 0.5), inset -2px -2px 6px hsl(0 0% 100% / 0.7);
+    --neu-shadow-hover: 8px 8px 18px hsl(220 15% 82% / 0.8), -8px -8px 18px hsl(0 0% 100% / 1);
 
     /* Sidebar - uses primary color */
     --sidebar-background: var(--color-primary);
@@ -113,6 +119,12 @@
     --border: 220 13% 22%;
     --input: 220 13% 22%;
     --ring: var(--color-tertiary);
+
+    /* Neumorphism shadows for dark mode */
+    --neu-shadow: 6px 6px 14px hsl(220 15% 4% / 0.6), -6px -6px 14px hsl(220 15% 16% / 0.3);
+    --neu-shadow-sm: 3px 3px 8px hsl(220 15% 4% / 0.5), -3px -3px 8px hsl(220 15% 16% / 0.2);
+    --neu-shadow-inset: inset 2px 2px 6px hsl(220 15% 4% / 0.4), inset -2px -2px 6px hsl(220 15% 16% / 0.15);
+    --neu-shadow-hover: 8px 8px 18px hsl(220 15% 3% / 0.7), -8px -8px 18px hsl(220 15% 18% / 0.35);
 
     /* Sidebar - dark version */
     --sidebar-background: 220 15% 6%;
@@ -208,6 +220,23 @@
 
   .belt-shadow {
     box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.2);
+  }
+
+  .neu-card {
+    box-shadow: var(--neu-shadow);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .neu-card:hover {
+    box-shadow: var(--neu-shadow-hover);
+  }
+
+  .neu-inset {
+    box-shadow: var(--neu-shadow-inset);
+  }
+
+  .neu-flat {
+    box-shadow: var(--neu-shadow-sm);
   }
 
   /* Screen reader only utility */
