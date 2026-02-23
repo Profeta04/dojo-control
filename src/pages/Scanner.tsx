@@ -99,7 +99,7 @@ export default function Scanner() {
         >
           <h1 className="text-xl font-bold text-foreground">Scanner de Presença</h1>
           <p className="text-sm text-muted-foreground">
-            Aponte para o QR Code do dojo
+            Aponte a câmera para o QR Code do cartaz de presença do dojo para registrar seu check-in automaticamente.
           </p>
         </motion.div>
 
