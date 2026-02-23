@@ -118,8 +118,23 @@ export function useAchievements(targetUserId?: string) {
       tasksCompleted: number;
       currentStreak: number;
       totalXp: number;
+      attendanceCount?: number;
     }) => {
       if (!userId) throw new Error("No user");
+
+      // Fetch attendance count if not provided and there are attendance achievements
+      let attendanceCount = stats.attendanceCount;
+      const hasAttendanceAchievements = allAchievements.some(
+        (a) => a.criteria_type === "attendance_count" && !a.is_annual
+      );
+      if (attendanceCount === undefined && hasAttendanceAchievements) {
+        const { count } = await supabase
+          .from("attendance")
+          .select("id", { count: "exact", head: true })
+          .eq("student_id", userId)
+          .eq("present", true);
+        attendanceCount = count || 0;
+      }
 
       const unlockedIds = new Set(
         unlockedAchievements.map((ua) => ua.achievement_id)
@@ -129,7 +144,7 @@ export function useAchievements(targetUserId?: string) {
 
       for (const achievement of allAchievements) {
         if (unlockedIds.has(achievement.id)) continue;
-        if (achievement.is_annual) continue; // Annual handled separately
+        if (achievement.is_annual) continue;
 
         let qualifies = false;
 
@@ -142,6 +157,9 @@ export function useAchievements(targetUserId?: string) {
             break;
           case "xp_total":
             qualifies = stats.totalXp >= achievement.criteria_value;
+            break;
+          case "attendance_count":
+            qualifies = (attendanceCount || 0) >= achievement.criteria_value;
             break;
         }
 
