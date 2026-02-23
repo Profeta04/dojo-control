@@ -177,8 +177,8 @@ const studentTutorials: Record<string, TabTutorial> = {
       "Acompanhe sua evolução com gráficos de presença e linha do tempo de graduações.",
     steps: [],
   },
-  "/configuracoes": {
-    tabId: "configuracoes",
+  "/config": {
+    tabId: "config",
     title: "Configurações",
     summary:
       "Gerencie seu perfil, foto, tema e preferências de navegação.",
