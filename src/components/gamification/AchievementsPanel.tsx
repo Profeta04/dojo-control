@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useAchievements } from "@/hooks/useAchievements";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Lock } from "lucide-react";
+import { Trophy, Lock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; label: string }> = {
@@ -21,6 +22,7 @@ interface AchievementsPanelProps {
 
 export function AchievementsPanel({ userId, compact = false, maxVisible }: AchievementsPanelProps) {
   const { allAchievements, unlockedAchievements, unlockedCount, totalCount, progressPercent, isLoading } = useAchievements(userId);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (isLoading) return null;
 
@@ -95,61 +97,85 @@ export function AchievementsPanel({ userId, compact = false, maxVisible }: Achie
             const isUnlocked = unlockedIds.has(achievement.id);
             const rarity = achievement.rarity;
             const style = RARITY_STYLES[rarity];
+            const isSelected = selectedId === achievement.id;
 
             return (
-              <Tooltip key={achievement.id}>
-                <TooltipTrigger asChild>
-                  <motion.div
-                    className={cn(
-                      "relative aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all cursor-default p-1",
-                      isUnlocked
-                        ? cn(style.border, style.bg, style.glow && `shadow-lg ${style.glow}`)
-                        : "border-border/40 bg-muted/30 opacity-40 grayscale"
-                    )}
-                    whileHover={isUnlocked ? { scale: 1.08, y: -2 } : {}}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <span className="text-xl sm:text-2xl">{achievement.icon}</span>
-                    {!isUnlocked && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-background/40 rounded-xl">
-                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                      </div>
-                    )}
-                    {achievement.xp_reward > 0 && isUnlocked && (
-                      <span className="text-[8px] font-bold text-accent mt-0.5">+{achievement.xp_reward}</span>
-                    )}
-                  </motion.div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px]">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-xs">{achievement.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{achievement.description}</p>
-                    <div className="flex items-center gap-1.5">
-                      <Badge variant="outline" className={cn(
-                        "text-[9px] px-1 py-0",
-                        isUnlocked && rarity === "legendary" && "border-amber-400 text-amber-600",
-                        isUnlocked && rarity === "epic" && "border-purple-400 text-purple-600",
-                        isUnlocked && rarity === "rare" && "border-blue-400 text-blue-600",
-                      )}>
+              <motion.div
+                key={achievement.id}
+                className={cn(
+                  "relative aspect-square rounded-xl flex flex-col items-center justify-center border-2 transition-all cursor-pointer p-1",
+                  isUnlocked
+                    ? cn(style.border, style.bg, style.glow && `shadow-lg ${style.glow}`)
+                    : "border-border/40 bg-muted/30 opacity-40 grayscale",
+                  isSelected && "ring-2 ring-accent"
+                )}
+                whileHover={isUnlocked ? { scale: 1.08, y: -2 } : {}}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
+                onClick={() => setSelectedId(isSelected ? null : achievement.id)}
+              >
+                <span className="text-xl sm:text-2xl">{achievement.icon}</span>
+                {!isUnlocked && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/40 rounded-xl">
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                )}
+                {achievement.xp_reward > 0 && isUnlocked && (
+                  <span className="text-[8px] font-bold text-accent mt-0.5">+{achievement.xp_reward}</span>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Selected achievement detail (mobile-friendly) */}
+        <AnimatePresence>
+          {selectedId && (() => {
+            const achievement = permanentAchievements.find(a => a.id === selectedId);
+            if (!achievement) return null;
+            const isUnlocked = unlockedIds.has(achievement.id);
+            const style = RARITY_STYLES[achievement.rarity];
+            return (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className={cn(
+                  "mt-3 p-3 rounded-xl border-2 flex items-start gap-3",
+                  style.border, style.bg
+                )}>
+                  <span className="text-3xl">{achievement.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-sm">{achievement.name}</p>
+                      <button onClick={() => setSelectedId(null)} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{achievement.description}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {style.label}
                       </Badge>
                       {achievement.xp_reward > 0 && (
-                        <span className="text-[9px] text-accent font-medium">+{achievement.xp_reward} XP</span>
+                        <span className="text-[10px] text-accent font-medium">+{achievement.xp_reward} XP</span>
                       )}
                     </div>
                     {!isUnlocked && (
-                      <p className="text-[10px] text-muted-foreground italic">
+                      <p className="text-[11px] text-muted-foreground italic mt-1">
                         {achievement.criteria_type === "tasks_completed" && `Complete ${achievement.criteria_value} tarefas`}
                         {achievement.criteria_type === "streak_days" && `Mantenha um streak de ${achievement.criteria_value} dias`}
                         {achievement.criteria_type === "xp_total" && `Alcance ${achievement.criteria_value} XP`}
                       </p>
                     )}
                   </div>
-                </TooltipContent>
-              </Tooltip>
+                </div>
+              </motion.div>
             );
-          })}
-        </div>
+          })()}
+        </AnimatePresence>
 
         {/* Annual achievements section */}
         {annualAchievements.length > 0 && (
