@@ -244,19 +244,19 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
       {hasPagination && page > 0 && (
         <button
           onClick={() => setPage(page - 1)}
-          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.25rem)] left-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-1.5 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] left-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-2 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
           aria-label="Voltar"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
       )}
       {hasPagination && page < pages.length - 1 && (
         <button
           onClick={() => setPage(page + 1)}
-          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.25rem)] right-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-1.5 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.5rem)] right-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-2 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
           aria-label="Mais opções"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-5 w-5" />
         </button>
       )}
 
