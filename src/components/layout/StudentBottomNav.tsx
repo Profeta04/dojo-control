@@ -239,48 +239,63 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
   };
 
   return (
-    <nav
-      id="student-bottom-nav"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
-      style={{ minHeight: '4rem' }}
-      aria-label="Navegação principal"
-    >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={page}
-          initial={{ opacity: 0, x: page === 1 ? 40 : -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
-          transition={{ duration: 0.25, ease: "easeInOut" }}
-          className="flex items-end justify-around w-full px-2 pt-2.5 pb-4"
-        >
-          {/* Back arrow if not on first page */}
-          {hasPagination && page > 0 && (
-            <button
-              onClick={() => setPage(page - 1)}
-              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
-              aria-label="Voltar"
-            >
-              <ChevronLeft className="h-6 w-6" />
-              <span className="text-[0.6rem] font-medium">←</span>
-            </button>
-          )}
+    <>
+      {/* Pagination indicator floating above the bar */}
+      {hasPagination && (
+        <div className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 bg-sidebar/90 backdrop-blur-sm rounded-full px-3 py-1 border border-sidebar-border shadow-md mb-1">
+            {page > 0 && (
+              <button
+                onClick={() => setPage(page - 1)}
+                className="text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+                aria-label="Voltar"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            )}
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-all",
+                  i === page ? "bg-accent scale-125" : "bg-sidebar-foreground/30"
+                )}
+                aria-label={`Página ${i + 1}`}
+              />
+            ))}
+            {page < pages.length - 1 && (
+              <button
+                onClick={() => setPage(page + 1)}
+                className="text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+                aria-label="Mais opções"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
-          {currentTabs.map((tab, i) => renderTab(tab, i))}
-
-          {/* Forward arrow if not on last page */}
-          {hasPagination && page < pages.length - 1 && (
-            <button
-              onClick={() => setPage(page + 1)}
-              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
-              aria-label="Mais opções"
-            >
-              <ChevronRight className="h-6 w-6" />
-              <span className="text-[0.6rem] font-medium">→</span>
-            </button>
-          )}
-        </motion.div>
-      </AnimatePresence>
-    </nav>
+      <nav
+        id="student-bottom-nav"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-sidebar-border safe-area-inset-bottom"
+        style={{ minHeight: '4rem' }}
+        aria-label="Navegação principal"
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={page}
+            initial={{ opacity: 0, x: page === 1 ? 40 : -40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: page === 1 ? -40 : 40 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="flex items-end justify-around w-full px-2 pt-2.5 pb-4"
+          >
+            {currentTabs.map((tab, i) => renderTab(tab, i))}
+          </motion.div>
+        </AnimatePresence>
+      </nav>
+    </>
   );
 }
