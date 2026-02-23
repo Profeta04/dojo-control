@@ -240,41 +240,24 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
 
   return (
     <>
-      {/* Pagination indicator floating above the bar */}
-      {hasPagination && (
-        <div className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px))] left-0 right-0 z-50 flex justify-center pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2 bg-sidebar/90 backdrop-blur-sm rounded-full px-3 py-1 border border-sidebar-border shadow-md mb-1">
-            {page > 0 && (
-              <button
-                onClick={() => setPage(page - 1)}
-                className="text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
-                aria-label="Voltar"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            )}
-            {pages.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                className={cn(
-                  "w-1.5 h-1.5 rounded-full transition-all",
-                  i === page ? "bg-accent scale-125" : "bg-sidebar-foreground/30"
-                )}
-                aria-label={`Página ${i + 1}`}
-              />
-            ))}
-            {page < pages.length - 1 && (
-              <button
-                onClick={() => setPage(page + 1)}
-                className="text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
-                aria-label="Mais opções"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Pagination arrows floating above the bar, at the corners */}
+      {hasPagination && page > 0 && (
+        <button
+          onClick={() => setPage(page - 1)}
+          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.25rem)] left-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-1.5 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+          aria-label="Voltar"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+      )}
+      {hasPagination && page < pages.length - 1 && (
+        <button
+          onClick={() => setPage(page + 1)}
+          className="lg:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom,0px)+0.25rem)] right-2 z-50 bg-sidebar/90 backdrop-blur-sm rounded-full p-1.5 border border-sidebar-border shadow-md text-sidebar-foreground/60 hover:text-sidebar-foreground active:scale-90 transition-all"
+          aria-label="Mais opções"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
       )}
 
       <nav
