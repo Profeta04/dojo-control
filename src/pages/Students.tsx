@@ -91,6 +91,7 @@ export default function Students() {
   const [blockReason, setBlockReason] = useState("");
 
   const [deleteStudent, setDeleteStudent] = useState<Profile | null>(null);
+  const [permanentDeleteStudent, setPermanentDeleteStudent] = useState<Profile | null>(null);
 
   // Enrollment after approval
   const [enrollStudent, setEnrollStudent] = useState<Profile | null>(null);
@@ -488,8 +489,44 @@ export default function Students() {
   }
 
   const pendingStudents = students?.filter((s) => s.registration_status === "pendente") || [];
-  const approvedStudents = students?.filter((s) => s.registration_status === "aprovado") || [];
+  const approvedStudents = students?.filter((s) => s.registration_status === "aprovado" && !s.is_blocked) || [];
+  const blockedStudents = students?.filter((s) => s.registration_status === "aprovado" && s.is_blocked) || [];
   const rejectedStudents = students?.filter((s) => s.registration_status === "rejeitado") || [];
+
+
+
+  const handlePermanentDelete = async () => {
+    if (!permanentDeleteStudent) return;
+    setActionLoading(true);
+    try {
+      // Remove from class_students
+      await supabase.from("class_students").delete().eq("student_id", permanentDeleteStudent.user_id);
+      // Remove attendance records
+      await supabase.from("attendance").delete().eq("student_id", permanentDeleteStudent.user_id);
+      // Remove payments
+      await supabase.from("payments").delete().eq("student_id", permanentDeleteStudent.user_id);
+      // Remove student_belts
+      await supabase.from("student_belts").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove student_xp
+      await supabase.from("student_xp").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove student_achievements
+      await supabase.from("student_achievements").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove user_roles
+      await supabase.from("user_roles").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove notifications
+      await supabase.from("notifications").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Finally remove the profile
+      await supabase.from("profiles").delete().eq("user_id", permanentDeleteStudent.user_id);
+
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({ title: "Aluno excluído permanentemente", description: `${permanentDeleteStudent.name} foi removido completamente.` });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message || "Erro ao excluir aluno", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setPermanentDeleteStudent(null);
+    }
+  };
 
   const handleToggleFederated = async (student: Profile) => {
     const newValue = !student.is_federated;
@@ -628,7 +665,7 @@ export default function Students() {
     }
   };
 
-  const StudentTable = ({ data, showActions = false, showManage = false }: { data: Profile[]; showActions?: boolean; showManage?: boolean }) => (
+  const StudentTable = ({ data, showActions = false, showManage = false, showPermanentDelete = false }: { data: Profile[]; showActions?: boolean; showManage?: boolean; showPermanentDelete?: boolean }) => (
     <div className="overflow-x-auto -mx-4 sm:mx-0">
       <Table>
         <TableHeader>
@@ -646,7 +683,7 @@ export default function Students() {
             <TableHead className="hidden md:table-cell">Federado</TableHead>
             <TableHead className="hidden md:table-cell">Bolsista</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
-            {(showActions || showManage) && <TableHead className="text-right">Ações</TableHead>}
+            {(showActions || showManage || showPermanentDelete) && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -823,6 +860,19 @@ export default function Students() {
                   </DropdownMenu>
                 </TableCell>
               )}
+              {showPermanentDelete && (
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
+                    onClick={() => setPermanentDeleteStudent(student)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Excluir</span>
+                  </Button>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -865,10 +915,15 @@ export default function Students() {
             <span className="hidden sm:inline">Aprovados ({approvedStudents.length})</span>
             <span className="sm:hidden">Aprov. ({approvedStudents.length})</span>
           </TabsTrigger>
+          <TabsTrigger value="blocked" className="gap-1.5 text-xs sm:text-sm">
+            <Ban className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Bloqueados ({blockedStudents.length})</span>
+            <span className="sm:hidden">Bloq. ({blockedStudents.length})</span>
+          </TabsTrigger>
           <TabsTrigger value="rejected" className="gap-1.5 text-xs sm:text-sm">
             <UserX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Rejeitados ({rejectedStudents.length})</span>
-            <span className="sm:hidden">Rej. ({rejectedStudents.length})</span>
+            <span className="hidden sm:inline">Excluídos ({rejectedStudents.length})</span>
+            <span className="sm:hidden">Excl. ({rejectedStudents.length})</span>
           </TabsTrigger>
           <TabsTrigger value="guardians" className="gap-1.5 text-xs sm:text-sm">
             <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -913,19 +968,39 @@ export default function Students() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="blocked">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Ban className="h-5 w-5 text-warning" />
+                Alunos Bloqueados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {blockedStudents.length > 0 ? (
+                <StudentTable data={blockedStudents} showManage />
+              ) : (
+                <EmptyState message="Nenhum aluno bloqueado." />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="rejected">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserX className="h-5 w-5 text-destructive" />
-                Cadastros Rejeitados
+                Alunos Excluídos
               </CardTitle>
             </CardHeader>
             <CardContent>
               {rejectedStudents.length > 0 ? (
-                <StudentTable data={rejectedStudents} />
+                <div>
+                  <StudentTable data={rejectedStudents} showPermanentDelete />
+                </div>
               ) : (
-                <EmptyState message="Nenhum cadastro rejeitado." />
+                <EmptyState message="Nenhum aluno excluído." />
               )}
             </CardContent>
           </Card>
@@ -1313,6 +1388,28 @@ export default function Students() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Permanent Delete Dialog */}
+      <AlertDialog open={!!permanentDeleteStudent} onOpenChange={(open) => !open && setPermanentDeleteStudent(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. Todos os dados de <strong>{permanentDeleteStudent?.name}</strong> serão removidos permanentemente, incluindo presenças, pagamentos, conquistas e XP.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handlePermanentDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={actionLoading}
+            >
+              {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Excluir Permanentemente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
     </RequireApproval>
   );
