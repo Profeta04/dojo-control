@@ -47,30 +47,35 @@ const studentPage2: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-// Admin/Dono pages
-const adminPage1: TabItem[] = [
+// Admin/Sensei pages
+const staffPage1: TabItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Alunos", href: "/students", icon: Users },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
   { title: "Pagamentos", href: "/payments", icon: CreditCard },
 ];
 
-const adminPage2: TabItem[] = [
+const staffPage2: TabItem[] = [
   { title: "Progresso", href: "/progresso", icon: TrendingUp },
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
   { title: "Graduações", href: "/graduations", icon: Trophy },
+];
+
+const staffPage3: TabItem[] = [
+  { title: "Histórico", href: "/payment-history", icon: History },
+  { title: "Planos", href: "/planos", icon: CreditCard },
+  { title: "Config. Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-const adminPage2WithSenseis: TabItem[] = [
-  ...adminPage2,
+const staffPage3WithAdmin: TabItem[] = [
+  { title: "Histórico", href: "/payment-history", icon: History },
   { title: "Senseis", href: "/senseis", icon: UserCog },
+  { title: "Planos", href: "/planos", icon: CreditCard },
+  { title: "Config. Dojo", href: "/settings", icon: Landmark },
+  { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
-
-// Sensei pages (same as admin but no Senseis)
-const senseiPage1 = adminPage1;
-const senseiPage2 = adminPage2;
 
 export function StudentBottomNav() {
   const location = useLocation();
@@ -87,8 +92,8 @@ export function StudentBottomNav() {
   const pages: TabItem[][] = isStudentOnly
     ? [studentPage1, studentPage2]
     : isAdminRole
-      ? [adminPage1, adminPage2WithSenseis]
-      : [senseiPage1, senseiPage2];
+      ? [staffPage1, staffPage2, staffPage3WithAdmin]
+      : [staffPage1, staffPage2, staffPage3];
 
   const hasPagination = pages.length > 1;
   const currentTabs = pages[page] || pages[0];
@@ -96,11 +101,11 @@ export function StudentBottomNav() {
   // Auto-switch to correct page based on current route
   useEffect(() => {
     if (!hasPagination) return;
-    const isOnPage2 = pages[1]?.some(t => location.pathname === t.href);
-    if (isOnPage2 && page !== 1) setPage(1);
-    else if (!isOnPage2 && page !== 0) {
-      const isOnPage1 = pages[0]?.some(t => location.pathname === t.href);
-      if (isOnPage1) setPage(0);
+    for (let i = 0; i < pages.length; i++) {
+      if (pages[i]?.some(t => location.pathname === t.href)) {
+        if (page !== i) setPage(i);
+        return;
+      }
     }
   }, [location.pathname]);
 
@@ -216,10 +221,10 @@ export function StudentBottomNav() {
           transition={{ duration: 0.25, ease: "easeInOut" }}
           className="flex items-end justify-around w-full px-1 pt-2 pb-3"
         >
-          {/* Page 2: show back arrow first */}
-          {hasPagination && page === 1 && (
+          {/* Back arrow if not on first page */}
+          {hasPagination && page > 0 && (
             <button
-              onClick={() => setPage(0)}
+              onClick={() => setPage(page - 1)}
               className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Voltar"
             >
@@ -230,10 +235,10 @@ export function StudentBottomNav() {
 
           {currentTabs.map((tab, i) => renderTab(tab, i))}
 
-          {/* Page 1: show forward arrow last */}
-          {hasPagination && page === 0 && (
+          {/* Forward arrow if not on last page */}
+          {hasPagination && page < pages.length - 1 && (
             <button
-              onClick={() => setPage(1)}
+              onClick={() => setPage(page + 1)}
               className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Mais opções"
             >
