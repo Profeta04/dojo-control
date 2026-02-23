@@ -20,11 +20,11 @@ const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; 
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  attendance: "Presença",
-  tasks: "Tarefas",
+  presenca: "Presença",
+  tarefas: "Tarefas",
   xp: "Experiência",
   streak: "Sequência",
-  graduation: "Graduação",
+  anual: "Anuais",
   general: "Geral",
 };
 
