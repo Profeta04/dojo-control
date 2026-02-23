@@ -83,6 +83,7 @@ export function ClassesTab() {
   const [studentSearch, setStudentSearch] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [martialArt, setMartialArt] = useState("judo");
+  const [senseiId, setSenseiId] = useState("");
 
   // Schedule form state
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
@@ -159,6 +160,37 @@ export function ClassesTab() {
     enabled: !!user,
   });
 
+  // Fetch senseis for the current dojo
+  const { data: availableSenseis } = useQuery({
+    queryKey: ["available-senseis", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) {
+        // If no dojo selected, fetch all senseis
+        const { data: senseiRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "sensei");
+        if (!senseiRoles || senseiRoles.length === 0) return [];
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, name, email")
+          .in("user_id", senseiRoles.map(r => r.user_id));
+        return profiles || [];
+      }
+      const { data: dojoSenseis } = await supabase
+        .from("dojo_senseis")
+        .select("sensei_id")
+        .eq("dojo_id", currentDojoId);
+      if (!dojoSenseis || dojoSenseis.length === 0) return [];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, name, email")
+        .in("user_id", dojoSenseis.map(ds => ds.sensei_id));
+      return profiles || [];
+    },
+    enabled: !!user && (isAdmin || isSensei),
+  });
+
   // Fetch available students (excluding guardians)
   const { data: availableStudents } = useQuery({
     queryKey: ["available-students", selectedClass?.id],
@@ -213,6 +245,7 @@ export function ClassesTab() {
     setDescription("");
     setMaxStudents("");
     setMartialArt("judo");
+    setSenseiId("");
     setEditMode(false);
     setSelectedClass(null);
   };
@@ -230,6 +263,7 @@ export function ClassesTab() {
     setDescription(cls.description || "");
     setMaxStudents(cls.max_students?.toString() || "");
     setMartialArt(cls.martial_art || "judo");
+    setSenseiId(cls.sensei_id || "");
     setEditMode(true);
     setDialogOpen(true);
   };
@@ -284,8 +318,8 @@ export function ClassesTab() {
         schedule: "Ver calendário",
         max_students: maxStudents ? parseInt(maxStudents) : null,
         martial_art: martialArt,
-        sensei_id: user!.id,
-        dojo_id: profile?.dojo_id || null,
+        sensei_id: senseiId || user!.id,
+        dojo_id: currentDojoId || profile?.dojo_id || null,
         is_active: true,
       };
 
@@ -476,6 +510,21 @@ export function ClassesTab() {
                     <SelectContent>
                       <SelectItem value="judo">Judô</SelectItem>
                       <SelectItem value="bjj">Jiu-Jitsu (BJJ)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="senseiId">Sensei responsável</Label>
+                  <Select value={senseiId} onValueChange={setSenseiId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o sensei" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSenseis?.map((s) => (
+                        <SelectItem key={s.user_id} value={s.user_id}>
+                          {s.name} {s.email ? `(${s.email})` : ""}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
