@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -58,12 +59,20 @@ export function useOnboarding() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user-onboarding"] }),
   });
 
+  const tabsSeen = onboarding?.tabs_seen ?? [];
+
+  const hasSeenTab = useCallback(
+    (tabId: string) => tabsSeen.includes(tabId),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tabsSeen.join(",")]
+  );
+
   return {
     welcomeSeen: onboarding?.welcome_seen ?? false,
-    tabsSeen: onboarding?.tabs_seen ?? [],
+    tabsSeen,
     isLoading,
     markWelcomeSeen: () => markWelcomeSeen.mutate(),
     markTabSeen: (tabId: string) => markTabSeen.mutate(tabId),
-    hasSeenTab: (tabId: string) => (onboarding?.tabs_seen ?? []).includes(tabId),
+    hasSeenTab,
   };
 }
