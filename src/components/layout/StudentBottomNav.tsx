@@ -223,7 +223,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
         <div className="relative">
           <Icon
             className={cn(
-              "h-5 w-5 transition-all duration-200",
+              "h-6 w-6 transition-all duration-200",
               isActive && "scale-110"
             )}
           />
