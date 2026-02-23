@@ -35,46 +35,46 @@ interface TabItem {
 
 // Student pages — matching sidebar: Principal then Pagamentos
 const studentPage1: TabItem[] = [
-  { title: "Dashboard", href: "/perfil", icon: LayoutDashboard },
+  { title: "Início", href: "/perfil", icon: LayoutDashboard },
   { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
-  { title: "Config", href: "/config", icon: Settings, isProfile: true },
+  { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
   { title: "Agenda", href: "/agenda", icon: Calendar },
 ];
 
 const studentPage2: TabItem[] = [
   { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
-  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
+  { title: "Pagar", href: "/mensalidade", icon: CreditCard },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 // Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)
 const staffPage1: TabItem[] = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Início", href: "/dashboard", icon: LayoutDashboard },
   { title: "Alunos", href: "/students", icon: Users },
-  { title: "Config", href: "/config", icon: Settings, isProfile: true },
+  { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
   { title: "Progresso", href: "/progresso", icon: TrendingUp },
 ];
 
 const staffPage2: TabItem[] = [
   { title: "Turmas", href: "/classes", icon: GraduationCap },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
-  { title: "Pagamentos", href: "/payments", icon: CreditCard },
+  { title: "Pagar", href: "/payments", icon: CreditCard },
   { title: "Histórico", href: "/payment-history", icon: History },
 ];
 
 const staffPage3: TabItem[] = [
-  { title: "Graduações", href: "/graduations", icon: Trophy },
+  { title: "Graduação", href: "/graduations", icon: Trophy },
   { title: "Planos", href: "/planos", icon: CreditCard },
-  { title: "Config. Dojo", href: "/settings", icon: Landmark },
+  { title: "Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 const staffPage3WithAdmin: TabItem[] = [
-  { title: "Graduações", href: "/graduations", icon: Trophy },
+  { title: "Graduação", href: "/graduations", icon: Trophy },
   { title: "Senseis", href: "/senseis", icon: UserCog },
   { title: "Planos", href: "/planos", icon: CreditCard },
-  { title: "Config. Dojo", href: "/settings", icon: Landmark },
+  { title: "Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
@@ -141,15 +141,15 @@ export function StudentBottomNav() {
         <Link
           key={tab.href}
           to={tab.href}
-          className="flex flex-col items-center -mt-7 relative px-2"
+          className="flex flex-col items-center -mt-5 relative px-1 flex-1 min-w-0"
           aria-current={isActive ? "page" : undefined}
         >
           <div
             className={cn(
-              "w-[3.5rem] h-[3.5rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
-              "shadow-lg border-[3px] border-sidebar",
+              "w-[3rem] h-[3rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+              "shadow-lg border-2 border-sidebar",
               isActive
-                ? "ring-2 ring-accent ring-offset-2 ring-offset-sidebar scale-110"
+                ? "ring-2 ring-accent ring-offset-1 ring-offset-sidebar scale-110"
                 : "ring-1 ring-sidebar-border hover:scale-105"
             )}
           >
@@ -182,7 +182,7 @@ export function StudentBottomNav() {
         key={tab.href}
         to={tab.href}
         className={cn(
-          "flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3.5rem]",
+          "flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1",
           isActive
             ? "text-accent"
             : "text-sidebar-foreground/50 hover:text-sidebar-foreground/80"
@@ -192,13 +192,13 @@ export function StudentBottomNav() {
         <div className="relative">
           <Icon
             className={cn(
-              "h-6 w-6 transition-all duration-200",
+              "h-5 w-5 transition-all duration-200",
               isActive && "scale-110"
             )}
           />
         </div>
         <span className={cn(
-          "text-xs font-medium transition-all duration-200",
+          "text-[0.65rem] leading-tight font-medium transition-all duration-200 truncate max-w-full text-center",
           isActive && "font-semibold"
         )}>
           {tab.title}
@@ -226,11 +226,11 @@ export function StudentBottomNav() {
           {hasPagination && page > 0 && (
             <button
               onClick={() => setPage(page - 1)}
-              className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Voltar"
             >
-              <ChevronLeft className="h-6 w-6" />
-              <span className="text-[0.6rem] font-medium">Voltar</span>
+              <ChevronLeft className="h-5 w-5" />
+              <span className="text-[0.55rem] font-medium">←</span>
             </button>
           )}
 
@@ -240,11 +240,11 @@ export function StudentBottomNav() {
           {hasPagination && page < pages.length - 1 && (
             <button
               onClick={() => setPage(page + 1)}
-              className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all duration-200 min-w-[3rem] text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Mais opções"
             >
-              <ChevronRight className="h-6 w-6" />
-              <span className="text-[0.6rem] font-medium">Mais</span>
+              <ChevronRight className="h-5 w-5" />
+              <span className="text-[0.55rem] font-medium">→</span>
             </button>
           )}
         </motion.div>
