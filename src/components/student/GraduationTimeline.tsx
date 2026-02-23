@@ -7,7 +7,7 @@ import { Award } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BELT_LABELS } from "@/lib/constants";
+import { BELT_LABELS, getBjjBeltLabel } from "@/lib/constants";
 
 export function GraduationTimeline() {
   const { user } = useAuth();
@@ -73,11 +73,14 @@ export function GraduationTimeline() {
                       <div className="flex items-center gap-3">
                         {grad.from_belt && (
                           <>
-                            <BeltBadge grade={grad.from_belt as any} size="sm" />
+                            <BeltBadge grade={grad.from_belt as any} size="sm" martialArt={grad.martial_art} degree={(grad as any).from_degree || 0} />
                             <span className="text-muted-foreground">→</span>
                           </>
                         )}
-                        <BeltBadge grade={grad.to_belt as any} size="sm" />
+                        <BeltBadge grade={grad.to_belt as any} size="sm" martialArt={grad.martial_art} degree={(grad as any).to_degree || 0} />
+                        {grad.martial_art === "bjj" && (grad as any).to_degree > 0 && (
+                          <span className="text-xs text-muted-foreground">{(grad as any).to_degree}º grau</span>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(grad.graduation_date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
