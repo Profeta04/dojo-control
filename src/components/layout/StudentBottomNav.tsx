@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
+import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 
@@ -36,15 +37,15 @@ interface TabItem {
 // Student pages — matching sidebar: Principal then Pagamentos
 const studentPage1: TabItem[] = [
   { title: "Início", href: "/perfil", icon: LayoutDashboard },
-  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
+  { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
   { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
-  { title: "Agenda", href: "/agenda", icon: Calendar },
+  { title: "Pagar", href: "/mensalidade", icon: CreditCard },
 ];
 
 const studentPage2: TabItem[] = [
-  { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
+  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
+  { title: "Agenda", href: "/agenda", icon: Calendar },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
-  { title: "Pagar", href: "/mensalidade", icon: CreditCard },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
@@ -82,6 +83,7 @@ export function StudentBottomNav() {
   const location = useLocation();
   const { profile, isStudent, canManageStudents, isSensei, isAdmin } = useAuth();
   const { getSignedUrl } = useSignedUrl();
+  const { data: studentBelts } = useStudentBelts(profile?.user_id);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
@@ -168,11 +170,17 @@ export function StudentBottomNav() {
               </span>
             )}
           </div>
-          {profile?.belt_grade && (
+          {studentBelts && studentBelts.length > 0 ? (
+            <div className="mt-0.5 flex gap-0.5 animate-scale-in">
+              {studentBelts.map((b) => (
+                <BeltBadge key={b.martial_art} grade={b.belt_grade as any} size="sm" />
+              ))}
+            </div>
+          ) : profile?.belt_grade ? (
             <div className="mt-0.5 animate-scale-in">
               <BeltBadge grade={profile.belt_grade as any} size="sm" />
             </div>
-          )}
+          ) : null}
         </Link>
       );
     }
