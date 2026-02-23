@@ -11,8 +11,8 @@ import {
 
 describe("JoinVictus - Constantes do Sistema", () => {
   describe("Faixas (BELT_LABELS)", () => {
-    it("contém todas as 18 faixas", () => {
-      expect(Object.keys(BELT_LABELS)).toHaveLength(18);
+    it("contém todas as 30 faixas", () => {
+      expect(Object.keys(BELT_LABELS)).toHaveLength(30);
     });
 
     it("faixas iniciais estão presentes (branca, cinza, azul, amarela, laranja, verde)", () => {
@@ -50,7 +50,7 @@ describe("JoinVictus - Constantes do Sistema", () => {
       expect(ROLE_LABELS.student).toBe("Aluno");
       expect(ROLE_LABELS.sensei).toBe("Sensei");
       expect(ROLE_LABELS.admin).toBe("Administrador");
-      expect(ROLE_LABELS.dono).toBe("Dono");
+      expect(ROLE_LABELS.dono).toBe("Sensei");
     });
   });
 

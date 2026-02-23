@@ -9,11 +9,19 @@ export const BELT_LABELS: Record<BeltGrade, string> = {
   branca: "Faixa Branca",
   bordo: "Faixa Bordô",
   cinza: "Faixa Cinza",
+  cinza_branca: "Faixa Cinza e Branca",
+  cinza_preta: "Faixa Cinza e Preta",
   azul_escura: "Faixa Azul Escura",
   azul: "Faixa Azul",
   amarela: "Faixa Amarela",
+  amarela_branca: "Faixa Amarela e Branca",
+  amarela_preta: "Faixa Amarela e Preta",
   laranja: "Faixa Laranja",
+  laranja_branca: "Faixa Laranja e Branca",
+  laranja_preta: "Faixa Laranja e Preta",
   verde: "Faixa Verde",
+  verde_branca: "Faixa Verde e Branca",
+  verde_preta: "Faixa Verde e Preta",
   roxa: "Faixa Roxa",
   marrom: "Faixa Marrom",
   preta_1dan: "Faixa Preta 1º Dan",
@@ -26,10 +34,39 @@ export const BELT_LABELS: Record<BeltGrade, string> = {
   preta_8dan: "Faixa Preta 8º Dan",
   preta_9dan: "Faixa Preta 9º Dan",
   preta_10dan: "Faixa Preta 10º Dan",
+  coral: "Faixa Coral",
+  vermelha: "Faixa Vermelha",
 };
 
-// BJJ belts that support degrees (graus)
-export const BJJ_DEGREE_BELTS = ["branca", "azul", "roxa", "marrom", "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan"];
+// BJJ belts that support degrees (graus) - all BJJ belts have 4 degrees
+export const BJJ_DEGREE_BELTS = [
+  "branca",
+  "cinza_branca", "cinza", "cinza_preta",
+  "amarela_branca", "amarela", "amarela_preta",
+  "laranja_branca", "laranja", "laranja_preta",
+  "verde_branca", "verde", "verde_preta",
+  "azul", "roxa", "marrom",
+  "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan", "preta_6dan",
+];
+
+// BJJ belt order for progression
+export const BJJ_BELT_ORDER: BeltGrade[] = [
+  "branca",
+  "cinza_branca", "cinza", "cinza_preta",
+  "amarela_branca", "amarela", "amarela_preta",
+  "laranja_branca", "laranja", "laranja_preta",
+  "verde_branca", "verde", "verde_preta",
+  "azul", "roxa", "marrom",
+  "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan", "preta_6dan",
+  "coral", "vermelha",
+];
+
+// Judo belt order for progression
+export const JUDO_BELT_ORDER: BeltGrade[] = [
+  "branca", "bordo", "cinza", "azul_escura", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
+  "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan",
+  "preta_6dan", "preta_7dan", "preta_8dan", "preta_9dan", "preta_10dan",
+];
 
 export function getBjjBeltLabel(grade: string, degree: number): string {
   const baseLabel = BELT_LABELS[grade as BeltGrade] || grade;
@@ -43,11 +80,19 @@ export const BELT_COLORS: Record<BeltGrade, string> = {
   branca: "bg-white border-2 border-foreground/40",
   bordo: "bg-red-900",
   cinza: "bg-belt-cinza",
+  cinza_branca: "bg-belt-cinza",
+  cinza_preta: "bg-belt-cinza",
   azul_escura: "bg-blue-900",
   azul: "bg-belt-azul",
   amarela: "bg-belt-amarela",
+  amarela_branca: "bg-belt-amarela",
+  amarela_preta: "bg-belt-amarela",
   laranja: "bg-belt-laranja",
+  laranja_branca: "bg-belt-laranja",
+  laranja_preta: "bg-belt-laranja",
   verde: "bg-belt-verde",
+  verde_branca: "bg-belt-verde",
+  verde_preta: "bg-belt-verde",
   roxa: "bg-belt-roxa",
   marrom: "bg-belt-marrom",
   preta_1dan: "bg-belt-preta",
@@ -60,6 +105,8 @@ export const BELT_COLORS: Record<BeltGrade, string> = {
   preta_8dan: "bg-belt-preta",
   preta_9dan: "bg-belt-preta",
   preta_10dan: "bg-belt-preta",
+  coral: "bg-red-700",
+  vermelha: "bg-red-600",
 };
 
 export const ROLE_LABELS: Record<AppRole, string> = {

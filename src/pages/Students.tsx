@@ -98,6 +98,10 @@ export default function Students() {
   const [selectedClassIds, setSelectedClassIds] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
 
+  // Cross-art belt assignment
+  const [crossArtDialog, setCrossArtDialog] = useState<{ student: Profile; missingArts: string[] } | null>(null);
+  const [crossArtBelts, setCrossArtBelts] = useState<Record<string, BeltGrade>>({});
+
   // Fetch dojo info for martial_arts
   const { data: dojoInfo } = useQuery({
     queryKey: ["dojo-info", currentDojoId],
@@ -355,17 +359,74 @@ export default function Students() {
     if (!enrollStudent || selectedClassIds.size === 0) return;
     setEnrollLoading(true);
     try {
+      // Check which martial arts the student already has belts for
+      const { data: existingBelts } = await supabase
+        .from("student_belts")
+        .select("martial_art")
+        .eq("user_id", enrollStudent.user_id);
+      const existingArts = new Set((existingBelts || []).map((b: any) => b.martial_art));
+
+      // Check which arts the selected classes require
+      const selectedClasses = availableClasses.filter(c => selectedClassIds.has(c.id));
+      const requiredArts = new Set(selectedClasses.map(c => c.martial_art as string));
+      const missingArts = [...requiredArts].filter(art => !existingArts.has(art));
+
+      // If there are missing arts, prompt for belt assignment first
+      if (missingArts.length > 0) {
+        const defaults: Record<string, BeltGrade> = {};
+        missingArts.forEach(art => { defaults[art] = "branca"; });
+        setCrossArtBelts(defaults);
+        setCrossArtDialog({ student: enrollStudent, missingArts });
+        setEnrollLoading(false);
+        return;
+      }
+
+      // Proceed with enrollment
+      await doEnrollment(enrollStudent);
+    } catch {
+      toast({ title: "Erro", description: "Erro ao matricular aluno", variant: "destructive" });
+      setEnrollLoading(false);
+    }
+  };
+
+  const handleCrossArtConfirm = async () => {
+    if (!crossArtDialog) return;
+    setEnrollLoading(true);
+    try {
+      // Insert belt records for missing arts
+      for (const art of crossArtDialog.missingArts) {
+        await supabase.from("student_belts").upsert({
+          user_id: crossArtDialog.student.user_id,
+          martial_art: art,
+          belt_grade: crossArtBelts[art] || "branca",
+          degree: 0,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,martial_art" });
+      }
+      setCrossArtDialog(null);
+      // Now proceed with enrollment
+      await doEnrollment(crossArtDialog.student);
+    } catch {
+      toast({ title: "Erro", description: "Erro ao definir faixa", variant: "destructive" });
+      setEnrollLoading(false);
+    }
+  };
+
+  const doEnrollment = async (student: Profile) => {
+    try {
       for (const classId of selectedClassIds) {
         await supabase.from("class_students").insert({
           class_id: classId,
-          student_id: enrollStudent.user_id,
+          student_id: student.user_id,
         });
       }
       toast({
         title: "Aluno matriculado!",
-        description: `${enrollStudent.name} foi adicionado a ${selectedClassIds.size} turma(s).`,
+        description: `${student.name} foi adicionado a ${selectedClassIds.size} turma(s).`,
       });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
+      queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
+      queryClient.invalidateQueries({ queryKey: ["student-belts"] });
     } catch {
       toast({ title: "Erro", description: "Erro ao matricular aluno", variant: "destructive" });
     } finally {
@@ -1199,6 +1260,55 @@ export default function Students() {
             >
               {enrollLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Matricular ({selectedClassIds.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cross-Art Belt Assignment Dialog */}
+      <Dialog open={!!crossArtDialog} onOpenChange={(open) => { if (!open) setCrossArtDialog(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5 text-accent" />
+              Definir Faixa em Nova Arte
+            </DialogTitle>
+            <DialogDescription>
+              {crossArtDialog?.student.name} será matriculado em uma turma de arte marcial diferente. Defina a faixa inicial.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {crossArtDialog?.missingArts.map((art) => (
+              <div key={art} className="space-y-2">
+                <Label className="text-sm font-medium">
+                  🥋 {MARTIAL_ART_LABELS[art] || art}
+                </Label>
+                <Select
+                  value={crossArtBelts[art] || "branca"}
+                  onValueChange={(v) => setCrossArtBelts(prev => ({ ...prev, [art]: v as BeltGrade }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(BELT_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        <div className="flex items-center gap-2">
+                          <BeltBadge grade={value} size="sm" martialArt={art} />
+                          <span>{label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCrossArtDialog(null)}>Cancelar</Button>
+            <Button onClick={handleCrossArtConfirm} disabled={enrollLoading}>
+              {enrollLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Confirmar e Matricular
             </Button>
           </DialogFooter>
         </DialogContent>
