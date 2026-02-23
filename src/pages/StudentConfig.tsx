@@ -112,7 +112,7 @@ export default function StudentConfig() {
 
       <div className="space-y-6 max-w-lg mx-auto">
         {/* Avatar & Belt */}
-        <Card>
+        <Card data-tour="config-avatar">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <User className="h-4 w-4" /> Foto e Faixa
@@ -130,7 +130,7 @@ export default function StudentConfig() {
         </Card>
 
         {/* Personal Info */}
-        <Card>
+        <Card data-tour="config-personal">
           <CardHeader>
             <CardTitle className="text-base">Dados Pessoais</CardTitle>
           </CardHeader>
@@ -159,7 +159,7 @@ export default function StudentConfig() {
         </Card>
 
         {/* Preferences */}
-        <Card>
+        <Card data-tour="config-preferences">
           <CardHeader>
             <CardTitle className="text-base">Preferências</CardTitle>
           </CardHeader>

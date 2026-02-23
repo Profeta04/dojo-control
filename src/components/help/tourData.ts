@@ -100,28 +100,65 @@ const studentTutorials: Record<string, TabTutorial> = {
     tabId: "agenda",
     title: "Agenda de Treinos",
     summary:
-      "Veja os próximos treinos da semana. Os horários são definidos pelo sensei da turma.",
-    steps: [],
+      "Veja os próximos treinos da semana, calendário de presenças e detalhes de cada dia.",
+    tip: "Toque em um dia no calendário para ver os treinos e presenças daquele dia.",
+    steps: [
+      {
+        selector: '[data-tour="agenda-today"]',
+        title: "Treino de Hoje",
+        description:
+          "Alerta com os treinos do dia atual, incluindo turma e horário. Aparece só quando há treino hoje.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="agenda-calendar"]',
+        title: "Calendário",
+        description:
+          "Calendário mensal com dias de treino, presenças (verde) e faltas (vermelho). Toque em um dia para ver detalhes.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="agenda-details"]',
+        title: "Detalhes do Dia",
+        description:
+          "Mostra os treinos e registros de presença do dia selecionado. Você pode justificar faltas aqui.",
+        position: "top",
+      },
+    ],
   },
   "/mensalidade": {
     tabId: "mensalidade",
     title: "Seus Pagamentos",
     summary:
-      "Aqui você vê suas mensalidades. Envie o comprovante de pagamento para o sensei aprovar.",
-    tip: "Mantenha os pagamentos em dia para evitar bloqueios.",
+      "Aqui você vê suas mensalidades, envia comprovantes e acompanha o status de cada pagamento.",
+    tip: "Mantenha os pagamentos em dia para evitar bloqueios e taxas.",
     steps: [
       {
         selector: '[data-tour="payment-stats"]',
         title: "Resumo de Pagamentos",
         description:
-          "Cards com total, pendentes, atrasados e pagos. Visão rápida da sua situação.",
+          "Cards com total de cobranças, pendentes, atrasados e pagos. Visão rápida da sua situação financeira.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="payment-summary"]',
+        title: "Total e Vencimento",
+        description:
+          "Cards com o total devido (incluindo multas se houver atraso) e a data do próximo vencimento.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="pix-card"]',
+        title: "Pagar via Pix",
+        description:
+          "Copie a chave Pix do dojo para fazer o pagamento pelo seu banco. Após pagar, envie o comprovante.",
+        position: "top",
       },
       {
         selector: '[data-tour="payment-list"]',
         title: "Lista de Pagamentos",
         description:
-          "Suas mensalidades com status. Toque para enviar comprovante.",
+          "Suas mensalidades organizadas por status. Toque em 'Enviar Comprovante' para anexar o recibo.",
         position: "top",
       },
     ],
@@ -139,6 +176,36 @@ const studentTutorials: Record<string, TabTutorial> = {
     summary:
       "Acompanhe sua evolução com gráficos de presença e linha do tempo de graduações.",
     steps: [],
+  },
+  "/configuracoes": {
+    tabId: "configuracoes",
+    title: "Configurações",
+    summary:
+      "Gerencie seu perfil, foto, tema e preferências de navegação.",
+    tip: "Você pode alternar entre barra inferior e menu lateral na seção de preferências.",
+    steps: [
+      {
+        selector: '[data-tour="config-avatar"]',
+        title: "Foto e Faixa",
+        description:
+          "Altere sua foto de perfil e veja sua faixa atual e status de federação.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="config-personal"]',
+        title: "Dados Pessoais",
+        description:
+          "Atualize seu nome, e-mail e telefone. Não esqueça de salvar as alterações.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="config-preferences"]',
+        title: "Preferências",
+        description:
+          "Ative o modo escuro e escolha entre navegação por barra inferior ou menu lateral.",
+        position: "top",
+      },
+    ],
   },
 };
 
