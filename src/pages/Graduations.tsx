@@ -246,11 +246,15 @@ export default function GraduationsPage() {
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
-  const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string): BeltGrade[] => {
+  const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string, currentDegree?: number): BeltGrade[] => {
     const order = martialArt === "bjj" ? BJJ_BELT_ORDER : JUDO_BELT_ORDER;
     if (!currentBelt) return order;
     const currentIndex = order.indexOf(currentBelt);
     if (currentIndex === -1) return order;
+    // For BJJ, include current belt if degree can still be increased (0-3 → can go up)
+    if (martialArt === "bjj" && BJJ_DEGREE_BELTS.includes(currentBelt) && (currentDegree ?? 0) < 4) {
+      return order.slice(currentIndex);
+    }
     return order.slice(currentIndex + 1);
   };
 
@@ -333,8 +337,9 @@ export default function GraduationsPage() {
   const renderStudentCard = (student: Profile) => {
     const belts = getStudentBelts(student.user_id);
     const singleArt = dojoArts.length === 1 ? dojoArts[0] : null;
+    const beltForSingleArt = singleArt ? belts.find(b => b.martial_art === singleArt) : null;
     const canPromote = singleArt
-      ? getNextBelts(belts.find(b => b.martial_art === singleArt)?.belt_grade as BeltGrade | null, singleArt).length > 0
+      ? getNextBelts(beltForSingleArt?.belt_grade as BeltGrade | null, singleArt, beltForSingleArt?.degree ?? 0).length > 0
       : true;
 
     return (
@@ -380,7 +385,7 @@ export default function GraduationsPage() {
               {dojoArts.map((art) => {
                 const beltForArt = getStudentBelts(student.user_id).find(b => b.martial_art === art);
                 const currentBelt = beltForArt?.belt_grade as BeltGrade | null;
-                const nextBeltsForArt = getNextBelts(currentBelt, art);
+                const nextBeltsForArt = getNextBelts(currentBelt, art, beltForArt?.degree ?? 0);
                 if (nextBeltsForArt.length === 0) return null;
                 return (
                   <Button key={art} className="flex-1" size="sm" variant="outline" onClick={() => openPromotionDialog(student, art)}>
@@ -639,7 +644,21 @@ export default function GraduationsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="new-belt">Nova Faixa</Label>
-                <Select value={newBelt} onValueChange={(v) => { setNewBelt(v as BeltGrade); setNewDegree(0); }}>
+                <Select value={newBelt} onValueChange={(v) => {
+                  const belt = v as BeltGrade;
+                  setNewBelt(belt);
+                  // Auto-set minimum degree for same-belt BJJ promotions
+                  if (selectedMartialArt === "bjj" && selectedStudent) {
+                    const currentBeltData = getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt);
+                    if (currentBeltData?.belt_grade === belt) {
+                      setNewDegree((currentBeltData?.degree ?? 0) + 1);
+                    } else {
+                      setNewDegree(0);
+                    }
+                  } else {
+                    setNewDegree(0);
+                  }
+                }}>
                   <SelectTrigger id="new-belt">
                     <SelectValue placeholder="Selecionar nova faixa" />
                   </SelectTrigger>
@@ -647,7 +666,7 @@ export default function GraduationsPage() {
                     {selectedStudent &&
                       (() => {
                         const currentBelt = getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt);
-                        return getNextBelts(currentBelt?.belt_grade as BeltGrade | null, selectedMartialArt);
+                        return getNextBelts(currentBelt?.belt_grade as BeltGrade | null, selectedMartialArt, currentBelt?.degree ?? 0);
                       })().map((belt) => (
                         <SelectItem key={belt} value={belt}>
                           <div className="flex items-center gap-2">
@@ -665,22 +684,28 @@ export default function GraduationsPage() {
                 <div className="space-y-2">
                   <Label>Grau (listras BJJ)</Label>
                   <div className="flex gap-2">
-                    {[0, 1, 2, 3, 4].map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => setNewDegree(d)}
-                        className={cn(
-                          "flex-1 flex flex-col items-center gap-1.5 p-2 rounded-md border transition-colors",
-                          newDegree === d
-                            ? "border-accent bg-accent/10 text-foreground"
-                            : "border-border hover:bg-muted text-muted-foreground"
-                        )}
-                      >
-                        <BeltBadge grade={newBelt} size="sm" martialArt="bjj" degree={d} />
-                        <span className="text-xs">{d}º</span>
-                      </button>
-                    ))}
+                    {(() => {
+                      const currentBeltData = selectedStudent ? getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt) : null;
+                      const isSameBelt = currentBeltData?.belt_grade === newBelt;
+                      const minDegree = isSameBelt ? (currentBeltData?.degree ?? 0) + 1 : 0;
+                      const degrees = [0, 1, 2, 3, 4].filter(d => d >= minDegree);
+                      return degrees.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => setNewDegree(d)}
+                          className={cn(
+                            "flex-1 flex flex-col items-center gap-1.5 p-2 rounded-md border transition-colors",
+                            newDegree === d
+                              ? "border-accent bg-accent/10 text-foreground"
+                              : "border-border hover:bg-muted text-muted-foreground"
+                          )}
+                        >
+                          <BeltBadge grade={newBelt} size="sm" martialArt="bjj" degree={d} />
+                          <span className="text-xs">{d}º</span>
+                        </button>
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
