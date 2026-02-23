@@ -13,10 +13,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 
 const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; label: string; order: number }> = {
-  legendary: { border: "border-amber-400/50", bg: "bg-amber-500/10", glow: "shadow-amber-400/30", label: "Lendária", order: 0 },
-  epic: { border: "border-purple-400/50", bg: "bg-purple-500/10", glow: "shadow-purple-400/20", label: "Épica", order: 1 },
-  rare: { border: "border-blue-400/50", bg: "bg-blue-500/10", glow: "shadow-blue-400/10", label: "Rara", order: 2 },
-  common: { border: "border-muted-foreground/30", bg: "bg-muted/50", glow: "", label: "Comum", order: 3 },
+  common: { border: "border-muted-foreground/30", bg: "bg-muted/50", glow: "", label: "Comum", order: 0 },
+  rare: { border: "border-blue-400/50", bg: "bg-blue-500/10", glow: "shadow-blue-400/10", label: "Rara", order: 1 },
+  epic: { border: "border-purple-400/50", bg: "bg-purple-500/10", glow: "shadow-purple-400/20", label: "Épica", order: 2 },
+  legendary: { border: "border-amber-400/50", bg: "bg-amber-500/10", glow: "shadow-amber-400/30", label: "Lendária", order: 3 },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
