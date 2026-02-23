@@ -12,11 +12,20 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 
-const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; label: string }> = {
-  common: { border: "border-muted-foreground/30", bg: "bg-muted/50", glow: "", label: "Comum" },
-  rare: { border: "border-blue-400/50", bg: "bg-blue-500/10", glow: "shadow-blue-400/10", label: "Rara" },
-  epic: { border: "border-purple-400/50", bg: "bg-purple-500/10", glow: "shadow-purple-400/20", label: "Épica" },
-  legendary: { border: "border-amber-400/50", bg: "bg-amber-500/10", glow: "shadow-amber-400/30", label: "Lendária" },
+const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; label: string; order: number }> = {
+  legendary: { border: "border-amber-400/50", bg: "bg-amber-500/10", glow: "shadow-amber-400/30", label: "Lendária", order: 0 },
+  epic: { border: "border-purple-400/50", bg: "bg-purple-500/10", glow: "shadow-purple-400/20", label: "Épica", order: 1 },
+  rare: { border: "border-blue-400/50", bg: "bg-blue-500/10", glow: "shadow-blue-400/10", label: "Rara", order: 2 },
+  common: { border: "border-muted-foreground/30", bg: "bg-muted/50", glow: "", label: "Comum", order: 3 },
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  attendance: "Presença",
+  tasks: "Tarefas",
+  xp: "Experiência",
+  streak: "Sequência",
+  graduation: "Graduação",
+  general: "Geral",
 };
 
 export default function StudentAchievements() {
@@ -29,7 +38,22 @@ export default function StudentAchievements() {
   }
 
   const unlockedIds = new Set(unlockedAchievements.map(ua => ua.achievement_id));
-  const permanentAchievements = allAchievements.filter(a => !a.is_annual);
+  const permanentAchievements = allAchievements
+    .filter(a => !a.is_annual)
+    .sort((a, b) => {
+      // Sort by category first, then by rarity (legendary first)
+      const catCompare = (a.category || "general").localeCompare(b.category || "general");
+      if (catCompare !== 0) return catCompare;
+      return (RARITY_STYLES[a.rarity]?.order ?? 3) - (RARITY_STYLES[b.rarity]?.order ?? 3);
+    });
+
+  // Group by category
+  const groupedAchievements = permanentAchievements.reduce<Record<string, typeof permanentAchievements>>((acc, a) => {
+    const cat = a.category || "general";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(a);
+    return acc;
+  }, {});
   const annualAchievements = unlockedAchievements.filter(ua => ua.achievement?.is_annual);
 
   return (
@@ -64,44 +88,51 @@ export default function StudentAchievements() {
             <LoadingSpinner />
           ) : (
             <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {permanentAchievements.map((achievement, i) => {
-                  const isUnlocked = unlockedIds.has(achievement.id);
-                  const style = RARITY_STYLES[achievement.rarity] || RARITY_STYLES.common;
-                  const isSelected = selectedId === achievement.id;
+              {Object.entries(groupedAchievements).map(([category, achievements]) => (
+                <div key={category} className="space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {CATEGORY_LABELS[category] || category}
+                  </h3>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {achievements.map((achievement, i) => {
+                      const isUnlocked = unlockedIds.has(achievement.id);
+                      const style = RARITY_STYLES[achievement.rarity] || RARITY_STYLES.common;
+                      const isSelected = selectedId === achievement.id;
 
-                  return (
-                    <motion.div
-                      key={achievement.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.03, duration: 0.3 }}
-                      className={cn(
-                        "relative flex flex-col items-center justify-center rounded-xl border-2 p-3 aspect-square cursor-pointer transition-all",
-                        isUnlocked
-                          ? cn(style.border, style.bg, style.glow && `shadow-lg ${style.glow}`)
-                          : "border-border/40 bg-muted/20 opacity-50 grayscale",
-                        isSelected && "ring-2 ring-accent"
-                      )}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedId(isSelected ? null : achievement.id)}
-                    >
-                      <span className="text-2xl sm:text-3xl mb-1">{achievement.icon}</span>
-                      <span className="text-[10px] font-medium text-center leading-tight line-clamp-2">
-                        {achievement.name}
-                      </span>
-                      {!isUnlocked && (
-                        <div className="absolute top-1.5 right-1.5">
-                          <Lock className="h-3 w-3 text-muted-foreground/60" />
-                        </div>
-                      )}
-                      {isUnlocked && achievement.xp_reward > 0 && (
-                        <span className="text-[9px] font-bold text-accent mt-0.5">+{achievement.xp_reward} XP</span>
-                      )}
-                    </motion.div>
-                  );
-                })}
-              </div>
+                      return (
+                        <motion.div
+                          key={achievement.id}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.03, duration: 0.3 }}
+                          className={cn(
+                            "relative flex flex-col items-center justify-center rounded-xl border-2 p-3 aspect-square cursor-pointer transition-all",
+                            isUnlocked
+                              ? cn(style.border, style.bg, style.glow && `shadow-lg ${style.glow}`)
+                              : "border-border/40 bg-muted/20 opacity-50 grayscale",
+                            isSelected && "ring-2 ring-accent"
+                          )}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedId(isSelected ? null : achievement.id)}
+                        >
+                          <span className="text-2xl sm:text-3xl mb-1">{achievement.icon}</span>
+                          <span className="text-[10px] font-medium text-center leading-tight line-clamp-2">
+                            {achievement.name}
+                          </span>
+                          {!isUnlocked && (
+                            <div className="absolute top-1.5 right-1.5">
+                              <Lock className="h-3 w-3 text-muted-foreground/60" />
+                            </div>
+                          )}
+                          {isUnlocked && achievement.xp_reward > 0 && (
+                            <span className="text-[9px] font-bold text-accent mt-0.5">+{achievement.xp_reward} XP</span>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
 
               {/* Selected achievement detail - fixed overlay */}
               <AnimatePresence>
