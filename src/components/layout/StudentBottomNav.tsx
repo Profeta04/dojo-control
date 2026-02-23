@@ -47,32 +47,32 @@ const studentPage2: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-// Admin/Sensei pages
+// Admin/Sensei pages — grouped by theme
 const staffPage1: TabItem[] = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { title: "Alunos", href: "/students", icon: Users },
   { title: "Config", href: "/config", icon: Settings, isProfile: true },
-  { title: "Pagamentos", href: "/payments", icon: CreditCard },
+  { title: "Turmas", href: "/classes", icon: GraduationCap },
 ];
 
 const staffPage2: TabItem[] = [
-  { title: "Progresso", href: "/progresso", icon: TrendingUp },
-  { title: "Turmas", href: "/classes", icon: GraduationCap },
+  { title: "Pagamentos", href: "/payments", icon: CreditCard },
+  { title: "Histórico", href: "/payment-history", icon: History },
+  { title: "Planos", href: "/planos", icon: CreditCard },
   { title: "Presenças", href: "/attendance", icon: ClipboardCheck },
-  { title: "Graduações", href: "/graduations", icon: Trophy },
 ];
 
 const staffPage3: TabItem[] = [
-  { title: "Histórico", href: "/payment-history", icon: History },
-  { title: "Planos", href: "/planos", icon: CreditCard },
+  { title: "Progresso", href: "/progresso", icon: TrendingUp },
+  { title: "Graduações", href: "/graduations", icon: Trophy },
   { title: "Config. Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 const staffPage3WithAdmin: TabItem[] = [
-  { title: "Histórico", href: "/payment-history", icon: History },
+  { title: "Progresso", href: "/progresso", icon: TrendingUp },
+  { title: "Graduações", href: "/graduations", icon: Trophy },
   { title: "Senseis", href: "/senseis", icon: UserCog },
-  { title: "Planos", href: "/planos", icon: CreditCard },
   { title: "Config. Dojo", href: "/settings", icon: Landmark },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
