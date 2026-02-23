@@ -103,7 +103,7 @@ export default function StudentAchievements() {
                 })}
               </div>
 
-              {/* Selected achievement detail */}
+              {/* Selected achievement detail - fixed overlay */}
               <AnimatePresence>
                 {selectedId && (() => {
                   const achievement = permanentAchievements.find(a => a.id === selectedId);
@@ -111,46 +111,58 @@ export default function StudentAchievements() {
                   const isUnlocked = unlockedIds.has(achievement.id);
                   const style = RARITY_STYLES[achievement.rarity] || RARITY_STYLES.common;
                   return (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <Card className={cn("border-2", style.border)}>
-                        <CardContent className="pt-4 pb-3">
-                          <div className="flex items-start gap-3">
-                            <span className="text-3xl">{achievement.icon}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <p className="font-semibold text-sm">{achievement.name}</p>
-                                <button onClick={() => setSelectedId(null)} className="text-muted-foreground hover:text-foreground">
-                                  <X className="h-4 w-4" />
-                                </button>
-                              </div>
+                    <>
+                      {/* Backdrop */}
+                      <motion.div
+                        key="backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-background/60 backdrop-blur-sm"
+                        onClick={() => setSelectedId(null)}
+                      />
+                      {/* Detail card */}
+                      <motion.div
+                        key="detail"
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                        className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto"
+                      >
+                        <Card className={cn("border-2 shadow-xl", style.border)}>
+                          <CardContent className="pt-5 pb-4">
+                            <div className="flex flex-col items-center text-center gap-2">
+                              <span className="text-5xl">{achievement.icon}</span>
+                              <p className="font-bold text-base">{achievement.name}</p>
                               {achievement.description && (
-                                <p className="text-xs text-muted-foreground mt-0.5">{achievement.description}</p>
+                                <p className="text-sm text-muted-foreground">{achievement.description}</p>
                               )}
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs px-2 py-0.5">
                                   {style.label}
                                 </Badge>
                                 {achievement.xp_reward > 0 && (
-                                  <span className="text-[10px] text-accent font-medium">+{achievement.xp_reward} XP</span>
+                                  <span className="text-xs text-accent font-semibold">+{achievement.xp_reward} XP</span>
                                 )}
                               </div>
                               {!isUnlocked && (
-                                <p className="text-[11px] text-muted-foreground italic mt-1">
+                                <p className="text-xs text-muted-foreground italic mt-1">
                                   {achievement.criteria_type === "tasks_completed" && `Complete ${achievement.criteria_value} tarefas`}
                                   {achievement.criteria_type === "streak_days" && `Mantenha um streak de ${achievement.criteria_value} dias`}
                                   {achievement.criteria_type === "xp_total" && `Alcance ${achievement.criteria_value} XP`}
                                 </p>
                               )}
+                              <button
+                                onClick={() => setSelectedId(null)}
+                                className="mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Fechar
+                              </button>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    </>
                   );
                 })()}
               </AnimatePresence>
