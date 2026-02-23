@@ -164,12 +164,12 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
         <Link
           key={tab.href}
           to={tab.href}
-          className="flex flex-col items-center -mt-5 relative px-1 flex-1 min-w-0"
+          className="flex flex-col items-center -mt-6 relative px-1 flex-1 min-w-0"
           aria-current={isActive ? "page" : undefined}
         >
           <div
             className={cn(
-              "w-[3rem] h-[3rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+              "w-[3.5rem] h-[3.5rem] rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
               "shadow-lg border-2 border-sidebar",
               isActive
                 ? "ring-2 ring-accent ring-offset-1 ring-offset-sidebar scale-110"
