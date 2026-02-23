@@ -257,11 +257,11 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
           {hasPagination && page > 0 && (
             <button
               onClick={() => setPage(page - 1)}
-              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Voltar"
             >
-              <ChevronLeft className="h-5 w-5" />
-              <span className="text-[0.55rem] font-medium">←</span>
+              <ChevronLeft className="h-6 w-6" />
+              <span className="text-[0.65rem] leading-tight font-medium">Voltar</span>
             </button>
           )}
 
@@ -271,11 +271,11 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
           {hasPagination && page < pages.length - 1 && (
             <button
               onClick={() => setPage(page + 1)}
-              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 w-8 flex-shrink-0 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
+              className="flex flex-col items-center gap-0.5 py-1 px-1 rounded-xl transition-all duration-200 min-w-0 flex-1 text-sidebar-foreground/50 hover:text-sidebar-foreground/80 active:scale-95"
               aria-label="Mais opções"
             >
-              <ChevronRight className="h-5 w-5" />
-              <span className="text-[0.55rem] font-medium">→</span>
+              <ChevronRight className="h-6 w-6" />
+              <span className="text-[0.65rem] leading-tight font-medium">Mais</span>
             </button>
           )}
         </motion.div>
