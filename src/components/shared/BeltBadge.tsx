@@ -10,7 +10,7 @@ interface BeltBadgeProps {
 }
 
 // Direct hex colors to avoid CSS variable conflicts with dojo theming
-const BELT_HEX_COLORS: Record<string, string> = {
+export const BELT_HEX_COLORS: Record<string, string> = {
   branca: "#FFFFFF",
   bordo: "#800020",
   cinza: "#999999",

@@ -70,7 +70,10 @@ export function AchievementsPanel({ userId, compact = false, maxVisible }: Achie
   }
 
   // Full panel
-  const permanentAchievements = allAchievements.filter(a => !a.is_annual);
+  const rarityOrder: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 };
+  const permanentAchievements = allAchievements
+    .filter(a => !a.is_annual)
+    .sort((a, b) => (rarityOrder[a.rarity] ?? 4) - (rarityOrder[b.rarity] ?? 4));
   const annualAchievements = unlockedAchievements.filter(ua => ua.achievement?.is_annual);
 
   return (
