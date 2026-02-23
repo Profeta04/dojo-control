@@ -10,13 +10,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { BeltGrade, BJJ_DEGREE_BELTS } from "@/lib/constants";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
 interface BeltOption {
@@ -43,11 +36,35 @@ const JUDO_BELTS: BeltOption[] = [
 ];
 
 const JIUJITSU_BELTS: BeltOption[] = [
+  // Kids/Juvenile belts
   { value: "branca", label: "Branca" },
+  { value: "cinza_branca", label: "Cinza e Branca" },
+  { value: "cinza", label: "Cinza" },
+  { value: "cinza_preta", label: "Cinza e Preta" },
+  { value: "amarela_branca", label: "Amarela e Branca" },
+  { value: "amarela", label: "Amarela" },
+  { value: "amarela_preta", label: "Amarela e Preta" },
+  { value: "laranja_branca", label: "Laranja e Branca" },
+  { value: "laranja", label: "Laranja" },
+  { value: "laranja_preta", label: "Laranja e Preta" },
+  { value: "verde_branca", label: "Verde e Branca" },
+  { value: "verde", label: "Verde" },
+  { value: "verde_preta", label: "Verde e Preta" },
+  // Adult belts
   { value: "azul", label: "Azul" },
   { value: "roxa", label: "Roxa" },
   { value: "marrom", label: "Marrom" },
-  { value: "preta_1dan", label: "Preta" },
+  // Black belt degrees
+  { value: "preta_1dan", label: "Preta 1º Grau" },
+  { value: "preta_2dan", label: "Preta 2º Grau" },
+  { value: "preta_3dan", label: "Preta 3º Grau" },
+  { value: "preta_4dan", label: "Preta 4º Grau" },
+  { value: "preta_5dan", label: "Preta 5º Grau" },
+  { value: "preta_6dan", label: "Preta 6º Grau" },
+  // Special belts
+  { value: "coral", label: "Coral (7º Grau)" },
+  { value: "preta_8dan", label: "Coral Verm./Branca (8º)" },
+  { value: "vermelha", label: "Vermelha (9º/10º)" },
 ];
 
 interface BeltSelectorDialogProps {
@@ -86,7 +103,7 @@ export function BeltSelectorDialog({
       <h3 className="text-sm font-semibold text-foreground text-center pb-1 border-b border-border">
         {title}
       </h3>
-      <div className="space-y-1 max-h-[250px] overflow-y-auto pr-1">
+      <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
         {belts.map((belt) => (
           <button
             key={`${title}-${belt.value}`}
@@ -100,7 +117,7 @@ export function BeltSelectorDialog({
             )}
           >
             <BeltBadge grade={belt.value} size="sm" martialArt={art} degree={tempBelt === belt.value && selectedArt === art ? tempDegree : 0} />
-            <span>{belt.label}</span>
+            <span className="text-xs">{belt.label}</span>
           </button>
         ))}
       </div>

@@ -43,7 +43,7 @@ import { cn } from "@/lib/utils";
 import { Tables } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BeltGrade, BELT_LABELS, BJJ_DEGREE_BELTS, getBjjBeltLabel } from "@/lib/constants";
+import { BeltGrade, BELT_LABELS, BJJ_DEGREE_BELTS, BJJ_BELT_ORDER, JUDO_BELT_ORDER, getBjjBeltLabel } from "@/lib/constants";
 
 type Profile = Tables<"profiles">;
 type GraduationHistory = Tables<"graduation_history">;
@@ -52,12 +52,6 @@ interface GraduationWithStudent extends GraduationHistory {
   studentName: string;
   promotedByName: string;
 }
-
-const BELT_ORDER: BeltGrade[] = [
-  "branca", "bordo", "cinza", "azul_escura", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
-  "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan",
-  "preta_6dan", "preta_7dan", "preta_8dan", "preta_9dan", "preta_10dan",
-];
 
 const MARTIAL_ART_LABELS: Record<string, string> = {
   judo: "Judô",
@@ -252,11 +246,12 @@ export default function GraduationsPage() {
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
-  const getNextBelts = (currentBelt: BeltGrade | null): BeltGrade[] => {
-    if (!currentBelt) return BELT_ORDER;
-    const currentIndex = BELT_ORDER.indexOf(currentBelt);
-    if (currentIndex === -1) return BELT_ORDER;
-    return BELT_ORDER.slice(currentIndex + 1);
+  const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string): BeltGrade[] => {
+    const order = martialArt === "bjj" ? BJJ_BELT_ORDER : JUDO_BELT_ORDER;
+    if (!currentBelt) return order;
+    const currentIndex = order.indexOf(currentBelt);
+    if (currentIndex === -1) return order;
+    return order.slice(currentIndex + 1);
   };
 
   const openPromotionDialog = (student: Profile, martialArt?: string) => {
@@ -336,8 +331,11 @@ export default function GraduationsPage() {
   };
 
   const renderStudentCard = (student: Profile) => {
-    const nextBelts = getNextBelts(student.belt_grade as BeltGrade | null);
-    const canPromote = nextBelts.length > 0;
+    const belts = getStudentBelts(student.user_id);
+    const singleArt = dojoArts.length === 1 ? dojoArts[0] : null;
+    const canPromote = singleArt
+      ? getNextBelts(belts.find(b => b.martial_art === singleArt)?.belt_grade as BeltGrade | null, singleArt).length > 0
+      : true;
 
     return (
       <Card key={student.user_id}>
@@ -382,8 +380,8 @@ export default function GraduationsPage() {
               {dojoArts.map((art) => {
                 const beltForArt = getStudentBelts(student.user_id).find(b => b.martial_art === art);
                 const currentBelt = beltForArt?.belt_grade as BeltGrade | null;
-                const nextBelts = getNextBelts(currentBelt);
-                if (nextBelts.length === 0) return null;
+                const nextBeltsForArt = getNextBelts(currentBelt, art);
+                if (nextBeltsForArt.length === 0) return null;
                 return (
                   <Button key={art} className="flex-1" size="sm" variant="outline" onClick={() => openPromotionDialog(student, art)}>
                     <Plus className="h-3 w-3 mr-1" />
@@ -649,7 +647,7 @@ export default function GraduationsPage() {
                     {selectedStudent &&
                       (() => {
                         const currentBelt = getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt);
-                        return getNextBelts(currentBelt?.belt_grade as BeltGrade | null);
+                        return getNextBelts(currentBelt?.belt_grade as BeltGrade | null, selectedMartialArt);
                       })().map((belt) => (
                         <SelectItem key={belt} value={belt}>
                           <div className="flex items-center gap-2">

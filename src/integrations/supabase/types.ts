@@ -1460,6 +1460,16 @@ export type Database = {
         | "preta_8dan"
         | "preta_9dan"
         | "preta_10dan"
+        | "cinza_branca"
+        | "cinza_preta"
+        | "amarela_branca"
+        | "amarela_preta"
+        | "laranja_branca"
+        | "laranja_preta"
+        | "verde_branca"
+        | "verde_preta"
+        | "coral"
+        | "vermelha"
       payment_category:
         | "mensalidade"
         | "material"
@@ -1619,6 +1629,16 @@ export const Constants = {
         "preta_8dan",
         "preta_9dan",
         "preta_10dan",
+        "cinza_branca",
+        "cinza_preta",
+        "amarela_branca",
+        "amarela_preta",
+        "laranja_branca",
+        "laranja_preta",
+        "verde_branca",
+        "verde_preta",
+        "coral",
+        "vermelha",
       ],
       payment_category: [
         "mensalidade",
