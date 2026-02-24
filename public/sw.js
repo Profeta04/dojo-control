@@ -5,10 +5,22 @@ self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
 self.addEventListener('push', (event) => {
   let data = { title: 'Dojo Control', body: 'Nova notificação', url: '/', icon: '/favicon.png' };
   try {
-    if (event.data) data = { ...data, ...event.data.json() };
+    if (event.data) {
+      const raw = event.data.text();
+      console.log('[SW] Push raw payload length:', raw.length);
+      try {
+        const parsed = JSON.parse(raw);
+        data = { ...data, ...parsed };
+      } catch (jsonErr) {
+        console.log('[SW] Payload is not JSON, using as body text');
+        data.body = raw;
+      }
+    }
   } catch (e) {
-    if (event.data) data.body = event.data.text();
+    console.error('[SW] Error reading push data:', e);
   }
+
+  console.log('[SW] Showing notification:', data.title, '-', data.body);
 
   event.waitUntil(
     self.registration.showNotification(data.title, {
