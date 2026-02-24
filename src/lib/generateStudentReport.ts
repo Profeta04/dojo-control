@@ -2,7 +2,18 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PdfDojoInfo, resolveDojoColors } from "./pdfTheme";
+import {
+  PdfDojoInfo,
+  resolveDojoColors,
+  drawPdfHeader,
+  drawSectionTitle,
+  drawMetricCards,
+  drawPdfFooters,
+  tableStyles,
+  smallTableStyles,
+  checkPageBreak,
+  STATUS_COLORS,
+} from "./pdfTheme";
 
 const BELT_LABELS: Record<string, string> = {
   branca: "Branca", cinza: "Cinza", azul: "Azul", amarela: "Amarela",
@@ -17,6 +28,9 @@ const PAYMENT_STATUS_LABELS: Record<string, string> = {
   pago: "Pago", pendente: "Pendente", atrasado: "Atrasado",
 };
 
+const RARITY_LABELS: Record<string, string> = {
+  common: "Comum", rare: "Rara", epic: "Épica", legendary: "Lendária",
+};
 
 export interface StudentReportData {
   dojoInfo: PdfDojoInfo;
@@ -58,58 +72,40 @@ export interface StudentReportData {
 
 export function generateStudentReport(data: StudentReportData, logoBase64?: string | null) {
   const doc = new jsPDF();
-  const pageWidth = doc.internal.pageSize.getWidth();
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const { headerBg, accentBg, lightBg } = resolveDojoColors(data.dojoInfo);
   const dojoName = data.dojoInfo.dojoName || "Dojo";
+  const tbl = tableStyles(headerBg, lightBg);
+  const smallTbl = smallTableStyles(headerBg, lightBg);
 
   // ── Header ──
-  const headerHeight = logoBase64 ? 48 : 40;
-  doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.rect(0, 0, pageWidth, headerHeight, "F");
+  let yPos = drawPdfHeader(doc, {
+    dojoName,
+    subtitle: "Relatório Individual do Aluno",
+    extraLine: data.student.name,
+    dateLine: `Gerado em: ${today}`,
+    headerBg,
+    accentBg,
+    logoBase64,
+  });
 
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, "PNG", 14, 6, 28, 28);
-    } catch { /* logo failed */ }
-  }
+  // ── Metric Cards ──
+  const gam = data.gamification;
+  const presentCount = data.attendance.filter((a) => a.present).length;
+  const attendanceRate = data.attendance.length > 0
+    ? Math.round((presentCount / data.attendance.length) * 100)
+    : 0;
 
-  const textX = logoBase64 ? pageWidth / 2 + 10 : pageWidth / 2;
-  doc.setFontSize(22);
-  doc.setTextColor(255, 255, 255);
-  doc.text(dojoName, textX, 16, { align: "center" });
-
-  doc.setFontSize(12);
-  doc.text("Relatório Individual do Aluno", textX, 25, { align: "center" });
-
-  doc.setFontSize(9);
-  doc.text(`Gerado em: ${today}`, textX, 35, { align: "center" });
-
-  let yPos = headerHeight + 10;
+  yPos = drawMetricCards(doc, [
+    { label: "XP Total", value: `${gam.totalXp} pts` },
+    { label: "Nível", value: `${gam.level}` },
+    { label: "Presença", value: `${attendanceRate}%` },
+    { label: "Conquistas", value: `${gam.achievements.length}` },
+  ], yPos, headerBg);
 
   // ── Dados do Aluno ──
-  const sectionTitle = (title: string) => {
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text(title, 20, yPos);
-    doc.setDrawColor(accentBg[0], accentBg[1], accentBg[2]);
-    doc.setLineWidth(1.5);
-    doc.line(20, yPos + 2, 20 + doc.getTextWidth(title), yPos + 2);
-    doc.setLineWidth(0.5);
-    yPos += 9;
-  };
-
-  const tableDefaults = {
-    theme: "striped" as const,
-    headStyles: { fillColor: headerBg, textColor: [255, 255, 255] as [number, number, number], fontStyle: "bold" as const },
-    alternateRowStyles: { fillColor: lightBg },
-    styles: { fontSize: 10, cellPadding: 4 },
-    margin: { left: 20, right: 20 },
-  };
-
-  const smallTableDefaults = { ...tableDefaults, styles: { fontSize: 9, cellPadding: 3 } };
-
-  sectionTitle("Dados do Aluno");
+  drawSectionTitle(doc, "Dados do Aluno", yPos, headerBg, accentBg);
+  yPos += 9;
 
   const birthDateFormatted = data.student.birth_date
     ? format(new Date(data.student.birth_date), "dd/MM/yyyy", { locale: ptBR })
@@ -127,12 +123,13 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
       ["Faixa Atual", BELT_LABELS[data.student.belt_grade || "branca"] || "Branca"],
       ["Membro Desde", memberSince],
     ],
-    ...tableDefaults,
+    ...tbl,
   });
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Graduações ──
-  sectionTitle("Histórico de Graduações");
+  drawSectionTitle(doc, "Histórico de Graduações", yPos, headerBg, accentBg);
+  yPos += 9;
   if (data.graduations.length > 0) {
     autoTable(doc, {
       startY: yPos,
@@ -143,7 +140,7 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
         BELT_LABELS[g.new_belt] || g.new_belt,
         g.notes || "-",
       ]),
-      ...smallTableDefaults,
+      ...smallTbl,
     });
     yPos = (doc as any).lastAutoTable.finalY + 12;
   } else {
@@ -151,13 +148,12 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
     doc.text("Nenhuma graduação registrada.", 20, yPos); yPos += 12;
   }
 
-  if (yPos > 220) { doc.addPage(); yPos = 20; }
+  yPos = checkPageBreak(doc, yPos, 220);
 
   // ── Presenças ──
-  sectionTitle("Histórico de Presenças");
+  drawSectionTitle(doc, "Histórico de Presenças", yPos, headerBg, accentBg);
+  yPos += 9;
   if (data.attendance.length > 0) {
-    const presentCount = data.attendance.filter((a) => a.present).length;
-    const attendanceRate = Math.round((presentCount / data.attendance.length) * 100);
     doc.setFontSize(10); doc.setTextColor(80, 80, 80);
     doc.text(`Taxa de presença: ${attendanceRate}% (${presentCount}/${data.attendance.length} aulas)`, 20, yPos);
     yPos += 6;
@@ -171,7 +167,14 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
         a.present ? "✓ Presente" : "✗ Ausente",
         a.notes || "-",
       ]),
-      ...smallTableDefaults,
+      ...smallTbl,
+      didParseCell: (hookData: any) => {
+        if (hookData.section === "body" && hookData.column.index === 2) {
+          const present = data.attendance[hookData.row.index]?.present;
+          hookData.cell.styles.textColor = present ? STATUS_COLORS.pago : STATUS_COLORS.atrasado;
+          hookData.cell.styles.fontStyle = "bold";
+        }
+      },
     });
 
     if (data.attendance.length > 50) {
@@ -185,10 +188,11 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
     doc.text("Nenhum registro de presença encontrado.", 20, yPos); yPos += 12;
   }
 
-  if (yPos > 200) { doc.addPage(); yPos = 20; }
+  yPos = checkPageBreak(doc, yPos);
 
   // ── Pagamentos ──
-  sectionTitle("Histórico de Pagamentos");
+  drawSectionTitle(doc, "Histórico de Pagamentos", yPos, headerBg, accentBg);
+  yPos += 9;
   if (data.payments.length > 0) {
     const totalPaid = data.payments.filter((p) => p.status === "pago").reduce((s, p) => s + p.amount, 0);
     doc.setFontSize(10); doc.setTextColor(80, 80, 80);
@@ -205,7 +209,16 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
         PAYMENT_STATUS_LABELS[p.status] || p.status,
         p.paid_date ? format(new Date(p.paid_date), "dd/MM/yyyy", { locale: ptBR }) : "-",
       ]),
-      ...smallTableDefaults,
+      ...smallTbl,
+      didParseCell: (hookData: any) => {
+        if (hookData.section === "body" && hookData.column.index === 3) {
+          const status = data.payments[hookData.row.index]?.status;
+          if (status && STATUS_COLORS[status]) {
+            hookData.cell.styles.textColor = STATUS_COLORS[status];
+            hookData.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
     });
     yPos = (doc as any).lastAutoTable.finalY + 12;
   } else {
@@ -213,11 +226,11 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
     doc.text("Nenhum pagamento registrado.", 20, yPos); yPos += 12;
   }
 
-  if (yPos > 200) { doc.addPage(); yPos = 20; }
+  yPos = checkPageBreak(doc, yPos);
 
   // ── Pontos & Conquistas ──
-  sectionTitle("Pontos & Conquistas");
-  const gam = data.gamification;
+  drawSectionTitle(doc, "Pontos & Conquistas", yPos, headerBg, accentBg);
+  yPos += 9;
 
   autoTable(doc, {
     startY: yPos,
@@ -229,14 +242,11 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
       ["Maior Streak", `${gam.longestStreak} dias`],
       ["Conquistas Desbloqueadas", `${gam.achievements.length}`],
     ],
-    ...tableDefaults,
+    ...tbl,
   });
   yPos = (doc as any).lastAutoTable.finalY + 8;
 
   if (gam.achievements.length > 0) {
-    const RARITY_LABELS: Record<string, string> = {
-      common: "Comum", rare: "Rara", epic: "Épica", legendary: "Lendária",
-    };
     autoTable(doc, {
       startY: yPos,
       head: [["Conquista", "Raridade", "Data"]],
@@ -245,26 +255,12 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
         RARITY_LABELS[a.rarity] || a.rarity,
         format(new Date(a.unlockedAt), "dd/MM/yyyy", { locale: ptBR }),
       ]),
-      ...smallTableDefaults,
+      ...smallTbl,
     });
   }
 
   // ── Footer ──
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.rect(0, pageH - 14, pageWidth, 14, "F");
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text(
-      `${dojoName} — Relatório de ${data.student.name} — Página ${i} de ${pageCount}`,
-      pageWidth / 2,
-      pageH - 5,
-      { align: "center" }
-    );
-  }
+  drawPdfFooters(doc, `${dojoName} — Relatório de ${data.student.name}`, headerBg);
 
   const safeFileName = data.student.name.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   const fileName = `relatorio-aluno-${safeFileName}-${format(new Date(), "yyyy-MM-dd")}.pdf`;

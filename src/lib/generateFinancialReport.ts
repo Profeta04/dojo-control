@@ -2,7 +2,18 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { PdfDojoInfo, resolveDojoColors } from "./pdfTheme";
+import {
+  PdfDojoInfo,
+  resolveDojoColors,
+  drawPdfHeader,
+  drawSectionTitle,
+  drawMetricCards,
+  drawPdfFooters,
+  tableStyles,
+  smallTableStyles,
+  checkPageBreak,
+  STATUS_COLORS,
+} from "./pdfTheme";
 
 export interface FinancialReportData {
   dojoInfo: PdfDojoInfo;
@@ -54,9 +65,9 @@ function drawBarChart(
   const barWidth = barGroupWidth * 0.2;
   const gap = barGroupWidth * 0.05;
   const colors = {
-    recebido: { r: 34, g: 139, b: 34 },
-    pendente: { r: 50, g: 50, b: 50 },
-    atrasado: { r: 220, g: 53, b: 69 },
+    recebido: STATUS_COLORS.pago,
+    pendente: STATUS_COLORS.pendente,
+    atrasado: STATUS_COLORS.atrasado,
   };
 
   doc.setDrawColor(180, 180, 180);
@@ -85,7 +96,7 @@ function drawBarChart(
       const barHeight = (v.val / maxValue) * chartHeight;
       const x = groupX + j * (barWidth + gap);
       const y = startY + chartHeight - barHeight;
-      doc.setFillColor(v.color.r, v.color.g, v.color.b);
+      doc.setFillColor(v.color[0], v.color[1], v.color[2]);
       doc.rect(x, y, barWidth, barHeight, "F");
     });
     doc.setFontSize(8);
@@ -108,7 +119,7 @@ function drawBarChart(
   let legendX = startX + 10;
   doc.setFontSize(8);
   legendItems.forEach((item) => {
-    doc.setFillColor(item.color.r, item.color.g, item.color.b);
+    doc.setFillColor(item.color[0], item.color[1], item.color[2]);
     doc.rect(legendX, legendY - 3, 6, 4, "F");
     doc.setTextColor(60, 60, 60);
     doc.text(item.label, legendX + 8, legendY);
@@ -122,47 +133,29 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   const today = format(new Date(), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   const { headerBg, accentBg, lightBg } = resolveDojoColors(data.dojoInfo);
   const dojoName = data.dojoInfo.dojoName || "Dojo";
-
-  // Helper: section title with accent underline
-  const drawSectionTitle = (title: string, y: number) => {
-    doc.setFontSize(13);
-    doc.setTextColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.text(title, 20, y);
-    doc.setDrawColor(accentBg[0], accentBg[1], accentBg[2]);
-    doc.setLineWidth(1.5);
-    doc.line(20, y + 2, 20 + doc.getTextWidth(title), y + 2);
-    doc.setLineWidth(0.5);
-  };
+  const tbl = tableStyles(headerBg, lightBg);
+  const smallTbl = smallTableStyles(headerBg, lightBg);
 
   // ── Header ──
-  const headerHeight = logoBase64 ? 52 : 44;
-  doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-  doc.rect(0, 0, pageWidth, headerHeight, "F");
+  let yPos = drawPdfHeader(doc, {
+    dojoName,
+    subtitle: "Relatório Financeiro",
+    extraLine: `Referência: ${data.referenceMonthLabel}`,
+    dateLine: `Gerado em: ${today}`,
+    headerBg,
+    accentBg,
+    logoBase64,
+  });
 
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, "PNG", 14, 8, 28, 28);
-    } catch { /* logo failed */ }
-  }
-
-  const textX = logoBase64 ? pageWidth / 2 + 10 : pageWidth / 2;
-  doc.setFontSize(22);
-  doc.setTextColor(255, 255, 255);
-  doc.text("Relatório Financeiro", textX, 16, { align: "center" });
-
-  doc.setFontSize(13);
-  doc.text(dojoName, textX, 25, { align: "center" });
-
-  doc.setFontSize(11);
-  doc.text(`Referência: ${data.referenceMonthLabel}`, textX, 33, { align: "center" });
-
-  doc.setFontSize(9);
-  doc.text(`Gerado em: ${today}`, textX, 40, { align: "center" });
-
-  let yPos = headerHeight + 10;
+  // ── Metric Cards ──
+  yPos = drawMetricCards(doc, [
+    { label: "Total Recebido", value: formatCurrency(data.totalRecebido), color: STATUS_COLORS.pago },
+    { label: "Total Pendente", value: formatCurrency(data.totalPendente), color: STATUS_COLORS.pendente },
+    { label: "Total Atrasado", value: formatCurrency(data.totalAtrasado), color: STATUS_COLORS.atrasado },
+  ], yPos, headerBg);
 
   // ── Resumo Financeiro ──
-  drawSectionTitle("Resumo Financeiro", yPos);
+  drawSectionTitle(doc, "Resumo Financeiro", yPos, headerBg, accentBg);
   yPos += 9;
 
   autoTable(doc, {
@@ -175,17 +168,12 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
       ["Total Geral", formatCurrency(data.totalGeral)],
       ["Taxa de Inadimplência", `${data.delinquencyRate.toFixed(1)}%`],
     ],
-    theme: "striped",
-    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
-    alternateRowStyles: { fillColor: lightBg },
-    styles: { fontSize: 10, cellPadding: 4 },
-    margin: { left: 20, right: 20 },
+    ...tbl,
   });
-
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Gráfico de Barras ──
-  drawSectionTitle("Receita por Mês (Últimos 6 Meses)", yPos);
+  drawSectionTitle(doc, "Receita por Mês (Últimos 6 Meses)", yPos, headerBg, accentBg);
   yPos += 10;
 
   const chartHeight = 65;
@@ -194,7 +182,7 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   if (yPos + chartHeight + 25 > doc.internal.pageSize.getHeight() - 20) {
     doc.addPage();
     yPos = 20;
-    drawSectionTitle("Receita por Mês (Últimos 6 Meses)", yPos);
+    drawSectionTitle(doc, "Receita por Mês (Últimos 6 Meses)", yPos, headerBg, accentBg);
     yPos += 10;
   }
 
@@ -202,7 +190,7 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
   yPos += chartHeight + 28;
 
   // ── Detalhamento Mensal ──
-  drawSectionTitle("Detalhamento Mensal", yPos);
+  drawSectionTitle(doc, "Detalhamento Mensal", yPos, headerBg, accentBg);
   yPos += 9;
 
   autoTable(doc, {
@@ -215,20 +203,16 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
       formatCurrency(m.atrasado),
       formatCurrency(m.recebido + m.pendente + m.atrasado),
     ]),
-    theme: "striped",
-    headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
-    alternateRowStyles: { fillColor: lightBg },
+    ...tbl,
     styles: { fontSize: 9, cellPadding: 4 },
-    margin: { left: 20, right: 20 },
   });
-
   yPos = (doc as any).lastAutoTable.finalY + 12;
 
   // ── Detalhamento de Pagamentos ──
   if (data.payments.length > 0) {
-    if (yPos > 200) { doc.addPage(); yPos = 20; }
+    yPos = checkPageBreak(doc, yPos);
 
-    drawSectionTitle("Detalhamento de Pagamentos", yPos);
+    drawSectionTitle(doc, "Detalhamento de Pagamentos", yPos, headerBg, accentBg);
     yPos += 9;
 
     autoTable(doc, {
@@ -242,31 +226,24 @@ export function generateFinancialReport(data: FinancialReportData, logoBase64?: 
         p.dueDate,
         p.paidDate || "—",
       ]),
-      theme: "striped",
-      headStyles: { fillColor: headerBg, textColor: [255, 255, 255], fontStyle: "bold" },
-      alternateRowStyles: { fillColor: lightBg },
-      styles: { fontSize: 8, cellPadding: 3 },
+      ...smallTbl,
       columnStyles: { 0: { cellWidth: 40 }, 3: { cellWidth: 22 } },
       margin: { left: 15, right: 15 },
+      didParseCell: (hookData: any) => {
+        // Color-code status column
+        if (hookData.section === "body" && hookData.column.index === 3) {
+          const status = data.payments[hookData.row.index]?.status;
+          if (status && STATUS_COLORS[status]) {
+            hookData.cell.styles.textColor = STATUS_COLORS[status];
+            hookData.cell.styles.fontStyle = "bold";
+          }
+        }
+      },
     });
   }
 
   // ── Footer ──
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    const pageH = doc.internal.pageSize.getHeight();
-    doc.setFillColor(headerBg[0], headerBg[1], headerBg[2]);
-    doc.rect(0, pageH - 14, pageWidth, 14, "F");
-    doc.setFontSize(8);
-    doc.setTextColor(255, 255, 255);
-    doc.text(
-      `${dojoName} — Relatório Financeiro — Página ${i} de ${pageCount}`,
-      pageWidth / 2,
-      pageH - 5,
-      { align: "center" }
-    );
-  }
+  drawPdfFooters(doc, `${dojoName} — Relatório Financeiro`, headerBg);
 
   const fileName = `relatorio-financeiro-${data.referenceMonth}.pdf`;
   doc.save(fileName);
