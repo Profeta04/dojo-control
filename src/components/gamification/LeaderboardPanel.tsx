@@ -21,6 +21,21 @@ const MARTIAL_ART_ICONS: Record<string, string> = {
   bjj: "🤼",
 };
 
+const MARTIAL_ART_COLORS: Record<string, { bg: string; border: string; hover: string; text: string }> = {
+  judo: {
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/30",
+    hover: "hover:bg-amber-500/20",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  bjj: {
+    bg: "bg-blue-500/10",
+    border: "border-blue-500/30",
+    hover: "hover:bg-blue-500/20",
+    text: "text-blue-600 dark:text-blue-400",
+  },
+};
+
 function LeaderboardAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
   const publicUrl = avatarUrl
     ? supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl
@@ -239,18 +254,27 @@ export function LeaderboardPanel() {
             className="grid gap-3"
           >
             <p className="text-sm text-muted-foreground text-center mb-1">Selecione a arte marcial</p>
-            {availableMartialArts.map((art) => (
-              <motion.button
-                key={art}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedArt(art)}
-                className="flex items-center gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors shadow-sm"
-              >
-                <span className="text-2xl">{MARTIAL_ART_ICONS[art] || "🥋"}</span>
-                <span className="font-semibold text-base text-foreground">{MARTIAL_ART_LABELS[art] || art}</span>
-              </motion.button>
-            ))}
+            {availableMartialArts.map((art) => {
+              const colors = MARTIAL_ART_COLORS[art] || MARTIAL_ART_COLORS.judo;
+              return (
+                <motion.button
+                  key={art}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setSelectedArt(art)}
+                  className={cn(
+                    "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all shadow-md",
+                    colors.bg, colors.border, colors.hover
+                  )}
+                >
+                  <span className="text-3xl">{MARTIAL_ART_ICONS[art] || "🥋"}</span>
+                  <div className="text-left">
+                    <span className={cn("font-bold text-lg", colors.text)}>{MARTIAL_ART_LABELS[art] || art}</span>
+                    <p className="text-xs text-muted-foreground">Ver ranking</p>
+                  </div>
+                </motion.button>
+              );
+            })}
           </motion.div>
         )}
 
