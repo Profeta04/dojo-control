@@ -147,7 +147,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
       {/* Logo & Dojo Header */}
       <div className="p-4 lg:p-5">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-sm ring-1 ring-sidebar-border/50">
+          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 shadow-md ring-1 ring-sidebar-border/50 transition-transform duration-200 hover:scale-105">
             {currentDojoId && logoUrl ? (
               <img
                 src={logoUrl}

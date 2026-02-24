@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
       {/* Student Mobile Top Bar */}
       {useBottomNav && (
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border/60 safe-area-inset-top">
           <div className="h-14 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               {currentDojoId && logoUrl ? (
@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       {/* Mobile Header for sidebar mode */}
       <header
         className={cn(
-          "lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border safe-area-inset-top",
+          "lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar/95 backdrop-blur-md border-b border-sidebar-border/60 safe-area-inset-top",
           useBottomNav && "hidden"
         )}
         role="banner"
@@ -191,7 +191,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className={cn("lg:hidden safe-area-inset-top", "h-14")} />
 
         {/* Desktop header */}
-        <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/50" role="banner">
+        <div className="hidden lg:flex items-center justify-between h-14 px-6 border-b border-border/30 bg-card/50 backdrop-blur-sm" role="banner">
           {showDojoSelector && !isLoadingDojos ? (
             <div className="flex items-center gap-2">
               <Building className="h-4 w-4 text-muted-foreground" />
