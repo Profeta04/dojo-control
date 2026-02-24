@@ -156,8 +156,8 @@ export default function Scanner() {
             animate={{ opacity: 1, scale: 1 }}
             className="relative"
           >
-            {/* Square scanner viewport - uses aspect-ratio to stay square */}
-            <div className="relative w-full aspect-square mx-auto overflow-hidden rounded-2xl">
+            {/* Scanner viewport - proportional to screen, max 85vw and 60vh to fit all devices */}
+            <div className="relative w-full mx-auto overflow-hidden rounded-2xl" style={{ aspectRatio: '1/1', maxHeight: '60dvh', maxWidth: '85vw' }}>
               {/* html5-qrcode mounts here */}
               <div
                 id="qr-reader-video"
