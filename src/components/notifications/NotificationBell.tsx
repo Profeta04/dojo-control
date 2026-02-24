@@ -12,6 +12,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, Check, CreditCard, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { playNotification } from "@/lib/sounds";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PushNotificationToggle } from "./PushNotificationToggle";
@@ -70,6 +71,7 @@ export function NotificationBell() {
           filter: `user_id=eq.${user.id}`,
         },
         () => {
+          playNotification();
           queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
         }
       )

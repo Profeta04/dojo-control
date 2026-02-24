@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { playCheckin } from "@/lib/sounds";
 import {
   Dialog,
   DialogContent,
@@ -184,6 +185,7 @@ export default function Checkin() {
         }
       } else {
         fireConfetti();
+        playCheckin();
         setSuccessClass(cls);
         refetch();
       }
