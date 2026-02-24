@@ -148,40 +148,19 @@ export default function Senseis() {
     setFormLoading(true);
 
     try {
-      // 1. Create user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name },
+      // Use edge function to create sensei without replacing admin session
+      const { data, error } = await supabase.functions.invoke("create-sensei-user", {
+        body: {
+          email,
+          password,
+          name,
+          phone: phone || undefined,
+          belt_grade: beltGrade || undefined,
         },
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Falha ao criar usuário");
-
-      const userId = authData.user.id;
-
-      // 2. Update profile with additional info
-      const updateData: { phone?: string; belt_grade?: BeltGradeEnum; registration_status: 'aprovado'; approved_at: string; approved_by: string } = {
-        registration_status: "aprovado",
-        approved_at: new Date().toISOString(),
-        approved_by: user!.id,
-      };
-      
-      if (phone) updateData.phone = phone;
-      if (beltGrade) updateData.belt_grade = beltGrade as BeltGradeEnum;
-
-      await supabase
-        .from("profiles")
-        .update(updateData)
-        .eq("user_id", userId);
-
-      // 3. Assign sensei role
-      await supabase.rpc("assign_user_role", {
-        _user_id: userId,
-        _role: "sensei",
-      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: "Sensei cadastrado!",
@@ -190,7 +169,7 @@ export default function Senseis() {
 
       setDialogOpen(false);
       resetForm();
-      queryClient.invalidateQueries({ queryKey: ["senseis"] });
+      queryClient.invalidateQueries({ queryKey: ["senseis-with-dojos"] });
     } catch (error: any) {
       let message = "Erro ao cadastrar sensei";
       if (error.message?.includes("already registered")) {
