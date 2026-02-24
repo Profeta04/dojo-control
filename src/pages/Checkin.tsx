@@ -241,14 +241,55 @@ export default function Checkin() {
           {classesLoading ? (
             <LoadingSpinner />
           ) : !classes || classes.length === 0 ? (
-            <div className="text-center py-6 space-y-2">
-              <Clock className="h-10 w-10 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">
-                Nenhuma aula agendada para você hoje neste dojo.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Verifique se você está matriculado em uma turma com aula hoje.
-              </p>
+            <div className="text-center py-8 space-y-4">
+              <div className="h-16 w-16 mx-auto rounded-full bg-muted flex items-center justify-center">
+                <Clock className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Nenhuma aula hoje</p>
+                <p className="text-sm text-muted-foreground">
+                  Não encontramos aulas agendadas para você hoje neste dojo.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Verifique se você está matriculado em uma turma com aula hoje.
+                </p>
+              </div>
+              <Button onClick={() => navigate("/dashboard")} className="w-full mt-2">
+                Voltar ao Início
+              </Button>
+            </div>
+          ) : classes.every((cls) => cls.status !== "open" && !cls.alreadyCheckedIn) ? (
+            <div className="text-center py-8 space-y-4">
+              <div className="h-16 w-16 mx-auto rounded-full bg-warning/10 flex items-center justify-center">
+                <AlertTriangle className="h-8 w-8 text-warning" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">Fora do horário de check-in</p>
+                <p className="text-sm text-muted-foreground">
+                  Você tem {classes.length === 1 ? "1 aula" : `${classes.length} aulas`} hoje, mas nenhuma está no horário disponível para registrar presença.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  O check-in é liberado até 1 hora antes e 1 hora após o término da aula.
+                </p>
+              </div>
+              <div className="space-y-2 text-left">
+                {classes.map((cls) => (
+                  <div key={cls.classId} className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+                    <div>
+                      <p className="text-sm font-medium">{cls.className}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {cls.startTime.slice(0, 5)} - {cls.endTime.slice(0, 5)}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {cls.statusMessage}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+              <Button onClick={() => navigate("/dashboard")} className="w-full mt-2">
+                Voltar ao Início
+              </Button>
             </div>
           ) : (
             <>
@@ -305,6 +346,9 @@ export default function Checkin() {
                   </CardContent>
                 </Card>
               ))}
+              <Button variant="outline" onClick={() => navigate("/dashboard")} className="w-full mt-2">
+                Voltar ao Início
+              </Button>
             </>
           )}
         </CardContent>
