@@ -39,11 +39,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    const { userId, newPassword } = await req.json();
+    const { userId, newPassword, newEmail } = await req.json();
 
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: newPassword,
-    });
+    const updatePayload: Record<string, string> = {};
+    if (newPassword) updatePayload.password = newPassword;
+    if (newEmail) updatePayload.email = newEmail;
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updatePayload);
 
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {

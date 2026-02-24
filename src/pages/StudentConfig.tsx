@@ -86,13 +86,23 @@ export default function StudentConfig() {
     if (!user) return;
     setSaving(true);
     try {
+      // If email changed, update auth email too
+      if (email && email !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({ email });
+        if (authError) throw authError;
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({ name, phone, email })
         .eq("user_id", user.id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["auth-profile"] });
-      toast.success("Perfil atualizado!");
+      toast.success(
+        email && email !== user.email
+          ? "Perfil atualizado! Confirme o novo email na sua caixa de entrada."
+          : "Perfil atualizado!"
+      );
     } catch (err: any) {
       toast.error("Erro ao salvar: " + err.message);
     } finally {

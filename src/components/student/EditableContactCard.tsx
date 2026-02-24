@@ -21,6 +21,12 @@ export function EditableContactCard() {
     if (!user) return;
     setSaving(true);
     try {
+      // If email changed, update auth email too
+      if (email && email !== user.email) {
+        const { error: authError } = await supabase.auth.updateUser({ email });
+        if (authError) throw authError;
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({ phone, email })
@@ -30,7 +36,11 @@ export function EditableContactCard() {
 
       queryClient.invalidateQueries({ queryKey: ["auth-profile"] });
       setEditing(false);
-      toast.success("Dados atualizados!");
+      toast.success(
+        email && email !== user.email
+          ? "Dados atualizados! Confirme o novo email na sua caixa de entrada."
+          : "Dados atualizados!"
+      );
     } catch (err: any) {
       toast.error("Erro ao salvar: " + err.message);
     } finally {
