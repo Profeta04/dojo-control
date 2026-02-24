@@ -143,16 +143,15 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
   );
 }
 
-type Step = "pick-art" | "pick-view";
-
 export function LeaderboardPanel() {
   const { leaderboard, isLoading, dojoClasses, availableMartialArts } = useLeaderboard();
   const { user } = useAuth();
 
   const [selectedArt, setSelectedArt] = useState<string | null>(null);
-  const [view, setView] = useState<"geral" | "turma" | null>(null);
+  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  const [viewChosen, setViewChosen] = useState(false);
 
-  const step: Step | "results" = !selectedArt ? "pick-art" : !view ? "pick-view" : "results";
+  const step = !selectedArt ? "pick-art" as const : !viewChosen ? "pick-view" as const : "results" as const;
 
   // Filtered entries for "geral" (all students of selected art)
   const geralEntries = useMemo(() => {
@@ -168,22 +167,33 @@ export function LeaderboardPanel() {
     return dojoClasses.filter((c) => c.martial_art === selectedArt);
   }, [dojoClasses, selectedArt]);
 
-  // Rankings by class
-  const classRankings = useMemo(() => {
-    return filteredClasses.map((cls) => {
-      const filtered = leaderboard
-        .filter((e) => e.class_ids.includes(cls.id))
-        .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
-      return { cls, entries: filtered };
-    });
-  }, [leaderboard, filteredClasses]);
+  // Single class ranking
+  const selectedClassEntries = useMemo(() => {
+    if (!selectedClassId) return [];
+    return leaderboard
+      .filter((e) => e.class_ids.includes(selectedClassId))
+      .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }, [leaderboard, selectedClassId]);
+
+  const selectedClassName = filteredClasses.find((c) => c.id === selectedClassId)?.name || "";
 
   const handleBack = () => {
-    if (view) {
-      setView(null);
+    if (viewChosen) {
+      setViewChosen(false);
+      setSelectedClassId(null);
     } else {
       setSelectedArt(null);
     }
+  };
+
+  const handleSelectGeral = () => {
+    setSelectedClassId(null);
+    setViewChosen(true);
+  };
+
+  const handleSelectClass = (classId: string) => {
+    setSelectedClassId(classId);
+    setViewChosen(true);
   };
 
   if (isLoading) return null;
@@ -235,16 +245,16 @@ export function LeaderboardPanel() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setSelectedArt(art)}
-                className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
+                className="flex items-center gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors shadow-sm"
               >
                 <span className="text-2xl">{MARTIAL_ART_ICONS[art] || "🥋"}</span>
-                <span className="font-semibold text-base">{MARTIAL_ART_LABELS[art] || art}</span>
+                <span className="font-semibold text-base text-foreground">{MARTIAL_ART_LABELS[art] || art}</span>
               </motion.button>
             ))}
           </motion.div>
         )}
 
-        {/* Step 2: Pick view (Geral or Turma) */}
+        {/* Step 2: Pick Geral or specific class */}
         {step === "pick-view" && selectedArt && (
           <motion.div
             key="pick-view"
@@ -255,37 +265,44 @@ export function LeaderboardPanel() {
             className="grid gap-3"
           >
             <p className="text-sm text-muted-foreground text-center mb-1">
-              {MARTIAL_ART_ICONS[selectedArt]} {MARTIAL_ART_LABELS[selectedArt]} — como deseja ver?
+              {MARTIAL_ART_ICONS[selectedArt]} {MARTIAL_ART_LABELS[selectedArt]}
             </p>
+
+            {/* Geral option */}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setView("geral")}
-              className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
+              onClick={handleSelectGeral}
+              className="flex items-center gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors shadow-sm"
             >
               <Crown className="h-5 w-5 text-amber-500" />
               <div className="text-left">
-                <span className="font-semibold text-sm">Geral</span>
+                <span className="font-semibold text-sm text-foreground">Ranking Geral</span>
                 <p className="text-xs text-muted-foreground">Todos os alunos de {MARTIAL_ART_LABELS[selectedArt]}</p>
               </div>
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setView("turma")}
-              className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
-            >
-              <Users className="h-5 w-5 text-primary" />
-              <div className="text-left">
-                <span className="font-semibold text-sm">Por Turma</span>
-                <p className="text-xs text-muted-foreground">Rankings separados por turma</p>
-              </div>
-            </motion.button>
+
+            {/* Each class as its own option */}
+            {filteredClasses.map((cls) => (
+              <motion.button
+                key={cls.id}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => handleSelectClass(cls.id)}
+                className="flex items-center gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors shadow-sm"
+              >
+                <Users className="h-5 w-5 text-primary" />
+                <div className="text-left">
+                  <span className="font-semibold text-sm text-foreground">{cls.name}</span>
+                  <p className="text-xs text-muted-foreground">Ranking da turma</p>
+                </div>
+              </motion.button>
+            ))}
           </motion.div>
         )}
 
         {/* Results: Geral */}
-        {step === "results" && view === "geral" && selectedArt && (
+        {step === "results" && !selectedClassId && selectedArt && (
           <motion.div
             key="results-geral"
             initial={{ opacity: 0, y: 12 }}
@@ -312,44 +329,31 @@ export function LeaderboardPanel() {
           </motion.div>
         )}
 
-        {/* Results: Turma */}
-        {step === "results" && view === "turma" && selectedArt && (
+        {/* Results: Specific class */}
+        {step === "results" && selectedClassId && selectedArt && (
           <motion.div
-            key="results-turma"
+            key={`results-${selectedClassId}`}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
-            className="space-y-6"
           >
-            {classRankings.length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma turma encontrada para {MARTIAL_ART_LABELS[selectedArt]}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-            {classRankings.map(({ cls, entries }) => (
-              <Card key={cls.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Crown className="h-5 w-5 text-amber-500" />
-                      {cls.name}
-                    </CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      {entries.length} aluno{entries.length !== 1 ? "s" : ""}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="px-0 pb-3">
-                  <RankingTable entries={entries} userId={user?.id} />
-                </CardContent>
-              </Card>
-            ))}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Crown className="h-5 w-5 text-amber-500" />
+                    {selectedClassName}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedClassEntries.length} aluno{selectedClassEntries.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-3">
+                <RankingTable entries={selectedClassEntries} userId={user?.id} />
+              </CardContent>
+            </Card>
           </motion.div>
         )}
       </AnimatePresence>
