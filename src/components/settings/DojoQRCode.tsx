@@ -91,20 +91,49 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     return val ? toHex(val, fallback) : fallback;
   };
 
+  // Ensure text color contrasts against background
+  const getContrastColor = (hexColor: string, lightFallback: string, darkFallback: string): string => {
+    const hex = hexColor.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    // Relative luminance
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? darkFallback : lightFallback;
+  };
+
+  const ensureReadable = (textHex: string, bgHex: string, fallback: string): string => {
+    const lum = (hex: string) => {
+      const c = hex.replace("#", "");
+      const r = parseInt(c.substring(0, 2), 16) / 255;
+      const g = parseInt(c.substring(2, 4), 16) / 255;
+      const b = parseInt(c.substring(4, 6), 16) / 255;
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    };
+    const contrast = Math.abs(lum(textHex) - lum(bgHex));
+    return contrast < 0.3 ? fallback : textHex;
+  };
+
   const handleDownload = (mode: "light" | "dark") => {
     const qrCanvas = canvasRef.current;
     if (!qrCanvas) return;
 
     const isDark = mode === "dark";
     
-    // High-contrast colors for each mode
+    // Fixed high-contrast colors for each mode
     const bg = isDark ? "#111827" : "#ffffff";
     const cardBg = isDark ? "#1f2937" : "#ffffff";
     const textMain = isDark ? "#f3f4f6" : "#111827";
     const textSub = isDark ? "#d1d5db" : "#374151";
     const textFooter = isDark ? "#6b7280" : "#9ca3af";
     const shadowColor = isDark ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.1)";
-    const stepsBg = isDark ? primary + "25" : primary + "0D";
+
+    // Ensure primary & accent are readable against the background
+    const safePrimary = ensureReadable(primary, bg, textMain);
+    const safeAccent = ensureReadable(accent, bg, isDark ? "#f59e0b" : "#c2410c");
+    const stepsBg = isDark ? safePrimary + "20" : safePrimary + "0A";
+    // Ensure step title is readable against the stepsBg (which is nearly transparent over bg)
+    const safeStepTitle = ensureReadable(safePrimary, bg, textMain);
 
     const posterW = 800;
     const posterH = 1100;
@@ -119,32 +148,32 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     ctx.fillRect(0, 0, posterW, posterH);
 
     // Top accent bar with dojo primary color
-    ctx.fillStyle = primary;
+    ctx.fillStyle = safePrimary;
     ctx.fillRect(0, 0, posterW, 10);
 
     // Thin accent line below
-    ctx.fillStyle = accent;
+    ctx.fillStyle = safeAccent;
     ctx.fillRect(0, 10, posterW, 4);
 
-    // Dojo name
-    ctx.fillStyle = primary;
+    // Dojo name — always readable
+    ctx.fillStyle = safePrimary;
     ctx.font = "bold 42px system-ui, -apple-system, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(dojoName.toUpperCase(), posterW / 2, 85);
 
     // Divider with accent color
-    ctx.strokeStyle = accent;
+    ctx.strokeStyle = safeAccent;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(posterW * 0.25, 110);
     ctx.lineTo(posterW * 0.75, 110);
     ctx.stroke();
 
-    // Instruction text
+    // Instruction text — uses guaranteed-contrast colors
     ctx.fillStyle = textMain;
     ctx.font = "600 28px system-ui, -apple-system, sans-serif";
     ctx.fillText("Escaneie o QR Code abaixo", posterW / 2, 165);
-    ctx.fillStyle = primary;
+    ctx.fillStyle = safePrimary;
     ctx.font = "bold 30px system-ui, -apple-system, sans-serif";
     ctx.fillText("para marcar sua presença!", posterW / 2, 205);
 
@@ -163,14 +192,14 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     ctx.fill();
     ctx.shadowColor = "transparent";
 
-    ctx.strokeStyle = primary;
+    ctx.strokeStyle = safePrimary;
     ctx.lineWidth = 3;
     ctx.beginPath();
     roundRect(ctx, qrX - 24, qrY - 24, qrSize + 48, qrSize + 48, 20);
     ctx.stroke();
 
     // Accent inner border
-    ctx.strokeStyle = accent;
+    ctx.strokeStyle = safeAccent;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     roundRect(ctx, qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 14);
@@ -192,7 +221,7 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     roundRect(ctx, posterW * 0.12, stepsY - 30, posterW * 0.76, 170, 16);
     ctx.fill();
 
-    ctx.fillStyle = primary;
+    ctx.fillStyle = safeStepTitle;
     ctx.font = "bold 24px system-ui, -apple-system, sans-serif";
     ctx.fillText("Como funciona?", posterW / 2, stepsY);
 
@@ -214,9 +243,9 @@ export function DojoQRCode({ dojoId, dojoName, checkinToken, logoUrl, colorPrima
     ctx.fillText("Presença registrada automaticamente • Dojo Control", posterW / 2, posterH - 50);
 
     // Bottom accent bar
-    ctx.fillStyle = accent;
+    ctx.fillStyle = safeAccent;
     ctx.fillRect(0, posterH - 14, posterW, 4);
-    ctx.fillStyle = primary;
+    ctx.fillStyle = safePrimary;
     ctx.fillRect(0, posterH - 10, posterW, 10);
 
     // Download
