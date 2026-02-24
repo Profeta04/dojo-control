@@ -94,18 +94,18 @@ export default function StudentPaymentHistory() {
         <PageHeader title="Histórico de Pagamentos" description="Pagamentos já confirmados" />
 
         {/* Summary */}
-        <Card className="mb-6 border-green-500/20 bg-gradient-to-br from-green-500/5 to-transparent">
+        <Card className="mb-6 border-success/20 bg-gradient-to-br from-success/5 to-transparent">
           <CardContent className="py-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              <div className="p-2 rounded-lg bg-success/10">
+                <CheckCircle2 className="h-5 w-5 text-success" />
               </div>
               <div>
                 <p className="text-sm font-medium">Total pago</p>
                 <p className="text-xs text-muted-foreground">{payments?.length || 0} pagamentos confirmados</p>
               </div>
             </div>
-            <p className="text-xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
+            <p className="text-xl font-bold text-success">{formatCurrency(totalPaid)}</p>
           </CardContent>
         </Card>
 
@@ -171,7 +171,7 @@ export default function StudentPaymentHistory() {
                               <ReceiptViewButton receiptUrl={payment.receipt_url} />
                             </div>
                           ) : (
-                            <Badge variant="outline" className="text-xs gap-1 bg-green-500/10 text-green-600 border-green-500/20">
+                            <Badge variant="outline" className="text-xs gap-1 bg-success/10 text-success border-success/20">
                               <CheckCircle2 className="h-3 w-3" />
                               Confirmado
                             </Badge>

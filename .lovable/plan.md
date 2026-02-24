@@ -1,22 +1,35 @@
 
-## Itens Pendentes (da lista original)
+## Itens Concluídos
 
-### 6. PDFs — Arrumar aparência dos relatórios
-- Revisar `generateDojoReport.ts`, `generateFinancialReport.ts`, `generateStudentReport.ts`
-- Padronizar layout, fontes, cores com identidade do dojo
-- Melhorar cabeçalhos, tabelas, logo e espaçamentos
+### 1-5. Bugs corrigidos (versões anteriores)
+- Admin/Sensei contando como alunos ✅
+- Admin logando como Sensei ao cadastrar ✅
+- Ranking por turmas e arte marcial ✅
+- Tutorial/tour repetindo ✅
+- Scanner não lendo QR Code ✅
 
-### 7. Visual — Efeitos de profundidade e melhorias
-- Aplicar tokens neumórficos nos cards principais
-- Melhorar sombras, gradientes e hierarquia visual
-- Revisar consistência entre páginas
+### 6. PDFs — Aparência dos relatórios ✅
+- Layout padronizado com cabeçalhos profissionais
+- Cards de métricas coloridos no topo
+- Tabelas com cores de status dinâmicas
+- Rodapé com paginação
 
-### 8. Sons — Melhorar efeitos sonoros
-- Revisar `src/lib/sounds.ts` — frequências, duração, volume
-- Garantir sons distintos para cada ação (clique, XP, conquista, level-up)
-- Adicionar feedback sonoro onde necessário
+### 7. Visual — Efeitos de profundidade ✅
+- Tokens neumórficos e glassmorphism aplicados
+- Contraste de cores nos cartazes QR Code corrigido
+- Sombras e hover states melhorados nos cards
+- Header e bottom nav com efeito glass
 
-### 9. Revisão Geral — UI e Code
-- Verificar todas as páginas por bugs visuais/UX
-- Testar fluxos críticos end-to-end
-- Corrigir textos, ícones, responsividade
+### 8. Sons — Efeitos sonoros ✅
+- Todos os sons reescritos com envelopes suaves e panning estéreo
+- Novos sons: playCheckin, playNotification, playSuccess, playError
+- Sons integrados no check-in e notificações em tempo real
+
+### 9. Revisão Geral — UI e Code ✅
+- Cores hardcoded substituídas por design tokens (Index, StudentPaymentHistory, ReceiptStatusBadge, NotificationBell, Checkin)
+- Ícones duplicados corrigidos no bottom nav (Planos e Dojo)
+- NotFound page: borda corrigida
+- forwardRef warnings identificadas como issue de biblioteca (cosmético)
+- Fluxos validados: login, perfil, tarefas, pagamentos
+
+## Todos os 9 itens concluídos! 🎉

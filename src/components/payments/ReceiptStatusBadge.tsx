@@ -15,17 +15,17 @@ const STATUS_CONFIG: Record<ReceiptStatus, {
   pendente_verificacao: { 
     variant: "secondary", 
     icon: Clock,
-    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+    className: "bg-warning/10 text-warning border-warning/20"
   },
   aprovado: { 
     variant: "default", 
     icon: CheckCircle2,
-    className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-800"
+    className: "bg-success/10 text-success border-success/20"
   },
   rejeitado: { 
     variant: "destructive", 
     icon: XCircle,
-    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 border-red-200 dark:border-red-800"
+    className: "bg-destructive/10 text-destructive border-destructive/20"
   },
 };
 

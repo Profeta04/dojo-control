@@ -13,7 +13,7 @@ const NotFound = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center px-4">
-        <img src={dojoLogo} alt="Dojo Control" className="w-24 h-24 mx-auto mb-6 border border-foreground rounded-full" />
+        <img src={dojoLogo} alt="Dojo Control" className="w-24 h-24 mx-auto mb-6 border-2 border-border rounded-full shadow-lg" />
         <h1 className="mb-2 text-5xl font-bold text-foreground">404</h1>
         <p className="mb-6 text-lg text-muted-foreground">Página não encontrada</p>
         <Button asChild className="bg-accent hover:bg-accent/90">
