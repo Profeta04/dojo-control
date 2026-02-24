@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLeaderboard, LeaderboardEntry, LeaderboardClassInfo } from "@/hooks/useLeaderboard";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,9 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Crown, Medal, Flame, Users } from "lucide-react";
+import { Crown, Medal, Flame, Users, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { motion, AnimatePresence } from "framer-motion";
 
 const MARTIAL_ART_LABELS: Record<string, string> = {
   judo: "Judô",
@@ -142,29 +143,48 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
   );
 }
 
+type Step = "pick-art" | "pick-view";
+
 export function LeaderboardPanel() {
   const { leaderboard, isLoading, dojoClasses, availableMartialArts } = useLeaderboard();
   const { user } = useAuth();
 
-  // Rankings by martial art
-  const martialArtRankings = useMemo(() => {
-    return availableMartialArts.map((art) => {
-      const filtered = leaderboard
-        .filter((e) => e.martial_arts.includes(art))
-        .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
-      return { art, label: MARTIAL_ART_LABELS[art] || art, icon: MARTIAL_ART_ICONS[art] || "🥋", entries: filtered };
-    });
-  }, [leaderboard, availableMartialArts]);
+  const [selectedArt, setSelectedArt] = useState<string | null>(null);
+  const [view, setView] = useState<"geral" | "turma" | null>(null);
+
+  const step: Step | "results" = !selectedArt ? "pick-art" : !view ? "pick-view" : "results";
+
+  // Filtered entries for "geral" (all students of selected art)
+  const geralEntries = useMemo(() => {
+    if (!selectedArt) return [];
+    return leaderboard
+      .filter((e) => e.martial_arts.includes(selectedArt))
+      .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }, [leaderboard, selectedArt]);
+
+  // Classes filtered by selected art
+  const filteredClasses = useMemo(() => {
+    if (!selectedArt) return [];
+    return dojoClasses.filter((c) => c.martial_art === selectedArt);
+  }, [dojoClasses, selectedArt]);
 
   // Rankings by class
   const classRankings = useMemo(() => {
-    return dojoClasses.map((cls) => {
+    return filteredClasses.map((cls) => {
       const filtered = leaderboard
         .filter((e) => e.class_ids.includes(cls.id))
         .map((entry, idx) => ({ ...entry, rank: idx + 1 }));
       return { cls, entries: filtered };
     });
-  }, [leaderboard, dojoClasses]);
+  }, [leaderboard, filteredClasses]);
+
+  const handleBack = () => {
+    if (view) {
+      setView(null);
+    } else {
+      setSelectedArt(null);
+    }
+  };
 
   if (isLoading) return null;
   if (leaderboard.length === 0) {
@@ -179,51 +199,160 @@ export function LeaderboardPanel() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Rankings por Arte Marcial */}
-      {martialArtRankings.map(({ art, label, icon, entries }) => (
-        <Card key={art}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <span className="text-lg">{icon}</span>
-                Ranking de {label}
-              </CardTitle>
-              <Badge variant="secondary" className="text-xs">
-                {entries.length} aluno{entries.length !== 1 ? "s" : ""}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-3">
-            <RankingTable entries={entries} userId={user?.id} />
-          </CardContent>
-        </Card>
-      ))}
+    <div className="space-y-4">
+      {/* Back button */}
+      <AnimatePresence>
+        {step !== "pick-art" && (
+          <motion.button
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            onClick={handleBack}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Voltar
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      {/* Rankings por Turma */}
-      {classRankings.map(({ cls, entries }) => (
-        <Card key={cls.id}>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Crown className="h-5 w-5 text-amber-500" />
-                {cls.name}
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px]">
-                  {MARTIAL_ART_LABELS[cls.martial_art] || cls.martial_art}
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  {entries.length} aluno{entries.length !== 1 ? "s" : ""}
-                </Badge>
+      <AnimatePresence mode="wait">
+        {/* Step 1: Pick martial art */}
+        {step === "pick-art" && (
+          <motion.div
+            key="pick-art"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="grid gap-3"
+          >
+            <p className="text-sm text-muted-foreground text-center mb-1">Selecione a arte marcial</p>
+            {availableMartialArts.map((art) => (
+              <motion.button
+                key={art}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedArt(art)}
+                className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
+              >
+                <span className="text-2xl">{MARTIAL_ART_ICONS[art] || "🥋"}</span>
+                <span className="font-semibold text-base">{MARTIAL_ART_LABELS[art] || art}</span>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Step 2: Pick view (Geral or Turma) */}
+        {step === "pick-view" && selectedArt && (
+          <motion.div
+            key="pick-view"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="grid gap-3"
+          >
+            <p className="text-sm text-muted-foreground text-center mb-1">
+              {MARTIAL_ART_ICONS[selectedArt]} {MARTIAL_ART_LABELS[selectedArt]} — como deseja ver?
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setView("geral")}
+              className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
+            >
+              <Crown className="h-5 w-5 text-amber-500" />
+              <div className="text-left">
+                <span className="font-semibold text-sm">Geral</span>
+                <p className="text-xs text-muted-foreground">Todos os alunos de {MARTIAL_ART_LABELS[selectedArt]}</p>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="px-0 pb-3">
-            <RankingTable entries={entries} userId={user?.id} />
-          </CardContent>
-        </Card>
-      ))}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setView("turma")}
+              className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/50 transition-colors shadow-sm"
+            >
+              <Users className="h-5 w-5 text-primary" />
+              <div className="text-left">
+                <span className="font-semibold text-sm">Por Turma</span>
+                <p className="text-xs text-muted-foreground">Rankings separados por turma</p>
+              </div>
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Results: Geral */}
+        {step === "results" && view === "geral" && selectedArt && (
+          <motion.div
+            key="results-geral"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+          >
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <span className="text-lg">{MARTIAL_ART_ICONS[selectedArt]}</span>
+                    Ranking Geral — {MARTIAL_ART_LABELS[selectedArt]}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {geralEntries.length} aluno{geralEntries.length !== 1 ? "s" : ""}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-3">
+                <RankingTable entries={geralEntries} userId={user?.id} />
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* Results: Turma */}
+        {step === "results" && view === "turma" && selectedArt && (
+          <motion.div
+            key="results-turma"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-6"
+          >
+            {classRankings.length === 0 && (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma turma encontrada para {MARTIAL_ART_LABELS[selectedArt]}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            {classRankings.map(({ cls, entries }) => (
+              <Card key={cls.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Crown className="h-5 w-5 text-amber-500" />
+                      {cls.name}
+                    </CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      {entries.length} aluno{entries.length !== 1 ? "s" : ""}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0 pb-3">
+                  <RankingTable entries={entries} userId={user?.id} />
+                </CardContent>
+              </Card>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
