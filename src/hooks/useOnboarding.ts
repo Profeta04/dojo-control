@@ -56,7 +56,22 @@ export function useOnboarding() {
           { onConflict: "user_id" }
         );
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user-onboarding"] }),
+    onMutate: async (tabId: string) => {
+      // Optimistic update to prevent dialog re-triggering
+      await queryClient.cancelQueries({ queryKey: ["user-onboarding", user?.id] });
+      const previous = queryClient.getQueryData<OnboardingData>(["user-onboarding", user?.id]);
+      queryClient.setQueryData<OnboardingData>(["user-onboarding", user?.id], (old) => ({
+        welcome_seen: old?.welcome_seen ?? true,
+        tabs_seen: [...(old?.tabs_seen || []), tabId],
+      }));
+      return { previous };
+    },
+    onError: (_err, _tabId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["user-onboarding", user?.id], context.previous);
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["user-onboarding"] }),
   });
 
   const tabsSeen = onboarding?.tabs_seen ?? [];

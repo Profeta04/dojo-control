@@ -1,16 +1,22 @@
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useState, useMemo } from "react";
+import { useLeaderboard, LeaderboardEntry } from "@/hooks/useLeaderboard";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Crown, Medal, Flame, Users } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Crown, Medal, Flame, Users, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
+const MARTIAL_ART_LABELS: Record<string, string> = {
+  judo: "Judô",
+  bjj: "Jiu-Jitsu",
+};
 
-function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | null; name: string; userId?: string }) {
+function LeaderboardAvatar({ avatarUrl, name }: { avatarUrl: string | null; name: string }) {
   const publicUrl = avatarUrl
     ? supabase.storage.from("avatars").getPublicUrl(avatarUrl).data.publicUrl
     : null;
@@ -27,8 +33,31 @@ function LeaderboardAvatar({ avatarUrl, name, userId }: { avatarUrl: string | nu
 const RANK_ICONS = ["🥇", "🥈", "🥉"];
 
 export function LeaderboardPanel() {
-  const { leaderboard, isLoading, myRank, totalParticipants } = useLeaderboard();
+  const { leaderboard, isLoading, myRank, totalParticipants, dojoClasses, availableMartialArts } = useLeaderboard();
   const { user } = useAuth();
+  const [filterType, setFilterType] = useState<string>("all");
+
+  // Filter and re-rank leaderboard
+  const filteredLeaderboard = useMemo(() => {
+    let filtered: LeaderboardEntry[];
+
+    if (filterType === "all") {
+      filtered = leaderboard;
+    } else if (filterType.startsWith("art:")) {
+      const art = filterType.replace("art:", "");
+      filtered = leaderboard.filter((e) => e.martial_arts.includes(art));
+    } else if (filterType.startsWith("class:")) {
+      const classId = filterType.replace("class:", "");
+      filtered = leaderboard.filter((e) => e.class_ids.includes(classId));
+    } else {
+      filtered = leaderboard;
+    }
+
+    // Re-rank after filtering
+    return filtered.map((entry, idx) => ({ ...entry, rank: idx + 1 }));
+  }, [leaderboard, filterType]);
+
+  const filteredMyRank = filteredLeaderboard.find((e) => e.user_id === user?.id)?.rank || null;
 
   if (isLoading) return null;
   if (leaderboard.length === 0) {
@@ -42,19 +71,44 @@ export function LeaderboardPanel() {
     );
   }
 
+  const hasFilters = availableMartialArts.length > 1 || dojoClasses.length > 0;
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2 text-base">
             <Crown className="h-5 w-5 text-amber-500" />
             Ranking do Dojo
           </CardTitle>
-          {myRank && (
-            <Badge variant="secondary" className="text-xs">
-              Sua posição: #{myRank}
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {hasFilters && (
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-8 w-[160px] text-xs">
+                  <Filter className="h-3 w-3 mr-1" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Geral</SelectItem>
+                  {availableMartialArts.length > 1 && availableMartialArts.map((art) => (
+                    <SelectItem key={art} value={`art:${art}`}>
+                      {MARTIAL_ART_LABELS[art] || art}
+                    </SelectItem>
+                  ))}
+                  {dojoClasses.map((cls) => (
+                    <SelectItem key={cls.id} value={`class:${cls.id}`}>
+                      📚 {cls.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {filteredMyRank && (
+              <Badge variant="secondary" className="text-xs">
+                Sua posição: #{filteredMyRank}
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="px-0 pb-3">
@@ -79,7 +133,7 @@ export function LeaderboardPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {leaderboard.map((entry) => {
+            {filteredLeaderboard.map((entry) => {
               const isMe = entry.user_id === user?.id;
               const rank = entry.rank;
               return (
@@ -99,7 +153,7 @@ export function LeaderboardPanel() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} userId={entry.user_id} />
+                      <LeaderboardAvatar avatarUrl={entry.avatar_url} name={entry.name} />
                       <div className="min-w-0">
                         <p className={cn("text-sm font-medium truncate", isMe && "text-primary")}>
                           {entry.name}
@@ -153,7 +207,8 @@ export function LeaderboardPanel() {
         </Table>
         <div className="text-center pt-3 px-4">
           <p className="text-[10px] text-muted-foreground">
-            {totalParticipants} participantes no ranking
+            {filteredLeaderboard.length} participante{filteredLeaderboard.length !== 1 ? "s" : ""} no ranking
+            {filterType !== "all" && ` (filtrado de ${totalParticipants})`}
           </p>
         </div>
       </CardContent>

@@ -108,8 +108,18 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         overduePaymentsRes,
         recentGraduationsRes
       ] = await Promise.all([
-        // Total approved students
-        addDojoFilter(supabase.from("profiles").select("user_id", { count: "exact" }).eq("registration_status", "aprovado")),
+        // Total approved students (use filtered studentUserIds count)
+        // We still query to get count when no dojo filter
+        currentDojoId
+          ? Promise.resolve({ count: studentUserIds.length, data: null, error: null })
+          : (async () => {
+              // Without dojo filter, exclude staff from total count
+              const { data: allApproved } = await supabase.from("profiles").select("user_id").eq("registration_status", "aprovado");
+              const { data: allStaff } = await supabase.from("user_roles").select("user_id").in("role", ["sensei", "admin", "dono", "super_admin"]);
+              const staffSet = new Set((allStaff || []).map(r => r.user_id));
+              const studentCount = (allApproved || []).filter(p => !staffSet.has(p.user_id)).length;
+              return { count: studentCount, data: null, error: null };
+            })(),
         // Active classes
         currentDojoId
           ? supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true).eq("dojo_id", currentDojoId)

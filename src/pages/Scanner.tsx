@@ -54,7 +54,12 @@ export default function Scanner() {
     scanner
       .start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
+        {
+          fps: 15,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+          disableFlip: false,
+        },
         (decodedText) => {
           const match = decodedText.match(/\/checkin\/([a-f0-9-]+)/i);
           if (match) {

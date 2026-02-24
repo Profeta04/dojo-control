@@ -14,6 +14,8 @@ export interface LeaderboardEntry {
   current_streak: number;
   rank: number;
   achievement_count: number;
+  class_ids: string[];
+  martial_arts: string[];
 }
 
 export interface LeaderboardHistoryEntry {
@@ -24,6 +26,12 @@ export interface LeaderboardHistoryEntry {
   final_xp: number;
   final_rank: number;
   name?: string;
+}
+
+export interface LeaderboardClassInfo {
+  id: string;
+  name: string;
+  martial_art: string;
 }
 
 export function useLeaderboard() {
@@ -47,6 +55,22 @@ export function useLeaderboard() {
 
   const effectiveDojoId = currentDojoId || profileDojoId;
 
+  // Fetch classes for filter options
+  const { data: dojoClasses = [] } = useQuery({
+    queryKey: ["leaderboard-classes", effectiveDojoId],
+    queryFn: async (): Promise<LeaderboardClassInfo[]> => {
+      if (!effectiveDojoId) return [];
+      const { data } = await supabase
+        .from("classes")
+        .select("id, name, martial_art")
+        .eq("dojo_id", effectiveDojoId)
+        .eq("is_active", true)
+        .order("name");
+      return (data || []) as LeaderboardClassInfo[];
+    },
+    enabled: !!effectiveDojoId,
+  });
+
   // Current live leaderboard
   const {
     data: leaderboard = [],
@@ -57,7 +81,7 @@ export function useLeaderboard() {
     queryFn: async (): Promise<LeaderboardEntry[]> => {
       if (!effectiveDojoId) return [];
 
-      // Get all approved students in this dojo
+      // Get all approved profiles in this dojo
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url, belt_grade")
@@ -67,36 +91,47 @@ export function useLeaderboard() {
       if (profilesError) throw profilesError;
       if (!profiles || profiles.length === 0) return [];
 
-      const userIds = profiles.map((p) => p.user_id);
+      const allUserIds = profiles.map((p) => p.user_id);
 
-      // Get XP data for these students
-      const { data: xpData, error: xpError } = await supabase
-        .from("student_xp")
-        .select("*")
-        .in("user_id", userIds);
-
-      if (xpError) throw xpError;
-
-      // Get achievement counts
-      const { data: achievementData } = await supabase
-        .from("student_achievements")
+      // Exclude users with admin/sensei roles from leaderboard
+      const { data: staffRoles } = await supabase
+        .from("user_roles")
         .select("user_id")
-        .in("user_id", userIds);
+        .in("user_id", allUserIds)
+        .in("role", ["admin", "sensei", "dono", "super_admin"]);
+
+      const staffIds = new Set((staffRoles || []).map((r) => r.user_id));
+      const studentProfiles = profiles.filter((p) => !staffIds.has(p.user_id));
+      if (studentProfiles.length === 0) return [];
+
+      const userIds = studentProfiles.map((p) => p.user_id);
+
+      // Get XP data, achievements, and class enrollments in parallel
+      const [xpRes, achievementRes, enrollmentRes] = await Promise.all([
+        supabase.from("student_xp").select("*").in("user_id", userIds),
+        supabase.from("student_achievements").select("user_id").in("user_id", userIds),
+        supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", userIds),
+      ]);
 
       const achievementCounts = new Map<string, number>();
-      achievementData?.forEach((a) => {
-        achievementCounts.set(
-          a.user_id,
-          (achievementCounts.get(a.user_id) || 0) + 1
-        );
+      achievementRes.data?.forEach((a) => {
+        achievementCounts.set(a.user_id, (achievementCounts.get(a.user_id) || 0) + 1);
       });
 
-      const xpMap = new Map(
-        xpData?.map((x) => [x.user_id, x]) || []
-      );
+      const xpMap = new Map((xpRes.data || []).map((x) => [x.user_id, x]));
 
-      // Build entries
-      const entries: LeaderboardEntry[] = profiles.map((p) => {
+      // Build class enrollment map
+      const classMap = new Map<string, string[]>();
+      const artMap = new Map<string, Set<string>>();
+      (enrollmentRes.data || []).forEach((e: any) => {
+        if (!classMap.has(e.student_id)) classMap.set(e.student_id, []);
+        classMap.get(e.student_id)!.push(e.class_id);
+        if (!artMap.has(e.student_id)) artMap.set(e.student_id, new Set());
+        if (e.classes?.martial_art) artMap.get(e.student_id)!.add(e.classes.martial_art);
+      });
+
+      // Build entries (only students)
+      const entries: LeaderboardEntry[] = studentProfiles.map((p) => {
         const xp = xpMap.get(p.user_id);
         return {
           user_id: p.user_id,
@@ -108,6 +143,8 @@ export function useLeaderboard() {
           current_streak: (xp?.current_streak as number) || 0,
           rank: 0,
           achievement_count: achievementCounts.get(p.user_id) || 0,
+          class_ids: classMap.get(p.user_id) || [],
+          martial_arts: [...(artMap.get(p.user_id) || [])],
         };
       });
 
@@ -188,6 +225,9 @@ export function useLeaderboard() {
   const topThree = leaderboard.slice(0, 3);
   const topTen = leaderboard.slice(0, 10);
 
+  // Available martial arts from classes
+  const availableMartialArts = [...new Set(dojoClasses.map((c) => c.martial_art))];
+
   return {
     leaderboard,
     isLoading,
@@ -197,5 +237,7 @@ export function useLeaderboard() {
     topThree,
     topTen,
     totalParticipants: leaderboard.length,
+    dojoClasses,
+    availableMartialArts,
   };
 }
