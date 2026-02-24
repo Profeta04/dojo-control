@@ -156,7 +156,7 @@ export function NotificationBell() {
                           notification.type === "warning"
                             ? "bg-destructive/10 text-destructive"
                             : notification.type === "payment"
-                            ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+                            ? "bg-warning/10 text-warning"
                             : "bg-primary/10 text-primary"
                         )}
                       >

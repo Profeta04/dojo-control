@@ -280,7 +280,7 @@ export default function Checkin() {
                       )}
                     </div>
                     {cls.alreadyCheckedIn ? (
-                      <Badge className="bg-green-600 gap-1 flex-shrink-0">
+                      <Badge className="bg-success text-success-foreground gap-1 flex-shrink-0">
                         <CheckCircle2 className="h-3 w-3" />
                         Confirmado
                       </Badge>

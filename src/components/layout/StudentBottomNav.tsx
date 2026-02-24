@@ -68,16 +68,16 @@ const staffPage2: TabItem[] = [
 
 const staffPage3: TabItem[] = [
   { title: "Graduação", href: "/graduations", icon: Trophy },
-  { title: "Planos", href: "/planos", icon: CreditCard },
-  { title: "Dojo", href: "/settings", icon: Landmark },
+  { title: "Planos", href: "/planos", icon: Landmark },
+  { title: "Dojo", href: "/settings", icon: Settings },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 const staffPage3WithAdmin: TabItem[] = [
   { title: "Graduação", href: "/graduations", icon: Trophy },
   { title: "Senseis", href: "/senseis", icon: UserCog },
-  { title: "Planos", href: "/planos", icon: CreditCard },
-  { title: "Dojo", href: "/settings", icon: Landmark },
+  { title: "Planos", href: "/planos", icon: Landmark },
+  { title: "Dojo", href: "/settings", icon: Settings },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
