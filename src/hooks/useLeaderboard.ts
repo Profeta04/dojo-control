@@ -106,11 +106,12 @@ export function useLeaderboard() {
 
       const userIds = studentProfiles.map((p) => p.user_id);
 
-      // Get XP data, achievements, and class enrollments in parallel
-      const [xpRes, achievementRes, enrollmentRes] = await Promise.all([
+      // Get XP data, achievements, class enrollments, and belts in parallel
+      const [xpRes, achievementRes, enrollmentRes, beltsRes] = await Promise.all([
         supabase.from("student_xp").select("*").in("user_id", userIds),
         supabase.from("student_achievements").select("user_id").in("user_id", userIds),
         supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", userIds),
+        supabase.from("student_belts").select("user_id, martial_art").in("user_id", userIds),
       ]);
 
       const achievementCounts = new Map<string, number>();
@@ -128,6 +129,12 @@ export function useLeaderboard() {
         classMap.get(e.student_id)!.push(e.class_id);
         if (!artMap.has(e.student_id)) artMap.set(e.student_id, new Set());
         if (e.classes?.martial_art) artMap.get(e.student_id)!.add(e.classes.martial_art);
+      });
+
+      // Fallback: use student_belts for martial arts if no class enrollment
+      (beltsRes.data || []).forEach((b) => {
+        if (!artMap.has(b.user_id)) artMap.set(b.user_id, new Set());
+        artMap.get(b.user_id)!.add(b.martial_art);
       });
 
       // Build entries (only students)
