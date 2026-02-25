@@ -7,8 +7,25 @@ import {
 } from "@/components/ui/accordion";
 import {
   LayoutDashboard, Users, GraduationCap, CreditCard, ClipboardList,
-  CalendarDays, Trophy, TrendingUp, ClipboardCheck, Settings, Landmark, UserCog,
+  CalendarDays, Trophy, TrendingUp, ClipboardCheck, Settings, Landmark,
 } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+
+// Student tutorial images
+import tutorialPerfil from "@/assets/tutorials/tutorial-perfil.jpg";
+import tutorialTarefas from "@/assets/tutorials/tutorial-tarefas.jpg";
+import tutorialAgenda from "@/assets/tutorials/tutorial-agenda.jpg";
+import tutorialPagamentos from "@/assets/tutorials/tutorial-pagamentos.jpg";
+import tutorialConquistas from "@/assets/tutorials/tutorial-conquistas.jpg";
+import tutorialProgresso from "@/assets/tutorials/tutorial-progresso.jpg";
+
+// Sensei tutorial images
+import tutorialDashboardSensei from "@/assets/tutorials/tutorial-dashboard-sensei.jpg";
+import tutorialAlunos from "@/assets/tutorials/tutorial-alunos.jpg";
+import tutorialTurmas from "@/assets/tutorials/tutorial-turmas.jpg";
+import tutorialPresencas from "@/assets/tutorials/tutorial-presencas.jpg";
+import tutorialGraduacoes from "@/assets/tutorials/tutorial-graduacoes.jpg";
+import tutorialConfig from "@/assets/tutorials/tutorial-config.jpg";
 
 interface Tutorial {
   id: string;
@@ -16,6 +33,7 @@ interface Tutorial {
   icon: React.ReactNode;
   description: string;
   steps: string[];
+  image: string;
 }
 
 const studentTutorials: Tutorial[] = [
@@ -24,6 +42,7 @@ const studentTutorials: Tutorial[] = [
     title: "Meu Perfil",
     icon: <LayoutDashboard className="h-5 w-5" />,
     description: "Veja e edite suas informações pessoais, foto e dados de contato.",
+    image: tutorialPerfil,
     steps: [
       "Acesse a aba 'Dashboard' para ver seu perfil completo.",
       "Clique no avatar para alterar sua foto de perfil.",
@@ -36,6 +55,7 @@ const studentTutorials: Tutorial[] = [
     title: "Tarefas",
     icon: <ClipboardList className="h-5 w-5" />,
     description: "Complete tarefas para ganhar XP e subir no ranking do dojo.",
+    image: tutorialTarefas,
     steps: [
       "Acesse a aba 'Tarefas' para ver suas missões pendentes.",
       "Tarefas podem ser quizzes, vídeos ou atividades práticas.",
@@ -48,6 +68,7 @@ const studentTutorials: Tutorial[] = [
     title: "Agenda",
     icon: <CalendarDays className="h-5 w-5" />,
     description: "Veja os horários dos treinos e aulas agendadas.",
+    image: tutorialAgenda,
     steps: [
       "Acesse a aba 'Agenda' para ver os próximos treinos.",
       "Veja os horários e dias da semana de cada aula.",
@@ -59,6 +80,7 @@ const studentTutorials: Tutorial[] = [
     title: "Pagamentos",
     icon: <CreditCard className="h-5 w-5" />,
     description: "Acompanhe suas mensalidades e envie comprovantes.",
+    image: tutorialPagamentos,
     steps: [
       "Acesse 'Pagamentos' para ver suas mensalidades.",
       "Envie o comprovante de pagamento clicando no botão de upload.",
@@ -71,6 +93,7 @@ const studentTutorials: Tutorial[] = [
     title: "Conquistas",
     icon: <Trophy className="h-5 w-5" />,
     description: "Desbloqueie conquistas conforme evolui no judô.",
+    image: tutorialConquistas,
     steps: [
       "Conquistas são desbloqueadas automaticamente ao atingir metas.",
       "Cada conquista dá XP bônus.",
@@ -82,6 +105,7 @@ const studentTutorials: Tutorial[] = [
     title: "Meu Progresso",
     icon: <TrendingUp className="h-5 w-5" />,
     description: "Acompanhe sua evolução com gráficos e estatísticas.",
+    image: tutorialProgresso,
     steps: [
       "Veja seu progresso de presenças ao longo do tempo.",
       "Acompanhe sua linha do tempo de graduações.",
@@ -96,6 +120,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Dashboard",
     icon: <LayoutDashboard className="h-5 w-5" />,
     description: "Visão geral do dojo com estatísticas e métricas.",
+    image: tutorialDashboardSensei,
     steps: [
       "Veja o total de alunos, presenças e pagamentos.",
       "Acompanhe gráficos de evolução do dojo.",
@@ -107,6 +132,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Gestão de Alunos",
     icon: <Users className="h-5 w-5" />,
     description: "Aprove, gerencie e acompanhe todos os alunos.",
+    image: tutorialAlunos,
     steps: [
       "Novos alunos aparecem como 'Pendentes' para aprovação.",
       "Ao aprovar, defina a faixa e adicione a uma turma.",
@@ -119,6 +145,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Turmas",
     icon: <GraduationCap className="h-5 w-5" />,
     description: "Crie e gerencie turmas com horários e alunos.",
+    image: tutorialTurmas,
     steps: [
       "Crie turmas com nome, arte marcial e horário.",
       "Adicione alunos às turmas manualmente.",
@@ -131,6 +158,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Presenças",
     icon: <ClipboardCheck className="h-5 w-5" />,
     description: "Registre e acompanhe a presença dos alunos.",
+    image: tutorialPresencas,
     steps: [
       "Selecione a turma e a data para marcar presenças.",
       "Alunos também podem fazer check-in via QR Code.",
@@ -142,6 +170,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Pagamentos",
     icon: <CreditCard className="h-5 w-5" />,
     description: "Gerencie cobranças e comprovantes dos alunos.",
+    image: tutorialPagamentos,
     steps: [
       "Gere cobranças mensais automaticamente.",
       "Aprove ou rejeite comprovantes enviados pelos alunos.",
@@ -154,6 +183,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Graduações",
     icon: <Trophy className="h-5 w-5" />,
     description: "Registre graduações e avanços de faixa.",
+    image: tutorialGraduacoes,
     steps: [
       "Selecione o aluno e a nova faixa.",
       "O histórico de graduações fica registrado automaticamente.",
@@ -165,6 +195,7 @@ const senseiTutorials: Tutorial[] = [
     title: "Configurações do Dojo",
     icon: <Landmark className="h-5 w-5" />,
     description: "Personalize o dojo com logo, cores e dados.",
+    image: tutorialConfig,
     steps: [
       "Adicione o logo e as cores do seu dojo.",
       "Configure a chave PIX para pagamentos.",
@@ -200,11 +231,25 @@ export function HelpTutorials() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="pb-4">
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-1">
-                {tutorial.steps.map((step, i) => (
-                  <li key={i} className="leading-relaxed">{step}</li>
-                ))}
-              </ol>
+              <div className="space-y-4">
+                {/* Tutorial image */}
+                <div className="rounded-lg overflow-hidden border border-border/40">
+                  <AspectRatio ratio={9 / 16}>
+                    <img
+                      src={tutorial.image}
+                      alt={`Tutorial: ${tutorial.title}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </AspectRatio>
+                </div>
+
+                {/* Steps */}
+                <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-1">
+                  {tutorial.steps.map((step, i) => (
+                    <li key={i} className="leading-relaxed">{step}</li>
+                  ))}
+                </ol>
+              </div>
             </AccordionContent>
           </AccordionItem>
         ))}
