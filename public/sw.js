@@ -1,7 +1,8 @@
-// Service Worker para Push Notifications — Dojo Control
+// Service Worker — Dojo Control (Push + Share Target)
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(clients.claim()));
 
+// ─── Push Notifications ───
 self.addEventListener('push', (event) => {
   let data = { title: 'Dojo Control', body: 'Nova notificação', url: '/', icon: '/favicon.png' };
   try {
@@ -19,8 +20,6 @@ self.addEventListener('push', (event) => {
   } catch (e) {
     console.error('[SW] Error reading push data:', e);
   }
-
-  console.log('[SW] Showing notification:', data.title, '-', data.body);
 
   event.waitUntil(
     self.registration.showNotification(data.title, {
@@ -49,4 +48,36 @@ self.addEventListener('notificationclick', (event) => {
       if (clients.openWindow) return clients.openWindow(url);
     })
   );
+});
+
+// ─── Share Target Handler ───
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  if (url.pathname === '/compartilhar' && event.request.method === 'POST') {
+    event.respondWith(
+      (async () => {
+        const formData = await event.request.formData();
+        const file = formData.get('file');
+
+        // Store shared file in Cache API for the page to pick up
+        if (file) {
+          const cache = await caches.open('shared-files');
+          // Store file as a response with metadata headers
+          const response = new Response(file, {
+            headers: {
+              'Content-Type': file.type,
+              'X-File-Name': file.name,
+              'X-Shared-At': new Date().toISOString(),
+            },
+          });
+          await cache.put('/shared-file-latest', response);
+        }
+
+        // Redirect to the payments page where the upload dialog will auto-open
+        return Response.redirect('/mensalidade?shared=1', 303);
+      })()
+    );
+    return;
+  }
 });

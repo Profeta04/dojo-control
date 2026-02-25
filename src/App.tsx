@@ -84,6 +84,7 @@ function AnimatedRoutes() {
           <Route path="/subscription-approvals" element={<PageTransition><SubscriptionApprovals /></PageTransition>} />
           <Route path="/planos" element={<PageTransition><Plans /></PageTransition>} />
           <Route path="/ajuda" element={<PageTransition><Help /></PageTransition>} />
+          <Route path="/compartilhar" element={<PageTransition><StudentPayments /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
       </AnimatePresence>

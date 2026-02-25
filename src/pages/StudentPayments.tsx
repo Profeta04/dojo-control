@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -110,6 +110,7 @@ export default function StudentPaymentsPage() {
     }
   }, []);
 
+
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["student-payments", user?.id],
     queryFn: async () => {
@@ -124,6 +125,44 @@ export default function StudentPaymentsPage() {
     },
     enabled: !!user,
   });
+
+  // ─── Handle shared files from Web Share Target ───
+  const processSharedFile = useCallback(async () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('shared') !== '1') return;
+    
+    try {
+      const cache = await caches.open('shared-files');
+      const response = await cache.match('/shared-file-latest');
+      if (!response) return;
+      
+      const blob = await response.blob();
+      const fileName = response.headers.get('X-File-Name') || 'comprovante.jpg';
+      const sharedFile = new File([blob], fileName, { type: blob.type });
+      
+      await cache.delete('/shared-file-latest');
+      
+      const url = new URL(window.location.href);
+      url.searchParams.delete('shared');
+      window.history.replaceState({}, '', url.pathname + url.search);
+      
+      (window as any).__sharedReceiptFile = sharedFile;
+      
+      toast({
+        title: "📎 Comprovante recebido!",
+        description: "Selecione o pagamento correspondente e clique em 'Enviar Comprovante' para vincular.",
+      });
+    } catch (error) {
+      console.error('Error processing shared file:', error);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (!paymentsLoading && payments) {
+      processSharedFile();
+    }
+  }, [paymentsLoading, payments, processSharedFile]);
+
 
   const handleCopyPix = async () => {
     if (!(dojoData as any)?.pix_key) {
