@@ -8,99 +8,132 @@ export function DojoLoadingSpinner({ className }: DojoLoadingSpinnerProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-5 w-full", className)}>
       <svg
-        viewBox="0 0 240 200"
-        className="w-36 sm:w-44 h-auto"
+        viewBox="0 0 280 230"
+        className="w-40 sm:w-52 h-auto"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
           <style>{`
-            /* Left pillar */
-            .torii-pillar-l {
-              stroke-dasharray: 140;
-              stroke-dashoffset: 140;
-              animation: draw-pillar 2.6s ease-in-out infinite;
+            .t-pillar-l, .t-pillar-r {
+              stroke-dasharray: 150;
+              stroke-dashoffset: 150;
+              animation: t-draw 3s ease-in-out infinite;
             }
-            /* Right pillar */
-            .torii-pillar-r {
-              stroke-dasharray: 140;
-              stroke-dashoffset: 140;
-              animation: draw-pillar 2.6s ease-in-out infinite;
-              animation-delay: 0.15s;
-            }
-            /* Top beam (kasagi) — the curved one */
-            .torii-kasagi {
-              stroke-dasharray: 260;
-              stroke-dashoffset: 260;
-              animation: draw-beam 2.6s ease-in-out infinite;
-              animation-delay: 0.5s;
-            }
-            /* Lower beam (nuki) */
-            .torii-nuki {
-              stroke-dasharray: 160;
-              stroke-dashoffset: 160;
-              animation: draw-beam 2.6s ease-in-out infinite;
-              animation-delay: 0.7s;
-            }
+            .t-pillar-r { animation-delay: 0.12s; }
 
-            @keyframes draw-pillar {
-              0% { stroke-dashoffset: 140; opacity: 0; }
-              10% { opacity: 1; }
-              40% { stroke-dashoffset: 0; }
-              70% { stroke-dashoffset: 0; opacity: 1; }
-              90% { opacity: 0; }
-              100% { stroke-dashoffset: 0; opacity: 0; }
+            .t-base-l, .t-base-r {
+              stroke-dasharray: 60;
+              stroke-dashoffset: 60;
+              animation: t-draw-short 3s ease-in-out infinite;
             }
-            @keyframes draw-beam {
-              0% { stroke-dashoffset: 260; opacity: 0; }
+            .t-base-l { animation-delay: 0.05s; }
+            .t-base-r { animation-delay: 0.17s; }
+
+            .t-kasagi {
+              stroke-dasharray: 340;
+              stroke-dashoffset: 340;
+              animation: t-draw-long 3s ease-in-out infinite;
+              animation-delay: 0.45s;
+            }
+            .t-shimaki {
+              stroke-dasharray: 300;
+              stroke-dashoffset: 300;
+              animation: t-draw-long 3s ease-in-out infinite;
+              animation-delay: 0.55s;
+            }
+            .t-nuki {
+              stroke-dasharray: 180;
+              stroke-dashoffset: 180;
+              animation: t-draw-med 3s ease-in-out infinite;
+              animation-delay: 0.65s;
+            }
+            .t-gakuzuka {
+              stroke-dasharray: 50;
+              stroke-dashoffset: 50;
+              animation: t-draw-short 3s ease-in-out infinite;
+              animation-delay: 0.8s;
+            }
+            .t-tip-l, .t-tip-r {
+              stroke-dasharray: 30;
+              stroke-dashoffset: 30;
+              animation: t-draw-short 3s ease-in-out infinite;
+            }
+            .t-tip-l { animation-delay: 0.55s; }
+            .t-tip-r { animation-delay: 0.6s; }
+
+            @keyframes t-draw {
+              0% { stroke-dashoffset: 150; opacity: 0; }
+              8% { opacity: 1; }
+              40% { stroke-dashoffset: 0; }
+              68% { stroke-dashoffset: 0; opacity: 1; }
+              88% { opacity: 0; }
+              100% { opacity: 0; }
+            }
+            @keyframes t-draw-long {
+              0% { stroke-dashoffset: 340; opacity: 0; }
               5% { opacity: 0; }
               15% { opacity: 1; }
               50% { stroke-dashoffset: 0; }
-              70% { stroke-dashoffset: 0; opacity: 1; }
-              90% { opacity: 0; }
-              100% { stroke-dashoffset: 0; opacity: 0; }
+              68% { stroke-dashoffset: 0; opacity: 1; }
+              88% { opacity: 0; }
+              100% { opacity: 0; }
+            }
+            @keyframes t-draw-med {
+              0% { stroke-dashoffset: 180; opacity: 0; }
+              10% { opacity: 0; }
+              20% { opacity: 1; }
+              50% { stroke-dashoffset: 0; }
+              68% { stroke-dashoffset: 0; opacity: 1; }
+              88% { opacity: 0; }
+              100% { opacity: 0; }
+            }
+            @keyframes t-draw-short {
+              0% { stroke-dashoffset: 60; opacity: 0; }
+              8% { opacity: 1; }
+              35% { stroke-dashoffset: 0; }
+              68% { stroke-dashoffset: 0; opacity: 1; }
+              88% { opacity: 0; }
+              100% { opacity: 0; }
             }
           `}</style>
         </defs>
 
-        {/* Left pillar */}
-        <line
-          className="torii-pillar-l"
-          x1="72" y1="55" x2="72" y2="185"
-          stroke="hsl(var(--accent))"
-          strokeWidth="10"
-          strokeLinecap="round"
-          fill="none"
-        />
+        {/* ── Pillar bases (wider feet) ── */}
+        <line className="t-base-l" x1="62" y1="195" x2="88" y2="195"
+          stroke="hsl(var(--accent))" strokeWidth="8" strokeLinecap="round" fill="none" />
+        <line className="t-base-r" x1="192" y1="195" x2="218" y2="195"
+          stroke="hsl(var(--accent))" strokeWidth="8" strokeLinecap="round" fill="none" />
 
-        {/* Right pillar */}
-        <line
-          className="torii-pillar-r"
-          x1="168" y1="55" x2="168" y2="185"
-          stroke="hsl(var(--accent))"
-          strokeWidth="10"
-          strokeLinecap="round"
-          fill="none"
-        />
+        {/* ── Left pillar (slightly tapered inward) ── */}
+        <line className="t-pillar-l" x1="78" y1="195" x2="82" y2="58"
+          stroke="hsl(var(--accent))" strokeWidth="9" strokeLinecap="round" fill="none" />
 
-        {/* Kasagi — top curved beam */}
-        <path
-          className="torii-kasagi"
-          d="M 30,50 Q 60,30 120,28 Q 180,30 210,50"
-          stroke="hsl(var(--accent))"
-          strokeWidth="11"
-          strokeLinecap="round"
-          fill="none"
-        />
+        {/* ── Right pillar ── */}
+        <line className="t-pillar-r" x1="202" y1="195" x2="198" y2="58"
+          stroke="hsl(var(--accent))" strokeWidth="9" strokeLinecap="round" fill="none" />
 
-        {/* Nuki — lower straight beam */}
-        <line
-          className="torii-nuki"
-          x1="50" y1="75" x2="190" y2="75"
-          stroke="hsl(var(--accent))"
-          strokeWidth="8"
-          strokeLinecap="round"
-          fill="none"
-        />
+        {/* ── Shimaki (lower/thinner top beam) ── */}
+        <line className="t-shimaki" x1="55" y1="58" x2="225" y2="58"
+          stroke="hsl(var(--accent))" strokeWidth="7" strokeLinecap="round" fill="none" />
+
+        {/* ── Kasagi (top curved beam — thicker, with upward curve at ends) ── */}
+        <path className="t-kasagi"
+          d="M 28,48 Q 40,38 70,35 L 140,32 L 210,35 Q 240,38 252,48"
+          stroke="hsl(var(--accent))" strokeWidth="10" strokeLinecap="round" fill="none" />
+
+        {/* ── Kasagi tips (curved end caps) ── */}
+        <path className="t-tip-l" d="M 28,48 Q 24,52 22,58"
+          stroke="hsl(var(--accent))" strokeWidth="7" strokeLinecap="round" fill="none" />
+        <path className="t-tip-r" d="M 252,48 Q 256,52 258,58"
+          stroke="hsl(var(--accent))" strokeWidth="7" strokeLinecap="round" fill="none" />
+
+        {/* ── Nuki (cross beam between pillars) ── */}
+        <line className="t-nuki" x1="62" y1="88" x2="218" y2="88"
+          stroke="hsl(var(--accent))" strokeWidth="6" strokeLinecap="round" fill="none" />
+
+        {/* ── Gakuzuka (vertical piece between kasagi and nuki, center) ── */}
+        <line className="t-gakuzuka" x1="140" y1="58" x2="140" y2="88"
+          stroke="hsl(var(--accent))" strokeWidth="6" strokeLinecap="round" fill="none" />
       </svg>
 
       <p className="text-sm text-muted-foreground font-medium tracking-wide animate-pulse">
