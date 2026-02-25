@@ -14,6 +14,7 @@ import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DojoLogoUpload } from "./DojoLogoUpload";
 import { DojoQRCode } from "./DojoQRCode";
 import { Building2, Save, Loader2, Mail, Phone, MapPin, QrCode, Image as ImageIcon } from "lucide-react";
+import { DojoMercadoPagoConfig } from "./DojoMercadoPagoConfig";
 
 export function SenseiDojoEdit() {
   const { user } = useAuth();
@@ -244,6 +245,9 @@ export function SenseiDojoEdit() {
               </Button>
             </CardContent>
           </Card>
+
+          {/* Mercado Pago Integration */}
+          <DojoMercadoPagoConfig dojoId={selectedDojo.id} dojoName={selectedDojo.name} />
         </>
       )}
     </div>
