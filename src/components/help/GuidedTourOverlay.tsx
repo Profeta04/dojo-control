@@ -150,7 +150,7 @@ export function GuidedTourOverlay({ steps, onFinish }: GuidedTourOverlayProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.2 }}
-          className="fixed z-[10000] bg-popover text-popover-foreground rounded-xl shadow-2xl border border-border p-4"
+          className="fixed z-[10000] bg-card text-card-foreground rounded-xl shadow-2xl border border-border p-4"
           style={getTooltipStyle()}
         >
           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={onFinish}>
