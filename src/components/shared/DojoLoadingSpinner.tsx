@@ -8,85 +8,67 @@ export function DojoLoadingSpinner({ className }: DojoLoadingSpinnerProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-5 w-full", className)}>
       <svg
-        viewBox="0 0 320 130"
-        className="w-64 sm:w-80 h-auto"
+        viewBox="0 0 200 200"
+        className="w-28 sm:w-36 h-auto"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
           <style>{`
-            .belt-back {
-              stroke-dasharray: 900;
-              stroke-dashoffset: 900;
-              animation: belt-draw 2.4s ease-in-out infinite;
+            .enso-circle {
+              stroke-dasharray: 520;
+              stroke-dashoffset: 520;
+              animation: enso-draw 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+              filter: url(#brush);
             }
-            .belt-front {
-              stroke-dasharray: 900;
-              stroke-dashoffset: 900;
-              animation: belt-draw 2.4s ease-in-out infinite;
-              animation-delay: 0.15s;
+            .enso-dot {
+              opacity: 0;
+              animation: dot-appear 2.8s ease-in-out infinite;
             }
-            .belt-tail-l, .belt-tail-r {
-              stroke-dasharray: 120;
-              stroke-dashoffset: 120;
-              animation: tail-draw 2.4s ease-in-out infinite;
+            @keyframes enso-draw {
+              0% {
+                stroke-dashoffset: 520;
+                opacity: 0.3;
+              }
+              8% {
+                opacity: 1;
+              }
+              60% {
+                stroke-dashoffset: 40;
+                opacity: 1;
+              }
+              75% {
+                stroke-dashoffset: 40;
+                opacity: 1;
+              }
+              100% {
+                stroke-dashoffset: 40;
+                opacity: 0;
+              }
             }
-            .belt-tail-l { animation-delay: 0.9s; }
-            .belt-tail-r { animation-delay: 1.0s; }
-            @keyframes belt-draw {
-              0% { stroke-dashoffset: 900; }
-              50% { stroke-dashoffset: 0; }
-              78% { stroke-dashoffset: 0; }
-              100% { stroke-dashoffset: -900; }
-            }
-            @keyframes tail-draw {
-              0% { stroke-dashoffset: 120; opacity: 0; }
-              8% { opacity: 1; }
-              45% { stroke-dashoffset: 0; }
-              75% { stroke-dashoffset: 0; opacity: 1; }
-              92% { opacity: 0; }
+            @keyframes dot-appear {
+              0%, 55% { opacity: 0; transform: scale(0); }
+              65% { opacity: 1; transform: scale(1); }
+              75% { opacity: 1; }
               100% { opacity: 0; }
             }
           `}</style>
+          <filter id="brush" x="-3%" y="-3%" width="106%" height="106%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" />
+          </filter>
         </defs>
 
-        {/* Back layer of the cross — goes UNDER */}
-        <path
-          className="belt-back"
-          d="M -20,55 C 80,55 120,55 145,45 Q 160,38 175,55 C 200,80 220,55 340,55"
-          stroke="hsl(var(--accent) / 0.5)"
-          strokeWidth="16"
-          strokeLinecap="round"
+        {/* Ensō circle — drawn like a brush stroke */}
+        <circle
+          className="enso-circle"
+          cx="100"
+          cy="100"
+          r="78"
           fill="none"
-        />
-
-        {/* Front layer of the cross — goes OVER */}
-        <path
-          className="belt-front"
-          d="M -20,55 C 80,55 120,55 145,65 Q 160,72 175,55 C 200,30 220,55 340,55"
           stroke="hsl(var(--accent))"
-          strokeWidth="16"
+          strokeWidth="7"
           strokeLinecap="round"
-          fill="none"
-        />
-
-        {/* Left tail */}
-        <path
-          className="belt-tail-l"
-          d="M 148,58 Q 142,80 134,105"
-          stroke="hsl(var(--accent))"
-          strokeWidth="14"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        {/* Right tail */}
-        <path
-          className="belt-tail-r"
-          d="M 172,58 Q 178,80 186,105"
-          stroke="hsl(var(--accent))"
-          strokeWidth="14"
-          strokeLinecap="round"
-          fill="none"
+          transform="rotate(-90 100 100)"
         />
       </svg>
 
