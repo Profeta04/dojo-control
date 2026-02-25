@@ -61,7 +61,7 @@ const Index = () => {
         <div className="relative z-10 flex flex-col items-center">
           <div className="relative mb-6">
             <div className="absolute inset-0 bg-accent/10 rounded-full blur-xl scale-150" />
-            <img src={dojoLogo} alt="Dojo Control" className="relative w-24 h-24 sm:w-28 sm:h-28 border-2 border-border rounded-full shadow-xl" />
+            <img src={dojoLogo} alt="Dojo Control" width={112} height={112} fetchPriority="high" className="relative w-24 h-24 sm:w-28 sm:h-28 border-2 border-border rounded-full shadow-xl" />
           </div>
           
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-foreground mb-3 sm:mb-4 tracking-tight">
