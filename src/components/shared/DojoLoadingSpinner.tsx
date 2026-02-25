@@ -8,67 +8,98 @@ export function DojoLoadingSpinner({ className }: DojoLoadingSpinnerProps) {
   return (
     <div className={cn("flex flex-col items-center justify-center gap-5 w-full", className)}>
       <svg
-        viewBox="0 0 200 200"
-        className="w-28 sm:w-36 h-auto"
+        viewBox="0 0 240 200"
+        className="w-36 sm:w-44 h-auto"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
           <style>{`
-            .enso-circle {
-              stroke-dasharray: 520;
-              stroke-dashoffset: 520;
-              animation: enso-draw 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-              filter: url(#brush);
+            /* Left pillar */
+            .torii-pillar-l {
+              stroke-dasharray: 140;
+              stroke-dashoffset: 140;
+              animation: draw-pillar 2.6s ease-in-out infinite;
             }
-            .enso-dot {
-              opacity: 0;
-              animation: dot-appear 2.8s ease-in-out infinite;
+            /* Right pillar */
+            .torii-pillar-r {
+              stroke-dasharray: 140;
+              stroke-dashoffset: 140;
+              animation: draw-pillar 2.6s ease-in-out infinite;
+              animation-delay: 0.15s;
             }
-            @keyframes enso-draw {
-              0% {
-                stroke-dashoffset: 520;
-                opacity: 0.3;
-              }
-              8% {
-                opacity: 1;
-              }
-              60% {
-                stroke-dashoffset: 40;
-                opacity: 1;
-              }
-              75% {
-                stroke-dashoffset: 40;
-                opacity: 1;
-              }
-              100% {
-                stroke-dashoffset: 40;
-                opacity: 0;
-              }
+            /* Top beam (kasagi) — the curved one */
+            .torii-kasagi {
+              stroke-dasharray: 260;
+              stroke-dashoffset: 260;
+              animation: draw-beam 2.6s ease-in-out infinite;
+              animation-delay: 0.5s;
             }
-            @keyframes dot-appear {
-              0%, 55% { opacity: 0; transform: scale(0); }
-              65% { opacity: 1; transform: scale(1); }
-              75% { opacity: 1; }
-              100% { opacity: 0; }
+            /* Lower beam (nuki) */
+            .torii-nuki {
+              stroke-dasharray: 160;
+              stroke-dashoffset: 160;
+              animation: draw-beam 2.6s ease-in-out infinite;
+              animation-delay: 0.7s;
+            }
+
+            @keyframes draw-pillar {
+              0% { stroke-dashoffset: 140; opacity: 0; }
+              10% { opacity: 1; }
+              40% { stroke-dashoffset: 0; }
+              70% { stroke-dashoffset: 0; opacity: 1; }
+              90% { opacity: 0; }
+              100% { stroke-dashoffset: 0; opacity: 0; }
+            }
+            @keyframes draw-beam {
+              0% { stroke-dashoffset: 260; opacity: 0; }
+              5% { opacity: 0; }
+              15% { opacity: 1; }
+              50% { stroke-dashoffset: 0; }
+              70% { stroke-dashoffset: 0; opacity: 1; }
+              90% { opacity: 0; }
+              100% { stroke-dashoffset: 0; opacity: 0; }
             }
           `}</style>
-          <filter id="brush" x="-3%" y="-3%" width="106%" height="106%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" result="noise" />
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" />
-          </filter>
         </defs>
 
-        {/* Ensō circle — drawn like a brush stroke */}
-        <circle
-          className="enso-circle"
-          cx="100"
-          cy="100"
-          r="78"
-          fill="none"
+        {/* Left pillar */}
+        <line
+          className="torii-pillar-l"
+          x1="72" y1="55" x2="72" y2="185"
           stroke="hsl(var(--accent))"
-          strokeWidth="7"
+          strokeWidth="10"
           strokeLinecap="round"
-          transform="rotate(-90 100 100)"
+          fill="none"
+        />
+
+        {/* Right pillar */}
+        <line
+          className="torii-pillar-r"
+          x1="168" y1="55" x2="168" y2="185"
+          stroke="hsl(var(--accent))"
+          strokeWidth="10"
+          strokeLinecap="round"
+          fill="none"
+        />
+
+        {/* Kasagi — top curved beam */}
+        <path
+          className="torii-kasagi"
+          d="M 30,50 Q 60,30 120,28 Q 180,30 210,50"
+          stroke="hsl(var(--accent))"
+          strokeWidth="11"
+          strokeLinecap="round"
+          fill="none"
+        />
+
+        {/* Nuki — lower straight beam */}
+        <line
+          className="torii-nuki"
+          x1="50" y1="75" x2="190" y2="75"
+          stroke="hsl(var(--accent))"
+          strokeWidth="8"
+          strokeLinecap="round"
+          fill="none"
         />
       </svg>
 
