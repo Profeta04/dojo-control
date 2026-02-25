@@ -12,10 +12,14 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+  define: {
+    global: "globalThis",
+  },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      buffer: "buffer/",
     },
   },
 }));
