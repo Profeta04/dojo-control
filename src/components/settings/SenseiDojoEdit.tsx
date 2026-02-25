@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DojoLogoUpload } from "./DojoLogoUpload";
 import { DojoQRCode } from "./DojoQRCode";
-import { StripeConnectCard } from "./StripeConnectCard";
+
 import { Building2, Save, Loader2, Mail, Phone, MapPin, QrCode, Image as ImageIcon } from "lucide-react";
 
 export function SenseiDojoEdit() {
@@ -246,8 +246,6 @@ export function SenseiDojoEdit() {
             </CardContent>
           </Card>
 
-          {/* Stripe Connect */}
-          <StripeConnectCard dojoId={selectedDojo.id} dojoName={selectedDojo.name} />
         </>
       )}
     </div>

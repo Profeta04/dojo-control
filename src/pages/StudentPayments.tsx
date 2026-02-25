@@ -67,42 +67,6 @@ export default function StudentPaymentsPage() {
     enabled: !!profile?.dojo_id,
   });
 
-  // Check if dojo has Stripe Connect enabled
-  const { data: stripeEnabled } = useQuery({
-    queryKey: ["student-dojo-stripe", profile?.dojo_id],
-    queryFn: async () => {
-      if (!profile?.dojo_id) return false;
-      const { data, error } = await supabase
-        .from("dojo_integrations")
-        .select("is_enabled")
-        .eq("dojo_id", profile.dojo_id)
-        .eq("integration_type", "stripe_connect")
-        .eq("is_enabled", true)
-        .maybeSingle();
-      if (error) return false;
-      return !!data;
-    },
-    enabled: !!profile?.dojo_id,
-  });
-
-  const [payingWithStripe, setPayingWithStripe] = useState<string | null>(null);
-
-  const handlePayWithStripe = async (paymentId: string) => {
-    setPayingWithStripe(paymentId);
-    try {
-      const { data, error } = await supabase.functions.invoke("create-student-checkout", {
-        body: { payment_id: paymentId },
-      });
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Erro ao iniciar pagamento", description: err.message, variant: "destructive" });
-    } finally {
-      setPayingWithStripe(null);
-    }
-  };
 
   const pixKey = (dojoData as any)?.pix_key || "Chave Pix não configurada";
 
@@ -599,22 +563,6 @@ export default function StudentPaymentsPage() {
                                       </>
                                     ) : payment.status !== "pago" ? (
                                       <div className="flex flex-col items-end gap-1.5">
-                                        {stripeEnabled && (
-                                          <Button
-                                            variant="default"
-                                            size="sm"
-                                            onClick={() => handlePayWithStripe(payment.id)}
-                                            disabled={payingWithStripe === payment.id}
-                                            className="hover-scale"
-                                          >
-                                            {payingWithStripe === payment.id ? (
-                                              <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                            ) : (
-                                              <CreditCard className="h-4 w-4 mr-1" />
-                                            )}
-                                            Pagar
-                                          </Button>
-                                        )}
                                         <Button
                                           variant="outline"
                                           size="sm"
