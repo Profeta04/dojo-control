@@ -56,12 +56,14 @@ export const SUBSCRIPTION_TIERS = {
   premium: {
     name: "Premium",
     description: "Sem limites para seu dojo",
-    price_brl: 7,
+    base_price_brl: 49,
+    price_brl: 5,
     price_per_student: true as const,
     min_students: 20,
     max_students: Infinity,
     features: [
-      "Mínimo 20 alunos (R$7/aluno)",
+      "Taxa fixa R$49 + R$5/aluno",
+      "Mínimo 20 alunos",
       "Alunos ilimitados",
       "Tudo do Pro",
       "QR Code check-in automático",

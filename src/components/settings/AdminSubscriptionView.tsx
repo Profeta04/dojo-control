@@ -95,17 +95,20 @@ export function AdminSubscriptionView() {
   });
 
   const [editingPlans, setEditingPlans] = useState(false);
-  const [planForm, setPlanForm] = useState<Record<string, { price: string; max_students: string }>>({});
+  const [planForm, setPlanForm] = useState<Record<string, { price: string; max_students: string; base_price?: string }>>({});
   const [savingPlans, setSavingPlans] = useState(false);
 
   const startEditPlans = () => {
     const config = tierConfig || {};
-    const form: Record<string, { price: string; max_students: string }> = {};
+    const form: Record<string, { price: string; max_students: string; base_price?: string }> = {};
     (Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).forEach((key) => {
       const override = config[key] || {};
+      const tierDef = SUBSCRIPTION_TIERS[key];
+      const hasBasePrice = "base_price_brl" in tierDef;
       form[key] = {
-        price: String(override.price_brl ?? SUBSCRIPTION_TIERS[key].price_brl),
-        max_students: String(override.max_students ?? (SUBSCRIPTION_TIERS[key].max_students === Infinity ? "" : SUBSCRIPTION_TIERS[key].max_students)),
+        price: String(override.price_brl ?? tierDef.price_brl),
+        max_students: String(override.max_students ?? (tierDef.max_students === Infinity ? "" : tierDef.max_students)),
+        ...(hasBasePrice ? { base_price: String(override.base_price_brl ?? (tierDef as any).base_price_brl) } : {}),
       };
     });
     setPlanForm(form);
@@ -120,6 +123,7 @@ export function AdminSubscriptionView() {
         config[key] = {
           price_brl: Number(val.price),
           max_students: val.max_students ? Number(val.max_students) : null,
+          ...(val.base_price !== undefined ? { base_price_brl: Number(val.base_price) } : {}),
         };
       });
       const { error } = await supabase
@@ -257,6 +261,13 @@ export function AdminSubscriptionView() {
     return override?.price_brl ?? SUBSCRIPTION_TIERS[key].price_brl;
   };
 
+  const getEffectiveBasePrice = (key: SubscriptionTierKey) => {
+    const tierDef = SUBSCRIPTION_TIERS[key];
+    if (!("base_price_brl" in tierDef)) return null;
+    const override = tierConfig?.[key];
+    return override?.base_price_brl ?? (tierDef as any).base_price_brl;
+  };
+
   const getEffectiveMaxStudents = (key: SubscriptionTierKey) => {
     const override = tierConfig?.[key];
     const val = override?.max_students ?? SUBSCRIPTION_TIERS[key].max_students;
@@ -322,9 +333,23 @@ export function AdminSubscriptionView() {
         <CardContent>
           {editingPlans ? (
             <div className="space-y-4">
-              {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).map((key) => (
-                <div key={key} className="flex items-center gap-4 p-3 rounded-lg border">
-                  <span className="font-medium w-24">{SUBSCRIPTION_TIERS[key].name}</span>
+               {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).map((key) => {
+                const tierDef = SUBSCRIPTION_TIERS[key];
+                const hasBasePrice = "base_price_brl" in tierDef;
+                return (
+                <div key={key} className="flex flex-wrap items-center gap-4 p-3 rounded-lg border">
+                  <span className="font-medium w-24">{tierDef.name}</span>
+                  {hasBasePrice && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground">Taxa fixa R$</Label>
+                      <Input
+                        type="number"
+                        value={planForm[key]?.base_price || ""}
+                        onChange={(e) => setPlanForm(prev => ({ ...prev, [key]: { ...prev[key], base_price: e.target.value } }))}
+                        className="w-24"
+                      />
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Label className="text-xs text-muted-foreground">R$</Label>
                     <Input
@@ -334,7 +359,7 @@ export function AdminSubscriptionView() {
                       className="w-24"
                     />
                     <Label className="text-xs text-muted-foreground">
-                      {SUBSCRIPTION_TIERS[key].price_per_student ? "/aluno/mês" : "/mês"}
+                      {tierDef.price_per_student ? "/aluno/mês" : "/mês"}
                     </Label>
                   </div>
                   <div className="flex items-center gap-2">
@@ -348,7 +373,8 @@ export function AdminSubscriptionView() {
                     />
                   </div>
                 </div>
-              ))}
+                );
+              })}
               <div className="flex gap-2">
                 <Button onClick={handleSavePlans} disabled={savingPlans}>
                   {savingPlans ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
@@ -368,16 +394,20 @@ export function AdminSubscriptionView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).map((key) => (
+                   {(Object.keys(SUBSCRIPTION_TIERS) as SubscriptionTierKey[]).map((key) => {
+                    const basePrice = getEffectiveBasePrice(key);
+                    return (
                     <TableRow key={key}>
                       <TableCell className="font-medium">{SUBSCRIPTION_TIERS[key].name}</TableCell>
                       <TableCell>
+                        {basePrice != null && `R$${basePrice} + `}
                         R${getEffectivePrice(key)}
                         {SUBSCRIPTION_TIERS[key].price_per_student ? "/aluno/mês" : "/mês"}
                       </TableCell>
                       <TableCell>{getEffectiveMaxStudents(key)}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
