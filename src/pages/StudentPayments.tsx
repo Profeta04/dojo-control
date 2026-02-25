@@ -52,6 +52,7 @@ export default function StudentPaymentsPage() {
   const [uploading, setUploading] = useState(false);
   const [guardianVerified, setGuardianVerified] = useState(false);
   const [pixDialogPayment, setPixDialogPayment] = useState<Payment | null>(null);
+  const [sharedFile, setSharedFile] = useState<File | null>(null);
 
   // Fetch PIX key from the student's dojo
   const { data: dojoData } = useQuery({
@@ -146,7 +147,7 @@ export default function StudentPaymentsPage() {
       url.searchParams.delete('shared');
       window.history.replaceState({}, '', url.pathname + url.search);
       
-      (window as any).__sharedReceiptFile = sharedFile;
+      setSharedFile(sharedFile);
       
       toast({
         title: "📎 Comprovante recebido!",
@@ -183,15 +184,8 @@ export default function StudentPaymentsPage() {
     }
   };
 
-  const openUploadDialog = (payment: Payment) => {
-    setSelectedPayment(payment);
-    setUploadDialogOpen(true);
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedPayment || !user) return;
-
+  const uploadFile = async (file: File, payment: Payment) => {
+    if (!user) return;
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
     if (!allowedTypes.includes(file.type)) {
       toast({ title: "Tipo de arquivo inválido", description: "Envie uma imagem (JPG, PNG, WEBP) ou PDF.", variant: "destructive" });
@@ -205,7 +199,7 @@ export default function StudentPaymentsPage() {
     setUploading(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${selectedPayment.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${payment.id}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage.from("payment-receipts").upload(fileName, file);
       if (uploadError) throw uploadError;
@@ -213,7 +207,7 @@ export default function StudentPaymentsPage() {
       const { error: updateError } = await supabase
         .from("payments")
         .update({ receipt_url: fileName, receipt_status: "pendente_verificacao" })
-        .eq("id", selectedPayment.id);
+        .eq("id", payment.id);
       if (updateError) throw updateError;
 
       const { data: studentProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
@@ -223,15 +217,16 @@ export default function StudentPaymentsPage() {
         const notifications = adminSenseiRoles.map((role) => ({
           user_id: role.user_id,
           title: "📎 Novo Comprovante Recebido",
-          message: `${studentProfile?.name || "Um aluno"} enviou um comprovante de pagamento referente a ${formatMonth(selectedPayment.reference_month)}.`,
+          message: `${studentProfile?.name || "Um aluno"} enviou um comprovante de pagamento referente a ${formatMonth(payment.reference_month)}.`,
           type: "payment",
-          related_id: selectedPayment.id,
+          related_id: payment.id,
         }));
         await supabase.from("notifications").insert(notifications);
       }
 
       toast({ title: "Comprovante enviado!", description: "Seu comprovante foi enviado e está aguardando verificação." });
       setUploadDialogOpen(false);
+      setSharedFile(null);
       queryClient.invalidateQueries({ queryKey: ["student-payments", user.id] });
     } catch (error: any) {
       toast({ title: "Erro ao enviar", description: error.message || "Não foi possível enviar o comprovante.", variant: "destructive" });
@@ -239,6 +234,22 @@ export default function StudentPaymentsPage() {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const openUploadDialog = (payment: Payment) => {
+    setSelectedPayment(payment);
+    // If we have a shared file, auto-upload it immediately
+    if (sharedFile) {
+      uploadFile(sharedFile, payment);
+    } else {
+      setUploadDialogOpen(true);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedPayment) return;
+    await uploadFile(file, selectedPayment);
   };
 
   const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -364,6 +375,24 @@ export default function StudentPaymentsPage() {
             </Card>
           )}
         </div>
+      )}
+
+      {/* Shared file banner */}
+      {sharedFile && (
+        <Card className="border-primary/30 bg-gradient-to-r from-primary/10 to-primary/5 shadow-sm animate-fade-in mb-4">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <FileImage className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium">📎 Comprovante pronto para enviar</p>
+              <p className="text-xs text-muted-foreground">{sharedFile.name} — Selecione o pagamento abaixo para vincular</p>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setSharedFile(null)}>
+              ✕
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Stats Cards */}
