@@ -9,7 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { DojoProvider } from "@/hooks/useDojoContext";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { PageTransition } from "@/components/shared/PageTransition";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
 
 // Lazy load all pages
 const Index = lazy(() => import("./pages/Index"));
@@ -55,7 +55,7 @@ function AnimatedRoutes() {
   const location = useLocation();
   
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><LoadingSpinner /></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><DojoLoadingSpinner /></div>}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><Index /></PageTransition>} />
