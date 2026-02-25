@@ -216,26 +216,34 @@ const senseiTutorials: Record<string, TabTutorial> = {
     title: "Dashboard",
     summary:
       "Visão geral do dojo com estatísticas de alunos, presenças, pagamentos e análises de gamificação.",
+    tip: "Toque nos cards para navegar diretamente à seção correspondente.",
     steps: [
       {
         selector: '[data-tour="stats-cards"]',
         title: "Cards de Estatísticas",
         description:
-          "Resumo rápido: total de alunos, turmas ativas, aprovações pendentes e mais. Toque em um card para ir à seção correspondente.",
+          "Resumo rápido do dojo: total de alunos ativos, turmas em funcionamento, aprovações pendentes e presenças do mês. Cada card é interativo — toque nele para ir direto à seção correspondente.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="attendance-chart"]',
+        title: "Presenças do Mês",
+        description:
+          "Gráfico circular com a taxa de presença do mês atual. Mostra o percentual de alunos presentes vs ausentes e o total de registros.",
         position: "bottom",
       },
       {
         selector: '[data-tour="analytics-chart"]',
         title: "Análise de Gamificação",
         description:
-          "Estatísticas de tarefas concluídas, ranking dos alunos com mais pontos e evolução mensal.",
+          "Estatísticas detalhadas do sistema de XP: total de tarefas concluídas, ranking dos top alunos por pontuação e gráfico de evolução mensal. Use para acompanhar o engajamento.",
         position: "top",
       },
       {
         selector: '[data-tour="export-report"]',
-        title: "Exportar Relatório",
+        title: "Exportar Relatório PDF",
         description:
-          "Gere um PDF completo com todas as estatísticas do dojo para compartilhar ou imprimir.",
+          "Gere um relatório completo em PDF com todas as estatísticas do dojo — alunos, presenças, pagamentos e gamificação. Ideal para reuniões ou prestação de contas.",
         position: "bottom",
       },
     ],
@@ -251,8 +259,29 @@ const senseiTutorials: Record<string, TabTutorial> = {
         selector: '[role="tablist"]',
         title: "Abas de Status",
         description:
-          "Alterne entre alunos Pendentes, Aprovados, Rejeitados e Responsáveis.",
+          "Filtre os alunos por status: Pendentes (aguardando aprovação), Aprovados (ativos no dojo), Rejeitados e Responsáveis (pais/guardiões vinculados).",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="student-search"]',
+        title: "Busca de Alunos",
+        description:
+          "Use a barra de pesquisa para encontrar rapidamente um aluno pelo nome ou e-mail. A busca filtra em tempo real conforme você digita.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="student-list"]',
+        title: "Lista de Alunos",
+        description:
+          "Cada card mostra o nome, faixa, turma e status do aluno. Toque no card para ver o perfil completo, editar dados ou gerenciar a matrícula.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="student-actions"]',
+        title: "Ações do Aluno",
+        description:
+          "No perfil do aluno, você pode: editar dados pessoais, alterar faixa, trocar de turma, bloquear/desbloquear acesso e gerar relatório individual em PDF.",
+        position: "top",
       },
     ],
   },
@@ -260,21 +289,29 @@ const senseiTutorials: Record<string, TabTutorial> = {
     tabId: "classes",
     title: "Turmas",
     summary:
-      "Crie e gerencie turmas. Defina horários, arte marcial e adicione alunos.",
+      "Crie e gerencie turmas do dojo. Defina horários, arte marcial, limite de alunos e vincule turmas a planos.",
+    tip: "Turmas sem horário definido não aparecerão na agenda dos alunos.",
     steps: [
       {
         selector: '[role="tablist"]',
         title: "Turmas e Agenda",
         description:
-          "Alterne entre a lista de turmas e a agenda semanal de aulas.",
+          "Alterne entre duas visões: 'Turmas' mostra a lista de todas as turmas cadastradas, e 'Agenda' exibe a programação semanal em formato de calendário.",
         position: "bottom",
       },
       {
         selector: '[data-tour="create-class"]',
-        title: "Criar Turma",
+        title: "Criar Nova Turma",
         description:
-          "Crie uma nova turma definindo nome, arte marcial, horário e limite de alunos.",
+          "Crie uma turma definindo: nome, arte marcial, dias e horários das aulas, limite máximo de alunos e descrição. Após criar, você pode adicionar alunos à turma.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="class-list"]',
+        title: "Lista de Turmas",
+        description:
+          "Cada card de turma mostra: nome, arte marcial, horários, número de alunos matriculados e status (ativa/inativa). Toque para editar ou gerenciar os alunos da turma.",
+        position: "top",
       },
     ],
   },
@@ -283,25 +320,34 @@ const senseiTutorials: Record<string, TabTutorial> = {
     title: "Presenças",
     summary:
       "Registre a presença dos alunos por turma e data. Alunos podem fazer check-in via QR Code.",
+    tip: "Imprima o cartaz com QR Code e cole no dojo para check-in automático!",
     steps: [
       {
         selector: '[data-tour="attendance-date"]',
         title: "Selecionar Data",
-        description: "Escolha a data da aula. Por padrão mostra o dia de hoje.",
+        description:
+          "Escolha a data da aula para fazer a chamada. Por padrão mostra o dia de hoje. Você pode voltar a datas anteriores para corrigir presenças.",
         position: "bottom",
       },
       {
         selector: '[data-tour="attendance-class-select"]',
         title: "Turmas do Dia",
         description:
-          "Veja as turmas com aula nesta data. Toque em uma para fazer a chamada.",
+          "Lista as turmas que têm aula na data selecionada. Toque em uma turma para expandir a lista de alunos e marcar presença individualmente.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="attendance-student-list"]',
+        title: "Lista de Chamada",
+        description:
+          "Marque cada aluno como presente ou ausente. O sistema registra quem fez a marcação e quando. Presenças via QR Code aparecem com o selo 'Self check-in'.",
         position: "top",
       },
       {
         selector: '[data-tour="attendance-qrcode"]',
         title: "QR Code de Presença",
         description:
-          "Gere e imprima um cartaz com QR Code para que os alunos façam check-in automático pelo celular. Acesse pela aba 'QR Code'.",
+          "Gere um cartaz com QR Code exclusivo do dojo. Os alunos escaneiam com o celular para registrar presença automaticamente. Acesse pela aba 'QR Code'.",
         position: "top",
       },
     ],
@@ -310,21 +356,43 @@ const senseiTutorials: Record<string, TabTutorial> = {
     tabId: "payments",
     title: "Pagamentos",
     summary:
-      "Gerencie cobranças e comprovantes. Gere cobranças mensais e aprove pagamentos recebidos.",
+      "Gerencie cobranças, aprove comprovantes e acompanhe o fluxo financeiro do dojo.",
+    tip: "Configure planos de mensalidade para gerar cobranças automáticas todo mês.",
     steps: [
       {
         selector: '[data-tour="payment-stats"]',
         title: "Resumo Financeiro",
         description:
-          "Cards com total recebido, pendente e atrasado do mês.",
+          "Visão rápida do mês: total recebido, valores pendentes, atrasados e quantidade de comprovantes aguardando análise. Os valores são filtrados pelo dojo selecionado.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="financial-chart"]',
+        title: "Gráfico Financeiro",
+        description:
+          "Dashboard visual com a evolução de receitas ao longo dos meses. Acompanhe tendências de pagamento e identifique meses com maior inadimplência.",
         position: "bottom",
       },
       {
         selector: '[data-tour="generate-payments"]',
-        title: "Ações de Pagamento",
+        title: "Ações de Cobrança",
         description:
-          "Notifique alunos com pagamentos pendentes, crie cobranças individuais ou em lote.",
+          "Gere cobranças mensais em lote (para todos os alunos de um plano), crie cobranças individuais ou envie notificações de pagamentos atrasados direto pelo app.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="payment-list"]',
+        title: "Lista de Pagamentos",
+        description:
+          "Todas as cobranças organizadas por status. Para cada pagamento, você pode: aprovar/rejeitar comprovantes, marcar como pago manualmente ou enviar lembrete ao aluno.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="monthly-plans"]',
+        title: "Planos de Mensalidade",
+        description:
+          "Crie e gerencie planos com valores e vencimentos diferentes. Vincule turmas a cada plano para gerar cobranças automáticas no início do mês.",
+        position: "top",
       },
     ],
   },
@@ -332,13 +400,49 @@ const senseiTutorials: Record<string, TabTutorial> = {
     tabId: "graduations",
     title: "Graduações",
     summary:
-      "Registre avanços de faixa dos alunos. O histórico fica registrado automaticamente.",
+      "Registre avanços de faixa dos alunos. O histórico completo fica registrado automaticamente no perfil de cada aluno.",
     steps: [
       {
         selector: '[data-tour="graduation-form"]',
-        title: "Alunos por Turma",
+        title: "Selecionar Turma e Aluno",
         description:
-          "Selecione a turma e toque em 'Promover' para registrar a graduação do aluno.",
+          "Escolha a turma e veja os alunos matriculados com suas faixas atuais. Use o botão 'Promover' ao lado do aluno que será graduado.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="graduation-dialog"]',
+        title: "Registrar Graduação",
+        description:
+          "No diálogo de promoção, selecione a nova faixa, grau (dan) se aplicável, e adicione observações. A graduação anterior é registrada automaticamente no histórico.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="graduation-history"]',
+        title: "Histórico de Graduações",
+        description:
+          "Linha do tempo com todas as promoções registradas no dojo. Mostra data, faixa anterior, nova faixa e quem autorizou a graduação.",
+        position: "top",
+      },
+    ],
+  },
+  "/senseis": {
+    tabId: "senseis",
+    title: "Senseis",
+    summary:
+      "Gerencie os senseis (instrutores) vinculados ao dojo. Adicione novos senseis ou ajuste permissões.",
+    steps: [
+      {
+        selector: '[data-tour="sensei-list"]',
+        title: "Lista de Senseis",
+        description:
+          "Todos os senseis vinculados ao dojo com nome, e-mail e status. Toque em um sensei para ver detalhes ou gerenciar suas permissões.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="add-sensei"]',
+        title: "Adicionar Sensei",
+        description:
+          "Convide um novo sensei informando nome e e-mail. Ele receberá acesso ao painel de gestão do dojo com permissões de instrutor.",
         position: "bottom",
       },
     ],
@@ -347,14 +451,43 @@ const senseiTutorials: Record<string, TabTutorial> = {
     tabId: "settings",
     title: "Configurações do Dojo",
     summary:
-      "Personalize logo, cores, PIX e outras opções. Gerencie planos de mensalidade.",
+      "Personalize logo, cores, chave PIX, QR Code e gerencie planos de assinatura e temporadas de gamificação.",
+    tip: "Configure as cores do tema para personalizar a identidade visual do seu dojo.",
     steps: [
       {
         selector: '[role="tablist"]',
         title: "Seções de Configuração",
         description:
-          "Navegue entre Dojos/Informações e Tema para personalizar seu dojo.",
+          "Navegue entre as abas: 'Config. Dojo' para informações e identidade visual, 'Tema' para personalizar cores, e 'Temporadas' para gerenciar seasons de gamificação.",
         position: "bottom",
+      },
+      {
+        selector: '[data-tour="dojo-info"]',
+        title: "Informações do Dojo",
+        description:
+          "Edite nome, endereço, telefone, e-mail e chave PIX do dojo. Configure também a taxa de multa por atraso e dias de carência para pagamentos.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="dojo-logo"]',
+        title: "Logo e QR Code",
+        description:
+          "Faça upload do logo do dojo (aparece na sidebar e relatórios) e gere o QR Code de cadastro para novos alunos escanearem e se inscreverem.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="dojo-theme"]',
+        title: "Personalização de Tema",
+        description:
+          "Escolha uma paleta predefinida ou defina cores personalizadas (primária, secundária e destaque). O preview em tempo real mostra como ficará a interface.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="subscription-plan"]',
+        title: "Plano de Assinatura",
+        description:
+          "Veja seu plano atual, limites de alunos e turmas, e envie comprovante de pagamento para renovação.",
+        position: "top",
       },
     ],
   },

@@ -79,7 +79,7 @@ export function InteractiveTutorialDialog({
               <Lightbulb className="h-6 w-6 text-accent" />
             </div>
             <DialogTitle className="text-lg">{tutorial.title}</DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed mt-2 text-accent-foreground/70">
+            <DialogDescription className="text-sm leading-relaxed mt-2 text-muted-foreground">
               {tutorial.summary}
             </DialogDescription>
           </DialogHeader>
