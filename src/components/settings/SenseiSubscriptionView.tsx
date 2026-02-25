@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Check, Crown, Loader2, Star, Upload, QrCode, Copy, CheckCircle, Tag, Sparkles, Clock } from "lucide-react";
-import pixQrCode from "@/assets/pix-qrcode.png";
+import { PixQRCodePayment } from "@/components/payments/PixQRCodePayment";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -624,25 +624,20 @@ export function SenseiSubscriptionView() {
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="flex justify-center">
-              <img src={pixQrCode} alt="QR Code PIX" className="w-48 h-48 rounded-lg border" />
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Chave PIX:</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono break-all">
-                  {adminPixKey || "Não configurada"}
-                </code>
-                <Button variant="outline" size="icon" onClick={handleCopyPixKey} disabled={!adminPixKey}>
-                  {copied ? <CheckCircle className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                </Button>
-              </div>
-            </div>
+            {selectedTier && adminPixKey && (
+              <PixQRCodePayment
+                pixKey={adminPixKey}
+                amount={getDiscountedPrice(selectedTier)}
+                merchantName="Dojo Control"
+                description={`Plano ${SUBSCRIPTION_TIERS[selectedTier].name}`}
+              />
+            )}
+
             <div className="bg-muted/50 rounded-lg p-3 space-y-1">
               <p className="text-sm font-medium">Como pagar:</p>
               <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>Copie a chave PIX acima</li>
-                <li>Faça um PIX de <strong>R${selectedTier ? getDiscountedPrice(selectedTier) : 0}</strong></li>
+                <li>Escaneie o QR Code acima ou copie o Pix Copia e Cola</li>
+                <li>O valor de <strong>R${selectedTier ? getDiscountedPrice(selectedTier) : 0}</strong> já está embutido</li>
                 <li>Envie o comprovante abaixo</li>
                 <li>Aguarde a aprovação (até 24h)</li>
               </ol>

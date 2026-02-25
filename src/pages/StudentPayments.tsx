@@ -25,6 +25,7 @@ import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ReceiptProgress } from "@/components/payments/ReceiptProgress";
 import { PaymentStatsCards } from "@/components/payments/PaymentStatsCards";
+import { PixQRCodePayment } from "@/components/payments/PixQRCodePayment";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -50,6 +51,7 @@ export default function StudentPaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [uploading, setUploading] = useState(false);
   const [guardianVerified, setGuardianVerified] = useState(false);
+  const [pixDialogPayment, setPixDialogPayment] = useState<Payment | null>(null);
 
   // Fetch PIX key from the student's dojo
   const { data: dojoData } = useQuery({
@@ -408,7 +410,7 @@ export default function StudentPaymentsPage() {
             Pagar via Pix
           </CardTitle>
           <CardDescription>
-            Use a chave Pix abaixo para realizar o pagamento
+            Clique em "Pagar" ao lado de um pagamento pendente para gerar o QR Code com o valor exato
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 relative">
@@ -433,9 +435,9 @@ export default function StudentPaymentsPage() {
             </Button>
           </div>
 
-          <div className="p-3 bg-warning/10 border border-warning/20 rounded-xl">
-            <p className="text-sm text-warning-foreground">
-              <strong>Importante:</strong> Após o pagamento, envie o comprovante abaixo.
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl">
+            <p className="text-sm text-muted-foreground">
+              💡 Clique em <strong>"Pagar"</strong> em qualquer pagamento pendente para gerar um QR Code Pix com o valor já preenchido.
             </p>
           </div>
         </CardContent>
@@ -564,13 +566,13 @@ export default function StudentPaymentsPage() {
                                     ) : payment.status !== "pago" ? (
                                       <div className="flex flex-col items-end gap-1.5">
                                         <Button
-                                          variant="outline"
+                                          variant="default"
                                           size="sm"
-                                          onClick={() => openUploadDialog(payment)}
+                                          onClick={() => setPixDialogPayment(payment)}
                                           className="hover-scale"
                                         >
-                                          <Upload className="h-4 w-4 mr-1" />
-                                          Comprovante
+                                          <QrCode className="h-4 w-4 mr-1" />
+                                          Pagar
                                         </Button>
                                       </div>
                                     ) : (
@@ -605,7 +607,7 @@ export default function StudentPaymentsPage() {
         </Card>
       )}
 
-      {/* Upload Dialog */}
+      {/* Upload Dialog (kept for rejected resubmissions) */}
       <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -613,7 +615,7 @@ export default function StudentPaymentsPage() {
               <div className="p-2 rounded-lg bg-primary/10">
                 <Upload className="h-5 w-5 text-primary" />
               </div>
-              Enviar Comprovante
+              Reenviar Comprovante
             </DialogTitle>
             <DialogDescription>
               {selectedPayment && (
@@ -655,13 +657,116 @@ export default function StudentPaymentsPage() {
               onChange={handleFileSelect}
               disabled={uploading}
             />
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
-              <p className="text-xs text-muted-foreground">
-                💡 Envie uma foto ou print do comprovante Pix. Após a verificação pelo sensei, o status será atualizado automaticamente.
+      {/* Pix QR Code Payment Dialog */}
+      <Dialog open={!!pixDialogPayment} onOpenChange={(open) => !open && setPixDialogPayment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <QrCode className="h-5 w-5 text-primary" />
+              </div>
+              Pagar via Pix
+            </DialogTitle>
+            <DialogDescription>
+              {pixDialogPayment && (
+                <>Pagamento de {formatMonth(pixDialogPayment.reference_month)} — vencimento {format(parseISO(pixDialogPayment.due_date), "dd/MM/yyyy")}</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          {pixDialogPayment && (dojoData as any)?.pix_key && (
+            <div className="space-y-4">
+              <PixQRCodePayment
+                pixKey={(dojoData as any).pix_key}
+                amount={(() => {
+                  const fees = calculateLateFees(pixDialogPayment);
+                  return fees ? fees.total : pixDialogPayment.amount;
+                })()}
+                merchantName={(dojoData as any)?.name || "Dojo"}
+                description={`Ref ${pixDialogPayment.reference_month}`}
+              />
+
+              {/* Late fee breakdown */}
+              {(() => {
+                const fees = calculateLateFees(pixDialogPayment);
+                if (!fees) return null;
+                return (
+                  <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-xl text-sm space-y-1">
+                    <p className="font-medium text-destructive">Detalhamento com multa/juros:</p>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Valor original:</span>
+                      <span>{formatCurrency(pixDialogPayment.amount)}</span>
+                    </div>
+                    {fees.fee > 0 && (
+                      <div className="flex justify-between text-destructive/80">
+                        <span>Multa:</span>
+                        <span>+ {formatCurrency(fees.fee)}</span>
+                      </div>
+                    )}
+                    {fees.interest > 0 && (
+                      <div className="flex justify-between text-destructive/80">
+                        <span>Juros ({fees.daysLate} dias):</span>
+                        <span>+ {formatCurrency(fees.interest)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between font-bold text-destructive border-t border-destructive/20 pt-1">
+                      <span>Total:</span>
+                      <span>{formatCurrency(fees.total)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Upload receipt in same dialog */}
+              <div className="space-y-2 border-t pt-4">
+                <p className="text-sm font-medium text-foreground">Após pagar, envie o comprovante:</p>
+                <div 
+                  className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+                  onClick={() => {
+                    setSelectedPayment(pixDialogPayment);
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  {uploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Enviando...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <FileImage className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                      <p className="text-sm font-medium">Enviar comprovante</p>
+                      <p className="text-xs text-muted-foreground">JPG, PNG, WEBP ou PDF (máx. 5MB)</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (!selectedPayment) setSelectedPayment(pixDialogPayment);
+                    handleFileSelect(e);
+                  }}
+                  disabled={uploading}
+                />
+              </div>
+            </div>
+          )}
+
+          {pixDialogPayment && !(dojoData as any)?.pix_key && (
+            <div className="flex flex-col items-center gap-3 p-6 text-center">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-sm text-destructive font-medium">
+                Chave Pix não configurada pelo dojo. Entre em contato com a administração.
               </p>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </DashboardLayout>
