@@ -76,7 +76,7 @@ serve(async (req) => {
 
     // Create Checkout Session with payment going to connected account
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["pix"],
+      payment_method_types: ["card", "pix"],
       mode: "payment",
       line_items: [
         {
