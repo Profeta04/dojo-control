@@ -24,11 +24,11 @@ export default function Classes() {
           <TabsList className="w-full grid grid-cols-2 max-w-sm">
             <TabsTrigger value="classes" className="gap-1.5 text-xs sm:text-sm">
               <GraduationCap className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Turmas</span>
+              Turmas
             </TabsTrigger>
             <TabsTrigger value="schedule" className="gap-1.5 text-xs sm:text-sm">
               <CalendarDays className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Agenda</span>
+              Agenda
             </TabsTrigger>
           </TabsList>
 
