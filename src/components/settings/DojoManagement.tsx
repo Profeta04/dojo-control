@@ -17,7 +17,6 @@ import { Building2, Plus, Edit, Trash2, Loader2, Users, Image as ImageIcon, QrCo
 import { DojoSenseisDialog } from "./DojoSenseisDialog";
 import { DojoLogoUpload } from "./DojoLogoUpload";
 import { DojoQRCode } from "./DojoQRCode";
-import { DojoMercadoPagoConfig } from "./DojoMercadoPagoConfig";
 
 interface DojoFormData {
   name: string;
@@ -448,13 +447,6 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
               {updateDojoMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Salvar Alterações
             </Button>
-            {editingDojo && (
-              <DojoMercadoPagoConfig
-                dojoId={editingDojo.id}
-                dojoName={editingDojo.name}
-                isAdmin
-              />
-            )}
           </div>
         </DialogContent>
       </Dialog>
