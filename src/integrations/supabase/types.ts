@@ -270,6 +270,44 @@ export type Database = {
           },
         ]
       }
+      dojo_integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          dojo_id: string
+          id: string
+          integration_type: string
+          is_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          dojo_id: string
+          id?: string
+          integration_type?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          dojo_id?: string
+          id?: string
+          integration_type?: string
+          is_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_integrations_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dojo_senseis: {
         Row: {
           created_at: string | null
