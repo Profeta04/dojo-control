@@ -46,24 +46,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if mercadopago is globally enabled
+    // Get dojo integration credentials (per-dojo enablement)
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data: setting } = await adminClient
-      .from("settings")
-      .select("value")
-      .eq("key", "mercadopago_enabled")
-      .single();
-
-    if (!setting || setting.value !== "true") {
-      return new Response(
-        JSON.stringify({ error: "Integração Mercado Pago não está habilitada" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get dojo integration credentials
     const { data: integration } = await adminClient
       .from("dojo_integrations")
       .select("access_token, is_enabled")
@@ -73,7 +59,7 @@ Deno.serve(async (req) => {
 
     if (!integration || !integration.is_enabled || !integration.access_token) {
       return new Response(
-        JSON.stringify({ error: "Dojo não possui integração Mercado Pago configurada" }),
+        JSON.stringify({ error: "Dojo não possui integração Mercado Pago habilitada" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
