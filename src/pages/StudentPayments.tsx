@@ -663,7 +663,7 @@ export default function StudentPaymentsPage() {
 
       {/* Pix QR Code Payment Dialog */}
       <Dialog open={!!pixDialogPayment} onOpenChange={(open) => !open && setPixDialogPayment(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <div className="p-2 rounded-lg bg-primary/10">
