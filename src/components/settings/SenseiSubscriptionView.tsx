@@ -85,7 +85,8 @@ export function SenseiSubscriptionView() {
 
   const getBasePrice = (tierKey: SubscriptionTierKey) => {
     const tier = SUBSCRIPTION_TIERS[tierKey];
-    return tier.price_per_student ? tier.price_brl * studentCount : tier.price_brl;
+    const baseFixed = "base_price_brl" in tier ? (tier as any).base_price_brl : 0;
+    return tier.price_per_student ? baseFixed + tier.price_brl * studentCount : tier.price_brl;
   };
 
   const getDiscountedPrice = (tierKey: SubscriptionTierKey) => {
@@ -277,10 +278,16 @@ export function SenseiSubscriptionView() {
     const discounted = getDiscountedPrice(tierKey);
     const base = getBasePrice(tierKey);
     const hasDiscount = discounted < base;
+    const hasBasePrice = "base_price_brl" in tier;
 
     if (tier.price_per_student) {
       return (
         <>
+          {hasBasePrice && (
+            <div className="text-sm text-muted-foreground mb-1">
+              R${(tier as any).base_price_brl} fixo +
+            </div>
+          )}
           <span className="text-4xl font-bold text-foreground">R${tier.price_brl}</span>
           <span className="text-muted-foreground">/aluno/mês</span>
           <p className="text-sm text-muted-foreground mt-1">
