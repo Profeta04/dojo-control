@@ -85,6 +85,16 @@ export function ClassesTab() {
   const [martialArt, setMartialArt] = useState("judo");
   const [senseiId, setSenseiId] = useState("");
 
+  // Recurring weekly schedule
+  interface WeeklySlot {
+    day: number; // 0=Dom, 1=Seg, ..., 6=Sáb
+    startTime: string;
+    endTime: string;
+  }
+  const DAY_LABELS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+  const DAY_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const [weeklySlots, setWeeklySlots] = useState<WeeklySlot[]>([]);
+
   // Schedule form state
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [startTime, setStartTime] = useState("19:00");
@@ -246,6 +256,7 @@ export function ClassesTab() {
     setMaxStudents("");
     setMartialArt("judo");
     setSenseiId("");
+    setWeeklySlots([]);
     setEditMode(false);
     setSelectedClass(null);
   };
@@ -264,6 +275,16 @@ export function ClassesTab() {
     setMaxStudents(cls.max_students?.toString() || "");
     setMartialArt(cls.martial_art || "judo");
     setSenseiId(cls.sensei_id || "");
+    // Parse existing weekly schedule from JSONB
+    if (cls.schedule && Array.isArray(cls.schedule)) {
+      setWeeklySlots((cls.schedule as any[]).map((s: any) => ({
+        day: s.day ?? 0,
+        startTime: s.startTime ?? "19:00",
+        endTime: s.endTime ?? "20:00",
+      })));
+    } else {
+      setWeeklySlots([]);
+    }
     setEditMode(true);
     setDialogOpen(true);
   };
@@ -315,7 +336,7 @@ export function ClassesTab() {
       const classData = {
         name,
         description: description || null,
-        schedule: "Ver calendário",
+        schedule: weeklySlots.length > 0 ? JSON.parse(JSON.stringify(weeklySlots)) : null,
         max_students: maxStudents ? parseInt(maxStudents) : null,
         martial_art: martialArt,
         sensei_id: senseiId || user!.id,
@@ -536,6 +557,76 @@ export function ClassesTab() {
                   <Label htmlFor="description">Descrição</Label>
                   <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Descrição opcional" rows={3} />
                 </div>
+                {/* Weekly Schedule Editor */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Horários semanais</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWeeklySlots((prev) => [...prev, { day: 1, startTime: "19:00", endTime: "20:00" }])}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      Adicionar
+                    </Button>
+                  </div>
+                  {weeklySlots.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Nenhum horário definido. Clique em "Adicionar" para definir os dias e horários das aulas.</p>
+                  )}
+                  {weeklySlots.map((slot, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+                      <Select
+                        value={slot.day.toString()}
+                        onValueChange={(val) => {
+                          const updated = [...weeklySlots];
+                          updated[idx] = { ...updated[idx], day: parseInt(val) };
+                          setWeeklySlots(updated);
+                        }}
+                      >
+                        <SelectTrigger className="w-[110px] h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DAY_LABELS.map((label, i) => (
+                            <SelectItem key={i} value={i.toString()}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="time"
+                        value={slot.startTime}
+                        onChange={(e) => {
+                          const updated = [...weeklySlots];
+                          updated[idx] = { ...updated[idx], startTime: e.target.value };
+                          setWeeklySlots(updated);
+                        }}
+                        className="w-[100px] h-8 text-xs"
+                      />
+                      <span className="text-xs text-muted-foreground">às</span>
+                      <Input
+                        type="time"
+                        value={slot.endTime}
+                        onChange={(e) => {
+                          const updated = [...weeklySlots];
+                          updated[idx] = { ...updated[idx], endTime: e.target.value };
+                          setWeeklySlots(updated);
+                        }}
+                        className="w-[100px] h-8 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => setWeeklySlots((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
                   <Button type="submit" className="bg-accent hover:bg-accent/90" disabled={formLoading}>
@@ -575,6 +666,25 @@ export function ClassesTab() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Weekly Recurring Schedule */}
+                  {cls.schedule && Array.isArray(cls.schedule) && (cls.schedule as any[]).length > 0 && (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <Clock className="h-4 w-4 text-accent" />
+                        Horários
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {(cls.schedule as any[])
+                          .sort((a: any, b: any) => a.day - b.day)
+                          .map((slot: any, i: number) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {DAY_SHORT[slot.day]} {slot.startTime}–{slot.endTime}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Upcoming Schedule */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm font-medium">
