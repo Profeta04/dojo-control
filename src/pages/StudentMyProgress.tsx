@@ -18,7 +18,18 @@ import { cn } from "@/lib/utils";
 const MARTIAL_ART_LABELS: Record<string, string> = {
   judo: "Judô",
   bjj: "Jiu-Jitsu",
+  "jiu-jitsu": "Jiu-Jitsu",
 };
+
+function normalizeArt(art: string): string {
+  if (art === "jiu-jitsu") return "bjj";
+  return art;
+}
+
+function artVariants(normalized: string): string[] {
+  if (normalized === "bjj") return ["bjj", "jiu-jitsu"];
+  return [normalized];
+}
 
 function StatCard({ icon: Icon, label, value, sub, className }: { icon: any; label: string; value: string | number; sub?: string; className?: string }) {
   return (
@@ -93,7 +104,7 @@ export default function StudentMyProgress() {
       if (!enrollments || enrollments.length === 0) return [];
       const classIds = enrollments.map(e => e.class_id);
       const { data: classes } = await supabase.from("classes").select("martial_art").in("id", classIds);
-      return [...new Set(classes?.map(c => c.martial_art) || [])];
+      return [...new Set(classes?.map(c => normalizeArt(c.martial_art)) || [])];
     },
     enabled: !!user?.id,
   });
@@ -123,29 +134,38 @@ export default function StudentMyProgress() {
 
       const results = [];
       for (const art of studentMartialArts) {
-        // Get total templates for this art
-        const { count: totalTemplates } = await supabase
-          .from("task_templates")
-          .select("id", { count: "exact", head: true })
-          .eq("martial_art", art);
-
-        // Get template titles to count completed ones for this art
-        const artTemplates: string[] = [];
-        let f = 0;
-        while (true) {
-          const { data, error } = await supabase
+        const variants = artVariants(art);
+        
+        // Get total templates for all variants of this art
+        let totalTemplatesCount = 0;
+        for (const v of variants) {
+          const { count } = await supabase
             .from("task_templates")
-            .select("title")
-            .eq("martial_art", art)
-            .range(f, f + PAGE - 1);
-          if (error) throw error;
-          if (data) artTemplates.push(...data.map(t => t.title));
-          if (!data || data.length < PAGE) break;
-          f += PAGE;
+            .select("id", { count: "exact", head: true })
+            .eq("martial_art", v);
+          totalTemplatesCount += count || 0;
         }
 
+        // Get template titles (deduplicated) to count completed ones
+        const artTitleSet = new Set<string>();
+        for (const v of variants) {
+          let f = 0;
+          while (true) {
+            const { data, error } = await supabase
+              .from("task_templates")
+              .select("title")
+              .eq("martial_art", v)
+              .range(f, f + PAGE - 1);
+            if (error) throw error;
+            if (data) data.forEach(t => artTitleSet.add(t.title));
+            if (!data || data.length < PAGE) break;
+            f += PAGE;
+          }
+        }
+        const artTemplates = [...artTitleSet];
+
         const completed = artTemplates.filter(t => completedTitles.has(t)).length;
-        const total = totalTemplates || 0;
+        const total = artTitleSet.size;
 
         // Get belt for this art
         const { data: beltData } = await supabase
