@@ -70,8 +70,8 @@ const studentTutorials: Record<string, TabTutorial> = {
     tabId: "tarefas",
     title: "Suas Tarefas",
     summary:
-      "Complete tarefas e quizzes para ganhar XP. Use as abas para alternar entre missões, conquistas e ranking.",
-    tip: "Tarefas com prazo dão XP bônus se completadas a tempo!",
+      "Responda quizzes para ganhar XP! As perguntas começam fáceis e vão ficando mais difíceis conforme você acerta.",
+    tip: "Quanto mais você acerta seguido, mais desafiador fica — como subir de fase num jogo!",
     steps: [
       {
         selector: '[data-tour="xp-bar"]',
