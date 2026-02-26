@@ -17,6 +17,13 @@ const studentFAQ: FAQItem[] = [
   { question: "Como ganho XP?", answer: "Você ganha XP completando tarefas, fazendo check-in nos treinos e desbloqueando conquistas. Quanto mais ativo, mais XP você acumula!" },
   { question: "Posso ver meu histórico de graduações?", answer: "Sim! Acesse 'Meu Progresso' para ver toda a sua linha do tempo de faixas." },
   { question: "O que acontece se meu pagamento atrasar?", answer: "O sistema marca o pagamento como atrasado. Dependendo da configuração do dojo, pode haver restrições até a regularização." },
+  { question: "Como funciona o ranking/leaderboard?", answer: "O ranking é baseado no XP acumulado durante a temporada. Completar tarefas, fazer check-in e desbloquear conquistas são formas de subir no ranking." },
+  { question: "Como ativo as notificações push?", answer: "Clique no ícone de sino no topo da tela e ative o botão de notificações push. Você receberá alertas de pagamentos, tarefas e lembretes de treino diretamente no celular." },
+  { question: "O que são as temporadas?", answer: "Temporadas são períodos trimestrais onde o XP é contabilizado separadamente. No final de cada temporada, os melhores colocados ganham recompensas especiais." },
+  { question: "Como compartilho meu comprovante pelo celular?", answer: "Use o botão 'Compartilhar' do seu app de banco e selecione o Dojo Control. O comprovante será anexado automaticamente ao pagamento pendente." },
+  { question: "Por que minha conta está bloqueada?", answer: "Contas podem ser bloqueadas por pagamentos em atraso. Regularize suas pendências financeiras para desbloquear automaticamente o acesso." },
+  { question: "Como vejo meus próximos treinos?", answer: "Acesse a aba 'Agenda' para ver os horários dos treinos da semana. Aulas canceladas aparecem com um indicador visual." },
+  { question: "Posso praticar mais de uma arte marcial?", answer: "Sim! Se o dojo oferecer múltiplas modalidades, você pode ser matriculado em turmas de artes diferentes e acompanhar o progresso de cada uma separadamente." },
 ];
 
 const senseiFAQ: FAQItem[] = [
@@ -26,6 +33,14 @@ const senseiFAQ: FAQItem[] = [
   { question: "Como funciona o QR Code de check-in?", answer: "Cada dojo tem um QR Code único. Imprima ou exiba no local do treino. Os alunos escaneiam para registrar presença automaticamente." },
   { question: "Como exporto relatórios?", answer: "No Dashboard, clique no botão 'Exportar Relatório'. Você pode gerar relatórios gerais e financeiros em PDF." },
   { question: "Como adiciono um sensei ao dojo?", answer: "Apenas administradores podem gerenciar senseis. Acesse a aba 'Senseis' para adicionar ou remover." },
+  { question: "Como configuro multas e juros por atraso?", answer: "Em 'Pagamentos', acesse as configurações de multa. Defina o percentual de multa, valor fixo, juros diários e dias de carência conforme a política do dojo." },
+  { question: "Como funciona o sistema de planos de mensalidade?", answer: "Crie planos vinculados à arte marcial (Judô, Jiu-Jitsu ou combo). Ao gerar cobranças, o sistema prioriza planos combo para alunos em múltiplas modalidades, evitando duplicidade." },
+  { question: "Como bloqueio/desbloqueio um aluno?", answer: "Acesse o perfil do aluno e use a opção de bloqueio. Alunos bloqueados por inadimplência são desbloqueados automaticamente quando regularizam os pagamentos." },
+  { question: "Como gerencio as temporadas de XP?", answer: "Acesse 'Configurações' e a seção 'Temporadas'. Crie temporadas trimestrais com multiplicadores de XP e recompensas personalizadas." },
+  { question: "Como funciona a assinatura do dojo?", answer: "Cada dojo pode ter um plano de assinatura (Free, Pro ou Premium) que libera funcionalidades como QR Code Check-in e relatórios PDF. Gerencie em 'Configurações'." },
+  { question: "Como crio cobranças avulsas?", answer: "Em 'Pagamentos', use o botão de criar cobrança. Escolha a categoria (matrícula, material, exame, evento, etc.), o aluno e o valor." },
+  { question: "Como vejo quais alunos estão inadimplentes?", answer: "No dashboard financeiro em 'Pagamentos', veja os cards de resumo. Use os filtros para listar apenas pagamentos atrasados." },
+  { question: "Como recebo notificações de novos alunos?", answer: "Ative as notificações push clicando no sino. Você será notificado automaticamente quando um novo aluno se cadastrar no dojo." },
 ];
 
 export function HelpFAQ() {
