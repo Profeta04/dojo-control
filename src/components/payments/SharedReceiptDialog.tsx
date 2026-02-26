@@ -127,17 +127,28 @@ export function SharedReceiptDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* File preview */}
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-3 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileImage className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
+        {/* File preview with thumbnail */}
+        <Card className="border-primary/20 bg-primary/5 overflow-hidden">
+          <CardContent className="p-3 flex items-start gap-3">
+            {file.type.startsWith("image/") ? (
+              <img
+                src={URL.createObjectURL(file)}
+                alt="Comprovante"
+                className="h-20 w-20 rounded-lg object-cover border border-border/50 flex-shrink-0"
+              />
+            ) : (
+              <div className="h-20 w-20 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileImage className="h-8 w-8 text-primary" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0 py-1">
               <p className="text-sm font-medium truncate">{file.name}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 {(file.size / 1024).toFixed(0)} KB
               </p>
+              <Badge variant="outline" className="mt-2 text-[10px]">
+                {file.type.startsWith("image/") ? "Imagem" : "PDF"}
+              </Badge>
             </div>
           </CardContent>
         </Card>
