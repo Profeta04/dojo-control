@@ -95,10 +95,15 @@ export function ClassesTab() {
   const DAY_SHORT = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const [weeklySlots, setWeeklySlots] = useState<WeeklySlot[]>([]);
 
-  // Schedule form state
-  const [selectedDates, setSelectedDates] = useState<Date[]>([]);
-  const [startTime, setStartTime] = useState("19:00");
-  const [endTime, setEndTime] = useState("20:00");
+  // Schedule form state - per-date times
+  interface ScheduleEntry {
+    date: Date;
+    startTime: string;
+    endTime: string;
+  }
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
+  const [defaultStartTime, setDefaultStartTime] = useState("19:00");
+  const [defaultEndTime, setDefaultEndTime] = useState("20:00");
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Fetch classes with details
@@ -262,9 +267,9 @@ export function ClassesTab() {
   };
 
   const resetScheduleForm = () => {
-    setSelectedDates([]);
-    setStartTime("19:00");
-    setEndTime("20:00");
+    setScheduleEntries([]);
+    setDefaultStartTime("19:00");
+    setDefaultEndTime("20:00");
     setCurrentMonth(new Date());
   };
 
@@ -291,11 +296,16 @@ export function ClassesTab() {
 
   const openScheduleDialog = (cls: ClassWithDetails) => {
     setSelectedClass(cls);
-    const existingDates = cls.schedules?.map((s) => new Date(s.date + "T00:00:00")) || [];
-    setSelectedDates(existingDates);
-    if (cls.schedules && cls.schedules.length > 0) {
-      setStartTime(cls.schedules[0].start_time.slice(0, 5));
-      setEndTime(cls.schedules[0].end_time.slice(0, 5));
+    // Build entries from existing schedules
+    const entries: ScheduleEntry[] = cls.schedules?.map((s) => ({
+      date: new Date(s.date + "T00:00:00"),
+      startTime: s.start_time.slice(0, 5),
+      endTime: s.end_time.slice(0, 5),
+    })) || [];
+    setScheduleEntries(entries);
+    if (entries.length > 0) {
+      setDefaultStartTime(entries[0].startTime);
+      setDefaultEndTime(entries[0].endTime);
     }
     setScheduleDialogOpen(true);
   };
@@ -303,12 +313,12 @@ export function ClassesTab() {
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     
-    setSelectedDates((prev) => {
-      const exists = prev.some((d) => isSameDay(d, date));
+    setScheduleEntries((prev) => {
+      const exists = prev.some((e) => isSameDay(e.date, date));
       if (exists) {
-        return prev.filter((d) => !isSameDay(d, date));
+        return prev.filter((e) => !isSameDay(e.date, date));
       }
-      return [...prev, date];
+      return [...prev, { date, startTime: defaultStartTime, endTime: defaultEndTime }];
     });
   };
 
@@ -385,16 +395,16 @@ export function ClassesTab() {
         .gte("date", monthStart)
         .lte("date", monthEnd);
 
-      const datesInMonth = selectedDates.filter(
-        (d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth)
+      const entriesInMonth = scheduleEntries.filter(
+        (e) => e.date >= startOfMonth(currentMonth) && e.date <= endOfMonth(currentMonth)
       );
 
-      if (datesInMonth.length > 0) {
-        const schedules = datesInMonth.map((date) => ({
+      if (entriesInMonth.length > 0) {
+        const schedules = entriesInMonth.map((entry) => ({
           class_id: selectedClass.id,
-          date: format(date, "yyyy-MM-dd"),
-          start_time: startTime,
-          end_time: endTime,
+          date: format(entry.date, "yyyy-MM-dd"),
+          start_time: entry.startTime,
+          end_time: entry.endTime,
         }));
 
         const { error } = await supabase.from("class_schedule").insert(schedules);
@@ -403,7 +413,7 @@ export function ClassesTab() {
 
       toast({
         title: "Agenda atualizada!",
-        description: `${datesInMonth.length} dia(s) agendado(s) para ${format(currentMonth, "MMMM yyyy", { locale: ptBR })}.`,
+        description: `${entriesInMonth.length} dia(s) agendado(s) para ${format(currentMonth, "MMMM yyyy", { locale: ptBR })}.`,
       });
 
       setScheduleDialogOpen(false);
@@ -776,27 +786,38 @@ export function ClassesTab() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Agendar Aulas - {selectedClass?.name}</DialogTitle>
-            <DialogDescription>
-              Selecione os dias do mês e defina o horário das aulas
+          <DialogDescription>
+              Selecione os dias do mês. Cada dia pode ter horário individual.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Horário de início</Label>
-                <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+                <Label>Horário padrão (início)</Label>
+                <Input type="time" value={defaultStartTime} onChange={(e) => setDefaultStartTime(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Horário de término</Label>
-                <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+                <Label>Horário padrão (término)</Label>
+                <Input type="time" value={defaultEndTime} onChange={(e) => setDefaultEndTime(e.target.value)} />
               </div>
             </div>
+            <p className="text-xs text-muted-foreground">Novos dias usarão o horário padrão acima. Você pode ajustar cada dia individualmente abaixo.</p>
 
             <div className="flex justify-center">
               <Calendar
                 mode="multiple"
-                selected={selectedDates}
-                onSelect={(dates) => setSelectedDates(dates || [])}
+                selected={scheduleEntries.map(e => e.date)}
+                onSelect={(dates) => {
+                  if (!dates) { setScheduleEntries([]); return; }
+                  // Sync entries with selected dates
+                  setScheduleEntries(prev => {
+                    const newEntries: ScheduleEntry[] = dates.map(d => {
+                      const existing = prev.find(e => isSameDay(e.date, d));
+                      return existing || { date: d, startTime: defaultStartTime, endTime: defaultEndTime };
+                    });
+                    return newEntries;
+                  });
+                }}
                 month={currentMonth}
                 onMonthChange={setCurrentMonth}
                 locale={ptBR}
@@ -805,21 +826,50 @@ export function ClassesTab() {
             </div>
 
             <div className="text-sm text-muted-foreground text-center">
-              {selectedDates.filter((d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth)).length} dia(s) selecionado(s) em {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+              {scheduleEntries.filter((e) => e.date >= startOfMonth(currentMonth) && e.date <= endOfMonth(currentMonth)).length} dia(s) selecionado(s) em {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
             </div>
 
-            {selectedDates.length > 0 && (
-              <div className="flex flex-wrap gap-1 max-h-24 overflow-auto">
-                {selectedDates
-                  .filter((d) => d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth))
-                  .sort((a, b) => a.getTime() - b.getTime())
-                  .map((date) => (
-                    <Badge key={date.toISOString()} variant="secondary" className="text-xs">
-                      {format(date, "dd/MM")}
-                      <button onClick={() => handleDateSelect(date)} className="ml-1 hover:text-destructive">
+            {scheduleEntries.length > 0 && (
+              <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2">
+                {scheduleEntries
+                  .filter((e) => e.date >= startOfMonth(currentMonth) && e.date <= endOfMonth(currentMonth))
+                  .sort((a, b) => a.date.getTime() - b.date.getTime())
+                  .map((entry, idx) => (
+                    <div key={entry.date.toISOString()} className="flex items-center gap-2 p-2 rounded-lg bg-muted/30">
+                      <Badge variant="outline" className="text-xs min-w-[50px] justify-center">
+                        {format(entry.date, "dd/MM")}
+                      </Badge>
+                      <Input
+                        type="time"
+                        value={entry.startTime}
+                        onChange={(e) => {
+                          setScheduleEntries(prev => prev.map(en =>
+                            isSameDay(en.date, entry.date) ? { ...en, startTime: e.target.value } : en
+                          ));
+                        }}
+                        className="w-[100px] h-8 text-xs"
+                      />
+                      <span className="text-xs text-muted-foreground">às</span>
+                      <Input
+                        type="time"
+                        value={entry.endTime}
+                        onChange={(e) => {
+                          setScheduleEntries(prev => prev.map(en =>
+                            isSameDay(en.date, entry.date) ? { ...en, endTime: e.target.value } : en
+                          ));
+                        }}
+                        className="w-[100px] h-8 text-xs"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => setScheduleEntries(prev => prev.filter(en => !isSameDay(en.date, entry.date)))}
+                      >
                         <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
+                      </Button>
+                    </div>
                   ))}
               </div>
             )}
