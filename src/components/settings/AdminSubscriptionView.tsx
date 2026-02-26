@@ -532,7 +532,7 @@ export function AdminSubscriptionView() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Tipo de desconto</Label>
-                <Select value={promoForm.discount_type} onValueChange={(v) => setPromoForm(p => ({ ...p, discount_type: v as any }))}>
+                <Select value={promoForm.discount_type} onValueChange={(v: "percent" | "fixed") => setPromoForm(p => ({ ...p, discount_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="percent">Porcentagem (%)</SelectItem>
