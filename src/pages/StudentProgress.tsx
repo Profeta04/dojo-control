@@ -17,7 +17,20 @@ import { Search, TrendingUp, CheckCircle2, ClipboardList, Users, Filter } from "
 const MARTIAL_ART_LABELS: Record<string, string> = {
   judo: "Judô",
   bjj: "Jiu-Jitsu",
+  "jiu-jitsu": "Jiu-Jitsu",
 };
+
+// Normalize martial art identifiers so bjj and jiu-jitsu are treated as one
+function normalizeArt(art: string): string {
+  if (art === "jiu-jitsu") return "bjj";
+  return art;
+}
+
+// Get all DB identifiers that map to a normalized art
+function artVariants(normalized: string): string[] {
+  if (normalized === "bjj") return ["bjj", "jiu-jitsu"];
+  return [normalized];
+}
 
 export default function StudentProgress() {
   const { loading: authLoading } = useAuth();
@@ -49,37 +62,43 @@ export default function StudentProgress() {
       const studentArts = new Map<string, Set<string>>();
       const allArts = new Set<string>();
       (enrollments || []).forEach((e: any) => {
-        const ma = e.classes?.martial_art || "judo";
+        const ma = normalizeArt(e.classes?.martial_art || "judo");
         if (!studentArts.has(e.student_id)) studentArts.set(e.student_id, new Set());
         studentArts.get(e.student_id)!.add(ma);
         allArts.add(ma);
       });
 
-      // Count total templates per martial art
+      // Count total templates per normalized martial art (bjj includes jiu-jitsu)
       const templateCounts = new Map<string, number>();
       for (const ma of allArts) {
-        const { count } = await supabase
-          .from("task_templates")
-          .select("id", { count: "exact", head: true })
-          .eq("martial_art", ma);
-        templateCounts.set(ma, count || 0);
+        let total = 0;
+        for (const variant of artVariants(ma)) {
+          const { count } = await supabase
+            .from("task_templates")
+            .select("id", { count: "exact", head: true })
+            .eq("martial_art", variant);
+          total += count || 0;
+        }
+        templateCounts.set(ma, total);
       }
 
-      // Get all template titles per martial art (for counting completed per art)
+      // Get all template titles per normalized martial art
       const templateTitlesByArt = new Map<string, Set<string>>();
       for (const ma of allArts) {
         const titles = new Set<string>();
-        let from = 0;
-        const PAGE = 1000;
-        while (true) {
-          const { data: tData } = await supabase
-            .from("task_templates")
-            .select("title")
-            .eq("martial_art", ma)
-            .range(from, from + PAGE - 1);
-          if (tData) tData.forEach(t => titles.add(t.title));
-          if (!tData || tData.length < PAGE) break;
-          from += PAGE;
+        for (const variant of artVariants(ma)) {
+          let from = 0;
+          const PAGE = 1000;
+          while (true) {
+            const { data: tData } = await supabase
+              .from("task_templates")
+              .select("title")
+              .eq("martial_art", variant)
+              .range(from, from + PAGE - 1);
+            if (tData) tData.forEach(t => titles.add(t.title));
+            if (!tData || tData.length < PAGE) break;
+            from += PAGE;
+          }
         }
         templateTitlesByArt.set(ma, titles);
       }
