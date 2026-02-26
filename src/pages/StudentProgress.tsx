@@ -39,7 +39,7 @@ export default function StudentProgress() {
   const [filterArt, setFilterArt] = useState<string>("all");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["student-progress", currentDojoId],
+    queryKey: ["student-progress-v2", currentDojoId],
     queryFn: async () => {
       if (!currentDojoId) return { students: [], martialArts: [] as string[] };
 
