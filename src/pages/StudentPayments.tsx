@@ -26,6 +26,7 @@ import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ReceiptProgress } from "@/components/payments/ReceiptProgress";
 import { PaymentStatsCards } from "@/components/payments/PaymentStatsCards";
 import { PixQRCodePayment } from "@/components/payments/PixQRCodePayment";
+import { SharedReceiptDialog } from "@/components/payments/SharedReceiptDialog";
 import { Tables } from "@/integrations/supabase/types";
 import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -139,7 +140,7 @@ export default function StudentPaymentsPage() {
       
       const blob = await response.blob();
       const fileName = response.headers.get('X-File-Name') || 'comprovante.jpg';
-      const sharedFile = new File([blob], fileName, { type: blob.type });
+      const file = new File([blob], fileName, { type: blob.type });
       
       await cache.delete('/shared-file-latest');
       
@@ -147,16 +148,12 @@ export default function StudentPaymentsPage() {
       url.searchParams.delete('shared');
       window.history.replaceState({}, '', url.pathname + url.search);
       
-      setSharedFile(sharedFile);
-      
-      toast({
-        title: "📎 Comprovante recebido!",
-        description: "Selecione o pagamento correspondente e clique em 'Enviar Comprovante' para vincular.",
-      });
+      // Set the file — the SharedReceiptDialog will open automatically
+      setSharedFile(file);
     } catch (error) {
       console.error('Error processing shared file:', error);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     if (!paymentsLoading && payments) {
@@ -238,12 +235,7 @@ export default function StudentPaymentsPage() {
 
   const openUploadDialog = (payment: Payment) => {
     setSelectedPayment(payment);
-    // If we have a shared file, auto-upload it immediately
-    if (sharedFile) {
-      uploadFile(sharedFile, payment);
-    } else {
-      setUploadDialogOpen(true);
-    }
+    setUploadDialogOpen(true);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -377,22 +369,16 @@ export default function StudentPaymentsPage() {
         </div>
       )}
 
-      {/* Shared file banner */}
-      {sharedFile && (
-        <Card className="border-primary/30 bg-gradient-to-r from-primary/10 to-primary/5 shadow-sm animate-fade-in mb-4">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileImage className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">📎 Comprovante pronto para enviar</p>
-              <p className="text-xs text-muted-foreground">{sharedFile.name} — Selecione o pagamento abaixo para vincular</p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => setSharedFile(null)}>
-              ✕
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Shared Receipt Dialog - popup when file is shared to the app */}
+      {sharedFile && payments && (
+        <SharedReceiptDialog
+          open={!!sharedFile}
+          onClose={() => setSharedFile(null)}
+          file={sharedFile}
+          payments={payments}
+          userId={user?.id || ""}
+          userName={profile?.name}
+        />
       )}
 
       {/* Stats Cards */}
