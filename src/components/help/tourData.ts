@@ -493,10 +493,123 @@ const senseiTutorials: Record<string, TabTutorial> = {
   },
 };
 
+// ── Guardian tutorials ──
+const guardianTutorials: Record<string, TabTutorial> = {
+  "/perfil": {
+    tabId: "guardian-perfil",
+    title: "Seus Dados Pessoais",
+    summary:
+      "Aqui você vê suas informações de contato e um resumo dos seus dependentes vinculados ao dojo.",
+    tip: "Mantenha seus dados atualizados para que o dojo possa entrar em contato.",
+    steps: [
+      {
+        selector: '[data-tour="guardian-profile-card"]',
+        title: "Seu Card de Perfil",
+        description:
+          "Mostra seu nome, e-mail e telefone cadastrados. Esses são os dados que o dojo usa para entrar em contato com você.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="guardian-minors-summary"]',
+        title: "Resumo dos Dependentes",
+        description:
+          "Lista rápida de todos os filhos ou dependentes que estão vinculados a você no dojo, com o nome e a faixa atual de cada um.",
+        position: "top",
+      },
+    ],
+  },
+  "/dependentes": {
+    tabId: "guardian-dependentes",
+    title: "Seus Dependentes",
+    summary:
+      "Veja os detalhes de cada filho ou dependente matriculado no dojo: presenças, faixa, pagamentos e progresso.",
+    tip: "Toque no nome de um dependente para ver todos os detalhes dele.",
+    steps: [
+      {
+        selector: '[data-tour="guardian-minor-list"]',
+        title: "Lista de Dependentes",
+        description:
+          "Todos os seus filhos ou dependentes aparecem aqui. Cada card mostra o nome, a faixa atual e a turma em que está matriculado.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="guardian-minor-details"]',
+        title: "Detalhes do Dependente",
+        description:
+          "Ao tocar em um dependente, você vê informações detalhadas: presenças recentes, próximos treinos, faixa e histórico de graduações.",
+        position: "top",
+      },
+    ],
+  },
+  "/mensalidade": {
+    tabId: "guardian-mensalidade",
+    title: "Pagamentos dos Dependentes",
+    summary:
+      "Aqui você acompanha as mensalidades e cobranças de todos os seus dependentes. Envie comprovantes e veja o que está pendente.",
+    tip: "Pagamentos em dia evitam bloqueios no acesso dos seus dependentes.",
+    steps: [
+      {
+        selector: '[data-tour="payment-stats"]',
+        title: "Resumo de Pagamentos",
+        description:
+          "Cards mostrando quantas cobranças estão pendentes, pagas ou atrasadas. Dá uma visão rápida da situação financeira.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="pix-card"]',
+        title: "Pagar pelo Pix",
+        description:
+          "Copie a chave Pix do dojo e faça o pagamento pelo aplicativo do seu banco. Depois, envie o comprovante aqui no app.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="payment-list"]',
+        title: "Lista de Cobranças",
+        description:
+          "Todas as mensalidades organizadas por status. Toque em 'Enviar Comprovante' para anexar o recibo de pagamento.",
+        position: "top",
+      },
+    ],
+  },
+  "/config": {
+    tabId: "guardian-config",
+    title: "Configurações",
+    summary:
+      "Altere suas preferências pessoais como modo escuro e dados de contato.",
+    steps: [
+      {
+        selector: '[data-tour="config-personal"]',
+        title: "Dados Pessoais",
+        description:
+          "Atualize seu nome, e-mail e telefone. Não esqueça de salvar as alterações depois de editar.",
+        position: "bottom",
+      },
+      {
+        selector: '[data-tour="config-preferences"]',
+        title: "Preferências",
+        description:
+          "Ative ou desative o modo escuro para deixar a tela mais confortável para seus olhos.",
+        position: "top",
+      },
+    ],
+  },
+  "/ajuda": {
+    tabId: "guardian-ajuda",
+    title: "Ajuda e Suporte",
+    summary:
+      "Encontre tutoriais, perguntas frequentes e envie relatos de problemas.",
+    steps: [],
+  },
+};
+
 export function getTutorialForPath(
   path: string,
-  canManageStudents: boolean
+  canManageStudents: boolean,
+  isGuardian?: boolean
 ): TabTutorial | null {
+  if (isGuardian && guardianTutorials[path]) {
+    return guardianTutorials[path];
+  }
   const map = canManageStudents ? senseiTutorials : studentTutorials;
   return map[path] || null;
 }
