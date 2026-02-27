@@ -1,88 +1,70 @@
 
 
-# QR Code Pix com Valor Embutido
+# Plano: Remover Sistema de Responsável
 
-## Objetivo
-Gerar QR Codes Pix (BR Code / padrão EMV) com o valor exato da cobrança embutido, tanto para pagamentos de mensalidades dos alunos quanto para assinaturas de planos dos dojos. O aluno/sensei escaneia o QR Code no app do banco e o valor já vem preenchido automaticamente.
+## Resumo
+Remover completamente o sistema de "responsável" (guardian). O responsável que precisar pagar mensalidades simplesmente fará login na conta do aluno e usará a senha do aluno na aba de pagamentos.
 
-## Como funciona o Pix Estático
-O padrão BR Code (definido pelo Banco Central) permite codificar em uma string: chave Pix, nome do recebedor, cidade, e **valor da transacao**. Essa string vira um QR Code que qualquer app bancário lê. Usaremos a biblioteca **pix-utils** que implementa esse padrão.
+## Arquivos a Deletar
+1. `src/pages/GuardianDependents.tsx` - Página de dependentes
+2. `src/components/guardian/GuardianDashboard.tsx` - Dashboard do responsável
+3. `src/components/guardian/GuardianMinorDetails.tsx` - Detalhes do dependente
+4. `src/components/guardian/GuardianProfileCard.tsx` - Cards de perfil do responsável
+5. `src/components/guardian/GuardianPaymentsSummaryCard.tsx` - Resumo financeiro
+6. `src/components/auth/GuardianPasswordGate.tsx` - Gate de senha do responsável
+7. `src/hooks/useGuardianMinors.ts` - Hook de menores vinculados
 
-**Limitacao importante**: O QR Code estático nao confirma pagamento automaticamente. O fluxo de comprovantes (upload + verificacao) continua igual.
+## Arquivos a Editar
 
----
+### Rotas e Navegacao
+1. **`src/App.tsx`** - Remover import e rota `/dependentes` do `GuardianDependents`
+2. **`src/components/layout/StudentBottomNav.tsx`** - Remover `guardianPage1`, remover import `useGuardianMinors`, remover lógica `isGuardian` na seleção de páginas
+3. **`src/components/layout/DashboardLayout.tsx`** - Remover import `useGuardianMinors`, remover lógica `isGuardian` e o botão de config do responsável
+4. **`src/components/layout/sidebar/SidebarNavContent.tsx`** - Verificar se há itens específicos de guardian (provavelmente não, mas confirmar)
 
-## Etapas
+### Páginas
+5. **`src/pages/StudentProfile.tsx`** - Remover branch `isGuardian` que renderiza `GuardianProfileCard`/`GuardianMinorsSummaryCard`/`GuardianPaymentsSummaryCard`. Manter apenas o fluxo de aluno normal
+6. **`src/pages/StudentPayments.tsx`** - Remover import `useGuardianMinors`, remover lógica `isGuardian` na query de pagamentos (voltar a buscar apenas pagamentos do `user.id`), remover exibição de nome do dependente na tabela
+7. **`src/pages/StudentPaymentHistory.tsx`** - Remover lógica de `isMinorWithGuardian` e `GuardianPasswordGate`
+8. **`src/pages/Dashboard.tsx`** - Remover import `useGuardianMinors` e `GuardianDashboard`
 
-### 1. Instalar dependencia `pix-utils`
-Biblioteca TypeScript leve que gera a string BR Code no padrao EMV do Banco Central.
+### Componentes de Apoio
+9. **`src/components/student/GuardianInfoCard.tsx`** - Remover este componente (exibe info do responsável no perfil do aluno) ou simplificar para apenas mostrar email/nome se houver `guardian_email` no perfil
+10. **`src/components/help/HelpTutorials.tsx`** - Remover `guardianTutorials` e lógica `isGuardian`
+11. **`src/components/help/tourData.ts`** - Remover `guardianTutorials` e parâmetro `isGuardian` da função `getTutorialForPath`
+12. **`src/components/help/InteractiveTutorialDialog.tsx`** - Remover import `useGuardianMinors` e lógica `isGuardian`
+13. **`src/components/notifications/InAppPaymentNotifier.tsx`** - Verificar se há lógica guardian-specific
 
-### 2. Criar componente compartilhado `PixQRCodePayment`
-Novo arquivo `src/components/payments/PixQRCodePayment.tsx`:
-- Recebe: `pixKey`, `amount`, `merchantName`, `city` (opcional), `description` (opcional)
-- Usa `pix-utils` para gerar a string BR Code com valor embutido
-- Usa a biblioteca `qrcode` (ja instalada) para renderizar o QR Code em canvas
-- Exibe o valor formatado abaixo do QR Code
-- Inclui botao "Copiar Pix Copia e Cola" que copia a string BR Code completa
-- Tratamento de erro caso a chave Pix nao esteja configurada
+### Páginas Admin
+14. **`src/pages/Students.tsx`** - Remover filtro que exclui guardians da lista de alunos (guardians com `guardian_user_id`)
+15. **`src/components/classes/ClassesTab.tsx`** - Remover filtro que exclui guardians dos alunos disponíveis
 
-### 3. Atualizar tela de Pagamentos do Aluno (`StudentPayments.tsx`)
-- Substituir o card generico de "Pagar via Pix" (que so mostra a chave) por um sistema contextual
-- Ao clicar em um pagamento pendente/atrasado, abrir um dialog com o `PixQRCodePayment` ja com o valor exato (incluindo multas/juros se aplicavel)
-- Manter o botao de upload de comprovante no mesmo dialog
-- O card geral de Pix continua visivel mas agora indica "Clique em um pagamento para gerar o QR Code com valor"
+### Autenticação
+16. **`src/pages/Auth.tsx`** - Remover o passo de cadastro que cria conta de responsável separada (signup do guardian). Manter apenas o campo `guardian_email` e `guardian_name` como informações de contato no perfil do aluno, sem criar conta separada
 
-### 4. Atualizar tela de Assinatura do Sensei (`SenseiSubscriptionView.tsx`)
-- No dialog de pagamento PIX (que hoje mostra uma imagem estatica `pix-qrcode.png`), substituir pela geracao dinamica do QR Code
-- O valor sera o preco calculado do plano (ja com descontos/cupons aplicados)
-- A chave Pix usada sera a `admin_pix_key` dos settings
-- Manter o fluxo de upload de comprovante
+## Banco de Dados
+- As RLS policies de guardian (`Guardians can view minor payments`, `Guardians can view minor attendance`, etc.) podem ser removidas via migração SQL
+- A tabela `guardian_minors` pode ser mantida por ora (não causa problemas) ou removida se desejado
+- Os campos `guardian_email` e `guardian_user_id` na tabela `profiles` serão mantidos como dados de contato informativos
 
----
+## Detalhes Técnicos
 
-## Detalhes Tecnicos
-
-### Componente `PixQRCodePayment`
-
+### Migração SQL
 ```text
-+----------------------------------+
-|         [QR Code Canvas]         |
-|           280 x 280              |
-|                                  |
-|     Valor: R$ 150,00             |
-|                                  |
-|  [====== BR Code string ======]  |
-|  [   Copiar Pix Copia e Cola  ]  |
-+----------------------------------+
+DROP POLICY IF EXISTS "Guardians can view minor payments" ON public.payments;
+DROP POLICY IF EXISTS "Guardians can view minor attendance" ON public.attendance;
+DROP POLICY IF EXISTS "Guardians can view minor enrollments" ON public.class_students;
+DROP POLICY IF EXISTS "Guardians can view minor classes" ON public.classes;
+DROP POLICY IF EXISTS "Guardians can view minor schedules" ON public.class_schedule;
+DROP POLICY IF EXISTS "Guardians can view minor profiles" ON public.profiles;
 ```
 
-Logica principal:
-- `createStaticPix()` do `pix-utils` gera o BR Code
-- `QRCode.toCanvas()` (ja usado no projeto) renderiza
-- Props: `pixKey`, `amount`, `merchantName`, `merchantCity?`, `description?`
+### Edge Function
+- `supabase/functions/verify-guardian-password/index.ts` - Pode ser deletada pois não será mais usada
 
-### Fluxo do Aluno
-1. Aluno ve lista de pagamentos pendentes/atrasados
-2. Clica no botao "Pagar" de um pagamento especifico
-3. Dialog abre com QR Code Pix contendo o valor exato (com multas se aplicavel)
-4. Aluno escaneia com app do banco -- valor ja preenchido
-5. Aluno faz upload do comprovante no mesmo dialog
-6. Comprovante vai para verificacao do sensei/admin
-
-### Fluxo do Sensei (Assinatura)
-1. Sensei escolhe plano e clica "Assinar"
-2. Dialog abre com QR Code Pix dinamico com o valor do plano (com descontos)
-3. Sensei escaneia e paga
-4. Upload do comprovante
-5. Admin aprova
-
-### Arquivos modificados
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/components/payments/PixQRCodePayment.tsx` | **Novo** - Componente compartilhado |
-| `src/pages/StudentPayments.tsx` | Dialog de pagamento com QR Code por cobranca |
-| `src/components/settings/SenseiSubscriptionView.tsx` | QR Code dinamico no dialog de assinatura |
-
-### Sem alteracoes no banco de dados
-Nenhuma migracao necessaria. Toda a geracao do QR Code acontece no frontend.
+### Impacto no Cadastro (Auth.tsx)
+O fluxo de cadastro de menores será simplificado:
+- Remover criação de conta do responsável via `supabase.auth.signUp` com `is_guardian: true`
+- Manter campos de nome/email/telefone do responsável apenas como informação de contato salva no perfil do aluno
+- O campo `guardian_user_id` não será mais preenchido no signup
 
