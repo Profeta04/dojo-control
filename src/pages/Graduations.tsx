@@ -246,16 +246,10 @@ export default function GraduationsPage() {
     enabled: !!user && (isAdmin || !!currentDojoId),
   });
 
-  const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string, currentDegree?: number): BeltGrade[] => {
+  const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string, _currentDegree?: number): BeltGrade[] => {
     const order = martialArt === "bjj" ? BJJ_BELT_ORDER : JUDO_BELT_ORDER;
-    if (!currentBelt) return order;
-    const currentIndex = order.indexOf(currentBelt);
-    if (currentIndex === -1) return order;
-    // For BJJ, include current belt if degree can still be increased (0-3 → can go up)
-    if (martialArt === "bjj" && BJJ_DEGREE_BELTS.includes(currentBelt) && (currentDegree ?? 0) < 4) {
-      return order.slice(currentIndex);
-    }
-    return order.slice(currentIndex + 1);
+    // Return all belts for the art — each art is independent, so any belt can be assigned
+    return order;
   };
 
   const openPromotionDialog = (student: Profile, martialArt?: string) => {
