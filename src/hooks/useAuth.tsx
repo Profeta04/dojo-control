@@ -33,8 +33,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let initialSessionHandled = false;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Skip if this is the INITIAL_SESSION and we already handled it
+        if (event === 'INITIAL_SESSION') {
+          if (initialSessionHandled) return;
+          initialSessionHandled = true;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -50,14 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // getSession triggers INITIAL_SESSION event in onAuthStateChange
+    // so we just need to call it to kick things off
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchUserData(session.user.id);
-      } else {
-        setLoading(false);
+      if (!initialSessionHandled) {
+        initialSessionHandled = true;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserData(session.user.id);
+        } else {
+          setLoading(false);
+        }
       }
     });
 
