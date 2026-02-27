@@ -11,6 +11,7 @@ import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { StudentXPCard } from "@/components/student/StudentXPCard";
 import { GuardianProfileCard, GuardianMinorsSummaryCard } from "@/components/guardian/GuardianProfileCard";
+import { GuardianPaymentsSummaryCard } from "@/components/guardian/GuardianPaymentsSummaryCard";
 
 export default function StudentProfile() {
   const { loading: authLoading, isStudent, canManageStudents } = useAuth();
@@ -32,6 +33,7 @@ export default function StudentProfile() {
           <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
             <GuardianProfileCard />
             <GuardianMinorsSummaryCard />
+            <GuardianPaymentsSummaryCard />
           </div>
         </DashboardLayout>
       </RequireApproval>
