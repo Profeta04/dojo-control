@@ -572,7 +572,7 @@ export default function PaymentsPage() {
               <Plus className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">Novo</span> Pagamento
             </Button>
-            {payments && payments.length > 0 && <ExportFinancialReportButton payments={payments} />}
+            <ExportFinancialReportButton payments={payments || []} />
           </div>
         )}
       </div>
