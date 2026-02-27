@@ -81,8 +81,10 @@ const studentTutorials: Tutorial[] = [
     description: "Acompanhe suas mensalidades, envie comprovantes e veja o histórico.",
     steps: [
       "Acesse 'Pagamentos' para ver suas mensalidades e cobranças.",
-      "Envie o comprovante de pagamento clicando no botão de upload.",
-      "Você também pode compartilhar o comprovante diretamente do app do banco.",
+      "Cada cobrança tem um QR Code Pix com o valor já embutido.",
+      "Para pagar: abra o app do seu banco, escolha 'Pagar com Pix', aponte a câmera para o QR Code e confirme. O valor já aparece preenchido!",
+      "Se preferir, copie a chave Pix e cole no app do banco na opção 'Pix Copia e Cola'.",
+      "Depois de pagar, volte aqui e toque em 'Enviar Comprovante' para anexar o recibo.",
       "Acompanhe o status: pendente, pago ou atrasado.",
       "Em caso de atraso, o sistema calcula automaticamente multas e juros conforme política do dojo.",
       "Veja o histórico completo na aba 'Histórico'.",
@@ -164,7 +166,9 @@ const guardianTutorials: Tutorial[] = [
     steps: [
       "Toque em 'Pagamentos' na barra de baixo da tela.",
       "Você verá um resumo mostrando quantas cobranças estão pendentes, pagas ou atrasadas.",
-      "Para pagar, copie a chave Pix do dojo e faça a transferência pelo app do seu banco.",
+      "Cada cobrança tem um QR Code Pix com o valor já incluído.",
+      "Para pagar: abra o aplicativo do seu banco, escolha 'Pagar com Pix', aponte a câmera do celular para o QR Code na tela e confirme. O valor já aparece preenchido!",
+      "Se não conseguir usar o QR Code, toque em 'Copiar' para copiar a chave Pix e cole no app do banco na opção 'Pix Copia e Cola'.",
       "Depois de pagar, volte aqui e toque em 'Enviar Comprovante'.",
       "Escolha a foto do comprovante ou tire uma foto na hora.",
       "O sensei vai conferir e aprovar o comprovante.",

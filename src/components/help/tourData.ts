@@ -149,9 +149,16 @@ const studentTutorials: Record<string, TabTutorial> = {
       },
       {
         selector: '[data-tour="pix-card"]',
-        title: "Pagar via Pix",
+        title: "Pagar via QR Code Pix",
         description:
-          "Copie a chave Pix do dojo para fazer o pagamento pelo seu banco. Após pagar, envie o comprovante.",
+          "Cada cobrança tem um QR Code Pix com o valor já embutido. Abra o app do seu banco, escolha 'Pagar com Pix', aponte a câmera para o QR Code e confirme. O valor já aparece preenchido! Depois de pagar, volte aqui e envie o comprovante.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="pix-copy"]',
+        title: "Copiar Chave Pix",
+        description:
+          "Se preferir, você também pode copiar a chave Pix e colar manualmente no app do banco. Toque no botão 'Copiar' ao lado da chave.",
         position: "top",
       },
       {
@@ -557,9 +564,16 @@ const guardianTutorials: Record<string, TabTutorial> = {
       },
       {
         selector: '[data-tour="pix-card"]',
-        title: "Pagar pelo Pix",
+        title: "Pagar pelo QR Code Pix",
         description:
-          "Copie a chave Pix do dojo e faça o pagamento pelo aplicativo do seu banco. Depois, envie o comprovante aqui no app.",
+          "Cada cobrança tem um QR Code Pix com o valor já incluído. Abra o aplicativo do seu banco no celular, escolha a opção 'Pagar com Pix', aponte a câmera para o QR Code na tela e confirme o pagamento. O valor já aparece preenchido automaticamente! Depois que pagar, volte aqui no app e envie o comprovante.",
+        position: "top",
+      },
+      {
+        selector: '[data-tour="pix-copy"]',
+        title: "Copiar Chave Pix",
+        description:
+          "Se não conseguir usar o QR Code, você pode copiar a chave Pix tocando no botão 'Copiar'. Depois cole no app do banco na opção 'Pix Copia e Cola'.",
         position: "top",
       },
       {
