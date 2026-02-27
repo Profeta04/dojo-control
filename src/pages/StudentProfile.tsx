@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -9,12 +10,32 @@ import { GraduationTimeline } from "@/components/student/GraduationTimeline";
 import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { StudentXPCard } from "@/components/student/StudentXPCard";
+import { GuardianProfileCard, GuardianMinorsSummaryCard } from "@/components/guardian/GuardianProfileCard";
 
 export default function StudentProfile() {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, isStudent, canManageStudents } = useAuth();
+  const { hasMinors } = useGuardianMinors();
+  const isGuardian = isStudent && !canManageStudents && hasMinors;
 
   if (authLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  }
+
+  if (isGuardian) {
+    return (
+      <RequireApproval>
+        <DashboardLayout>
+          <PageHeader 
+            title="Meus Dados" 
+            description="Suas informações pessoais e dependentes" 
+          />
+          <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GuardianProfileCard />
+            <GuardianMinorsSummaryCard />
+          </div>
+        </DashboardLayout>
+      </RequireApproval>
+    );
   }
 
   return (
