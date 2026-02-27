@@ -627,11 +627,7 @@ export default function GraduationsPage() {
                     if (currentBelt) {
                       return <BeltBadge grade={currentBelt.belt_grade} size="md" showLabel martialArt={currentBelt.martial_art} degree={currentBelt.degree || 0} />;
                     }
-                    return selectedStudent?.belt_grade ? (
-                      <BeltBadge grade={selectedStudent.belt_grade} size="md" showLabel />
-                    ) : (
-                      <span className="text-sm">Sem faixa</span>
-                    );
+                    return <span className="text-sm text-muted-foreground">Sem faixa nesta arte</span>;
                   })()}
                 </div>
               </div>
@@ -709,11 +705,11 @@ export default function GraduationsPage() {
                   <Label className="text-sm text-muted-foreground">Promoção ({MARTIAL_ART_LABELS[selectedMartialArt]})</Label>
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
-                      const currentBelt = selectedStudent ? getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt) : null;
+                     const currentBelt = selectedStudent ? getStudentBelts(selectedStudent.user_id).find(b => b.martial_art === selectedMartialArt) : null;
                       if (currentBelt) {
                         return <BeltBadge grade={currentBelt.belt_grade} size="sm" martialArt={currentBelt.martial_art} degree={currentBelt.degree || 0} />;
                       }
-                      return <span className="text-xs">—</span>;
+                      return <span className="text-xs text-muted-foreground">Nova</span>;
                     })()}
                     <ChevronRight className="h-4 w-4 text-accent" />
                     <BeltBadge grade={newBelt} size="sm" showLabel martialArt={selectedMartialArt} degree={newDegree} />
