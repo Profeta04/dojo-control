@@ -26,6 +26,7 @@ const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const StudentPayments = lazy(() => import("./pages/StudentPayments"));
 const Settings = lazy(() => import("./pages/Settings"));
 const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+const GuardianDependents = lazy(() => import("./pages/GuardianDependents"));
 const StudentTasks = lazy(() => import("./pages/StudentTasks"));
 const StudentConfig = lazy(() => import("./pages/StudentConfig"));
 const StudentProgress = lazy(() => import("./pages/StudentProgress"));
@@ -72,6 +73,7 @@ function AnimatedRoutes() {
           <Route path="/graduations" element={<PageTransition><Graduations /></PageTransition>} />
           <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
           <Route path="/perfil" element={<PageTransition><StudentProfile /></PageTransition>} />
+          <Route path="/dependentes" element={<PageTransition><GuardianDependents /></PageTransition>} />
           <Route path="/tarefas" element={<PageTransition><StudentTasks /></PageTransition>} />
           <Route path="/config" element={<PageTransition><StudentConfig /></PageTransition>} />
           <Route path="/progresso" element={<PageTransition><StudentProgress /></PageTransition>} />

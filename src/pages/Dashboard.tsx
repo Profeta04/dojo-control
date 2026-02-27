@@ -71,12 +71,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Guardian Dashboard - Shows if user has linked minors */}
-      {hasMinors && (
-        <div className="mb-6">
-          <GuardianDashboard />
-        </div>
-      )}
+      {/* Guardian Dashboard - redirect handled by bottom nav */}
 
       {/* Dashboard Stats Component - Only for admins/senseis */}
       {canManageStudents && (
