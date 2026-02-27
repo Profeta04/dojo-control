@@ -23,24 +23,55 @@ async function getVapidPublicKey(): Promise<string> {
   return "";
 }
 
+/** Detect if running on iOS/iPadOS */
+function isIOSDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+/** Detect if app is running in standalone/PWA mode */
+function isStandalonePWA(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+    (navigator as any).standalone === true
+  );
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [needsInstall, setNeedsInstall] = useState(false);
 
   useEffect(() => {
+    const isiOS = isIOSDevice();
+    const isPWA = isStandalonePWA();
+    setIsIOS(isiOS);
+
+    // On iOS, push only works inside installed PWA (iOS 16.4+)
+    if (isiOS && !isPWA) {
+      setNeedsInstall(true);
+      setIsSupported(false);
+      return;
+    }
+
     const supported =
       typeof window !== "undefined" &&
       "serviceWorker" in navigator &&
-      "Notification" in window;
+      "Notification" in window &&
+      "PushManager" in window;
+
     setIsSupported(supported);
+    setNeedsInstall(false);
 
     if (supported) {
       setPermission(Notification.permission);
       navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const pm = reg && (reg as any).pushManager;
         if (pm) {
           pm.getSubscription().then((sub: PushSubscription | null) => {
@@ -77,7 +108,7 @@ export function usePushNotifications() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pm = (registration as any).pushManager;
       if (!pm) {
-        console.error("PushManager not supported");
+        console.error("PushManager not supported on this device/browser");
         setIsLoading(false);
         return false;
       }
@@ -147,5 +178,5 @@ export function usePushNotifications() {
     }
   }, [user]);
 
-  return { permission, isSubscribed, isSupported, isLoading, subscribe, unsubscribe };
+  return { permission, isSubscribed, isSupported, isLoading, isIOS, needsInstall, subscribe, unsubscribe };
 }

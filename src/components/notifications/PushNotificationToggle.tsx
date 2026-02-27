@@ -1,4 +1,4 @@
-import { BellRing, BellOff, Loader2 } from "lucide-react";
+import { BellRing, BellOff, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -6,7 +6,35 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function PushNotificationToggle({ className }: { className?: string }) {
-  const { permission, isSubscribed, isSupported, isLoading, subscribe, unsubscribe } = usePushNotifications();
+  const { permission, isSubscribed, isSupported, isLoading, isIOS, needsInstall, subscribe, unsubscribe } = usePushNotifications();
+
+  // iOS but not installed as PWA — show install prompt
+  if (needsInstall && isIOS) {
+    const handleInstallPrompt = () => {
+      toast.info("Instale o app para receber notificações", {
+        description:
+          'No Safari, toque no botão "Compartilhar" (ícone ⬆) e selecione "Adicionar à Tela de Início". Depois abra o app pela tela inicial.',
+        duration: 8000,
+      });
+    };
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleInstallPrompt}
+            className={cn("relative", className)}
+            aria-label="Instalar para receber notificações"
+          >
+            <Download className="h-5 w-5 text-muted-foreground" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Instalar app para notificações</TooltipContent>
+      </Tooltip>
+    );
+  }
 
   if (!isSupported) return null;
 
@@ -19,7 +47,9 @@ export function PushNotificationToggle({ className }: { className?: string }) {
     } else {
       if (isBlocked) {
         toast.error("Permissão bloqueada", {
-          description: "Acesse as configurações do navegador para permitir notificações.",
+          description: isIOS
+            ? 'Acesse Ajustes > Dojo Control > Notificações para permitir.'
+            : "Acesse as configurações do navegador para permitir notificações.",
         });
         return;
       }
@@ -29,7 +59,11 @@ export function PushNotificationToggle({ className }: { className?: string }) {
           description: "Você receberá alertas de pagamentos e novas tarefas.",
         });
       } else if ((Notification.permission as string) === "denied") {
-        toast.error("Permissão negada. Verifique as configurações do navegador.");
+        toast.error(
+          isIOS
+            ? "Permissão negada. Acesse Ajustes > Dojo Control > Notificações."
+            : "Permissão negada. Verifique as configurações do navegador."
+        );
       }
     }
   };
