@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
@@ -42,7 +43,9 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 };
 
 export default function StudentPaymentsPage() {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading, isStudent, canManageStudents } = useAuth();
+  const { minors, hasMinors } = useGuardianMinors();
+  const isGuardian = isStudent && !canManageStudents && hasMinors;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,9 +117,23 @@ export default function StudentPaymentsPage() {
 
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ["student-payments", user?.id],
+    queryKey: ["student-payments", user?.id, isGuardian, minors.map(m => m.user_id).join(",")],
     queryFn: async () => {
       if (!user) return [];
+      
+      if (isGuardian && minors.length > 0) {
+        // Guardian: fetch payments for all linked minors
+        const minorIds = minors.map(m => m.user_id);
+        const { data, error } = await supabase
+          .from("payments")
+          .select("*")
+          .in("student_id", minorIds)
+          .order("due_date", { ascending: false });
+        if (error) throw error;
+        return data as Payment[];
+      }
+      
+      // Regular student
       const { data, error } = await supabase
         .from("payments")
         .select("*")
@@ -565,8 +582,13 @@ export default function StudentPaymentsPage() {
                               >
                                 <TableCell>
                                   <div>
+                                    {isGuardian && minors.length > 0 && (
+                                      <p className="text-xs font-semibold text-accent mb-0.5">
+                                        {minors.find(m => m.user_id === payment.student_id)?.name || "Dependente"}
+                                      </p>
+                                    )}
                                     <p className="capitalize font-medium text-sm">
-                                      {formatMonth(payment.reference_month)}
+                                      {payment.reference_month ? formatMonth(payment.reference_month) : (payment.description || "—")}
                                     </p>
                                     <div className="flex items-center gap-1.5 mt-0.5">
                                       <Badge variant="outline" className="text-[10px] gap-0.5 px-1.5 py-0 sm:hidden">
@@ -574,7 +596,7 @@ export default function StudentPaymentsPage() {
                                         {PAYMENT_CATEGORY_LABELS[payment.category as PaymentCategory] || payment.category}
                                       </Badge>
                                     </div>
-                                    {payment.description && (
+                                    {payment.description && payment.reference_month && (
                                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
                                         {payment.description}
                                       </p>
