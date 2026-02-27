@@ -28,6 +28,7 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 
 interface TabItem {
   title: string;
@@ -49,6 +50,14 @@ const studentPage2: TabItem[] = [
   { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
+];
+
+// Guardian pages — only bottom nav, single page, no pagination
+const guardianPage1: TabItem[] = [
+  { title: "Meus Dados", href: "/perfil", icon: LayoutDashboard },
+  { title: "Dependentes", href: "/dependentes", icon: Users },
+  { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
+  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
 // Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)
@@ -108,13 +117,17 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
   const { data: studentBelts } = useStudentBelts(profile?.user_id);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const { hasMinors } = useGuardianMinors();
 
   const isAdminRole = isAdmin;
   const isStaff = canManageStudents;
 
   // Determine which pages to use
   const isStudentOnly = isStudent && !canManageStudents;
-  const pages: TabItem[][] = isStudentOnly
+  const isGuardian = isStudentOnly && hasMinors;
+  const pages: TabItem[][] = isGuardian
+    ? [guardianPage1]
+    : isStudentOnly
     ? [studentPage1, studentPage2]
     : isAdminRole
       ? [staffPage1, staffPage2, staffPage3WithAdmin]

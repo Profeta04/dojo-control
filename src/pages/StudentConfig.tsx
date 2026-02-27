@@ -20,12 +20,14 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { SenseiDojoEdit } from "@/components/settings/SenseiDojoEdit";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 
 export default function StudentConfig() {
   const { profile, user, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: studentBelts = [] } = useStudentBelts(user?.id);
+  const { hasMinors } = useGuardianMinors();
   const [saving, setSaving] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || "");
   const [email, setEmail] = useState(profile?.email || "");
@@ -201,40 +203,45 @@ export default function StudentConfig() {
 
             <Separator />
 
-            {/* Nav Mode */}
-            <div>
-              <p className="text-sm font-medium mb-3">Navegação Mobile</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setNavMode("bottom")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-                    navMode === "bottom"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-muted-foreground/30"
-                  )}
-                >
-                  <PanelBottom className={cn("h-8 w-8", navMode === "bottom" ? "text-primary" : "text-muted-foreground")} />
-                  <span className={cn("text-xs font-medium", navMode === "bottom" ? "text-primary" : "text-muted-foreground")}>
-                    Barra inferior
-                  </span>
-                </button>
-                <button
-                  onClick={() => setNavMode("sidebar")}
-                  className={cn(
-                    "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
-                    navMode === "sidebar"
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "border-border hover:border-muted-foreground/30"
-                  )}
-                >
-                  <PanelLeft className={cn("h-8 w-8", navMode === "sidebar" ? "text-primary" : "text-muted-foreground")} />
-                  <span className={cn("text-xs font-medium", navMode === "sidebar" ? "text-primary" : "text-muted-foreground")}>
-                    Menu lateral
-                  </span>
-                </button>
-              </div>
-            </div>
+            {/* Nav Mode - hidden for guardians */}
+            {!hasMinors && (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-sm font-medium mb-3">Navegação Mobile</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setNavMode("bottom")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                        navMode === "bottom"
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <PanelBottom className={cn("h-8 w-8", navMode === "bottom" ? "text-primary" : "text-muted-foreground")} />
+                      <span className={cn("text-xs font-medium", navMode === "bottom" ? "text-primary" : "text-muted-foreground")}>
+                        Barra inferior
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => setNavMode("sidebar")}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200",
+                        navMode === "sidebar"
+                          ? "border-primary bg-primary/5 shadow-sm"
+                          : "border-border hover:border-muted-foreground/30"
+                      )}
+                    >
+                      <PanelLeft className={cn("h-8 w-8", navMode === "sidebar" ? "text-primary" : "text-muted-foreground")} />
+                      <span className={cn("text-xs font-medium", navMode === "sidebar" ? "text-primary" : "text-muted-foreground")}>
+                        Menu lateral
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
