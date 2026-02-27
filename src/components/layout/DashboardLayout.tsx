@@ -1,11 +1,11 @@
 import { ReactNode, useState, useEffect } from "react";
 import dojoLogo from "@/assets/dojo-control-logo.png";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
-import { Link } from "react-router-dom";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Menu, X, Building, Settings, ScanLine } from "lucide-react";
@@ -31,11 +31,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { settings } = useDojoSettings();
   const { currentDojoId, setCurrentDojoId, userDojos, isLoadingDojos } = useDojoContext();
   const { getSignedUrl } = useSignedUrl();
+  const { hasMinors } = useGuardianMinors();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navMode = localStorage.getItem(`nav-mode-${profile?.user_id}`) || "bottom";
   const useBottomNav = navMode === "bottom";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const { allowed: qrAllowed } = useFeatureGate("qr_checkin");
+  const isGuardian = isStudent && !canManageStudents && hasMinors;
 
   const currentDojo = userDojos.find(d => d.id === currentDojoId) || userDojos[0];
   const showDojoSelector = userDojos.length > 1 && canManageStudents;
@@ -112,6 +114,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </Link>
               )}
               <NotificationBell />
+              {isGuardian && (
+                <Link to="/config">
+                  <Button variant="ghost" size="icon" className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent">
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </header>

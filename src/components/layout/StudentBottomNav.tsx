@@ -52,11 +52,10 @@ const studentPage2: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-// Guardian pages — only bottom nav, single page, no pagination
+// Guardian pages — config is accessed via gear icon in top bar, not bottom nav
 const guardianPage1: TabItem[] = [
   { title: "Meus Dados", href: "/perfil", icon: LayoutDashboard },
   { title: "Dependentes", href: "/dependentes", icon: Users },
-  { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];
 
