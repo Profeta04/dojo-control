@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import {
   Accordion,
   AccordionContent,
@@ -8,7 +9,7 @@ import {
 import {
   LayoutDashboard, Users, GraduationCap, CreditCard, ClipboardList,
   CalendarDays, Trophy, TrendingUp, ClipboardCheck, Settings, Landmark,
-  Bell, QrCode, Shield, BarChart3, UserPlus,
+  Bell, QrCode, Shield, BarChart3, UserPlus, HelpCircle, Heart,
 } from "lucide-react";
 
 interface Tutorial {
@@ -123,6 +124,89 @@ const studentTutorials: Tutorial[] = [
       "Quando o celular perguntar se pode enviar avisos, toque em 'Permitir'.",
       "Pronto! Você vai receber avisos de: cobranças novas, lembretes de pagamento atrasado, novas tarefas e lembretes de treino.",
       "Para parar de receber, toque de novo no botão de ligar/desligar dentro do sino.",
+    ],
+  },
+];
+
+const guardianTutorials: Tutorial[] = [
+  {
+    id: "meus-dados",
+    title: "Meus Dados",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+    description: "Veja suas informações pessoais e um resumo dos seus filhos no dojo.",
+    steps: [
+      "Na tela 'Meus Dados' você encontra suas informações de contato.",
+      "Seu nome, e-mail e telefone aparecem no card principal.",
+      "Logo abaixo, há um resumo dos seus filhos ou dependentes vinculados.",
+      "Você pode ver o nome e a faixa atual de cada dependente.",
+      "Se algum dado estiver errado, peça ao sensei para corrigir.",
+    ],
+  },
+  {
+    id: "dependentes",
+    title: "Acompanhando seus Filhos",
+    icon: <Users className="h-5 w-5" />,
+    description: "Veja como cada filho está indo no dojo: presenças, faixa e progresso.",
+    steps: [
+      "Toque em 'Dependentes' na barra de baixo da tela.",
+      "Você verá a lista de todos os seus filhos matriculados no dojo.",
+      "Cada filho mostra um card com nome e faixa atual.",
+      "Toque no nome de um filho para ver os detalhes completos dele.",
+      "Nos detalhes, você vê presenças, próximos treinos e graduações.",
+      "Isso ajuda a acompanhar se seu filho está frequentando os treinos.",
+    ],
+  },
+  {
+    id: "pagamentos",
+    title: "Pagamentos e Mensalidades",
+    icon: <CreditCard className="h-5 w-5" />,
+    description: "Veja as mensalidades dos seus filhos, envie comprovantes e acompanhe o que está pendente.",
+    steps: [
+      "Toque em 'Pagamentos' na barra de baixo da tela.",
+      "Você verá um resumo mostrando quantas cobranças estão pendentes, pagas ou atrasadas.",
+      "Para pagar, copie a chave Pix do dojo e faça a transferência pelo app do seu banco.",
+      "Depois de pagar, volte aqui e toque em 'Enviar Comprovante'.",
+      "Escolha a foto do comprovante ou tire uma foto na hora.",
+      "O sensei vai conferir e aprovar o comprovante.",
+      "Pagamentos em dia evitam que o acesso dos seus filhos seja bloqueado.",
+    ],
+  },
+  {
+    id: "configuracoes",
+    title: "Configurações",
+    icon: <Settings className="h-5 w-5" />,
+    description: "Altere o modo escuro e veja suas informações de conta.",
+    steps: [
+      "Toque no ícone de engrenagem (⚙️) no canto superior direito da tela.",
+      "Você pode ativar o modo escuro, que deixa a tela com fundo preto — melhor para usar à noite.",
+      "Para ativar, toque no botão de ligar/desligar ao lado de 'Modo Escuro'.",
+      "Seus dados pessoais como nome e e-mail também aparecem nesta tela.",
+    ],
+  },
+  {
+    id: "avisos",
+    title: "Avisos e Notificações",
+    icon: <Bell className="h-5 w-5" />,
+    description: "Receba avisos no celular sobre pagamentos e atualizações dos seus filhos.",
+    steps: [
+      "Toque no ícone de sino (🔔) no topo da tela.",
+      "Ative os avisos usando o botão de ligar/desligar.",
+      "Quando o celular perguntar se pode enviar avisos, toque em 'Permitir'.",
+      "Você receberá avisos quando houver cobranças novas ou pagamentos atrasados.",
+      "Isso ajuda a não esquecer de pagar as mensalidades no prazo.",
+    ],
+  },
+  {
+    id: "navegacao",
+    title: "Como Usar o Aplicativo",
+    icon: <HelpCircle className="h-5 w-5" />,
+    description: "Aprenda a navegar pelo aplicativo de forma simples e rápida.",
+    steps: [
+      "Na parte de baixo da tela, você tem 4 botões: Meus Dados, Dependentes, Pagamentos e Ajuda.",
+      "Toque em qualquer botão para ir para aquela seção.",
+      "O botão que estiver com cor diferente mostra onde você está agora.",
+      "No topo da tela, à direita, você encontra o sino de avisos (🔔) e a engrenagem de configurações (⚙️).",
+      "Se tiver dúvidas, volte aqui na aba 'Ajuda' para reler estes tutoriais.",
     ],
   },
 ];
@@ -250,13 +334,23 @@ const senseiTutorials: Tutorial[] = [
 ];
 
 export function HelpTutorials() {
-  const { canManageStudents } = useAuth();
-  const tutorials = canManageStudents ? senseiTutorials : studentTutorials;
+  const { canManageStudents, isStudent } = useAuth();
+  const { hasMinors } = useGuardianMinors();
+  const isGuardian = isStudent && !canManageStudents && hasMinors;
+  
+  const tutorials = isGuardian
+    ? guardianTutorials
+    : canManageStudents
+      ? senseiTutorials
+      : studentTutorials;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Clique em cada item para ver o passo-a-passo de como usar cada funcionalidade.
+        {isGuardian
+          ? "Toque em cada item abaixo para ver uma explicação simples de como usar cada parte do aplicativo."
+          : "Clique em cada item para ver o passo-a-passo de como usar cada funcionalidade."
+        }
       </p>
       <Accordion type="single" collapsible className="w-full space-y-2">
         {tutorials.map((tutorial) => (

@@ -15,7 +15,7 @@ export function GuardianProfileCard() {
   if (!profile) return null;
 
   return (
-    <Card className="overflow-hidden">
+    <Card data-tour="guardian-profile-card" className="overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50 pb-4">
         <CardTitle className="flex items-center gap-2 text-lg sm:text-xl font-bold">
           Meus Dados
@@ -64,7 +64,7 @@ export function GuardianMinorsSummaryCard() {
   if (loading || minors.length === 0) return null;
 
   return (
-    <Card>
+    <Card data-tour="guardian-minors-summary">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg font-bold">
           <Users className="h-5 w-5 text-accent" />

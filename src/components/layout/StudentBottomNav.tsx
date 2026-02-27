@@ -57,6 +57,7 @@ const guardianPage1: TabItem[] = [
   { title: "Meus Dados", href: "/perfil", icon: LayoutDashboard },
   { title: "Dependentes", href: "/dependentes", icon: Users },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
+  { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
 // Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)

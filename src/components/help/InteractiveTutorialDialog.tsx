@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
+import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import {
   Dialog,
   DialogContent,
@@ -25,13 +26,15 @@ export function InteractiveTutorialDialog({
   onManualClose,
 }: InteractiveTutorialDialogProps) {
   const { pathname } = useLocation();
-  const { user, canManageStudents } = useAuth();
+  const { user, canManageStudents, isStudent } = useAuth();
+  const { hasMinors } = useGuardianMinors();
   const { hasSeenTab, markTabSeen, welcomeSeen, isLoading } = useOnboarding();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tourActive, setTourActive] = useState(false);
 
-  const tutorial = getTutorialForPath(pathname, canManageStudents);
+  const isGuardian = isStudent && !canManageStudents && hasMinors;
+  const tutorial = getTutorialForPath(pathname, canManageStudents, isGuardian);
 
   // Auto-open on first visit
   useEffect(() => {
