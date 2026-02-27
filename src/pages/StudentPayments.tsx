@@ -128,19 +128,35 @@ export default function StudentPaymentsPage() {
     enabled: !!user,
   });
 
-  // ─── Handle shared files from Web Share Target ───
+  // ─── Handle shared files from Web Share Target (iOS + Android) ───
   const processSharedFile = useCallback(async () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('shared') !== '1') return;
     
+    // Small delay for iOS PWA — cache may not be ready immediately
+    await new Promise(r => setTimeout(r, 300));
+    
     try {
       const cache = await caches.open('shared-files');
       const response = await cache.match('/shared-file-latest');
-      if (!response) return;
+      if (!response) {
+        console.warn('[Share] No cached file found');
+        return;
+      }
       
       const blob = await response.blob();
-      const fileName = response.headers.get('X-File-Name') || 'comprovante.jpg';
-      const file = new File([blob], fileName, { type: blob.type });
+      // Decode the file name (encoded with encodeURIComponent in SW)
+      const rawName = response.headers.get('X-File-Name') || 'comprovante.jpg';
+      let fileName: string;
+      try {
+        fileName = decodeURIComponent(rawName);
+      } catch {
+        fileName = rawName;
+      }
+      
+      // Use ArrayBuffer → File for iOS compatibility
+      const arrayBuffer = await blob.arrayBuffer();
+      const file = new File([arrayBuffer], fileName, { type: blob.type || 'image/jpeg' });
       
       await cache.delete('/shared-file-latest');
       
