@@ -116,6 +116,7 @@ export default function Auth() {
   const [skipBjj, setSkipBjj] = useState(false);
 
   // Step 3: Guardian contact info (if minor) — just email, no account
+  const [guardianName, setGuardianName] = useState("");
   const [guardianEmail, setGuardianEmail] = useState("");
 
   // Step 4: Credentials
@@ -258,6 +259,10 @@ export default function Auth() {
       return true;
     }
     if (step === guardianStep && isMinor) {
+      if (!guardianName.trim() || guardianName.trim().length < 2) {
+        toast({ title: "Nome do responsável deve ter pelo menos 2 caracteres", variant: "destructive" });
+        return false;
+      }
       if (!guardianEmail) {
         toast({ title: "Email do responsável é obrigatório", variant: "destructive" });
         return false;
@@ -348,6 +353,7 @@ export default function Auth() {
             dojo_id: dojoInfo?.id || "",
             birth_date: signupBirthDate || "",
             guardian_email: isMinor ? guardianEmail : "",
+            guardian_name: isMinor ? guardianName : "",
             guardian_user_id: "",
             belt_grade: beltGrade,
             judo_belt: judoBeltValue,
@@ -409,6 +415,7 @@ export default function Auth() {
       setBjjBelt("branca");
       setSkipJudo(false);
       setSkipBjj(false);
+      setGuardianName("");
       setGuardianEmail("");
       setSignupEmail("");
       setSignupPassword("");
@@ -763,13 +770,17 @@ export default function Auth() {
                     <p className="text-xs text-muted-foreground">
                       Como aluno menor de idade, é obrigatório informar o email de um responsável para contato.
                     </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="guardian-email">Email do responsável *</Label>
-                    <Input id="guardian-email" type="email" placeholder="responsavel@email.com" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} className="h-10" />
-                    <p className="text-xs text-muted-foreground">
-                      Usado apenas como informação de contato, não será criada conta separada.
-                    </p>
-                  </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="guardian-name">Nome completo do responsável *</Label>
+                     <Input id="guardian-name" placeholder="Nome do responsável" value={guardianName} onChange={(e) => setGuardianName(e.target.value)} className="h-10" />
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="guardian-email">Email do responsável *</Label>
+                     <Input id="guardian-email" type="email" placeholder="responsavel@email.com" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} className="h-10" />
+                     <p className="text-xs text-muted-foreground">
+                       Usado apenas como informação de contato. Um mesmo email pode ser responsável por vários alunos.
+                     </p>
+                   </div>
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" className="flex-1 h-10" onClick={handleBack}>
