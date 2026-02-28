@@ -52,7 +52,7 @@ function LeaderboardAvatar({ avatarUrl, name }: { avatarUrl: string | null; name
 
 const RANK_ICONS = ["🥇", "🥈", "🥉"];
 
-function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId?: string }) {
+function RankingTable({ entries, userId, selectedArt }: { entries: LeaderboardEntry[]; userId?: string; selectedArt?: string }) {
   if (entries.length === 0) {
     return (
       <div className="py-6 text-center">
@@ -87,6 +87,9 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
         {entries.map((entry) => {
           const isMe = entry.user_id === userId;
           const rank = entry.rank;
+          const displayBelt = selectedArt && entry.belts_by_art?.[selectedArt]
+            ? entry.belts_by_art[selectedArt]
+            : entry.belt_grade;
           return (
             <TableRow
               key={entry.user_id}
@@ -111,7 +114,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
                       {isMe && <span className="text-[10px] ml-1 text-muted-foreground">(você)</span>}
                     </p>
                     <div className="flex items-center gap-2 sm:hidden text-[10px] text-muted-foreground mt-0.5">
-                      {entry.belt_grade && <BeltBadge grade={entry.belt_grade as any} size="sm" />}
+                      {displayBelt && <BeltBadge grade={displayBelt as any} size="sm" />}
                       <span>Nv.{entry.level}</span>
                       {entry.current_streak > 0 && (
                         <span className="flex items-center gap-0.5 text-warning">
@@ -123,7 +126,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
                 </div>
               </TableCell>
               <TableCell className="text-center hidden sm:table-cell">
-                {entry.belt_grade ? <BeltBadge grade={entry.belt_grade as any} size="sm" /> : "—"}
+                {displayBelt ? <BeltBadge grade={displayBelt as any} size="sm" /> : "—"}
               </TableCell>
               <TableCell className="text-center hidden sm:table-cell">
                 <Badge variant="outline" className="text-[10px]">Nv. {entry.level}</Badge>
@@ -347,7 +350,7 @@ export function LeaderboardPanel() {
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-3">
-                <RankingTable entries={geralEntries} userId={user?.id} />
+                <RankingTable entries={geralEntries} userId={user?.id} selectedArt={selectedArt || undefined} />
               </CardContent>
             </Card>
           </motion.div>
@@ -375,7 +378,7 @@ export function LeaderboardPanel() {
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-3">
-                <RankingTable entries={selectedClassEntries} userId={user?.id} />
+                <RankingTable entries={selectedClassEntries} userId={user?.id} selectedArt={selectedArt || undefined} />
               </CardContent>
             </Card>
           </motion.div>
