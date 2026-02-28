@@ -419,7 +419,8 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
       (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
-    const onAppInstalled = () => markSuccess();
+    // Don't listen to appinstalled — we rely on the 30s timer only
+    const onAppInstalled = () => {};
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onAppInstalled);
