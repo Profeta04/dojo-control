@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { PasswordGateDialog } from "@/components/payments/PasswordGateDialog";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -52,6 +53,10 @@ export default function StudentPaymentsPage() {
   const [uploading, setUploading] = useState(false);
   const [pixDialogPayment, setPixDialogPayment] = useState<Payment | null>(null);
   const [sharedFile, setSharedFile] = useState<File | null>(null);
+
+  // Password gate state
+  const [passwordVerified, setPasswordVerified] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(true);
 
   // Fetch PIX key from the student's dojo
   const { data: dojoData } = useQuery({
@@ -296,6 +301,34 @@ export default function StudentPaymentsPage() {
 
   if (authLoading || paymentsLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  }
+
+  // Password gate - require password before showing payments
+  if (!passwordVerified) {
+    return (
+      <DashboardLayout>
+        <PageHeader title="Pagamentos" description="Informações sobre seus pagamentos" />
+        <Card className="mt-6">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <CreditCard className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-sm text-muted-foreground mb-4">
+              Para acessar a área de pagamentos, é necessário confirmar sua senha.
+            </p>
+            <Button onClick={() => setShowPasswordDialog(true)}>
+              Acessar Pagamentos
+            </Button>
+          </CardContent>
+        </Card>
+        <PasswordGateDialog
+          open={showPasswordDialog}
+          onSuccess={() => {
+            setPasswordVerified(true);
+            setShowPasswordDialog(false);
+          }}
+          onCancel={() => setShowPasswordDialog(false)}
+        />
+      </DashboardLayout>
+    );
   }
 
   return (
