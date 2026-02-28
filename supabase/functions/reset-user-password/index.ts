@@ -1,68 +1,39 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  createHandler, verifyStaff, parseBody, getServiceClient,
+  validateUUID, validateString,
+  jsonResponse, errorResponse, safeLog,
+} from "../_shared/validation.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+Deno.serve(createHandler(async (req) => {
+  // Auth: staff only
+  const auth = await verifyStaff(req);
+  if (auth instanceof Response) return auth;
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const body = await parseBody<Record<string, unknown>>(req);
+  if (body instanceof Response) return body;
+
+  const userId = validateUUID(body.userId, "userId");
+  const newPassword = validateString(body.newPassword, "newPassword", { required: false, minLen: 6, maxLen: 128 });
+  const newEmail = validateString(body.newEmail, "newEmail", { required: false, maxLen: 255 });
+
+  if (!newPassword && !newEmail) {
+    return errorResponse("Informe nova senha ou novo e-mail", 400);
   }
 
-  try {
-    // Verify caller is admin
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+  safeLog("RESET_USER_PASSWORD", { callerUserId: auth.userId, targetUserId: userId });
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+  const supabaseAdmin = getServiceClient();
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user: caller } } = await supabaseAdmin.auth.getUser(token);
-    if (!caller) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id);
-    const isStaff = roles?.some(r => ["admin", "dono", "super_admin"].includes(r.role));
-    if (!isStaff) {
-      return new Response(JSON.stringify({ error: "Sem permissão" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
+  const updatePayload: Record<string, string> = {};
+  if (newPassword) updatePayload.password = newPassword;
+  if (newEmail) updatePayload.email = newEmail;
 
-    const { userId, newPassword, newEmail } = await req.json();
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updatePayload);
 
-    const updatePayload: Record<string, string> = {};
-    if (newPassword) updatePayload.password = newPassword;
-    if (newEmail) updatePayload.email = newEmail;
-
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, updatePayload);
-
-    if (error) {
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
-  } catch (error) {
-    return new Response(JSON.stringify({ error: "Erro interno" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" }
-    });
+  if (error) {
+    return errorResponse(error.message, 400);
   }
-});
+
+  safeLog("PASSWORD_RESET_SUCCESS", { targetUserId: userId });
+  return jsonResponse({ success: true });
+}));

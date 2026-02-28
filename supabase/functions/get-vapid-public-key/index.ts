@@ -1,12 +1,11 @@
-Deno.serve(async (req) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  };
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+import { corsHeaders, jsonResponse } from "../_shared/validation.ts";
 
-  return new Response(
-    JSON.stringify({ publicKey: Deno.env.get('VAPID_PUBLIC_KEY') || '' }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const publicKey = Deno.env.get("VAPID_PUBLIC_KEY") || "";
+  if (!publicKey) {
+    return jsonResponse({ error: "VAPID key not configured" }, 500);
+  }
+  return jsonResponse({ publicKey });
 });
