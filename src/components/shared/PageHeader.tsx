@@ -18,7 +18,7 @@ export function PageHeader({ title, description, actions, showHelp = true }: Pag
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-border/30">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">{title}</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-foreground tracking-tight">{title}</h1>
             {showHelp && (
               <Button
                 variant="ghost"

@@ -216,7 +216,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </div>
 
         <div
-          className={cn("p-3 sm:p-4 lg:p-6", !useBottomNav && "safe-area-inset-bottom")}
+          className={cn("p-4 sm:p-5 lg:p-6", !useBottomNav && "safe-area-inset-bottom")}
           style={useBottomNav ? { paddingBottom: "calc(5rem + env(safe-area-inset-bottom, 0px))" } : undefined}
         >
           <WelcomeOnboarding />

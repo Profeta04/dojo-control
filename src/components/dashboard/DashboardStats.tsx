@@ -219,10 +219,10 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader className="pb-2">
-              <div className="h-4 bg-muted rounded w-24"></div>
+              <div className="h-4 bg-muted/60 rounded w-24"></div>
             </CardHeader>
             <CardContent>
-              <div className="h-8 bg-muted rounded w-16"></div>
+              <div className="h-8 bg-muted/60 rounded w-16"></div>
             </CardContent>
           </Card>
         ))}

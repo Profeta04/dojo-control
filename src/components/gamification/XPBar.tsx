@@ -69,15 +69,14 @@ export function XPBar({ compact = false }: XPBarProps) {
               <motion.div
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-full",
-                  currentStreak >= 7 ? "bg-orange-500/10 text-orange-600" : "bg-muted"
+                  currentStreak >= 7 ? "bg-warning/10 text-warning" : "bg-muted"
                 )}
                 animate={currentStreak >= 7 ? { scale: [1, 1.05, 1] } : {}}
                 transition={{ repeat: Infinity, duration: 2 }}
               >
                 <Flame className={cn(
                   "h-4 w-4",
-                  currentStreak >= 30 && "text-orange-500",
-                  currentStreak >= 7 && currentStreak < 30 && "text-orange-400"
+                  currentStreak >= 7 && "text-warning"
                 )} />
                 <span className="text-xs font-bold">{currentStreak}d</span>
               </motion.div>
