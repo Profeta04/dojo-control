@@ -1,5 +1,4 @@
 import { useAuth } from "@/hooks/useAuth";
-import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import {
   Accordion,
   AccordionContent,
@@ -338,23 +337,16 @@ const senseiTutorials: Tutorial[] = [
 ];
 
 export function HelpTutorials() {
-  const { canManageStudents, isStudent } = useAuth();
-  const { hasMinors } = useGuardianMinors();
-  const isGuardian = isStudent && !canManageStudents && hasMinors;
+  const { canManageStudents } = useAuth();
   
-  const tutorials = isGuardian
-    ? guardianTutorials
-    : canManageStudents
-      ? senseiTutorials
-      : studentTutorials;
+  const tutorials = canManageStudents
+    ? senseiTutorials
+    : studentTutorials;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {isGuardian
-          ? "Toque em cada item abaixo para ver uma explicação simples de como usar cada parte do aplicativo."
-          : "Clique em cada item para ver o passo-a-passo de como usar cada funcionalidade."
-        }
+        Clique em cada item para ver o passo-a-passo de como usar cada funcionalidade.
       </p>
       <Accordion type="single" collapsible className="w-full space-y-2">
         {tutorials.map((tutorial) => (

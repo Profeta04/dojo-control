@@ -1,13 +1,11 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
-import { GuardianPasswordGate } from "@/components/auth/GuardianPasswordGate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,9 +41,7 @@ const STATUS_STYLES: Record<PaymentStatus, { variant: "default" | "secondary" | 
 };
 
 export default function StudentPaymentsPage() {
-  const { user, profile, loading: authLoading, isStudent, canManageStudents } = useAuth();
-  const { minors, hasMinors } = useGuardianMinors();
-  const isGuardian = isStudent && !canManageStudents && hasMinors;
+  const { user, profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,7 +50,6 @@ export default function StudentPaymentsPage() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [guardianVerified, setGuardianVerified] = useState(false);
   const [pixDialogPayment, setPixDialogPayment] = useState<Payment | null>(null);
   const [sharedFile, setSharedFile] = useState<File | null>(null);
 
@@ -92,48 +87,14 @@ export default function StudentPaymentsPage() {
     return { fee, interest, total, daysLate };
   };
 
-  const isMinorWithGuardian = useMemo(() => {
-    if (!profile?.birth_date || !profile?.guardian_email) return false;
-    const birthDate = new Date(profile.birth_date);
-    const age = differenceInYears(new Date(), birthDate);
-    return age < 18;
-  }, [profile]);
 
-  useEffect(() => {
-    const stored = sessionStorage.getItem("guardian_verified");
-    if (stored) {
-      try {
-        const { expiry } = JSON.parse(stored);
-        if (Date.now() < expiry) {
-          setGuardianVerified(true);
-        } else {
-          sessionStorage.removeItem("guardian_verified");
-        }
-      } catch {
-        sessionStorage.removeItem("guardian_verified");
-      }
-    }
-  }, []);
+
 
 
   const { data: payments, isLoading: paymentsLoading } = useQuery({
-    queryKey: ["student-payments", user?.id, isGuardian, minors.map(m => m.user_id).join(",")],
+    queryKey: ["student-payments", user?.id],
     queryFn: async () => {
       if (!user) return [];
-      
-      if (isGuardian && minors.length > 0) {
-        // Guardian: fetch payments for all linked minors
-        const minorIds = minors.map(m => m.user_id);
-        const { data, error } = await supabase
-          .from("payments")
-          .select("*")
-          .in("student_id", minorIds)
-          .order("due_date", { ascending: false });
-        if (error) throw error;
-        return data as Payment[];
-      }
-      
-      // Regular student
       const { data, error } = await supabase
         .from("payments")
         .select("*")
@@ -335,19 +296,6 @@ export default function StudentPaymentsPage() {
 
   if (authLoading || paymentsLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
-  }
-
-  if (isMinorWithGuardian && !guardianVerified) {
-    return (
-      <DashboardLayout>
-        <GuardianPasswordGate
-          guardianEmail={profile?.guardian_email || ""}
-          onSuccess={() => setGuardianVerified(true)}
-          title="Área de Pagamentos"
-          description="Acesso restrito para maiores de idade"
-        />
-      </DashboardLayout>
-    );
   }
 
   return (
@@ -582,11 +530,6 @@ export default function StudentPaymentsPage() {
                               >
                                 <TableCell>
                                   <div>
-                                    {isGuardian && minors.length > 0 && (
-                                      <p className="text-xs font-semibold text-accent mb-0.5">
-                                        {minors.find(m => m.user_id === payment.student_id)?.name || "Dependente"}
-                                      </p>
-                                    )}
                                     <p className="capitalize font-medium text-sm">
                                       {payment.reference_month ? formatMonth(payment.reference_month) : (payment.description || "—")}
                                     </p>

@@ -1,4 +1,3 @@
-import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +5,6 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
-import { GuardianPasswordGate } from "@/components/auth/GuardianPasswordGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,32 +14,14 @@ import { CheckCircle2, CreditCard, Tag } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { Tables } from "@/integrations/supabase/types";
-import { format, parseISO, differenceInYears } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PAYMENT_CATEGORY_LABELS, PaymentCategory } from "@/lib/constants";
 
 type Payment = Tables<"payments">;
 
 export default function StudentPaymentHistory() {
-  const { user, profile, loading: authLoading } = useAuth();
-  const [guardianVerified, setGuardianVerified] = useState(false);
-
-  const isMinorWithGuardian = useMemo(() => {
-    if (!profile?.birth_date || !profile?.guardian_email) return false;
-    const age = differenceInYears(new Date(), new Date(profile.birth_date));
-    return age < 18;
-  }, [profile]);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("guardian_verified");
-    if (stored) {
-      try {
-        const { expiry } = JSON.parse(stored);
-        if (Date.now() < expiry) setGuardianVerified(true);
-        else sessionStorage.removeItem("guardian_verified");
-      } catch { sessionStorage.removeItem("guardian_verified"); }
-    }
-  }, []);
+  const { user, loading: authLoading } = useAuth();
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ["student-payments-history", user?.id],
@@ -71,19 +51,6 @@ export default function StudentPaymentHistory() {
 
   if (authLoading || isLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
-  }
-
-  if (isMinorWithGuardian && !guardianVerified) {
-    return (
-      <DashboardLayout>
-        <GuardianPasswordGate
-          guardianEmail={profile?.guardian_email || ""}
-          onSuccess={() => setGuardianVerified(true)}
-          title="Histórico de Pagamentos"
-          description="Acesso restrito para maiores de idade"
-        />
-      </DashboardLayout>
-    );
   }
 
   const totalPaid = payments?.reduce((acc, p) => acc + p.amount, 0) || 0;
