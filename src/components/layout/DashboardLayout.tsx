@@ -222,8 +222,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <WelcomeOnboarding />
           <InAppPaymentNotifier />
           
-          {isStudent && !canManageStudents && (profile as any)?.is_blocked && location.pathname !== "/mensalidade" ? (
-            <BlockedStudentScreen reason={(profile as any)?.blocked_reason} />
+          {isStudent && !canManageStudents && profile?.is_blocked && location.pathname !== "/mensalidade" ? (
+            <BlockedStudentScreen reason={profile?.blocked_reason ?? undefined} />
           ) : (
             children
           )}

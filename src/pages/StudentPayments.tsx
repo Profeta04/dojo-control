@@ -205,18 +205,36 @@ export default function StudentPaymentsPage() {
         .eq("id", payment.id);
       if (updateError) throw updateError;
 
-      const { data: studentProfile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
+      const { data: studentProfile } = await supabase.from("profiles").select("name, dojo_id").eq("user_id", user.id).single();
 
-      const { data: adminSenseiRoles } = await supabase.from("user_roles").select("user_id").in("role", ["admin", "sensei"]);
-      if (adminSenseiRoles && adminSenseiRoles.length > 0) {
-        const notifications = adminSenseiRoles.map((role) => ({
-          user_id: role.user_id,
-          title: "📎 Novo Comprovante Recebido",
-          message: `${studentProfile?.name || "Um aluno"} enviou um comprovante de pagamento referente a ${formatMonth(payment.reference_month)}.`,
-          type: "payment",
-          related_id: payment.id,
-        }));
-        await supabase.from("notifications").insert(notifications);
+      // Only notify staff from the student's own dojo (multi-tenant isolation)
+      if (studentProfile?.dojo_id) {
+        // Get senseis for this specific dojo
+        const { data: dojoSenseis } = await supabase
+          .from("dojo_senseis")
+          .select("sensei_id")
+          .eq("dojo_id", studentProfile.dojo_id);
+
+        // Get admins (global, they manage all dojos)
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+
+        const staffIds = new Set<string>();
+        dojoSenseis?.forEach((s) => staffIds.add(s.sensei_id));
+        adminRoles?.forEach((a) => staffIds.add(a.user_id));
+
+        if (staffIds.size > 0) {
+          const notifications = [...staffIds].map((staffUserId) => ({
+            user_id: staffUserId,
+            title: "📎 Novo Comprovante Recebido",
+            message: `${studentProfile?.name || "Um aluno"} enviou um comprovante de pagamento referente a ${formatMonth(payment.reference_month)}.`,
+            type: "payment",
+            related_id: payment.id,
+          }));
+          await supabase.from("notifications").insert(notifications);
+        }
       }
 
       toast({ title: "Comprovante enviado!", description: "Seu comprovante foi enviado e está aguardando verificação." });

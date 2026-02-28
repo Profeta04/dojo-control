@@ -9,6 +9,32 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate auth - only authenticated users can trigger this
+    const authHeader = req.headers.get("Authorization");
+    const token = authHeader?.replace("Bearer ", "");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the caller is a real authenticated user
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader! } },
+    });
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { studentName, dojoId } = await req.json();
 
     if (!studentName || !dojoId) {
@@ -18,15 +44,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    // Validate input lengths to prevent abuse
+    if (typeof studentName !== "string" || studentName.length > 200 || typeof dojoId !== "string" || dojoId.length > 50) {
+      return new Response(
+        JSON.stringify({ error: "Invalid input" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    const projectUrl = Deno.env.get('SUPABASE_URL')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Find all staff (senseis, admins, owners) associated with this dojo
+    const projectUrl = supabaseUrl;
+
+    // Find all staff (senseis, admins) associated with this dojo
     const staffUserIds = new Set<string>();
 
     // Dojo senseis
@@ -64,7 +94,7 @@ Deno.serve(async (req) => {
           userId,
           title: '🆕 Novo Cadastro Pendente',
           body: `${studentName} se cadastrou e aguarda aprovação.`,
-          url: '/alunos',
+          url: '/students',
           icon: '/favicon.png',
         }),
       });
@@ -85,7 +115,6 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err) {
-    console.error('Error:', err);
     return new Response(
       JSON.stringify({ error: String(err) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
