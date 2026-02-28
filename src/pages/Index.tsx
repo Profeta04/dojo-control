@@ -1,10 +1,16 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
-import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react";
+import { Users, CalendarDays, Trophy, Shield, ChevronRight, Download } from "lucide-react";
 import dojoLogo from "@/assets/dojo-control-logo.png";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 const features = [
   { 
@@ -41,6 +47,8 @@ const Index = () => {
   const { user, isStudent, canManageStudents } = useAuth();
   const { userDojos } = useDojoContext();
   const { settings } = useDojoSettings();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [installing, setInstalling] = useState(false);
   const isStudentOnly = isStudent && !canManageStudents;
   const homeLink = isStudentOnly ? "/perfil" : "/dashboard";
 
@@ -48,6 +56,26 @@ const Index = () => {
   const subtitle = user && settings.welcome_message
     ? settings.welcome_message
     : "Sistema completo de gestão para seu dojo";
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    setInstalling(true);
+    try {
+      await deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    } catch {}
+    setInstalling(false);
+    setDeferredPrompt(null);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -89,6 +117,18 @@ const Index = () => {
                   <Link to="/auth?mode=signup">Criar Conta</Link>
                 </Button>
               </>
+            )}
+            {deferredPrompt && (
+              <Button
+                onClick={handleInstall}
+                disabled={installing}
+                size="lg"
+                variant="secondary"
+                className="h-12 sm:h-11 text-base font-semibold w-full sm:w-auto gap-2"
+              >
+                <Download className="h-4 w-4" />
+                {installing ? "Instalando..." : "Instalar App"}
+              </Button>
             )}
           </div>
         </div>
