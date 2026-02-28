@@ -82,8 +82,6 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", () => {
       setInstalled(true);
-      // Reopen the app in standalone mode
-      window.location.href = window.location.origin;
     });
 
     return () => {
