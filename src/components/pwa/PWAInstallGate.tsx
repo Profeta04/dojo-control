@@ -66,9 +66,8 @@ function InstallingScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 92) return 92;
-        // Slow: takes ~25s to reach ~90%
-        return prev + (Math.random() * 3 + 0.5);
+        if (prev >= 100) return 100;
+        return prev + 5; // 20 steps × 1s = 20s to reach 100%
       });
     }, 1000);
     return () => clearInterval(interval);
@@ -388,15 +387,10 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const isIOS = isIOSDevice();
   const successFired = useRef(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const markSuccess = useCallback(() => {
     if (successFired.current) return;
     successFired.current = true;
-    // Clear any running polling/timeout
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setPhase("success");
     (window as any).__pwaInstallPrompt = null;
   }, []);
@@ -436,22 +430,13 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
   }, [markSuccess]);
 
-  // Start polling only when phase becomes "installing"
+  // Fixed 20-second timer when phase becomes "installing"
   useEffect(() => {
     if (phase !== "installing") return;
 
-    // Poll standalone mode every 2s as fallback
-    pollingRef.current = setInterval(() => {
-      if (isStandalone()) markSuccess();
-    }, 2000);
+    const timeout = setTimeout(() => markSuccess(), 20000);
 
-    // Hard timeout after 60s — assume installed
-    timeoutRef.current = setTimeout(() => markSuccess(), 60000);
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => clearTimeout(timeout);
   }, [phase, markSuccess]);
 
   // Desktop or already standalone → show app
