@@ -66,14 +66,11 @@ function InstallingScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(interval);
-          return 90;
-        }
-        // Slow progress: ~20s to reach 90%
-        return prev + Math.random() * 4 + 1;
+        if (prev >= 92) return 92;
+        // Slow: takes ~25s to reach ~90%
+        return prev + (Math.random() * 3 + 0.5);
       });
-    }, 800);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -85,11 +82,7 @@ function InstallingScreen() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <motion.div
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
+      <motion.div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-accent/[0.06] rounded-full blur-3xl"
           animate={{ scale: [1, 1.15, 1] }}
@@ -127,7 +120,6 @@ function InstallingScreen() {
           Aguarde enquanto o Dojo Control é preparado para você.
         </motion.p>
 
-        {/* Progress bar */}
         <motion.div
           className="w-full max-w-xs h-2 bg-muted rounded-full overflow-hidden"
           initial={{ opacity: 0, scaleX: 0.8 }}
@@ -136,9 +128,8 @@ function InstallingScreen() {
         >
           <motion.div
             className="h-full bg-accent rounded-full"
-            initial={{ width: "0%" }}
-            animate={{ width: `${Math.min(progress, 100)}%` }}
-            transition={{ duration: 0.4 }}
+            style={{ width: `${Math.min(progress, 100)}%` }}
+            transition={{ duration: 0.5 }}
           />
         </motion.div>
 
@@ -174,7 +165,6 @@ function SuccessScreen() {
       </motion.div>
 
       <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full">
-        {/* Animated check */}
         <motion.div
           className="relative mb-6"
           initial={{ scale: 0 }}
@@ -260,12 +250,10 @@ function PromptScreen({
   deferredPrompt,
   isIOS,
   onInstall,
-  installing,
 }: {
   deferredPrompt: BeforeInstallPromptEvent | null;
   isIOS: boolean;
   onInstall: () => void;
-  installing: boolean;
 }) {
   const steps = isIOS
     ? [
@@ -342,12 +330,11 @@ function PromptScreen({
             >
               <Button
                 onClick={onInstall}
-                disabled={installing}
                 size="lg"
                 className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 rounded-xl"
               >
                 <Download className="h-5 w-5 mr-2" />
-                {installing ? "Instalando..." : "Instalar Aplicativo"}
+                Instalar Aplicativo
               </Button>
             </motion.div>
           ) : (
@@ -400,12 +387,18 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const isIOS = isIOSDevice();
-  const successTriggered = useRef(false);
+  const successFired = useRef(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const markSuccess = useCallback(() => {
-    if (successTriggered.current) return;
-    successTriggered.current = true;
+    if (successFired.current) return;
+    successFired.current = true;
+    // Clear any running polling/timeout
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setPhase("success");
+    (window as any).__pwaInstallPrompt = null;
   }, []);
 
   useEffect(() => {
@@ -415,65 +408,74 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     }
     setInstalled(isStandalone());
 
+    // Pick up event captured in index.html before React mounted
+    if ((window as any).__pwaInstallPrompt) {
+      setDeferredPrompt((window as any).__pwaInstallPrompt as BeforeInstallPromptEvent);
+    }
+
     const mq = window.matchMedia("(display-mode: standalone)");
-    const handler = (e: MediaQueryListEvent) => {
+    const onMqChange = (e: MediaQueryListEvent) => {
       if (e.matches) setInstalled(true);
     };
-    mq.addEventListener("change", handler);
-
-    if ((window as any).__pwaInstallPrompt) {
-      setDeferredPrompt((window as any).__pwaInstallPrompt);
-    }
+    mq.addEventListener("change", onMqChange);
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
-    const onInstalled = () => {
-      markSuccess();
-      (window as any).__pwaInstallPrompt = null;
-    };
+    const onAppInstalled = () => markSuccess();
+
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("appinstalled", onAppInstalled);
 
     return () => {
-      mq.removeEventListener("change", handler);
+      mq.removeEventListener("change", onMqChange);
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("appinstalled", onAppInstalled);
     };
   }, [markSuccess]);
 
-  // Polling fallback: check standalone mode every 2s while installing
+  // Start polling only when phase becomes "installing"
   useEffect(() => {
     if (phase !== "installing") return;
-    const interval = setInterval(() => {
-      if (isStandalone()) {
-        markSuccess();
-        clearInterval(interval);
-      }
+
+    // Poll standalone mode every 2s as fallback
+    pollingRef.current = setInterval(() => {
+      if (isStandalone()) markSuccess();
     }, 2000);
-    // Hard timeout: after 60s assume installed
-    const timeout = setTimeout(() => markSuccess(), 60000);
+
+    // Hard timeout after 60s — assume installed
+    timeoutRef.current = setTimeout(() => markSuccess(), 60000);
+
     return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, [phase, markSuccess]);
 
-  if (installed && phase !== "success" && phase !== "installing") return <>{children}</>;
+  // Desktop or already standalone → show app
+  if (installed && phase !== "success" && phase !== "installing") {
+    return <>{children}</>;
+  }
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
+
+    // Reset guard so a fresh install attempt works
+    successFired.current = false;
     setPhase("installing");
+
     try {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome !== "accepted") {
+        // User dismissed → go back to prompt
         setPhase("prompt");
         return;
       }
-      // Wait for appinstalled event or polling fallback
+      // User accepted → wait for appinstalled event or polling
+      // Phase stays "installing" until markSuccess fires
     } catch {
       setPhase("prompt");
     }
@@ -490,7 +492,6 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
           deferredPrompt={deferredPrompt}
           isIOS={isIOS}
           onInstall={handleInstallClick}
-          installing={false}
         />
       )}
     </AnimatePresence>

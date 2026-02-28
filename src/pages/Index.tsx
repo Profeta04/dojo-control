@@ -1,16 +1,10 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
-import { Users, CalendarDays, Trophy, Shield, ChevronRight, Download, CheckCircle, Smartphone } from "lucide-react";
+import { Users, CalendarDays, Trophy, Shield, ChevronRight } from "lucide-react";
 import dojoLogo from "@/assets/dojo-control-logo.png";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 const features = [
   { 
@@ -47,9 +41,6 @@ const Index = () => {
   const { user, isStudent, canManageStudents } = useAuth();
   const { userDojos } = useDojoContext();
   const { settings } = useDojoSettings();
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [installing, setInstalling] = useState(false);
-  const [justInstalled, setJustInstalled] = useState(false);
   const isStudentOnly = isStudent && !canManageStudents;
   const homeLink = isStudentOnly ? "/perfil" : "/dashboard";
 
@@ -57,40 +48,6 @@ const Index = () => {
   const subtitle = user && settings.welcome_message
     ? settings.welcome_message
     : "Sistema completo de gestão para seu dojo";
-
-  useEffect(() => {
-    // Read from global if already captured by PWAInstallGate
-    if ((window as any).__pwaInstallPrompt) {
-      setDeferredPrompt((window as any).__pwaInstallPrompt);
-    }
-    const handler = (e: Event) => {
-      e.preventDefault();
-      (window as any).__pwaInstallPrompt = e;
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    const onInstalled = () => {
-      setJustInstalled(true);
-      setDeferredPrompt(null);
-      (window as any).__pwaInstallPrompt = null;
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, []);
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    setInstalling(true);
-    try {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-    } catch {}
-    setInstalling(false);
-    setDeferredPrompt(null);
-  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -132,28 +89,6 @@ const Index = () => {
                   <Link to="/auth?mode=signup">Criar Conta</Link>
                 </Button>
               </>
-            )}
-            {justInstalled && (
-              <div className="w-full bg-card border border-border rounded-xl p-4 text-center space-y-2">
-                <CheckCircle className="h-8 w-8 text-success mx-auto" />
-                <p className="font-bold text-foreground">App instalado com sucesso!</p>
-                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
-                  <Smartphone className="h-4 w-4" />
-                  Abra o <strong>Dojo Control</strong> pela tela inicial do seu celular.
-                </p>
-              </div>
-            )}
-            {!justInstalled && deferredPrompt && (
-              <Button
-                onClick={handleInstall}
-                disabled={installing}
-                size="lg"
-                variant="secondary"
-                className="h-12 sm:h-11 text-base font-semibold w-full sm:w-auto gap-2"
-              >
-                <Download className="h-4 w-4" />
-                {installing ? "Instalando..." : "Instalar App"}
-              </Button>
             )}
           </div>
         </div>
