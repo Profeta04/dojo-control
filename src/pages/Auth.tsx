@@ -419,8 +419,7 @@ export default function Auth() {
       setSignupEmail("");
       setSignupPassword("");
       setSignupConfirmPassword("");
-    } catch (error) {
-      console.error("Signup error:", error);
+    } catch {
       toast({ title: "Erro", description: "Ocorreu um erro inesperado.", variant: "destructive" });
     }
     setLoading(false);

@@ -95,7 +95,7 @@ export default function Students() {
 
   // Enrollment after approval
   const [enrollStudent, setEnrollStudent] = useState<Profile | null>(null);
-  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string; martial_art: string }[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
 

@@ -154,20 +154,13 @@ export function useTasks() {
 
       // Fire push notification for the assigned student (non-blocking)
       if (data && taskData.assigned_to !== user.id) {
-        const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        fetch(`${projectUrl}/functions/v1/send-push-notification`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${anonKey}`,
-          },
-          body: JSON.stringify({
+        supabase.functions.invoke("send-push-notification", {
+          body: {
             userId: taskData.assigned_to,
             title: "📋 Nova Tarefa Atribuída",
             body: taskData.title,
             url: "/tarefas",
-          }),
+          },
         }).catch(() => {/* silent fail — push is optional */});
       }
 
