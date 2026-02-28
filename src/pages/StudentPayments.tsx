@@ -316,7 +316,7 @@ export default function StudentPaymentsPage() {
               </div>
               <CardTitle className="text-xl">Área Financeira Protegida</CardTitle>
               <CardDescription className="text-sm mt-1">
-                Esta seção contém informações de pagamentos e dados financeiros. Para sua segurança, é necessário confirmar sua identidade.
+                Para evitar que alunos menores de idade acessem informações financeiras, esta área é protegida por senha. Apenas o responsável ou o próprio aluno com a senha pode visualizar os pagamentos.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-2 pb-6 flex flex-col items-center gap-4">
