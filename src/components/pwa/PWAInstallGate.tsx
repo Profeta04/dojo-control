@@ -80,7 +80,11 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", () => setInstalled(true));
+    window.addEventListener("appinstalled", () => {
+      setInstalled(true);
+      // Reopen the app in standalone mode
+      window.location.href = window.location.origin;
+    });
 
     return () => {
       mq.removeEventListener("change", handler);
