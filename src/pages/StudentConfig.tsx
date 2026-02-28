@@ -20,14 +20,14 @@ import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { SenseiDojoEdit } from "@/components/settings/SenseiDojoEdit";
 import { DojoThemeSettings } from "@/components/settings/DojoThemeSettings";
-import { useGuardianMinors } from "@/hooks/useGuardianMinors";
+
 
 export default function StudentConfig() {
   const { profile, user, signOut, isAdmin, isSensei, isStudent, canManageStudents } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { data: studentBelts = [] } = useStudentBelts(user?.id);
-  const { hasMinors } = useGuardianMinors();
+  
   const [saving, setSaving] = useState(false);
   const [phone, setPhone] = useState(profile?.phone || "");
   const [email, setEmail] = useState(profile?.email || "");
@@ -203,8 +203,8 @@ export default function StudentConfig() {
 
             <Separator />
 
-            {/* Nav Mode - hidden for guardians */}
-            {!hasMinors && (
+            {/* Nav Mode */}
+            {(
               <>
                 <Separator />
                 <div>

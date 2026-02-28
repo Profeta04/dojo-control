@@ -115,12 +115,8 @@ export default function Auth() {
   const [skipJudo, setSkipJudo] = useState(false);
   const [skipBjj, setSkipBjj] = useState(false);
 
-  // Step 3: Guardian (if minor)
+  // Step 3: Guardian contact info (if minor) — just email, no account
   const [guardianEmail, setGuardianEmail] = useState("");
-  const [guardianPassword, setGuardianPassword] = useState("");
-  const [guardianConfirmPassword, setGuardianConfirmPassword] = useState("");
-  const [showGuardianPassword, setShowGuardianPassword] = useState(false);
-  const [showGuardianConfirmPassword, setShowGuardianConfirmPassword] = useState(false);
 
   // Step 4: Credentials
   const [signupEmail, setSignupEmail] = useState("");
@@ -271,15 +267,6 @@ export default function Auth() {
         toast({ title: "Email do responsável inválido", variant: "destructive" });
         return false;
       }
-      const gPwdErr = validatePassword(guardianPassword, "Senha do responsável");
-      if (gPwdErr) {
-        toast({ title: gPwdErr, variant: "destructive" });
-        return false;
-      }
-      if (guardianPassword !== guardianConfirmPassword) {
-        toast({ title: "Senhas do responsável não coincidem", variant: "destructive" });
-        return false;
-      }
       return true;
     }
     if (step === credentialsStep) {
@@ -343,39 +330,7 @@ export default function Auth() {
       if (ma === "judo" || (ma === "judo_bjj" && !skipJudo)) beltGrade = judoBelt as string;
       else if (ma === "bjj" || (ma === "judo_bjj" && skipJudo && !skipBjj)) beltGrade = bjjBelt as string;
 
-      let guardianUserId: string | null = null;
-
-      // Create guardian account first if minor
-      if (isMinor) {
-        // Sign out any existing session first
-        await supabase.auth.signOut();
-
-        const { data: guardianData, error: guardianError } = await supabase.auth.signUp({
-          email: guardianEmail,
-          password: guardianPassword,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { name: `Responsável de ${signupName}`, is_guardian: true },
-          },
-        });
-
-        if (guardianError) {
-          let message = "Erro ao criar conta do responsável";
-          if (guardianError.message.includes("already registered")) {
-            message = "O email do responsável já está cadastrado";
-          } else if (guardianError.message.includes("weak") || guardianError.message.includes("password")) {
-            message = "Senha do responsável é muito fraca. Use pelo menos 8 caracteres com letras e números.";
-          }
-          toast({ title: "Erro", description: message, variant: "destructive" });
-          setLoading(false);
-          return;
-        }
-
-        guardianUserId = guardianData.user?.id || null;
-
-        // Sign out guardian session immediately to not mix sessions
-        await supabase.auth.signOut();
-      }
+      // No guardian account creation — just store guardian_email as contact info
 
       // Determine per-art belts for the trigger
       const judoBeltValue = (ma === "judo" || ma === "judo_bjj") && !skipJudo ? (judoBelt as string) : "branca";
@@ -393,7 +348,7 @@ export default function Auth() {
             dojo_id: dojoInfo?.id || "",
             birth_date: signupBirthDate || "",
             guardian_email: isMinor ? guardianEmail : "",
-            guardian_user_id: guardianUserId || "",
+            guardian_user_id: "",
             belt_grade: beltGrade,
             judo_belt: judoBeltValue,
             bjj_belt: bjjBeltValue,
@@ -455,8 +410,6 @@ export default function Auth() {
       setSkipJudo(false);
       setSkipBjj(false);
       setGuardianEmail("");
-      setGuardianPassword("");
-      setGuardianConfirmPassword("");
       setSignupEmail("");
       setSignupPassword("");
       setSignupConfirmPassword("");
@@ -808,30 +761,15 @@ export default function Auth() {
                       Cadastro do Responsável
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Como aluno menor de idade, é obrigatório o cadastro de um responsável.
+                      Como aluno menor de idade, é obrigatório informar o email de um responsável para contato.
                     </p>
-                    <div className="space-y-2">
-                      <Label htmlFor="guardian-email">Email do responsável *</Label>
-                      <Input id="guardian-email" type="email" placeholder="responsavel@email.com" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} className="h-10" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guardian-password">Senha do responsável *</Label>
-                      <div className="relative">
-                        <Input id="guardian-password" type={showGuardianPassword ? "text" : "password"} placeholder="••••••••" value={guardianPassword} onChange={(e) => setGuardianPassword(e.target.value)} className="h-10 pr-10" />
-                        <button type="button" tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowGuardianPassword(!showGuardianPassword)}>
-                          {showGuardianPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="guardian-confirm">Confirmar senha *</Label>
-                      <div className="relative">
-                        <Input id="guardian-confirm" type={showGuardianConfirmPassword ? "text" : "password"} placeholder="••••••••" value={guardianConfirmPassword} onChange={(e) => setGuardianConfirmPassword(e.target.value)} className="h-10 pr-10" />
-                        <button type="button" tabIndex={-1} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" onClick={() => setShowGuardianConfirmPassword(!showGuardianConfirmPassword)}>
-                          {showGuardianConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </button>
-                      </div>
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="guardian-email">Email do responsável *</Label>
+                    <Input id="guardian-email" type="email" placeholder="responsavel@email.com" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} className="h-10" />
+                    <p className="text-xs text-muted-foreground">
+                      Usado apenas como informação de contato, não será criada conta separada.
+                    </p>
+                  </div>
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" variant="outline" className="flex-1 h-10" onClick={handleBack}>

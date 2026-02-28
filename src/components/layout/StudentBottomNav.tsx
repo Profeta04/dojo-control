@@ -28,7 +28,7 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { useStudentBelts } from "@/hooks/useStudentBelts";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
-import { useGuardianMinors } from "@/hooks/useGuardianMinors";
+
 
 interface TabItem {
   title: string;
@@ -52,13 +52,7 @@ const studentPage2: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
-// Guardian pages — config is accessed via gear icon in top bar, not bottom nav
-const guardianPage1: TabItem[] = [
-  { title: "Meus Dados", href: "/perfil", icon: LayoutDashboard },
-  { title: "Dependentes", href: "/dependentes", icon: Users },
-  { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
-  { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
-];
+// Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)
 
 // Staff pages — matching sidebar sections (Principal / Financeiro / Configurações)
 const staffPage1: TabItem[] = [
@@ -117,17 +111,13 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
   const { data: studentBelts } = useStudentBelts(profile?.user_id);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const { hasMinors } = useGuardianMinors();
 
   const isAdminRole = isAdmin;
   const isStaff = canManageStudents;
 
   // Determine which pages to use
   const isStudentOnly = isStudent && !canManageStudents;
-  const isGuardian = isStudentOnly && hasMinors;
-  const pages: TabItem[][] = isGuardian
-    ? [guardianPage1]
-    : isStudentOnly
+  const pages: TabItem[][] = isStudentOnly
     ? [studentPage1, studentPage2]
     : isAdminRole
       ? [staffPage1, staffPage2, staffPage3WithAdmin]

@@ -1,13 +1,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useGuardianMinors } from "@/hooks/useGuardianMinors";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { ExportReportButton } from "@/components/dashboard/ExportReportButton";
-import { GuardianDashboard } from "@/components/guardian/GuardianDashboard";
 import { StudentTasksDashboard } from "@/components/tasks/StudentTasksDashboard";
 import { PendingApprovalScreen } from "@/components/auth/PendingApprovalScreen";
 import { StudentProfileCard } from "@/components/student/StudentProfileCard";
@@ -19,7 +17,6 @@ import { FeatureGate } from "@/components/shared/FeatureGate";
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user, loading: authLoading, profile, isAdmin, isStudent, canManageStudents, isPending } = useAuth();
-  const { hasMinors } = useGuardianMinors();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,8 +67,6 @@ export default function Dashboard() {
           <AchievementsPanel compact maxVisible={8} />
         </div>
       )}
-
-      {/* Guardian Dashboard - redirect handled by bottom nav */}
 
       {/* Dashboard Stats Component - Only for admins/senseis */}
       {canManageStudents && (

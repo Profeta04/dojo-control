@@ -135,21 +135,10 @@ export default function Students() {
 
       const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
 
-      // Get all guardians (users who have minors linked to them)
-      const { data: guardianProfiles } = await (supabase
-        .from("profiles")
-        .select("guardian_user_id")
-        .not("guardian_user_id", "is", null) as any);
-
-      const guardianUserIds = [...new Set((guardianProfiles || []).map((p: any) => p.guardian_user_id).filter(Boolean) || [])];
-
-      // Exclude senseis, admins, and guardians
-      const excludeIds = [...senseiUserIds, ...adminUserIds, ...guardianUserIds] as string[];
-
-      // Get all profiles that are students (not admins, senseis, or guardians)
+      // Get all profiles that are students (not admins or senseis)
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }) as any;
 
-      // Exclude senseis, admins, and guardians
+      // Exclude senseis and admins
       if (excludeIds.length > 0) {
         query = query.not("user_id", "in", `(${excludeIds.join(",")})`);
       }
@@ -924,11 +913,6 @@ export default function Students() {
             <UserX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Excluídos ({rejectedStudents.length})</span>
             <span className="sm:hidden">Excl. ({rejectedStudents.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="guardians" className="gap-1.5 text-xs sm:text-sm">
-            <ShieldCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-            <span className="hidden sm:inline">Responsáveis ({guardiansWithMinors?.length || 0})</span>
-            <span className="sm:hidden">Resp. ({guardiansWithMinors?.length || 0})</span>
           </TabsTrigger>
         </TabsList>
 
