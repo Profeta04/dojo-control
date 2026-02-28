@@ -19,7 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CreditCard, CheckCircle2, Clock, AlertTriangle, Copy, QrCode, Mail,
-  Upload, Loader2, FileImage, DollarSign, CalendarClock, TrendingUp, Tag
+  Upload, Loader2, FileImage, DollarSign, CalendarClock, TrendingUp, Tag, Lock
 } from "lucide-react";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
 import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
@@ -307,18 +307,44 @@ export default function StudentPaymentsPage() {
   if (!passwordVerified) {
     return (
       <DashboardLayout>
-        <PageHeader title="Pagamentos" description="Informações sobre seus pagamentos" />
-        <Card className="mt-6">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <CreditCard className="h-12 w-12 text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Para acessar a área de pagamentos, é necessário confirmar sua senha.
-            </p>
-            <Button onClick={() => setShowPasswordDialog(true)}>
-              Acessar Pagamentos
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+          <Card className="w-full max-w-md overflow-hidden border-accent/20">
+            <div className="h-2 bg-gradient-to-r from-accent via-primary to-accent" />
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto mb-3 p-4 rounded-full bg-accent/10">
+                <Lock className="h-10 w-10 text-accent" />
+              </div>
+              <CardTitle className="text-xl">Área Financeira Protegida</CardTitle>
+              <CardDescription className="text-sm mt-1">
+                Esta seção contém informações de pagamentos e dados financeiros. Para sua segurança, é necessário confirmar sua identidade.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2 pb-6 flex flex-col items-center gap-4">
+              <div className="w-full space-y-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                  <CreditCard className="h-4 w-4 text-accent shrink-0" />
+                  <span>Consultar mensalidades e cobranças</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                  <Upload className="h-4 w-4 text-accent shrink-0" />
+                  <span>Enviar comprovantes de pagamento</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                  <QrCode className="h-4 w-4 text-accent shrink-0" />
+                  <span>Gerar QR Code Pix para pagamento</span>
+                </div>
+              </div>
+              <Button
+                size="lg"
+                className="w-full mt-2"
+                onClick={() => setShowPasswordDialog(true)}
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Desbloquear com Senha
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
         <PasswordGateDialog
           open={showPasswordDialog}
           onSuccess={() => {
