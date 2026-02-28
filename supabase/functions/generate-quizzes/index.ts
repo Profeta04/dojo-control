@@ -6,9 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const JUDO_BELTS = ["branca", "bordo", "cinza", "azul_escura", "azul", "amarela", "laranja", "verde", "roxa", "marrom", "preta_1dan"];
-const BJJ_BELTS = ["branca", "cinza", "amarela", "laranja", "verde", "azul", "roxa", "marrom", "preta_1dan"];
-
 const THEMES = [
   { id: "tecnicas", label: "Técnicas (projeção, solo, finalização)", category: "technical" },
   { id: "historia", label: "História e filosofia", category: "theory" },
@@ -36,10 +33,44 @@ function getDifficulty(belt: string): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  // --- AUTH: Require staff (admin/sensei) ---
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Allow service role key directly (for cron/internal calls)
+  const token = authHeader.replace("Bearer ", "");
+  const isServiceRole = token === serviceRoleKey;
+
+  if (!isServiceRole) {
+    // Validate user token and check staff role
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claimsData, error: claimsError } = await userClient.auth.getUser();
+    if (claimsError || !claimsData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // Check staff role using service role client
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+    const { data: isStaff } = await adminClient.rpc("is_staff", { _user_id: claimsData.user.id });
+    if (!isStaff) {
+      return new Response(JSON.stringify({ error: "Forbidden: staff only" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
@@ -91,13 +122,11 @@ serve(async (req) => {
     });
   }
 
-  // Cap at 25 per call for quality
   toGenerate = Math.min(toGenerate, 25);
 
   let totalCreated = 0;
   const errors: string[] = [];
 
-  // Fetch existing titles to avoid duplicates
   const { data: existingTemplates } = await supabase
     .from("task_templates")
     .select("title")
@@ -165,7 +194,7 @@ Retorne APENAS um array JSON válido sem markdown:
 
     for (const quiz of quizzes) {
       if (!quiz.title || !quiz.options || quiz.correct_option === undefined) continue;
-      if (existingTitles.has(quiz.title)) continue; // skip duplicates
+      if (existingTitles.has(quiz.title)) continue;
 
       const { error: insertErr } = await supabase
         .from("task_templates")
