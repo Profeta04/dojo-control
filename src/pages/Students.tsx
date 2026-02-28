@@ -135,6 +135,8 @@ export default function Students() {
 
       const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
 
+      const excludeIds = [...new Set([...senseiUserIds, ...adminUserIds])];
+
       // Get all profiles that are students (not admins or senseis)
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }) as any;
 
