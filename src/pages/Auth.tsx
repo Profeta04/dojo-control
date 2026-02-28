@@ -118,6 +118,7 @@ export default function Auth() {
   // Step 3: Guardian contact info (if minor) — just email, no account
   const [guardianName, setGuardianName] = useState("");
   const [guardianEmail, setGuardianEmail] = useState("");
+  const [guardianPhone, setGuardianPhone] = useState("");
 
   // Step 4: Credentials
   const [signupEmail, setSignupEmail] = useState("");
@@ -272,6 +273,10 @@ export default function Auth() {
         toast({ title: "Email do responsável inválido", variant: "destructive" });
         return false;
       }
+      if (!guardianPhone.trim() || guardianPhone.replace(/\D/g, "").length < 10) {
+        toast({ title: "Telefone do responsável deve ter pelo menos 10 dígitos", variant: "destructive" });
+        return false;
+      }
       return true;
     }
     if (step === credentialsStep) {
@@ -354,6 +359,7 @@ export default function Auth() {
             birth_date: signupBirthDate || "",
             guardian_email: isMinor ? guardianEmail : "",
             guardian_name: isMinor ? guardianName : "",
+            guardian_phone: isMinor ? guardianPhone : "",
             guardian_user_id: "",
             belt_grade: beltGrade,
             judo_belt: judoBeltValue,
@@ -417,6 +423,7 @@ export default function Auth() {
       setSkipBjj(false);
       setGuardianName("");
       setGuardianEmail("");
+      setGuardianPhone("");
       setSignupEmail("");
       setSignupPassword("");
       setSignupConfirmPassword("");
@@ -780,6 +787,10 @@ export default function Auth() {
                      <p className="text-xs text-muted-foreground">
                        Usado apenas como informação de contato. Um mesmo email pode ser responsável por vários alunos.
                      </p>
+                   </div>
+                   <div className="space-y-2">
+                     <Label htmlFor="guardian-phone">Telefone do responsável *</Label>
+                     <Input id="guardian-phone" type="tel" placeholder="(11) 99999-9999" value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} className="h-10" />
                    </div>
                   </div>
                   <div className="flex gap-2">
