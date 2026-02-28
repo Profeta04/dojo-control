@@ -1508,6 +1508,12 @@ export type Database = {
         | "verde_preta"
         | "coral"
         | "vermelha"
+        | "branca_ponta_bordo"
+        | "bordo_ponta_cinza"
+        | "cinza_ponta_azul_escura"
+        | "azul_escura_ponta_azul"
+        | "azul_ponta_amarela"
+        | "amarela_ponta_laranja"
       payment_category:
         | "mensalidade"
         | "material"
@@ -1677,6 +1683,12 @@ export const Constants = {
         "verde_preta",
         "coral",
         "vermelha",
+        "branca_ponta_bordo",
+        "bordo_ponta_cinza",
+        "cinza_ponta_azul_escura",
+        "azul_escura_ponta_azul",
+        "azul_ponta_amarela",
+        "amarela_ponta_laranja",
       ],
       payment_category: [
         "mensalidade",

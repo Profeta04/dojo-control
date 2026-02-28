@@ -7,15 +7,21 @@ export type RegistrationStatus = Database["public"]["Enums"]["registration_statu
 
 export const BELT_LABELS: Record<BeltGrade, string> = {
   branca: "Faixa Branca",
+  branca_ponta_bordo: "Faixa Branca Ponta Bordô",
   bordo: "Faixa Bordô",
+  bordo_ponta_cinza: "Faixa Bordô Ponta Cinza",
   cinza: "Faixa Cinza",
   cinza_branca: "Faixa Cinza e Branca",
   cinza_preta: "Faixa Cinza e Preta",
+  cinza_ponta_azul_escura: "Faixa Cinza Ponta Azul Escura",
   azul_escura: "Faixa Azul Escura",
+  azul_escura_ponta_azul: "Faixa Azul Escura Ponta Azul",
   azul: "Faixa Azul",
+  azul_ponta_amarela: "Faixa Azul Ponta Amarela",
   amarela: "Faixa Amarela",
   amarela_branca: "Faixa Amarela e Branca",
   amarela_preta: "Faixa Amarela e Preta",
+  amarela_ponta_laranja: "Faixa Amarela Ponta Laranja",
   laranja: "Faixa Laranja",
   laranja_branca: "Faixa Laranja e Branca",
   laranja_preta: "Faixa Laranja e Preta",
@@ -63,7 +69,9 @@ export const BJJ_BELT_ORDER: BeltGrade[] = [
 
 // Judo belt order for progression
 export const JUDO_BELT_ORDER: BeltGrade[] = [
-  "branca", "bordo", "cinza", "azul_escura", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
+  "branca", "branca_ponta_bordo", "bordo", "bordo_ponta_cinza", "cinza", "cinza_ponta_azul_escura",
+  "azul_escura", "azul_escura_ponta_azul", "azul", "azul_ponta_amarela", "amarela", "amarela_ponta_laranja",
+  "laranja", "verde", "roxa", "marrom",
   "preta_1dan", "preta_2dan", "preta_3dan", "preta_4dan", "preta_5dan",
   "preta_6dan", "preta_7dan", "preta_8dan", "preta_9dan", "preta_10dan",
 ];
@@ -78,15 +86,21 @@ export function getBjjBeltLabel(grade: string, degree: number): string {
 
 export const BELT_COLORS: Record<BeltGrade, string> = {
   branca: "bg-white border-2 border-foreground/40",
+  branca_ponta_bordo: "bg-white border-2 border-foreground/40",
   bordo: "bg-red-900",
+  bordo_ponta_cinza: "bg-red-900",
   cinza: "bg-belt-cinza",
   cinza_branca: "bg-belt-cinza",
   cinza_preta: "bg-belt-cinza",
+  cinza_ponta_azul_escura: "bg-belt-cinza",
   azul_escura: "bg-blue-900",
+  azul_escura_ponta_azul: "bg-blue-900",
   azul: "bg-belt-azul",
+  azul_ponta_amarela: "bg-belt-azul",
   amarela: "bg-belt-amarela",
   amarela_branca: "bg-belt-amarela",
   amarela_preta: "bg-belt-amarela",
+  amarela_ponta_laranja: "bg-belt-amarela",
   laranja: "bg-belt-laranja",
   laranja_branca: "bg-belt-laranja",
   laranja_preta: "bg-belt-laranja",

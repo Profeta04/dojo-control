@@ -19,11 +19,17 @@ interface BeltOption {
 
 const JUDO_BELTS: BeltOption[] = [
   { value: "branca", label: "Branca" },
+  { value: "branca_ponta_bordo", label: "Branca Ponta Bordô" },
   { value: "bordo", label: "Bordô" },
+  { value: "bordo_ponta_cinza", label: "Bordô Ponta Cinza" },
   { value: "cinza", label: "Cinza" },
+  { value: "cinza_ponta_azul_escura", label: "Cinza Ponta Azul Escura" },
   { value: "azul_escura", label: "Azul Escura" },
+  { value: "azul_escura_ponta_azul", label: "Azul Escura Ponta Azul" },
   { value: "azul", label: "Azul" },
+  { value: "azul_ponta_amarela", label: "Azul Ponta Amarela" },
   { value: "amarela", label: "Amarela" },
+  { value: "amarela_ponta_laranja", label: "Amarela Ponta Laranja" },
   { value: "laranja", label: "Laranja" },
   { value: "verde", label: "Verde" },
   { value: "roxa", label: "Roxa" },
