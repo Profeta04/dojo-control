@@ -61,6 +61,19 @@ const stepVariants = {
 // ─── Installing Screen ──────────────────────────────────────────
 
 function InstallingScreen() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) return 100;
+        // 30 steps × 1s = 30s to fill (100/30 ≈ 3.33 per tick)
+        return Math.min(prev + 3.34, 100);
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <motion.div
       className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-8 safe-area-inset relative overflow-hidden"
@@ -115,8 +128,8 @@ function InstallingScreen() {
         >
           <motion.div
             className="h-full bg-accent rounded-full"
-            animate={{ x: ["-100%", "100%"] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            style={{ width: `${progress}%` }}
+            transition={{ duration: 0.5 }}
           />
         </motion.div>
 
@@ -418,7 +431,12 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
   }, [markSuccess]);
 
-  // No timer — success only fires via appinstalled event
+  // Fixed 30-second timer when phase becomes "installing"
+  useEffect(() => {
+    if (phase !== "installing") return;
+    const timeout = setTimeout(() => markSuccess(), 30000);
+    return () => clearTimeout(timeout);
+  }, [phase, markSuccess]);
 
   // Desktop or already standalone → show app
   if (installed && phase !== "success" && phase !== "installing") {
