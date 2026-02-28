@@ -359,7 +359,7 @@ export default function PaymentsPage() {
     if (!selectedPayment || !user) return;
     setFormLoading(true);
     try {
-      const updates: any = { status: newStatus };
+      const updates: Record<string, string | null> = { status: newStatus };
       if (newStatus === "pago") {
         updates.paid_date = format(new Date(), "yyyy-MM-dd");
         if (selectedPayment.receipt_url && selectedPayment.receipt_status !== "aprovado") {
@@ -487,7 +487,7 @@ export default function PaymentsPage() {
     if (!selectedPayment || !user) return;
     setFormLoading(true);
     try {
-      const updates: any = { receipt_status: newReceiptStatus };
+      const updates: Record<string, string | null> = { receipt_status: newReceiptStatus };
       if (newReceiptStatus === "aprovado") {
         updates.status = "pago";
         updates.paid_date = format(new Date(), "yyyy-MM-dd");

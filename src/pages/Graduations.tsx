@@ -210,11 +210,16 @@ export default function GraduationsPage() {
 
   // Fetch graduation history
   const { data: graduationHistory, isLoading: historyLoading } = useQuery({
-    queryKey: ["graduation-history"],
+    queryKey: ["graduation-history", currentDojoId],
     queryFn: async () => {
-    const { data, error } = await supabase
+      // First get student IDs for this dojo to filter graduation_history
+      const dojoStudentIds = students?.map(s => s.user_id) || [];
+      if (dojoStudentIds.length === 0) return [];
+
+      const { data, error } = await supabase
         .from("graduation_history")
         .select("*")
+        .in("student_id", dojoStudentIds)
         .order("graduation_date", { ascending: false });
 
       if (error) throw error;
@@ -242,7 +247,7 @@ export default function GraduationsPage() {
 
       return enriched;
     },
-    enabled: !!user && (isAdmin || !!currentDojoId),
+    enabled: !!user && (isAdmin || !!currentDojoId) && !!students,
   });
 
   const getNextBelts = (currentBelt: BeltGrade | null, martialArt?: string, _currentDegree?: number): BeltGrade[] => {

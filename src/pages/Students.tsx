@@ -119,26 +119,16 @@ export default function Students() {
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
     queryFn: async () => {
-      // Get all users with sensei role (to exclude them)
-      const { data: senseiRoles } = await (supabase
+      // Get all users with sensei or admin role (to exclude them)
+      const { data: staffRoles } = await supabase
         .from("user_roles")
         .select("user_id")
-        .eq("role", "sensei") as any);
+        .in("role", ["sensei", "admin"]);
 
-      const senseiUserIds = senseiRoles?.map((r: any) => r.user_id) || [];
-
-      // Get all users with admin role (to exclude them)
-      const { data: adminRoles } = await (supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "admin") as any);
-
-      const adminUserIds = adminRoles?.map((r: any) => r.user_id) || [];
-
-      const excludeIds = [...new Set([...senseiUserIds, ...adminUserIds])];
+      const excludeIds = [...new Set((staffRoles || []).map((r) => r.user_id))];
 
       // Get all profiles that are students (not admins or senseis)
-      let query = supabase.from("profiles").select("*").order("created_at", { ascending: false }) as any;
+      let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
 
       // Exclude senseis and admins
       if (excludeIds.length > 0) {
@@ -152,13 +142,13 @@ export default function Students() {
 
       const { data: profiles } = await query;
 
-      return profiles || [];
+      return (profiles || []) as Profile[];
     },
     enabled: !!user && canManageStudents,
   });
 
   // Fetch all student_belts for the dojo's students
-  const studentUserIds = students?.map((s: any) => s.user_id) || [];
+  const studentUserIds = students?.map((s) => s.user_id) || [];
   const { data: allStudentBelts } = useQuery({
     queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
@@ -174,7 +164,7 @@ export default function Students() {
 
   // Helper: get belt for a student + martial_art
   const getStudentBelt = (userId: string, martialArt: string): string | null => {
-    const belt = allStudentBelts?.find((b: any) => b.user_id === userId && b.martial_art === martialArt);
+    const belt = allStudentBelts?.find((b) => b.user_id === userId && b.martial_art === martialArt);
     return belt?.belt_grade || null;
   };
 
@@ -186,7 +176,7 @@ export default function Students() {
       let minorQuery = supabase
         .from("profiles")
         .select("*")
-        .not("guardian_user_id", "is", null) as any;
+        .not("guardian_user_id", "is", null);
 
       if (currentDojoId) {
         minorQuery = minorQuery.eq("dojo_id", currentDojoId);
@@ -197,13 +187,13 @@ export default function Students() {
       if (!minorProfiles || minorProfiles.length === 0) return [];
 
       // Get unique guardian user IDs
-      const guardianUserIds = [...new Set(minorProfiles.map((p: any) => p.guardian_user_id).filter(Boolean))] as string[];
+      const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
 
       // Fetch guardian profiles
-      const { data: guardianProfiles } = await (supabase
+      const { data: guardianProfiles } = await supabase
         .from("profiles")
         .select("*")
-        .in("user_id", guardianUserIds) as any);
+        .in("user_id", guardianUserIds);
 
       if (!guardianProfiles) return [];
 
@@ -213,7 +203,7 @@ export default function Students() {
       for (const guardian of guardianProfiles) {
         guardiansMap.set(guardian.user_id, {
           guardian,
-          minors: minorProfiles.filter((m: any) => m.guardian_user_id === guardian.user_id),
+          minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
         });
       }
 
@@ -236,7 +226,7 @@ export default function Students() {
         .select("martial_art, belt_grade")
         .eq("user_id", studentId);
       if (data && data.length > 0) {
-        setApprovalBelts(data.map((b: any) => ({ martial_art: b.martial_art, belt_grade: b.belt_grade as BeltGrade })));
+        setApprovalBelts(data.map((b) => ({ martial_art: b.martial_art, belt_grade: b.belt_grade as BeltGrade })));
       } else {
         // Fallback: use profile belt_grade
         const student = students?.find((s) => s.user_id === studentId);
@@ -263,21 +253,21 @@ export default function Students() {
       const primaryBelt = approvalBelts[0]?.belt_grade || "branca";
 
       // Update profile status
-      await (supabase
+      await supabase
         .from("profiles")
         .update({
           registration_status: "aprovado",
           approved_at: new Date().toISOString(),
           approved_by: user!.id,
           belt_grade: primaryBelt,
-        } as any)
-        .eq("user_id", selectedStudent.user_id) as any);
+        })
+        .eq("user_id", selectedStudent.user_id);
 
       // Update each student_belt record
       for (const belt of approvalBelts) {
         await supabase
           .from("student_belts")
-          .update({ belt_grade: belt.belt_grade } as any)
+          .update({ belt_grade: belt.belt_grade })
           .eq("user_id", selectedStudent.user_id)
           .eq("martial_art", belt.martial_art);
       }
@@ -321,7 +311,7 @@ export default function Students() {
       setActionType(null);
 
       try {
-        let classQuery = supabase.from("classes").select("id, name, martial_art").eq("is_active", true) as any;
+        let classQuery = supabase.from("classes").select("id, name, martial_art").eq("is_active", true);
         if (currentDojoId) classQuery = classQuery.eq("dojo_id", currentDojoId);
         const { data: classes } = await classQuery;
         if (classes && classes.length > 0) {
@@ -356,7 +346,7 @@ export default function Students() {
         .from("student_belts")
         .select("martial_art")
         .eq("user_id", enrollStudent.user_id);
-      const existingArts = new Set((existingBelts || []).map((b: any) => b.martial_art));
+      const existingArts = new Set((existingBelts || []).map((b) => b.martial_art));
 
       // Check which arts the selected classes require
       const selectedClasses = availableClasses.filter(c => selectedClassIds.has(c.id));
@@ -540,7 +530,7 @@ export default function Students() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ is_federated: newValue } as any)
+        .update({ is_federated: newValue })
         .eq("user_id", student.user_id);
       
       if (error) throw error;
@@ -560,7 +550,7 @@ export default function Students() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ is_scholarship: newValue } as any)
+        .update({ is_scholarship: newValue })
         .eq("user_id", student.user_id);
       
       if (error) throw error;
@@ -612,7 +602,7 @@ export default function Students() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ name: editName, phone: editPhone, belt_grade: editBelt } as any)
+        .update({ name: editName, phone: editPhone, belt_grade: editBelt })
         .eq("user_id", editStudent.user_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -635,7 +625,7 @@ export default function Students() {
         .update({
           is_blocked: !isCurrentlyBlocked,
           blocked_reason: isCurrentlyBlocked ? null : (blockReason || "Bloqueado pelo administrador"),
-        } as any)
+        })
         .eq("user_id", blockStudent.user_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -659,7 +649,7 @@ export default function Students() {
       // Soft delete: set status to 'rejeitado' and remove student role
       await supabase
         .from("profiles")
-        .update({ registration_status: "rejeitado" } as any)
+        .update({ registration_status: "rejeitado" })
         .eq("user_id", deleteStudent.user_id);
       await supabase.rpc("remove_user_role", { _user_id: deleteStudent.user_id, _role: "student" });
       queryClient.invalidateQueries({ queryKey: ["students"] });
