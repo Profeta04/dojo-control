@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Download, Smartphone, Share, PlusSquare, MoreVertical, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -400,6 +400,13 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const isIOS = isIOSDevice();
+  const successTriggered = useRef(false);
+
+  const markSuccess = useCallback(() => {
+    if (successTriggered.current) return;
+    successTriggered.current = true;
+    setPhase("success");
+  }, []);
 
   useEffect(() => {
     if (isDesktop()) {
@@ -423,36 +430,36 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
       (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", () => {
-      setPhase("success");
+    const onInstalled = () => {
+      markSuccess();
       (window as any).__pwaInstallPrompt = null;
-    });
+    };
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
+    window.addEventListener("appinstalled", onInstalled);
 
     return () => {
       mq.removeEventListener("change", handler);
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
+      window.removeEventListener("appinstalled", onInstalled);
     };
-  }, []);
+  }, [markSuccess]);
 
   // Polling fallback: check standalone mode every 2s while installing
   useEffect(() => {
     if (phase !== "installing") return;
     const interval = setInterval(() => {
       if (isStandalone()) {
-        setPhase("success");
+        markSuccess();
         clearInterval(interval);
       }
     }, 2000);
-    // Timeout fallback: after 30s assume installed if user accepted
-    const timeout = setTimeout(() => {
-      if (phase === "installing") setPhase("success");
-    }, 30000);
+    // Hard timeout: after 60s assume installed
+    const timeout = setTimeout(() => markSuccess(), 60000);
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [phase]);
+  }, [phase, markSuccess]);
 
   if (installed && phase !== "success" && phase !== "installing") return <>{children}</>;
 
