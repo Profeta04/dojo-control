@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Download, Smartphone, Share, PlusSquare, MoreVertical } from "lucide-react";
+import { Download, Smartphone, Share, PlusSquare, MoreVertical, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import dojoLogo from "@/assets/dojo-control-logo.png";
 
@@ -15,6 +15,10 @@ function isStandalone(): boolean {
   return false;
 }
 
+function isDesktop(): boolean {
+  return window.innerWidth >= 1024 && !("ontouchstart" in window);
+}
+
 function isIOSDevice(): boolean {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 }
@@ -26,6 +30,11 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const isIOS = isIOSDevice();
 
   useEffect(() => {
+    // Desktop users (senseis/admins) bypass the install gate
+    if (isDesktop()) {
+      setInstalled(true);
+      return;
+    }
     // Check if already installed/standalone
     setInstalled(isStandalone());
 
