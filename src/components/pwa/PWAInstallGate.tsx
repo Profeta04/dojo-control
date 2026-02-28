@@ -413,13 +413,20 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
     mq.addEventListener("change", handler);
 
+    // Check if event was already captured globally
+    if ((window as any).__pwaInstallPrompt) {
+      setDeferredPrompt((window as any).__pwaInstallPrompt);
+    }
+
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
+      (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", () => {
       setPhase("success");
+      (window as any).__pwaInstallPrompt = null;
     });
 
     return () => {
