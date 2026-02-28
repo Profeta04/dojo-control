@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
-import { Users, CalendarDays, Trophy, Shield, ChevronRight, Download } from "lucide-react";
+import { Users, CalendarDays, Trophy, Shield, ChevronRight, Download, CheckCircle, Smartphone } from "lucide-react";
 import dojoLogo from "@/assets/dojo-control-logo.png";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -49,6 +49,7 @@ const Index = () => {
   const { settings } = useDojoSettings();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [installing, setInstalling] = useState(false);
+  const [justInstalled, setJustInstalled] = useState(false);
   const isStudentOnly = isStudent && !canManageStudents;
   const homeLink = isStudentOnly ? "/perfil" : "/dashboard";
 
@@ -63,7 +64,8 @@ const Index = () => {
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
-      window.location.href = window.location.origin;
+      setJustInstalled(true);
+      setDeferredPrompt(null);
     };
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", onInstalled);
@@ -125,7 +127,17 @@ const Index = () => {
                 </Button>
               </>
             )}
-            {deferredPrompt && (
+            {justInstalled && (
+              <div className="w-full bg-card border border-border rounded-xl p-4 text-center space-y-2">
+                <CheckCircle className="h-8 w-8 text-success mx-auto" />
+                <p className="font-bold text-foreground">App instalado com sucesso!</p>
+                <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
+                  <Smartphone className="h-4 w-4" />
+                  Abra o <strong>Dojo Control</strong> pela tela inicial do seu celular.
+                </p>
+              </div>
+            )}
+            {!justInstalled && deferredPrompt && (
               <Button
                 onClick={handleInstall}
                 disabled={installing}
