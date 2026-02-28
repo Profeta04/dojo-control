@@ -387,15 +387,7 @@ export default function Auth() {
         return;
       }
 
-      // Sign out student session immediately - student must wait for approval
-      await supabase.auth.signOut();
-
-      // Save belt records in student_belts using an edge function or just try it
-      // Since we signed out, we need to handle this differently
-      // The belt inserts need auth - we'll handle this via a separate mechanism
-      // For now, belts will be set during approval by the sensei
-
-      // Notify
+      // Notify sensei about new registration
       if (dojoInfo?.id) {
         void supabase.functions.invoke("notify-new-student-registration", {
           body: { studentName: signupName, dojoId: dojoInfo.id },
@@ -407,8 +399,8 @@ export default function Auth() {
         description: "Seu cadastro está pendente de aprovação pelo Sensei.",
       });
 
-      // Switch to login mode
-      setSearchParams({ mode: "login" });
+      // Student stays logged in — will be redirected to pending approval screen
+      navigate("/dashboard");
 
       // Reset
       setSignupStep(1);
