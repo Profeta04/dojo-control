@@ -59,7 +59,7 @@ export default function StudentTasks() {
             className={cn(
               "flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200",
               activeTab === "ranking"
-                ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 shadow-sm"
+                ? "bg-warning/15 text-warning shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             )}
           >

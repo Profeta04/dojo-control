@@ -44,6 +44,13 @@
     --input: 220 13% 80%;
     --ring: var(--color-tertiary);
 
+    /* Chart colors */
+    --chart-1: var(--color-tertiary);
+    --chart-2: 142 70% 40%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 220 15% 40%;
+    --chart-5: 280 60% 50%;
+
     --radius: 0.75rem;
 
     /* Neumorphism shadows for light mode */
@@ -121,6 +128,13 @@
     --border: 220 13% 22%;
     --input: 220 13% 22%;
     --ring: var(--color-tertiary);
+
+    /* Chart colors */
+    --chart-1: var(--color-tertiary);
+    --chart-2: 142 70% 50%;
+    --chart-3: 38 92% 55%;
+    --chart-4: 220 10% 60%;
+    --chart-5: 280 60% 55%;
 
     /* Neumorphism shadows for dark mode */
     --neu-shadow: 5px 5px 12px hsl(220 15% 4% / 0.55), -5px -5px 12px hsl(220 15% 16% / 0.25);

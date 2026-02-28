@@ -9,9 +9,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const RARITY_STYLES: Record<string, { border: string; bg: string; glow: string; label: string }> = {
   common: { border: "border-muted-foreground/30", bg: "bg-muted/50", glow: "", label: "Comum" },
-  rare: { border: "border-blue-400/50", bg: "bg-blue-500/10", glow: "shadow-blue-400/10", label: "Rara" },
-  epic: { border: "border-purple-400/50", bg: "bg-purple-500/10", glow: "shadow-purple-400/20", label: "Épica" },
-  legendary: { border: "border-amber-400/50", bg: "bg-amber-500/10", glow: "shadow-amber-400/30", label: "Lendária" },
+  rare: { border: "border-info/50", bg: "bg-info/10", glow: "shadow-info/10", label: "Rara" },
+  epic: { border: "border-accent/50", bg: "bg-accent/10", glow: "shadow-accent/20", label: "Épica" },
+  legendary: { border: "border-warning/50", bg: "bg-warning/10", glow: "shadow-warning/30", label: "Lendária" },
 };
 
 interface AchievementsPanelProps {

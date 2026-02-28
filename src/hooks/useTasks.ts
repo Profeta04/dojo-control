@@ -8,14 +8,14 @@ export type TaskPriority = "baixa" | "normal" | "alta";
 export type TaskCategory = "tecnica" | "fisica" | "administrativa" | "outra" | "technical" | "physical" | "administrative" | "theory";
 
 export const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; bgColor: string }> = {
-  tecnica: { label: "Técnica", color: "text-blue-700", bgColor: "bg-blue-100" },
-  technical: { label: "Técnica", color: "text-blue-700", bgColor: "bg-blue-100" },
-  fisica: { label: "Física", color: "text-green-700", bgColor: "bg-green-100" },
-  physical: { label: "Física", color: "text-green-700", bgColor: "bg-green-100" },
-  administrativa: { label: "Administrativa", color: "text-purple-700", bgColor: "bg-purple-100" },
-  administrative: { label: "Administrativa", color: "text-purple-700", bgColor: "bg-purple-100" },
-  outra: { label: "Outra", color: "text-gray-700", bgColor: "bg-gray-100" },
-  theory: { label: "Teoria", color: "text-amber-700", bgColor: "bg-amber-100" },
+  tecnica: { label: "Técnica", color: "text-info", bgColor: "bg-info/10" },
+  technical: { label: "Técnica", color: "text-info", bgColor: "bg-info/10" },
+  fisica: { label: "Física", color: "text-success", bgColor: "bg-success/10" },
+  physical: { label: "Física", color: "text-success", bgColor: "bg-success/10" },
+  administrativa: { label: "Administrativa", color: "text-accent", bgColor: "bg-accent/10" },
+  administrative: { label: "Administrativa", color: "text-accent", bgColor: "bg-accent/10" },
+  outra: { label: "Outra", color: "text-muted-foreground", bgColor: "bg-muted" },
+  theory: { label: "Teoria", color: "text-warning", bgColor: "bg-warning/10" },
 };
 
 // Normalize category to Portuguese canonical form

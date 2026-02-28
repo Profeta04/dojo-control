@@ -171,7 +171,7 @@ export function SenseiAnalytics() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" />
+              <Crown className="h-4 w-4 text-warning" />
               Top 5 Pontos
             </CardTitle>
           </CardHeader>
@@ -198,7 +198,7 @@ export function SenseiAnalytics() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-muted-foreground">Nv.{student.level}</span>
                       {student.current_streak > 0 && (
-                        <span className="text-[10px] text-orange-500 flex items-center gap-0.5">
+                        <span className="text-[10px] text-warning flex items-center gap-0.5">
                           <Flame className="h-2.5 w-2.5" />{student.current_streak}d
                         </span>
                       )}

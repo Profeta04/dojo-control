@@ -148,7 +148,7 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>A Receber</CardDescription>
-            <CardTitle className="text-2xl text-amber-600">
+            <CardTitle className="text-2xl text-warning">
               {formatCurrency(totals.totalPendente)}
             </CardTitle>
           </CardHeader>
@@ -159,8 +159,8 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
               Receita Mês Atual
               {totals.revenueChange !== 0 && (
                 totals.revenueChange > 0 
-                  ? <TrendingUp className="h-3 w-3 text-green-500" />
-                  : <TrendingDown className="h-3 w-3 text-red-500" />
+                  ? <TrendingUp className="h-3 w-3 text-success" />
+                  : <TrendingDown className="h-3 w-3 text-destructive" />
               )}
             </CardDescription>
             <div className="flex items-baseline gap-2">
@@ -168,7 +168,7 @@ export function FinancialDashboard({ payments }: FinancialDashboardProps) {
                 {formatCurrency(totals.currentMonthRevenue)}
               </CardTitle>
               {totals.revenueChange !== 0 && (
-                <span className={`text-xs ${totals.revenueChange > 0 ? "text-green-500" : "text-red-500"}`}>
+                <span className={`text-xs ${totals.revenueChange > 0 ? "text-success" : "text-destructive"}`}>
                   {totals.revenueChange > 0 ? "+" : ""}{totals.revenueChange.toFixed(0)}%
                 </span>
               )}
