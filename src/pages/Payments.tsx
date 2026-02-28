@@ -98,11 +98,11 @@ export default function PaymentsPage() {
   });
 
   useEffect(() => {
-    setPixKeyInput((currentDojo as any)?.pix_key || "");
-    setLateFeePercent(String((currentDojo as any)?.late_fee_percent ?? 0));
-    setLateFeeFixed(String((currentDojo as any)?.late_fee_fixed ?? 0));
-    setDailyInterestPercent(String((currentDojo as any)?.daily_interest_percent ?? 0));
-    setGraceDays(String((currentDojo as any)?.grace_days ?? 0));
+    setPixKeyInput(currentDojo?.pix_key || "");
+    setLateFeePercent(String(currentDojo?.late_fee_percent ?? 0));
+    setLateFeeFixed(String(currentDojo?.late_fee_fixed ?? 0));
+    setDailyInterestPercent(String(currentDojo?.daily_interest_percent ?? 0));
+    setGraceDays(String(currentDojo?.grace_days ?? 0));
   }, [currentDojo]);
 
   const handleSavePixKey = async () => {
@@ -206,8 +206,8 @@ export default function PaymentsPage() {
         return {
           ...p,
           studentName: student?.name || "Desconhecido",
-          studentBlocked: (student as any)?.is_blocked || false,
-          studentScholarship: (student as any)?.is_scholarship || false,
+          studentBlocked: student?.is_blocked || false,
+          studentScholarship: student?.is_scholarship || false,
         };
       });
       return enriched;
@@ -222,11 +222,11 @@ export default function PaymentsPage() {
     if (!currentDojo || getPaymentStatus(payment) !== "atrasado") return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
     const dueDate = parseISO(payment.due_date);
     const today = new Date();
-    const daysLate = Math.max(0, differenceInDays(today, dueDate) - ((currentDojo as any).grace_days || 0));
+    const daysLate = Math.max(0, differenceInDays(today, dueDate) - (currentDojo.grace_days || 0));
     if (daysLate <= 0) return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
-    const feePercent = (currentDojo as any).late_fee_percent || 0;
-    const interestPercent = (currentDojo as any).daily_interest_percent || 0;
-    const fixedFee = (currentDojo as any).late_fee_fixed || 0;
+    const feePercent = currentDojo.late_fee_percent || 0;
+    const interestPercent = currentDojo.daily_interest_percent || 0;
+    const fixedFee = currentDojo.late_fee_fixed || 0;
     const fee = payment.amount * (feePercent / 100) + fixedFee;
     const interest = payment.amount * (interestPercent / 100) * daysLate;
     return { fee, interest, total: payment.amount + fee + interest, daysLate };
