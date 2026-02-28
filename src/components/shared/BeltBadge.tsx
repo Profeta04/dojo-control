@@ -12,15 +12,21 @@ interface BeltBadgeProps {
 // Direct hex colors to avoid CSS variable conflicts with dojo theming
 export const BELT_HEX_COLORS: Record<string, string> = {
   branca: "#FFFFFF",
+  branca_ponta_bordo: "#FFFFFF",
   bordo: "#800020",
+  bordo_ponta_cinza: "#800020",
   cinza: "#999999",
   cinza_branca: "#999999",
   cinza_preta: "#999999",
+  cinza_ponta_azul_escura: "#999999",
   azul_escura: "#1A3A6B",
+  azul_escura_ponta_azul: "#1A3A6B",
   azul: "#1A73E8",
+  azul_ponta_amarela: "#1A73E8",
   amarela: "#FFD600",
   amarela_branca: "#FFD600",
   amarela_preta: "#FFD600",
+  amarela_ponta_laranja: "#FFD600",
   laranja: "#FF6D00",
   laranja_branca: "#FF6D00",
   laranja_preta: "#FF6D00",
@@ -41,6 +47,16 @@ export const BELT_HEX_COLORS: Record<string, string> = {
   preta_10dan: "#1A1A1A",
   coral: "#CC0000",
   vermelha: "#CC0000",
+};
+
+// Judo tip belt colors (ponta): base → tip color on right 25%
+const JUDO_TIP_COLORS: Record<string, string> = {
+  branca_ponta_bordo: "#800020",
+  bordo_ponta_cinza: "#999999",
+  cinza_ponta_azul_escura: "#1A3A6B",
+  azul_escura_ponta_azul: "#1A73E8",
+  azul_ponta_amarela: "#FFD600",
+  amarela_ponta_laranja: "#FF6D00",
 };
 
 // Two-tone belt secondary color (for the tip/end section)
@@ -101,11 +117,13 @@ export function BeltBadge({ grade, size = "md", showLabel = false, degree = 0, m
 
   const specialBelt = getBjjSpecialBelt(grade, martialArt);
   const twoToneSecondary = TWO_TONE_SECONDARY[grade];
+  const judoTipColor = JUDO_TIP_COLORS[grade];
   const hexColor = specialBelt?.primary || BELT_HEX_COLORS[grade] || "#CCCCCC";
-  const isWhite = grade === "branca";
+  const isWhite = grade === "branca" || grade === "branca_ponta_bordo";
   const stripeColor = getStripeColor(grade);
   const showStripes = isBjj && degree > 0 && degree <= 4;
   const hasTwoTone = !!twoToneSecondary || !!specialBelt;
+  const hasJudoTip = !!judoTipColor;
 
   const stripeConfig = stripeSizes[size];
   const secondaryColor = specialBelt?.secondary || twoToneSecondary;
@@ -129,6 +147,18 @@ export function BeltBadge({ grade, size = "md", showLabel = false, degree = 0, m
               width: "50%",
               backgroundColor: secondaryColor,
               borderLeft: secondaryColor === "#FFFFFF" ? "1px solid rgba(0,0,0,0.15)" : undefined,
+            }}
+          />
+        )}
+
+        {/* Judo tip (ponta) section - right 25% */}
+        {hasJudoTip && (
+          <div
+            className="absolute top-0 bottom-0 right-0"
+            style={{
+              width: "25%",
+              backgroundColor: judoTipColor,
+              borderLeft: judoTipColor === "#FFFFFF" ? "1px solid rgba(0,0,0,0.15)" : undefined,
             }}
           />
         )}
