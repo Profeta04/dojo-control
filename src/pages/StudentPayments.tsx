@@ -75,17 +75,16 @@ export default function StudentPaymentsPage() {
   });
 
 
-  const pixKey = (dojoData as any)?.pix_key || "Chave Pix não configurada";
+  const pixKey = dojoData?.pix_key || "Chave Pix não configurada";
 
   const calculateLateFees = (payment: Payment) => {
     if (payment.status !== "atrasado" || !dojoData) return null;
-    const dojo = dojoData as any;
-    const graceDays = dojo.grace_days || 0;
+    const graceDays = dojoData.grace_days || 0;
     const daysLate = differenceInCalendarDays(new Date(), parseISO(payment.due_date)) - graceDays;
     if (daysLate <= 0) return null;
-    const feePercent = dojo.late_fee_percent || 0;
-    const fixedFee = dojo.late_fee_fixed || 0;
-    const interestPercent = dojo.daily_interest_percent || 0;
+    const feePercent = dojoData.late_fee_percent || 0;
+    const fixedFee = dojoData.late_fee_fixed || 0;
+    const interestPercent = dojoData.daily_interest_percent || 0;
     const fee = payment.amount * (feePercent / 100) + fixedFee;
     const interest = payment.amount * (interestPercent / 100) * daysLate;
     const total = payment.amount + fee + interest;
@@ -162,7 +161,7 @@ export default function StudentPaymentsPage() {
 
 
   const handleCopyPix = async () => {
-    if (!(dojoData as any)?.pix_key) {
+    if (!dojoData?.pix_key) {
       toast({
         title: "Chave Pix não configurada",
         description: "Entre em contato com a administração do dojo.",
@@ -171,7 +170,7 @@ export default function StudentPaymentsPage() {
       return;
     }
     try {
-      await navigator.clipboard.writeText((dojoData as any).pix_key);
+      await navigator.clipboard.writeText(dojoData.pix_key);
       setCopied(true);
       toast({ title: "Chave Pix copiada!", description: "Cole no seu aplicativo de banco para fazer o pagamento." });
       setTimeout(() => setCopied(false), 3000);
@@ -772,15 +771,15 @@ export default function StudentPaymentsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {pixDialogPayment && (dojoData as any)?.pix_key && (
+          {pixDialogPayment && dojoData?.pix_key && (
             <div className="space-y-4">
               <PixQRCodePayment
-                pixKey={(dojoData as any).pix_key}
+                pixKey={dojoData.pix_key}
                 amount={(() => {
                   const fees = calculateLateFees(pixDialogPayment);
                   return fees ? fees.total : pixDialogPayment.amount;
                 })()}
-                merchantName={(dojoData as any)?.name || "Dojo"}
+                merchantName={dojoData?.name || "Dojo"}
                 description={`Ref ${pixDialogPayment.reference_month}`}
               />
 
@@ -853,7 +852,7 @@ export default function StudentPaymentsPage() {
             </div>
           )}
 
-          {pixDialogPayment && !(dojoData as any)?.pix_key && (
+          {pixDialogPayment && !dojoData?.pix_key && (
             <div className="flex flex-col items-center gap-3 p-6 text-center">
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <p className="text-sm text-destructive font-medium">
