@@ -70,9 +70,10 @@ function InstallingScreen() {
           clearInterval(interval);
           return 90;
         }
-        return prev + Math.random() * 12;
+        // Slow progress: ~20s to reach 90%
+        return prev + Math.random() * 4 + 1;
       });
-    }, 400);
+    }, 800);
     return () => clearInterval(interval);
   }, []);
 
@@ -398,16 +399,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [installed, setInstalled] = useState(true);
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [pendingSuccess, setPendingSuccess] = useState(false);
-  const [minDelayDone, setMinDelayDone] = useState(false);
   const isIOS = isIOSDevice();
-
-  // When both conditions are met, move to success
-  useEffect(() => {
-    if (pendingSuccess && minDelayDone) {
-      setPhase("success");
-    }
-  }, [pendingSuccess, minDelayDone]);
 
   useEffect(() => {
     if (isDesktop()) {
@@ -433,7 +425,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", () => {
-      setPendingSuccess(true);
+      setPhase("success");
       (window as any).__pwaInstallPrompt = null;
     });
 
@@ -443,17 +435,30 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Polling fallback: check standalone mode every 2s while installing
+  useEffect(() => {
+    if (phase !== "installing") return;
+    const interval = setInterval(() => {
+      if (isStandalone()) {
+        setPhase("success");
+        clearInterval(interval);
+      }
+    }, 2000);
+    // Timeout fallback: after 30s assume installed if user accepted
+    const timeout = setTimeout(() => {
+      if (phase === "installing") setPhase("success");
+    }, 30000);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [phase]);
+
   if (installed && phase !== "success" && phase !== "installing") return <>{children}</>;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     setPhase("installing");
-    setPendingSuccess(false);
-    setMinDelayDone(false);
-
-    // Minimum 4 seconds of loading screen
-    setTimeout(() => setMinDelayDone(true), 4000);
-
     try {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
@@ -461,7 +466,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
         setPhase("prompt");
         return;
       }
-      // appinstalled event will set pendingSuccess = true
+      // Wait for appinstalled event or polling fallback
     } catch {
       setPhase("prompt");
     }
