@@ -16,6 +16,7 @@ export interface LeaderboardEntry {
   achievement_count: number;
   class_ids: string[];
   martial_arts: string[];
+  belts_by_art: Record<string, string>;
 }
 
 export interface LeaderboardHistoryEntry {
@@ -111,7 +112,7 @@ export function useLeaderboard() {
         supabase.from("student_xp").select("*").in("user_id", userIds),
         supabase.from("student_achievements").select("user_id").in("user_id", userIds),
         supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", userIds),
-        supabase.from("student_belts").select("user_id, martial_art").in("user_id", userIds),
+        supabase.from("student_belts").select("user_id, martial_art, belt_grade").in("user_id", userIds),
       ]);
 
       const achievementCounts = new Map<string, number>();
@@ -131,10 +132,13 @@ export function useLeaderboard() {
         if (e.classes?.martial_art) artMap.get(e.student_id)!.add(e.classes.martial_art);
       });
 
-      // Fallback: use student_belts for martial arts if no class enrollment
-      (beltsRes.data || []).forEach((b) => {
+      // Build per-art belt map and fallback martial arts from student_belts
+      const beltsByArtMap = new Map<string, Record<string, string>>();
+      (beltsRes.data || []).forEach((b: any) => {
         if (!artMap.has(b.user_id)) artMap.set(b.user_id, new Set());
         artMap.get(b.user_id)!.add(b.martial_art);
+        if (!beltsByArtMap.has(b.user_id)) beltsByArtMap.set(b.user_id, {});
+        beltsByArtMap.get(b.user_id)![b.martial_art] = b.belt_grade;
       });
 
       // Build entries (only students)
@@ -152,6 +156,7 @@ export function useLeaderboard() {
           achievement_count: achievementCounts.get(p.user_id) || 0,
           class_ids: classMap.get(p.user_id) || [],
           martial_arts: [...(artMap.get(p.user_id) || [])],
+          belts_by_art: beltsByArtMap.get(p.user_id) || {},
         };
       });
 
