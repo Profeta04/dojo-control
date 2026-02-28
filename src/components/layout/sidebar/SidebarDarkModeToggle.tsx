@@ -46,9 +46,9 @@ export function SidebarDarkModeToggle() {
     <div className="px-4 py-2.5">
       <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/30">
         <div className="flex items-center gap-2.5">
-          <span className={cn(
+        <span className={cn(
             "flex-shrink-0 transition-all duration-300",
-            isDarkMode ? "text-amber-400" : "text-sidebar-foreground/50"
+            isDarkMode ? "text-gold" : "text-sidebar-foreground/50"
           )}>
             {isDarkMode ? (
               <Moon className="h-4 w-4" />
@@ -77,7 +77,7 @@ export function SidebarDarkModeToggle() {
           {/* Sun icon on left */}
           <Sun className={cn(
             "absolute left-1 h-3 w-3 transition-opacity duration-200",
-            isDarkMode ? "opacity-0" : "opacity-60 text-amber-500"
+            isDarkMode ? "opacity-0" : "opacity-60 text-gold"
           )} />
           {/* Moon icon on right */}
           <Moon className={cn(

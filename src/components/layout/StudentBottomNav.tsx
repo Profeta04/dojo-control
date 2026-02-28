@@ -81,6 +81,9 @@ const staffPage3WithAdmin: TabItem[] = [
   { title: "Senseis", href: "/senseis", icon: UserCog },
   { title: "Planos", href: "/planos", icon: Landmark },
   { title: "Dojo", href: "/settings", icon: Settings },
+];
+
+const staffPage4WithAdmin: TabItem[] = [
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
 
@@ -120,7 +123,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
   const pages: TabItem[][] = isStudentOnly
     ? [studentPage1, studentPage2]
     : isAdminRole
-      ? [staffPage1, staffPage2, staffPage3WithAdmin]
+      ? [staffPage1, staffPage2, staffPage3WithAdmin, staffPage4WithAdmin]
       : [staffPage1, staffPage2, staffPage3];
 
   const hasPagination = pages.length > 1;
@@ -234,7 +237,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
           />
         </div>
         <span className={cn(
-          "text-[0.65rem] leading-tight font-medium transition-all duration-200 truncate max-w-full text-center",
+          "text-[0.7rem] leading-tight font-medium transition-all duration-200 truncate max-w-full text-center",
           isActive && "font-semibold"
         )}>
           {tab.title}
@@ -266,7 +269,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
               aria-label="Voltar"
             >
               <ChevronLeft className="h-6 w-6" />
-              <span className="text-[0.65rem] leading-tight font-medium">Voltar</span>
+              <span className="text-[0.7rem] leading-tight font-medium">Voltar</span>
             </button>
           )}
 
@@ -280,7 +283,7 @@ function SplitBeltBadge({ belts }: { belts: StudentBelt[] }) {
               aria-label="Mais opções"
             >
               <ChevronRight className="h-6 w-6" />
-              <span className="text-[0.65rem] leading-tight font-medium">Mais</span>
+              <span className="text-[0.7rem] leading-tight font-medium">Mais</span>
             </button>
           )}
         </motion.div>

@@ -219,7 +219,7 @@
   }
   
   .gradient-judo {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(220 15% 30%) 100%);
+    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.6) 100%);
   }
 
   .belt-shadow {
@@ -305,6 +305,19 @@
     display: none;
   }
 }
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 #lovable-badge {
 display: none !important;
 }
