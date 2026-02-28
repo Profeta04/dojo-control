@@ -398,7 +398,16 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [installed, setInstalled] = useState(true);
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [pendingSuccess, setPendingSuccess] = useState(false);
+  const [minDelayDone, setMinDelayDone] = useState(false);
   const isIOS = isIOSDevice();
+
+  // When both conditions are met, move to success
+  useEffect(() => {
+    if (pendingSuccess && minDelayDone) {
+      setPhase("success");
+    }
+  }, [pendingSuccess, minDelayDone]);
 
   useEffect(() => {
     if (isDesktop()) {
@@ -413,7 +422,6 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
     mq.addEventListener("change", handler);
 
-    // Check if event was already captured globally
     if ((window as any).__pwaInstallPrompt) {
       setDeferredPrompt((window as any).__pwaInstallPrompt);
     }
@@ -425,7 +433,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", () => {
-      setPhase("success");
+      setPendingSuccess(true);
       (window as any).__pwaInstallPrompt = null;
     });
 
@@ -435,19 +443,25 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  if (installed && phase !== "success") return <>{children}</>;
+  if (installed && phase !== "success" && phase !== "installing") return <>{children}</>;
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
     setPhase("installing");
+    setPendingSuccess(false);
+    setMinDelayDone(false);
+
+    // Minimum 4 seconds of loading screen
+    setTimeout(() => setMinDelayDone(true), 4000);
+
     try {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") {
-        // appinstalled event will fire and set phase to "success"
-      } else {
+      if (outcome !== "accepted") {
         setPhase("prompt");
+        return;
       }
+      // appinstalled event will set pendingSuccess = true
     } catch {
       setPhase("prompt");
     }
