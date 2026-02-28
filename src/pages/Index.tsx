@@ -59,13 +59,19 @@ const Index = () => {
     : "Sistema completo de gestão para seu dojo";
 
   useEffect(() => {
+    // Read from global if already captured by PWAInstallGate
+    if ((window as any).__pwaInstallPrompt) {
+      setDeferredPrompt((window as any).__pwaInstallPrompt);
+    }
     const handler = (e: Event) => {
       e.preventDefault();
+      (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
     const onInstalled = () => {
       setJustInstalled(true);
       setDeferredPrompt(null);
+      (window as any).__pwaInstallPrompt = null;
     };
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", onInstalled);
