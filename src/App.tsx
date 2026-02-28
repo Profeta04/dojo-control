@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
+import { PWAInstallGate } from "@/components/pwa/PWAInstallGate";
 
 // Lazy load all pages
 const Index = lazy(() => import("./pages/Index"));
@@ -97,21 +98,23 @@ function AnimatedRoutes() {
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <DojoProvider>
-          <ThemeProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AnimatedRoutes />
-              </BrowserRouter>
-            </TooltipProvider>
-          </ThemeProvider>
-        </DojoProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <PWAInstallGate>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <DojoProvider>
+            <ThemeProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <AnimatedRoutes />
+                </BrowserRouter>
+              </TooltipProvider>
+            </ThemeProvider>
+          </DojoProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </PWAInstallGate>
   </ErrorBoundary>
 );
 
