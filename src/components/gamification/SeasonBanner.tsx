@@ -61,7 +61,7 @@ export function SeasonBanner() {
               {streak > 0 && (
                 <div className={cn(
                   "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold",
-                  streak >= 7 ? "bg-orange-500/10 text-orange-600" : "bg-muted text-muted-foreground"
+                  streak >= 7 ? "bg-warning/10 text-warning" : "bg-muted text-muted-foreground"
                 )}>
                   <Flame className="h-3 w-3" />
                   {streak}d

@@ -142,7 +142,7 @@ export default function ResetPassword() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
             <CardTitle>Senha redefinida!</CardTitle>
             <CardDescription>
               Sua senha foi alterada com sucesso. Você será redirecionado para o login.

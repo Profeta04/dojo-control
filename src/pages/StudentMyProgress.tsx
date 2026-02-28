@@ -282,9 +282,9 @@ export default function StudentMyProgress() {
           {/* Dojo comparison */}
           {dojoAvg !== null && dojoAvg !== undefined && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-              <Card className={cn("border-l-4", aboveAverage ? "border-l-green-500" : "border-l-amber-500")}>
+              <Card className={cn("border-l-4", aboveAverage ? "border-l-success" : "border-l-warning")}>
                 <CardContent className="py-3 flex items-center gap-3">
-                  <TrendingUp className={cn("h-5 w-5", aboveAverage ? "text-green-500" : "text-amber-500")} />
+                  <TrendingUp className={cn("h-5 w-5", aboveAverage ? "text-success" : "text-warning")} />
                   <div>
                     <p className="text-sm font-medium">
                       {aboveAverage ? "Acima da média do dojo! 💪" : "Abaixo da média do dojo este mês"}

@@ -23,16 +23,16 @@ const MARTIAL_ART_ICONS: Record<string, string> = {
 
 const MARTIAL_ART_COLORS: Record<string, { bg: string; border: string; hover: string; text: string }> = {
   judo: {
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    hover: "hover:bg-amber-500/20",
-    text: "text-amber-600 dark:text-amber-400",
+    bg: "bg-warning/10",
+    border: "border-warning/30",
+    hover: "hover:bg-warning/20",
+    text: "text-warning",
   },
   bjj: {
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/30",
-    hover: "hover:bg-blue-500/20",
-    text: "text-blue-600 dark:text-blue-400",
+    bg: "bg-info/10",
+    border: "border-info/30",
+    hover: "hover:bg-info/20",
+    text: "text-info",
   },
 };
 
@@ -92,7 +92,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
               key={entry.user_id}
               className={cn(
                 isMe && "bg-accent/10 font-medium",
-                rank <= 3 && "bg-amber-500/[0.03]"
+                rank <= 3 && "bg-warning/[0.03]"
               )}
             >
               <TableCell className="text-center font-bold text-sm">
@@ -114,7 +114,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
                       {entry.belt_grade && <BeltBadge grade={entry.belt_grade as any} size="sm" />}
                       <span>Nv.{entry.level}</span>
                       {entry.current_streak > 0 && (
-                        <span className="flex items-center gap-0.5 text-orange-500">
+                        <span className="flex items-center gap-0.5 text-warning">
                           <Flame className="h-2.5 w-2.5" />{entry.current_streak}d
                         </span>
                       )}
@@ -130,7 +130,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
               </TableCell>
               <TableCell className="text-center hidden sm:table-cell">
                 {entry.current_streak > 0 ? (
-                  <span className="flex items-center justify-center gap-0.5 text-orange-500 text-xs font-medium">
+                  <span className="flex items-center justify-center gap-0.5 text-warning text-xs font-medium">
                     <Flame className="h-3 w-3" />{entry.current_streak}d
                   </span>
                 ) : (
@@ -145,7 +145,7 @@ function RankingTable({ entries, userId }: { entries: LeaderboardEntry[]; userId
                 )}
               </TableCell>
               <TableCell className="text-right">
-                <span className={cn("font-bold text-sm", rank <= 3 && "text-amber-600")}>
+                <span className={cn("font-bold text-sm", rank <= 3 && "text-warning")}>
                   {entry.total_xp}
                 </span>
                 <span className="text-[10px] text-muted-foreground ml-0.5">XP</span>
@@ -297,9 +297,9 @@ export function LeaderboardPanel() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSelectGeral}
-              className="flex items-center gap-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-colors shadow-sm"
+              className="flex items-center gap-3 p-4 rounded-xl border border-warning/30 bg-warning/5 hover:bg-warning/10 transition-colors shadow-sm"
             >
-              <Crown className="h-5 w-5 text-amber-500" />
+              <Crown className="h-5 w-5 text-warning" />
               <div className="text-left">
                 <span className="font-semibold text-sm text-foreground">Ranking Geral</span>
                 <p className="text-xs text-muted-foreground">Todos os alunos de {MARTIAL_ART_LABELS[selectedArt]}</p>
@@ -366,7 +366,7 @@ export function LeaderboardPanel() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Crown className="h-5 w-5 text-amber-500" />
+                    <Crown className="h-5 w-5 text-warning" />
                     {selectedClassName}
                   </CardTitle>
                   <Badge variant="secondary" className="text-xs">

@@ -70,15 +70,15 @@ export function AttendanceStatsCard() {
   if (!stats) return null;
 
   const getPercentageColor = (pct: number) => {
-    if (pct >= 80) return "text-green-600";
-    if (pct >= 60) return "text-yellow-600";
-    return "text-red-600";
+    if (pct >= 80) return "text-success";
+    if (pct >= 60) return "text-warning";
+    return "text-destructive";
   };
 
   const getProgressColor = (pct: number) => {
-    if (pct >= 80) return "[&>div]:bg-green-500";
-    if (pct >= 60) return "[&>div]:bg-yellow-500";
-    return "[&>div]:bg-red-500";
+    if (pct >= 80) return "[&>div]:bg-success";
+    if (pct >= 60) return "[&>div]:bg-warning";
+    return "[&>div]:bg-destructive";
   };
 
   return (

@@ -370,7 +370,7 @@ export function AttendanceTab() {
                       </CardDescription>
                     </div>
                     {status === "complete" ? (
-                      <Badge className="bg-green-600">
+                      <Badge className="bg-success text-success-foreground">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Completo
                       </Badge>
@@ -395,7 +395,7 @@ export function AttendanceTab() {
                   {schedule.attendance.length > 0 && (
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Presentes:</span>
-                      <span className="font-medium text-green-600">
+                      <span className="font-medium text-success">
                         {stats.present} / {stats.total}
                       </span>
                     </div>
@@ -468,7 +468,7 @@ export function AttendanceTab() {
                   key={item.student.user_id}
                   className={`p-3 rounded-lg border transition-colors ${
                     item.present 
-                      ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800" 
+                      ? "bg-success/5 border-success/20" 
                       : "bg-muted/30"
                   }`}
                 >
@@ -547,7 +547,7 @@ export function AttendanceTab() {
             {/* Summary */}
             <div className="flex items-center justify-between pt-4 border-t">
               <div className="text-sm text-muted-foreground">
-                <span className="text-green-600 font-medium">
+                <span className="text-success font-medium">
                   {attendanceList.filter((a) => a.present).length}
                 </span>
                 {" "}presente(s) de{" "}

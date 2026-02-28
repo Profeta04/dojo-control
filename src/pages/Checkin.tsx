@@ -301,7 +301,7 @@ export default function Checkin() {
                   key={cls.classId}
                   className={`transition-colors ${
                     cls.alreadyCheckedIn
-                      ? "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-800"
+                      ? "bg-success/5 border-success/20"
                       : cls.status !== "open"
                       ? "opacity-60"
                       : ""
