@@ -12,18 +12,41 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Only allow internal/service calls
+    // --- AUTH: Only allow service role or authenticated staff ---
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    if (!token || (token !== serviceRoleKey && token !== anonKey)) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+
+    if (!token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const isServiceRole = token === serviceRoleKey;
+
+    if (!isServiceRole) {
+      // Validate user token and check staff role
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader! } },
+      });
+      const { data: userData, error: userError } = await userClient.auth.getUser();
+      if (userError || !userData?.user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      const { data: isStaff } = await adminClient.rpc("is_staff", { _user_id: userData.user.id });
+      if (!isStaff) {
+        return new Response(JSON.stringify({ error: "Forbidden: staff only" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     // Get all active fee plans with their martial_art_type
@@ -147,7 +170,6 @@ Deno.serve(async (req) => {
       }
 
       if (!applicablePlan && hasJudo) {
-        // Only judo (or no combined plan exists)
         if (!(hasJudo && hasBjj)) {
           applicablePlan = dojoPlans.find((p: any) => p.martial_art_type === "judo");
         }
@@ -165,11 +187,9 @@ Deno.serve(async (req) => {
         if (combinedPlan) {
           applicablePlan = combinedPlan;
         } else {
-          // No combined plan - generate individual plans for each art
           const judoPlan = dojoPlans.find((p: any) => p.martial_art_type === "judo");
           const bjjPlan = dojoPlans.find((p: any) => p.martial_art_type === "bjj");
           
-          // Handle as two separate payments
           for (const plan of [judoPlan, bjjPlan]) {
             if (!plan) continue;
             const existing = existingByStudent.get(studentId) || [];
@@ -196,7 +216,7 @@ Deno.serve(async (req) => {
               type: "payment",
             });
           }
-          continue; // skip the single-plan logic below
+          continue;
         }
       }
 
@@ -204,11 +224,9 @@ Deno.serve(async (req) => {
 
       const existing = existingByStudent.get(studentId) || [];
 
-      // Check if already has the correct payment
       const alreadyHas = existing.some((p: any) => p.description === applicablePlan.name);
       if (alreadyHas) continue;
 
-      // If student has combined plan, delete any single-art payments
       if (applicablePlan.martial_art_type === "judo_bjj") {
         for (const ep of existing) {
           paymentsToDelete.push(ep.id);
@@ -238,7 +256,6 @@ Deno.serve(async (req) => {
 
     let totalReplaced = paymentsToDelete.length;
 
-    // Delete old payments that need replacing
     if (paymentsToDelete.length > 0) {
       const { error: deleteError } = await supabase
         .from("payments")
@@ -247,7 +264,6 @@ Deno.serve(async (req) => {
       if (deleteError) console.error("Error deleting old payments:", deleteError);
     }
 
-    // Insert new payments
     let totalGenerated = 0;
     if (paymentsToInsert.length > 0) {
       const { error: insertError } = await supabase
@@ -257,7 +273,6 @@ Deno.serve(async (req) => {
       totalGenerated = paymentsToInsert.length;
     }
 
-    // Send notifications
     if (notificationsToInsert.length > 0) {
       await supabase.from("notifications").insert(notificationsToInsert);
     }

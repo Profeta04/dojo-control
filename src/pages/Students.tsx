@@ -59,7 +59,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type Profile = Tables<"profiles"> | any;
+type Profile = Tables<"profiles">;
 
 interface GuardianWithMinors {
   guardian: Profile;

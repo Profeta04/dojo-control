@@ -212,34 +212,33 @@ export default function GraduationsPage() {
   const { data: graduationHistory, isLoading: historyLoading } = useQuery({
     queryKey: ["graduation-history"],
     queryFn: async () => {
-      const { data, error } = await supabase
+    const { data, error } = await supabase
         .from("graduation_history")
         .select("*")
         .order("graduation_date", { ascending: false });
 
       if (error) throw error;
+      if (!data || data.length === 0) return [];
 
-      const enriched: GraduationWithStudent[] = await Promise.all(
-        (data || []).map(async (g) => {
-          const { data: studentProfile } = await supabase
-            .from("profiles")
-            .select("name")
-            .eq("user_id", g.student_id)
-            .single();
+      // Batch fetch all needed profiles to avoid N+1
+      const allUserIds = [...new Set([
+        ...data.map(g => g.student_id),
+        ...data.map(g => g.approved_by).filter(Boolean),
+      ])];
 
-          const { data: promoterProfile } = await supabase
-            .from("profiles")
-            .select("name")
-            .eq("user_id", g.approved_by)
-            .single();
+      const { data: profilesData } = await supabase
+        .from("profiles")
+        .select("user_id, name")
+        .in("user_id", allUserIds);
 
-          return {
-            ...g,
-            studentName: studentProfile?.name || "Desconhecido",
-            promotedByName: promoterProfile?.name || "Desconhecido",
-          };
-        })
-      );
+      const profileMap = new Map<string, string>();
+      (profilesData || []).forEach(p => profileMap.set(p.user_id, p.name));
+
+      const enriched: GraduationWithStudent[] = data.map(g => ({
+        ...g,
+        studentName: profileMap.get(g.student_id) || "Desconhecido",
+        promotedByName: g.approved_by ? (profileMap.get(g.approved_by) || "Desconhecido") : "Desconhecido",
+      }));
 
       return enriched;
     },
