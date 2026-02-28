@@ -502,17 +502,33 @@ export default function Students() {
       await supabase.from("student_xp").delete().eq("user_id", permanentDeleteStudent.user_id);
       // Remove student_achievements
       await supabase.from("student_achievements").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove graduation_history
+      await supabase.from("graduation_history").delete().eq("student_id", permanentDeleteStudent.user_id);
+      // Remove season_xp
+      await supabase.from("season_xp").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Remove tasks
+      await supabase.from("tasks").delete().eq("assigned_to", permanentDeleteStudent.user_id);
+      // Remove user_onboarding
+      await supabase.from("user_onboarding").delete().eq("user_id", permanentDeleteStudent.user_id);
       // Remove user_roles
       await supabase.from("user_roles").delete().eq("user_id", permanentDeleteStudent.user_id);
       // Remove notifications
       await supabase.from("notifications").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Finally remove the profile
+      // Remove guardian_minors
+      await supabase.from("guardian_minors").delete().eq("minor_user_id", permanentDeleteStudent.user_id);
+      // Remove the profile
       await supabase.from("profiles").delete().eq("user_id", permanentDeleteStudent.user_id);
+
+      // Delete the auth.users entry via edge function to prevent zombie accounts
+      await supabase.functions.invoke("delete-user", {
+        body: { userId: permanentDeleteStudent.user_id },
+      });
 
       queryClient.invalidateQueries({ queryKey: ["students"] });
       toast({ title: "Aluno excluído permanentemente", description: `${permanentDeleteStudent.name} foi removido completamente.` });
-    } catch (error: any) {
-      toast({ title: "Erro", description: error.message || "Erro ao excluir aluno", variant: "destructive" });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Erro ao excluir aluno";
+      toast({ title: "Erro", description: msg, variant: "destructive" });
     } finally {
       setActionLoading(false);
       setPermanentDeleteStudent(null);

@@ -10,6 +10,7 @@ import { DojoProvider } from "@/hooks/useDojoContext";
 import { ThemeProvider } from "@/components/shared/ThemeProvider";
 import { PageTransition } from "@/components/shared/PageTransition";
 import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
+import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 
 // Lazy load all pages
 const Index = lazy(() => import("./pages/Index"));
@@ -95,21 +96,23 @@ function AnimatedRoutes() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <DojoProvider>
-        <ThemeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AnimatedRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </ThemeProvider>
-      </DojoProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <DojoProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AnimatedRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </ThemeProvider>
+        </DojoProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
