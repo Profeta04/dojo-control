@@ -86,6 +86,7 @@ export default function Students() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editBelt, setEditBelt] = useState<BeltGrade>("branca");
+  const [editBirthDate, setEditBirthDate] = useState("");
 
   const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
   const [blockReason, setBlockReason] = useState("");
@@ -602,7 +603,7 @@ export default function Students() {
     try {
       const { error } = await supabase
         .from("profiles")
-        .update({ name: editName, phone: editPhone, belt_grade: editBelt })
+        .update({ name: editName, phone: editPhone, belt_grade: editBelt, birth_date: editBirthDate || null })
         .eq("user_id", editStudent.user_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["students"] });
@@ -831,6 +832,7 @@ export default function Students() {
                         setEditName(student.name);
                         setEditPhone(student.phone || "");
                         setEditBelt((student.belt_grade as BeltGrade) || "branca");
+                        setEditBirthDate(student.birth_date || "");
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
@@ -1191,6 +1193,10 @@ export default function Students() {
             <div className="space-y-2">
               <Label>Telefone</Label>
               <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="(00) 00000-0000" />
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Nascimento</Label>
+              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Faixa</Label>
