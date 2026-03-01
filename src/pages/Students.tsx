@@ -87,6 +87,7 @@ export default function Students() {
   const [editPhone, setEditPhone] = useState("");
   const [editBelt, setEditBelt] = useState<BeltGrade>("branca");
   const [editBirthDate, setEditBirthDate] = useState("");
+  const [editStudentBelts, setEditStudentBelts] = useState<{ martial_art: string; belt_grade: string; id?: string }[]>([]);
 
   const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
   const [blockReason, setBlockReason] = useState("");
@@ -601,18 +602,43 @@ export default function Students() {
     if (!editStudent) return;
     setActionLoading(true);
     try {
+      // Update profile
       const { error } = await supabase
         .from("profiles")
         .update({ name: editName, phone: editPhone, belt_grade: editBelt, birth_date: editBirthDate || null })
         .eq("user_id", editStudent.user_id);
       if (error) throw error;
+
+      // Update each belt
+      for (const belt of editStudentBelts) {
+        if (belt.id) {
+          await supabase
+            .from("student_belts")
+            .update({ belt_grade: belt.belt_grade })
+            .eq("id", belt.id);
+        }
+      }
+
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
       toast({ title: "Aluno atualizado", description: `${editName} foi atualizado com sucesso.` });
     } catch {
       toast({ title: "Erro", description: "Erro ao atualizar aluno", variant: "destructive" });
     } finally {
       setActionLoading(false);
       setEditStudent(null);
+    }
+  };
+
+  const handleDeleteBelt = async (beltId: string, martialArt: string) => {
+    try {
+      const { error } = await supabase.from("student_belts").delete().eq("id", beltId);
+      if (error) throw error;
+      setEditStudentBelts(prev => prev.filter(b => b.id !== beltId));
+      queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
+      toast({ title: "Faixa removida", description: `Faixa de ${martialArt === "judo" ? "Judô" : "Jiu-Jitsu"} removida.` });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao remover faixa", variant: "destructive" });
     }
   };
 
@@ -833,6 +859,12 @@ export default function Students() {
                         setEditPhone(student.phone || "");
                         setEditBelt((student.belt_grade as BeltGrade) || "branca");
                         setEditBirthDate(student.birth_date || "");
+                        // Load student belts from cached data
+                        const belts = (allStudentBelts || []).filter(b => b.user_id === student.user_id);
+                        // We need belt IDs - fetch them
+                        supabase.from("student_belts").select("id, martial_art, belt_grade").eq("user_id", student.user_id).then(({ data }) => {
+                          setEditStudentBelts(data || []);
+                        });
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
@@ -1198,19 +1230,56 @@ export default function Students() {
               <Label>Data de Nascimento</Label>
               <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label>Faixa</Label>
-              <Select value={editBelt} onValueChange={(v) => setEditBelt(v as BeltGrade)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(BELT_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {editStudentBelts.length > 0 ? (
+              <div className="space-y-2">
+                <Label>Faixas por Arte Marcial</Label>
+                {editStudentBelts.map((belt, idx) => (
+                  <div key={belt.id || idx} className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground w-20 shrink-0">
+                      {belt.martial_art === "judo" ? "Judô" : belt.martial_art === "bjj" ? "Jiu-Jitsu" : belt.martial_art}
+                    </span>
+                    <Select
+                      value={belt.belt_grade}
+                      onValueChange={(v) => {
+                        setEditStudentBelts(prev => prev.map((b, i) => i === idx ? { ...b, belt_grade: v } : b));
+                      }}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(BELT_LABELS).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive shrink-0"
+                      onClick={() => belt.id && handleDeleteBelt(belt.id, belt.martial_art)}
+                      title="Remover faixa"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>Faixa</Label>
+                <Select value={editBelt} onValueChange={(v) => setEditBelt(v as BeltGrade)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(BELT_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditStudent(null)}>Cancelar</Button>
