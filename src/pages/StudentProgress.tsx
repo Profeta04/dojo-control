@@ -43,13 +43,21 @@ export default function StudentProgress() {
     queryFn: async () => {
       if (!currentDojoId) return { students: [], martialArts: [] as string[] };
 
-      const { data: profiles } = await supabase
+      // Get staff user IDs to exclude admins/senseis from student lists
+      const { data: staffRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["sensei", "admin", "dono", "super_admin"]);
+      const excludeIds = new Set((staffRoles || []).map(r => r.user_id));
+
+      const { data: allProfiles } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url, belt_grade")
         .eq("dojo_id", currentDojoId)
         .eq("registration_status", "aprovado");
 
-      if (!profiles || profiles.length === 0) return { students: [], martialArts: [] };
+      const profiles = (allProfiles || []).filter(p => !excludeIds.has(p.user_id));
+      if (profiles.length === 0) return { students: [], martialArts: [] };
 
       const studentIds = profiles.map(p => p.user_id);
 

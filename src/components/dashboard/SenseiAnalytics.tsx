@@ -41,14 +41,22 @@ export function SenseiAnalytics() {
     queryFn: async () => {
       if (!currentDojoId) return null;
 
-      // Get approved student IDs for this dojo
-      const { data: profiles } = await supabase
+      // Get staff user IDs to exclude admins/senseis from student lists
+      const { data: staffRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .in("role", ["sensei", "admin", "dono", "super_admin"]);
+      const excludeIds = new Set((staffRoles || []).map(r => r.user_id));
+
+      // Get approved student IDs for this dojo (excluding staff)
+      const { data: allProfiles } = await supabase
         .from("profiles")
         .select("user_id, name, avatar_url, belt_grade")
         .eq("dojo_id", currentDojoId)
         .eq("registration_status", "aprovado");
 
-      const studentIds = (profiles || []).map(p => p.user_id);
+      const profiles = (allProfiles || []).filter(p => !excludeIds.has(p.user_id));
+      const studentIds = profiles.map(p => p.user_id);
       if (studentIds.length === 0) return { ranking: [], monthlyAcertos: [], completionRate: 0, totalAcertos: 0 };
 
       // Fetch completed tasks and XP in parallel
