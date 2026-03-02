@@ -33,7 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock, Plus } from "lucide-react";
+import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock, Plus, KeyRound } from "lucide-react";
 import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
@@ -104,6 +104,10 @@ export default function Students() {
   // Cross-art belt assignment
   const [crossArtDialog, setCrossArtDialog] = useState<{ student: Profile; missingArts: string[] } | null>(null);
   const [crossArtBelts, setCrossArtBelts] = useState<Record<string, BeltGrade>>({});
+
+  // Password reset
+  const [resetPwStudent, setResetPwStudent] = useState<Profile | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
   // Fetch dojo info for martial_arts
   const { data: dojoInfo } = useQuery({
@@ -598,6 +602,25 @@ export default function Students() {
     handleToggleScholarship(student, false);
   };
 
+  const handleResetPassword = async () => {
+    if (!resetPwStudent || !newPassword.trim()) return;
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { userId: resetPwStudent.user_id, newPassword: newPassword.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Senha redefinida!", description: `A senha de ${resetPwStudent.name} foi alterada com sucesso.` });
+      setResetPwStudent(null);
+      setNewPassword("");
+    } catch (err: any) {
+      toast({ title: "Erro ao redefinir senha", description: err.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleEditStudent = async () => {
     if (!editStudent) return;
     setActionLoading(true);
@@ -868,6 +891,13 @@ export default function Students() {
                       }}>
                         <Edit className="h-4 w-4 mr-2" />
                         Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        setResetPwStudent(student);
+                        setNewPassword("");
+                      }}>
+                        <KeyRound className="h-4 w-4 mr-2" />
+                        Redefinir senha
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
                         setBlockStudent(student);
@@ -1477,6 +1507,44 @@ export default function Students() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Reset Password Dialog */}
+      <Dialog open={!!resetPwStudent} onOpenChange={(open) => { if (!open) { setResetPwStudent(null); setNewPassword(""); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5 text-accent" />
+              Redefinir Senha
+            </DialogTitle>
+            <DialogDescription>
+              Digite a nova senha para <strong>{resetPwStudent?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); handleResetPassword(); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">Nova senha</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                minLength={6}
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setResetPwStudent(null); setNewPassword(""); }}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={actionLoading || newPassword.trim().length < 6}>
+                {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Salvar nova senha
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
     </RequireApproval>
   );
