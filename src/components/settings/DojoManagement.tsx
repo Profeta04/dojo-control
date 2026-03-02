@@ -104,6 +104,45 @@ export function DojoManagement({ isSenseiView = false }: { isSenseiView?: boolea
 
   const deleteDojoMutation = useMutation({
     mutationFn: async (id: string) => {
+      // Remove dependent records first to avoid FK constraint errors
+      const { error: dsSenseiErr } = await supabase.from("dojo_senseis").delete().eq("dojo_id", id);
+      if (dsSenseiErr) throw dsSenseiErr;
+
+      const { error: duErr } = await supabase.from("dojo_users").delete().eq("dojo_id", id);
+      if (duErr) throw duErr;
+
+      const { error: diErr } = await supabase.from("dojo_integrations").delete().eq("dojo_id", id);
+      if (diErr) throw diErr;
+
+      const { error: dsErr } = await supabase.from("dojo_subscriptions").delete().eq("dojo_id", id);
+      if (dsErr) throw dsErr;
+
+      // Unlink profiles from this dojo
+      const { error: profErr } = await supabase.from("profiles").update({ dojo_id: null }).eq("dojo_id", id);
+      if (profErr) throw profErr;
+
+      // Remove classes (and their dependents via cascade)
+      const { data: classIds } = await supabase.from("classes").select("id").eq("dojo_id", id);
+      if (classIds && classIds.length > 0) {
+        const ids = classIds.map(c => c.id);
+        await supabase.from("class_students").delete().in("class_id", ids);
+        await supabase.from("class_schedule").delete().in("class_id", ids);
+        await supabase.from("attendance").delete().in("class_id", ids);
+        await supabase.from("classes").delete().eq("dojo_id", id);
+      }
+
+      // Remove fee plans
+      const { data: planIds } = await supabase.from("monthly_fee_plans").select("id").eq("dojo_id", id);
+      if (planIds && planIds.length > 0) {
+        const ids = planIds.map(p => p.id);
+        await supabase.from("monthly_fee_plan_classes").delete().in("plan_id", ids);
+        await supabase.from("monthly_fee_plans").delete().eq("dojo_id", id);
+      }
+
+      // Remove leaderboard history
+      await supabase.from("leaderboard_history").delete().eq("dojo_id", id);
+
+      // Finally delete the dojo
       const { error } = await supabase.from("dojos").delete().eq("id", id);
       if (error) throw error;
     },
