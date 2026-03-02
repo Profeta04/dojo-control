@@ -1,174 +1,193 @@
-# Plano de Novas Funcionalidades — Dojo Control
+# Plano: Comunicação Interna (Mural de Avisos)
 
-## Visão Geral
-Implementar 6 novos módulos, um por vez, na ordem abaixo.
-
----
-
-## 1. 📢 Comunicação Interna (Mural de Avisos)
-
-### Objetivo
-Permitir que senseis/admins publiquem avisos para alunos do dojo.
-
-### Decisões
-- **Quem cria:** Admin + Senseis
-- **Anexos:** Texto + 1 imagem
+## Decisões Finais
+- **Autores:** Admin + Senseis
+- **Conteúdo:** Texto + 1 imagem (opcional)
 - **Segmentação:** Para todo o dojo (sem filtro por turma)
+- **Expiração:** Opcional por aviso (sensei decide se coloca data ou não)
+- **Notificação:** Push notification para todos os avisos novos
+- **Edição:** Editável após publicação
+- **Visualização:** Lista com cards, exibida no topo da dashboard do aluno
 
-### Banco de Dados
-- **Tabela `announcements`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `author_id` (uuid), `title` (text NOT NULL), `content` (text NOT NULL), `image_url` (text nullable), `priority` (text default 'normal' — valores: normal/urgente), `pinned` (boolean default false), `expires_at` (timestamptz nullable), `created_at`, `updated_at`
-- **Tabela `announcement_reads`**: `id` (uuid PK), `announcement_id` (uuid FK announcements), `user_id` (uuid), `read_at` (timestamptz default now()) — unique(announcement_id, user_id)
-- RLS: membros do dojo podem SELECT; staff pode INSERT/UPDATE/DELETE
+---
+
+## Banco de Dados
+
+### Tabela `announcements`
+```sql
+CREATE TABLE public.announcements (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  dojo_id uuid NOT NULL REFERENCES public.dojos(id) ON DELETE CASCADE,
+  author_id uuid NOT NULL,
+  title text NOT NULL,
+  content text NOT NULL,
+  image_url text,
+  priority text NOT NULL DEFAULT 'normal', -- 'normal' | 'urgente'
+  pinned boolean NOT NULL DEFAULT false,
+  expires_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
+
+-- Membros do dojo podem ver avisos (não expirados)
+CREATE POLICY "Dojo members can view announcements"
+  ON public.announcements FOR SELECT
+  USING (
+    dojo_id = get_user_dojo_id_safe(auth.uid())
+    OR (is_staff(auth.uid()) AND dojo_id IN (SELECT get_sensei_dojo_ids(auth.uid())))
+  );
+
+-- Staff pode criar avisos do próprio dojo
+CREATE POLICY "Staff can insert announcements"
+  ON public.announcements FOR INSERT
+  WITH CHECK (
+    is_staff(auth.uid())
+    AND (dojo_id IN (SELECT get_sensei_dojo_ids(auth.uid())) OR has_role(auth.uid(), 'admin'))
+  );
+
+-- Staff pode editar avisos do próprio dojo
+CREATE POLICY "Staff can update announcements"
+  ON public.announcements FOR UPDATE
+  USING (
+    is_staff(auth.uid())
+    AND (dojo_id IN (SELECT get_sensei_dojo_ids(auth.uid())) OR has_role(auth.uid(), 'admin'))
+  );
+
+-- Staff pode deletar avisos do próprio dojo
+CREATE POLICY "Staff can delete announcements"
+  ON public.announcements FOR DELETE
+  USING (
+    is_staff(auth.uid())
+    AND (dojo_id IN (SELECT get_sensei_dojo_ids(auth.uid())) OR has_role(auth.uid(), 'admin'))
+  );
+
+-- Trigger de updated_at
+CREATE TRIGGER update_announcements_updated_at
+  BEFORE UPDATE ON public.announcements
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+```
+
+### Tabela `announcement_reads`
+```sql
+CREATE TABLE public.announcement_reads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  announcement_id uuid NOT NULL REFERENCES public.announcements(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL,
+  read_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(announcement_id, user_id)
+);
+
+ALTER TABLE public.announcement_reads ENABLE ROW LEVEL SECURITY;
+
+-- Usuário pode ver próprias leituras
+CREATE POLICY "Users can view own reads"
+  ON public.announcement_reads FOR SELECT
+  USING (user_id = auth.uid());
+
+-- Usuário pode marcar como lido
+CREATE POLICY "Users can insert own reads"
+  ON public.announcement_reads FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+-- Staff pode ver todas as leituras do dojo (para analytics)
+CREATE POLICY "Staff can view all reads"
+  ON public.announcement_reads FOR SELECT
+  USING (is_staff(auth.uid()));
+```
 
 ### Storage
-- Bucket `announcement-images` (público) com policy por dojo
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('announcement-images', 'announcement-images', true);
 
-### Frontend
-- Nova página `/avisos` no menu lateral (ícone Megaphone) — visível para todos
-- Lista de avisos com: título, prévia do conteúdo, badge urgente, ícone de fixado, imagem (se houver)
-- Card de "avisos não lidos" no Dashboard (aluno e sensei)
-- Badge com contagem de não lidos no menu lateral
-- Dialog para criar/editar aviso (título, conteúdo, imagem, prioridade, fixar, expiração)
-- Marcar como lido automaticamente ao abrir o aviso
-- Filtros: todos / não lidos / urgentes / fixados
+CREATE POLICY "Staff can upload announcement images"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'announcement-images' AND is_staff(auth.uid()));
 
-### Notificações
-- Push notification ao publicar aviso urgente
-- Notificação in-app para todos os avisos novos
+CREATE POLICY "Anyone can view announcement images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'announcement-images');
 
----
-
-## 2. 📄 Gestão de Contratos / Documentos
-
-### Objetivo
-Upload e acompanhamento de contratos, atestados médicos e termos de responsabilidade com alertas de vencimento.
-
-### Decisões
-- **Tipos:** Contrato de matrícula + Atestado médico + Termo de responsabilidade
-- **Upload:** Aluno pode enviar, sensei aprova
-
-### Banco de Dados
-- **Tabela `student_documents`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `student_id` (uuid), `document_type` (text NOT NULL — valores: contrato/atestado_medico/termo_responsabilidade), `title` (text NOT NULL), `file_url` (text NOT NULL), `status` (text default 'pendente' — valores: pendente/aprovado/rejeitado/vencido), `expires_at` (date nullable), `notes` (text nullable), `reviewed_by` (uuid nullable), `reviewed_at` (timestamptz nullable), `uploaded_by` (uuid NOT NULL), `created_at`, `updated_at`
-- RLS: staff pode CRUD completo; aluno pode INSERT próprio + SELECT próprio
-
-### Storage
-- Bucket `student-documents` (privado) com políticas por dojo/aluno
-
-### Frontend
-- Nova aba "Documentos" no perfil do aluno (visível para aluno e sensei)
-- Upload de PDF/imagem com seleção de tipo (contrato, atestado, termo)
-- Lista com status visual: pendente ⏳, aprovado ✓, rejeitado ✗, vencido ⚠️
-- Sensei: lista de documentos pendentes de aprovação com botões aprovar/rejeitar
-- Indicador visual de documentos vencendo nos próximos 30 dias no dashboard do sensei
-- Botão de download/visualização do documento
-
-### Automação
-- Edge function cron para marcar documentos vencidos (expires_at < hoje) e enviar notificação
+CREATE POLICY "Staff can delete announcement images"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'announcement-images' AND is_staff(auth.uid()));
+```
 
 ---
 
-## 3. 🎥 Biblioteca de Técnicas
+## Frontend — Arquivos a Criar/Editar
 
-### Objetivo
-Catálogo de vídeos/descrições de golpes organizados por faixa, arte marcial e categoria.
+### Novos Arquivos
+1. **`src/pages/Announcements.tsx`** — Página principal `/avisos`
+   - Lista de avisos em cards
+   - Filtros: todos / não lidos / urgentes / fixados
+   - Ordenação: fixados primeiro, depois urgentes, depois por data
+   - Avisos expirados não aparecem para alunos (filtra `expires_at`)
+   - Sensei: botão "Novo Aviso" no header
 
-### Decisões
-- **Fonte de vídeos:** Links externos (YouTube/Vimeo) + Upload direto
-- **Categorias:** Judô clássico + BJJ clássico + sensei pode criar categorias personalizadas
+2. **`src/components/announcements/AnnouncementCard.tsx`** — Card individual
+   - Badge de urgente (vermelho)
+   - Ícone de fixado (pin)
+   - Imagem (se houver) com aspect-ratio
+   - Título, prévia do conteúdo (truncado), data, autor
+   - Indicador de "não lido" (bolinha azul)
+   - Ao clicar: expande o conteúdo completo + marca como lido
 
-### Banco de Dados
-- **Tabela `techniques`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `title` (text NOT NULL), `description` (text nullable), `video_url` (text nullable — link externo), `video_file_url` (text nullable — upload), `thumbnail_url` (text nullable), `martial_art` (text NOT NULL), `belt_level` (text NOT NULL), `category` (text NOT NULL), `difficulty` (text default 'medium'), `created_by` (uuid), `created_at`, `updated_at`
-- **Tabela `technique_categories`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `martial_art` (text NOT NULL), `name` (text NOT NULL), `icon` (text default '🥋'), `sort_order` (int default 0), `created_at` — unique(dojo_id, martial_art, name)
-- **Tabela `technique_favorites`**: `id` (uuid PK), `technique_id` (uuid FK techniques), `user_id` (uuid), `created_at` — unique(technique_id, user_id)
-- RLS: membros do dojo podem SELECT; staff pode INSERT/UPDATE/DELETE; alunos podem gerenciar próprios favoritos
-- Seed: inserir categorias padrão de Judô e BJJ na primeira criação
+3. **`src/components/announcements/AnnouncementFormDialog.tsx`** — Dialog criar/editar
+   - Campos: título, conteúdo (textarea), upload de imagem, prioridade (toggle normal/urgente), fixar (checkbox), data de expiração (date picker opcional)
+   - Validação: título obrigatório (max 100 chars), conteúdo obrigatório (max 2000 chars)
+   - Ao salvar: insere no banco + dispara push notification
 
-### Storage
-- Bucket `technique-videos` (privado) para uploads diretos
+4. **`src/components/announcements/DashboardAnnouncementsBanner.tsx`** — Banner no dashboard do aluno
+   - Mostra os últimos 3 avisos não lidos no topo da dashboard
+   - Card compacto com título + badge urgente + "Ver todos →"
+   - Some quando não há avisos não lidos
 
-### Frontend
-- Nova página `/tecnicas` no menu (ícone Video) — visível para todos
-- Grid de cards com thumbnail, título, faixa, categoria e arte marcial
-- Filtros: por arte marcial, faixa, categoria, busca por nome
-- Player embed (YouTube/Vimeo) ou player nativo para uploads
-- Botão de favoritar (coração) para alunos
-- Aba "Meus Favoritos" para acesso rápido
-- Sensei: formulário para adicionar/editar técnica + gerenciar categorias personalizadas
+5. **`src/hooks/useAnnouncements.ts`** — Hook de dados
+   - Query de avisos do dojo atual (filtrando expirados para alunos)
+   - Query de contagem de não lidos
+   - Mutations: criar, editar, deletar, marcar como lido
 
----
+### Arquivos a Editar
+6. **`src/App.tsx`** — Adicionar rota `/avisos` → `Announcements`
+7. **`src/components/layout/sidebar/SidebarNavContent.tsx`** — Adicionar item "Avisos" com badge de contagem
+8. **`src/components/layout/StudentBottomNav.tsx`** — Adicionar ícone de avisos na nav mobile do aluno
+9. **`src/pages/Dashboard.tsx`** — Importar e renderizar `DashboardAnnouncementsBanner` no topo (para alunos)
 
-## 4. 📝 Justificativa de Faltas
-
-### Objetivo
-Permitir que alunos registrem justificativas para faltas, sem necessidade de aprovação.
-
-### Decisões
-- **Aprovação:** Sem aprovação — aluno justifica e fica registrado
-- **Anexo:** Upload opcional de atestado médico
-
-### Banco de Dados
-- **Tabela `absence_justifications`**: `id` (uuid PK), `attendance_id` (uuid FK attendance), `student_id` (uuid), `reason` (text NOT NULL), `document_url` (text nullable), `created_at`
-- RLS: aluno pode INSERT/SELECT próprio; staff pode SELECT todos do dojo
-
-### Storage
-- Reusar bucket `student-documents` para atestados
-
-### Frontend
-- Botão "Justificar" ao lado de cada falta na aba de presenças do aluno
-- Dialog simples: campo de texto (motivo) + upload opcional de documento
-- Status visual na lista de presenças: falta com justificativa 📝 vs falta sem justificativa ✗
-- Sensei: pode ver justificativas ao clicar na falta do aluno
+### Push Notification
+10. Reusar a edge function `send-push-notification` existente
+    - Ao criar aviso: buscar todos os `push_subscriptions` dos alunos do dojo + enviar push com título do aviso
 
 ---
 
-## 5. 🎯 Simulados de Exame de Faixa
+## Fluxos de Uso
 
-### Objetivo
-Simulados completos que combinam quizzes existentes em provas formatadas por faixa.
+### Sensei publica aviso
+1. Sensei vai em `/avisos` → clica "Novo Aviso"
+2. Preenche título, conteúdo, opcionalmente imagem/prioridade/fixar/expiração
+3. Clica "Publicar"
+4. Sistema insere na tabela `announcements`
+5. Sistema busca todos os alunos do dojo com push subscription
+6. Envia push notification para cada um: "📢 [Título do aviso]"
+7. Aviso aparece na lista e no dashboard dos alunos
 
-### Decisões
-- **Tentativas:** Ilimitadas
-- **Timer:** Sem cronômetro — aluno faz no próprio ritmo
+### Aluno vê aviso
+1. Aluno abre o app → vê banner no topo da dashboard com avisos não lidos
+2. Clica em um aviso → card expande mostrando conteúdo completo
+3. Sistema insere registro em `announcement_reads`
+4. Badge de não lido some
 
-### Banco de Dados
-- **Tabela `belt_exams`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `title` (text NOT NULL), `martial_art` (text NOT NULL), `target_belt` (text NOT NULL), `passing_score` (int NOT NULL — porcentagem 0-100), `is_active` (boolean default true), `created_by` (uuid), `created_at`, `updated_at`
-- **Tabela `belt_exam_questions`**: `id` (uuid PK), `exam_id` (uuid FK belt_exams), `template_id` (uuid FK task_templates), `sort_order` (int NOT NULL), `points` (int default 1)
-- **Tabela `belt_exam_attempts`**: `id` (uuid PK), `exam_id` (uuid FK belt_exams), `student_id` (uuid), `started_at` (timestamptz default now()), `finished_at` (timestamptz nullable), `score` (int nullable), `total_points` (int nullable), `passed` (boolean nullable), `answers` (jsonb nullable)
-- RLS: staff cria/edita exames e questões; alunos podem INSERT tentativas próprias + SELECT próprias
+### Sensei edita aviso
+1. Sensei vai em `/avisos` → clica no menu ⋮ do aviso → "Editar"
+2. Altera campos desejados → salva
+3. Não reenvia push notification
 
-### Frontend
-- Nova página `/simulados` no menu do aluno (ícone ClipboardCheck)
-- Lista de simulados disponíveis filtrados pela faixa atual do aluno
-- Tela de prova: questões sequenciais com barra de progresso, sem timer
-- Resultado ao final: nota, aprovado/reprovado, correção detalhada questão a questão
-- Histórico de tentativas com gráfico de evolução (Recharts)
-- Sensei: tela para montar simulados selecionando questões do banco (task_templates), definir faixa-alvo e nota mínima
-
----
-
-## 6. 📄 Gestão de Contratos (Automação de Vencimento)
-
-*(Cron job complementar ao item 2)*
-
-### Edge Function: `check-document-expiry`
-- Roda diariamente via pg_cron
-- Busca documentos com `expires_at < hoje` e `status = 'aprovado'`
-- Atualiza status para `'vencido'`
-- Envia notificação in-app + push para o aluno e senseis do dojo
-
----
-
-## Ordem de Implementação
-
-| # | Funcionalidade | Complexidade | Prioridade |
-|---|---------------|-------------|-----------|
-| 1 | Comunicação Interna (Avisos) | Média | Alta |
-| 2 | Justificativa de Faltas | Baixa | Alta |
-| 3 | Gestão de Documentos | Média | Média |
-| 4 | Biblioteca de Técnicas | Média-Alta | Média |
-| 5 | Simulados de Exame | Alta | Média |
+### Aviso expira
+1. Aviso com `expires_at` no passado não aparece para alunos
+2. Sensei ainda pode vê-lo na lista (com indicador "expirado")
 
 ---
 
 ## Próximo Passo
-Quando quiser começar, diga qual funcionalidade implementar primeiro!
+Quando quiser implementar, diga "vamos!" e começo pela migração SQL.
