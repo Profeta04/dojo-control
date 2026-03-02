@@ -1,70 +1,171 @@
+# Plano de Novas Funcionalidades — Dojo Control
 
+## Visão Geral
+Implementar 7 novos módulos, um por vez, na ordem abaixo.
 
-# Plano: Remover Sistema de Responsável
+---
 
-## Resumo
-Remover completamente o sistema de "responsável" (guardian). O responsável que precisar pagar mensalidades simplesmente fará login na conta do aluno e usará a senha do aluno na aba de pagamentos.
+## 1. 📢 Comunicação Interna (Mural de Avisos)
 
-## Arquivos a Deletar
-1. `src/pages/GuardianDependents.tsx` - Página de dependentes
-2. `src/components/guardian/GuardianDashboard.tsx` - Dashboard do responsável
-3. `src/components/guardian/GuardianMinorDetails.tsx` - Detalhes do dependente
-4. `src/components/guardian/GuardianProfileCard.tsx` - Cards de perfil do responsável
-5. `src/components/guardian/GuardianPaymentsSummaryCard.tsx` - Resumo financeiro
-6. `src/components/auth/GuardianPasswordGate.tsx` - Gate de senha do responsável
-7. `src/hooks/useGuardianMinors.ts` - Hook de menores vinculados
+### Objetivo
+Permitir que senseis/admins publiquem avisos para alunos do dojo.
 
-## Arquivos a Editar
+### Banco de Dados
+- **Tabela `announcements`**: `id`, `dojo_id`, `author_id`, `title`, `content` (texto rico), `priority` (normal/urgente), `pinned` (boolean), `expires_at` (nullable), `created_at`, `updated_at`
+- **Tabela `announcement_reads`**: `id`, `announcement_id`, `user_id`, `read_at` — para marcar como lido
+- RLS: alunos do dojo podem ler; senseis/admins podem criar/editar/deletar
 
-### Rotas e Navegacao
-1. **`src/App.tsx`** - Remover import e rota `/dependentes` do `GuardianDependents`
-2. **`src/components/layout/StudentBottomNav.tsx`** - Remover `guardianPage1`, remover import `useGuardianMinors`, remover lógica `isGuardian` na seleção de páginas
-3. **`src/components/layout/DashboardLayout.tsx`** - Remover import `useGuardianMinors`, remover lógica `isGuardian` e o botão de config do responsável
-4. **`src/components/layout/sidebar/SidebarNavContent.tsx`** - Verificar se há itens específicos de guardian (provavelmente não, mas confirmar)
+### Frontend
+- Nova página `/avisos` no menu lateral (ícone Megaphone)
+- Card de avisos não lidos no Dashboard do aluno e do sensei
+- Badge no menu lateral com contagem de não lidos
+- Dialog para criar/editar aviso (título, conteúdo, prioridade, fixar, data de expiração)
+- Lista com filtros: todos / não lidos / urgentes / fixados
 
-### Páginas
-5. **`src/pages/StudentProfile.tsx`** - Remover branch `isGuardian` que renderiza `GuardianProfileCard`/`GuardianMinorsSummaryCard`/`GuardianPaymentsSummaryCard`. Manter apenas o fluxo de aluno normal
-6. **`src/pages/StudentPayments.tsx`** - Remover import `useGuardianMinors`, remover lógica `isGuardian` na query de pagamentos (voltar a buscar apenas pagamentos do `user.id`), remover exibição de nome do dependente na tabela
-7. **`src/pages/StudentPaymentHistory.tsx`** - Remover lógica de `isMinorWithGuardian` e `GuardianPasswordGate`
-8. **`src/pages/Dashboard.tsx`** - Remover import `useGuardianMinors` e `GuardianDashboard`
+### Notificações
+- Push notification ao publicar aviso urgente
+- Notificação in-app para todos os avisos
 
-### Componentes de Apoio
-9. **`src/components/student/GuardianInfoCard.tsx`** - Remover este componente (exibe info do responsável no perfil do aluno) ou simplificar para apenas mostrar email/nome se houver `guardian_email` no perfil
-10. **`src/components/help/HelpTutorials.tsx`** - Remover `guardianTutorials` e lógica `isGuardian`
-11. **`src/components/help/tourData.ts`** - Remover `guardianTutorials` e parâmetro `isGuardian` da função `getTutorialForPath`
-12. **`src/components/help/InteractiveTutorialDialog.tsx`** - Remover import `useGuardianMinors` e lógica `isGuardian`
-13. **`src/components/notifications/InAppPaymentNotifier.tsx`** - Verificar se há lógica guardian-specific
+---
 
-### Páginas Admin
-14. **`src/pages/Students.tsx`** - Remover filtro que exclui guardians da lista de alunos (guardians com `guardian_user_id`)
-15. **`src/components/classes/ClassesTab.tsx`** - Remover filtro que exclui guardians dos alunos disponíveis
+## 2. 📄 Gestão de Contratos
 
-### Autenticação
-16. **`src/pages/Auth.tsx`** - Remover o passo de cadastro que cria conta de responsável separada (signup do guardian). Manter apenas o campo `guardian_email` e `guardian_name` como informações de contato no perfil do aluno, sem criar conta separada
+### Objetivo
+Upload e acompanhamento de contratos/documentos dos alunos com alertas de vencimento.
 
-## Banco de Dados
-- As RLS policies de guardian (`Guardians can view minor payments`, `Guardians can view minor attendance`, etc.) podem ser removidas via migração SQL
-- A tabela `guardian_minors` pode ser mantida por ora (não causa problemas) ou removida se desejado
-- Os campos `guardian_email` e `guardian_user_id` na tabela `profiles` serão mantidos como dados de contato informativos
+### Banco de Dados
+- **Tabela `contracts`**: `id`, `dojo_id`, `student_id`, `title`, `file_url` (storage), `signed_at`, `expires_at`, `status` (ativo/vencido/pendente), `notes`, `created_at`, `updated_at`
+- RLS: staff pode CRUD; aluno pode ver os próprios
 
-## Detalhes Técnicos
+### Storage
+- Bucket `contracts` (privado) com políticas por dojo/aluno
 
-### Migração SQL
-```text
-DROP POLICY IF EXISTS "Guardians can view minor payments" ON public.payments;
-DROP POLICY IF EXISTS "Guardians can view minor attendance" ON public.attendance;
-DROP POLICY IF EXISTS "Guardians can view minor enrollments" ON public.class_students;
-DROP POLICY IF EXISTS "Guardians can view minor classes" ON public.classes;
-DROP POLICY IF EXISTS "Guardians can view minor schedules" ON public.class_schedule;
-DROP POLICY IF EXISTS "Guardians can view minor profiles" ON public.profiles;
-```
+### Frontend
+- Nova aba "Contratos" dentro da página de Alunos ou perfil do aluno
+- Upload de PDF/imagem do contrato assinado
+- Indicador visual de contratos vencendo nos próximos 30 dias
+- Botão de download/visualização do contrato
+- Filtros: ativos / vencidos / vencendo em breve
 
-### Edge Function
-- `supabase/functions/verify-guardian-password/index.ts` - Pode ser deletada pois não será mais usada
+### Automação
+- Edge function agendada (cron) para marcar contratos vencidos e enviar notificação
 
-### Impacto no Cadastro (Auth.tsx)
-O fluxo de cadastro de menores será simplificado:
-- Remover criação de conta do responsável via `supabase.auth.signUp` com `is_guardian: true`
-- Manter campos de nome/email/telefone do responsável apenas como informação de contato salva no perfil do aluno
-- O campo `guardian_user_id` não será mais preenchido no signup
+---
 
+## 3. 🎥 Biblioteca de Técnicas
+
+### Objetivo
+Catálogo de vídeos/descrições de golpes organizados por faixa e arte marcial.
+
+### Banco de Dados
+- **Tabela `techniques`**: `id`, `dojo_id`, `title`, `description`, `video_url` (YouTube/Vimeo embed), `thumbnail_url`, `martial_art`, `belt_level`, `category` (nage-waza, katame-waza, etc.), `difficulty`, `created_by`, `created_at`, `updated_at`
+- **Tabela `technique_favorites`**: `id`, `technique_id`, `user_id`, `created_at` — para alunos favoritarem
+- RLS: todos do dojo podem ler; staff pode criar/editar/deletar
+
+### Frontend
+- Nova página `/tecnicas` no menu (ícone Video)
+- Grid de cards com thumbnail, título, faixa e categoria
+- Filtros: por arte marcial, faixa, categoria, busca por nome
+- Player embed de vídeo ao clicar
+- Botão de favoritar (coração) para alunos
+- Aba "Meus Favoritos" para acesso rápido
+- Sensei: formulário para adicionar/editar técnica
+
+---
+
+## 4. 📊 Avaliações Físicas
+
+### Objetivo
+Registrar e acompanhar métricas físicas dos alunos com gráficos de evolução.
+
+### Banco de Dados
+- **Tabela `physical_assessments`**: `id`, `student_id`, `dojo_id`, `assessed_by`, `assessment_date`, `weight_kg`, `height_cm`, `flexibility_score` (0-10), `endurance_score` (0-10), `strength_score` (0-10), `notes`, `created_at`
+- RLS: staff pode criar/ver todos do dojo; aluno pode ver os próprios
+
+### Frontend
+- Nova aba "Avaliações" no perfil do aluno (visão aluno e visão sensei)
+- Formulário para registrar avaliação (peso, altura, flexibilidade, resistência, força)
+- Gráfico de evolução temporal (Recharts) por métrica
+- Card resumo com última avaliação e tendência (↑↓→)
+- Tabela histórica com todas as avaliações
+
+---
+
+## 5. 📝 Justificativa de Faltas
+
+### Objetivo
+Permitir que alunos enviem justificativas para faltas, com aprovação pelo sensei.
+
+### Banco de Dados
+- **Tabela `absence_justifications`**: `id`, `attendance_id`, `student_id`, `reason` (texto), `document_url` (opcional, atestado médico), `status` (pendente/aprovada/rejeitada), `reviewed_by`, `reviewed_at`, `created_at`
+- RLS: aluno pode criar/ver os próprios; staff pode ver/aprovar todos do dojo
+
+### Storage
+- Bucket `justifications` (privado) para upload de atestados
+
+### Frontend
+- Botão "Justificar" ao lado de cada falta na aba de presenças do aluno
+- Dialog com campo de texto + upload opcional de documento
+- Badge de "justificativa pendente" na aba de presenças do sensei
+- Lista de justificativas pendentes para aprovação (sensei)
+- Status visual na lista de presenças (justificada ✓, pendente ⏳, rejeitada ✗)
+
+---
+
+## 6. 🎯 Simulados de Exame de Faixa
+
+### Objetivo
+Simulados completos que combinam quizzes existentes em provas formatadas por faixa.
+
+### Banco de Dados
+- **Tabela `belt_exams`**: `id`, `dojo_id`, `title`, `martial_art`, `target_belt`, `time_limit_minutes`, `passing_score` (%), `is_active`, `created_by`, `created_at`
+- **Tabela `belt_exam_questions`**: `id`, `exam_id`, `template_id` (FK task_templates), `order`, `points`
+- **Tabela `belt_exam_attempts`**: `id`, `exam_id`, `student_id`, `started_at`, `finished_at`, `score`, `total_points`, `passed`, `answers` (JSONB)
+- RLS: staff cria/edita exames; alunos fazem tentativas e veem próprios resultados
+
+### Frontend
+- Nova página `/simulados` no menu do aluno
+- Lista de simulados disponíveis para a faixa atual do aluno
+- Tela de prova com timer, questões sequenciais, barra de progresso
+- Resultado ao final: nota, aprovado/reprovado, correção detalhada
+- Histórico de tentativas com gráfico de evolução
+- Sensei: tela para montar simulados selecionando questões do banco (task_templates)
+
+---
+
+## 7. 📶 Modo Offline (PWA Aprimorado)
+
+### Objetivo
+Permitir marcação de presença e visualização de dados básicos sem internet.
+
+### Implementação
+- **Service Worker aprimorado**: cache de páginas principais e dados estáticos
+- **IndexedDB local**: armazenar presenças marcadas offline
+- **Sincronização**: ao reconectar, enviar presenças pendentes para o backend
+- **Indicador visual**: banner "Modo Offline" quando sem conexão
+- **Dados cacheados**: perfil do aluno, agenda da semana, últimos avisos
+
+### Frontend
+- Banner no topo quando offline (amarelo/laranja)
+- Ícone de sync com badge de pendências
+- Toast ao sincronizar dados com sucesso
+- Página de presenças funcional offline (com fila de envio)
+
+---
+
+## Ordem de Implementação Sugerida
+
+| # | Funcionalidade | Complexidade | Dependências |
+|---|---------------|-------------|-------------|
+| 1 | Comunicação Interna | Média | Nenhuma |
+| 2 | Justificativa de Faltas | Baixa | Tabela attendance existente |
+| 3 | Biblioteca de Técnicas | Média | Nenhuma |
+| 4 | Simulados de Exame | Alta | task_templates existente |
+| 5 | Avaliações Físicas | Média | Nenhuma |
+| 6 | Gestão de Contratos | Média | Storage bucket |
+| 7 | Modo Offline | Alta | PWA existente |
+
+---
+
+## Próximo Passo
+Quando quiser começar, diga qual funcionalidade implementar primeiro!
