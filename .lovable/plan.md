@@ -1,7 +1,7 @@
 # Plano de Novas Funcionalidades — Dojo Control
 
 ## Visão Geral
-Implementar 7 novos módulos, um por vez, na ordem abaixo.
+Implementar 6 novos módulos, um por vez, na ordem abaixo.
 
 ---
 
@@ -10,160 +10,163 @@ Implementar 7 novos módulos, um por vez, na ordem abaixo.
 ### Objetivo
 Permitir que senseis/admins publiquem avisos para alunos do dojo.
 
+### Decisões
+- **Quem cria:** Admin + Senseis
+- **Anexos:** Texto + 1 imagem
+- **Segmentação:** Para todo o dojo (sem filtro por turma)
+
 ### Banco de Dados
-- **Tabela `announcements`**: `id`, `dojo_id`, `author_id`, `title`, `content` (texto rico), `priority` (normal/urgente), `pinned` (boolean), `expires_at` (nullable), `created_at`, `updated_at`
-- **Tabela `announcement_reads`**: `id`, `announcement_id`, `user_id`, `read_at` — para marcar como lido
-- RLS: alunos do dojo podem ler; senseis/admins podem criar/editar/deletar
+- **Tabela `announcements`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `author_id` (uuid), `title` (text NOT NULL), `content` (text NOT NULL), `image_url` (text nullable), `priority` (text default 'normal' — valores: normal/urgente), `pinned` (boolean default false), `expires_at` (timestamptz nullable), `created_at`, `updated_at`
+- **Tabela `announcement_reads`**: `id` (uuid PK), `announcement_id` (uuid FK announcements), `user_id` (uuid), `read_at` (timestamptz default now()) — unique(announcement_id, user_id)
+- RLS: membros do dojo podem SELECT; staff pode INSERT/UPDATE/DELETE
+
+### Storage
+- Bucket `announcement-images` (público) com policy por dojo
 
 ### Frontend
-- Nova página `/avisos` no menu lateral (ícone Megaphone)
-- Card de avisos não lidos no Dashboard do aluno e do sensei
-- Badge no menu lateral com contagem de não lidos
-- Dialog para criar/editar aviso (título, conteúdo, prioridade, fixar, data de expiração)
-- Lista com filtros: todos / não lidos / urgentes / fixados
+- Nova página `/avisos` no menu lateral (ícone Megaphone) — visível para todos
+- Lista de avisos com: título, prévia do conteúdo, badge urgente, ícone de fixado, imagem (se houver)
+- Card de "avisos não lidos" no Dashboard (aluno e sensei)
+- Badge com contagem de não lidos no menu lateral
+- Dialog para criar/editar aviso (título, conteúdo, imagem, prioridade, fixar, expiração)
+- Marcar como lido automaticamente ao abrir o aviso
+- Filtros: todos / não lidos / urgentes / fixados
 
 ### Notificações
 - Push notification ao publicar aviso urgente
-- Notificação in-app para todos os avisos
+- Notificação in-app para todos os avisos novos
 
 ---
 
-## 2. 📄 Gestão de Contratos
+## 2. 📄 Gestão de Contratos / Documentos
 
 ### Objetivo
-Upload e acompanhamento de contratos/documentos dos alunos com alertas de vencimento.
+Upload e acompanhamento de contratos, atestados médicos e termos de responsabilidade com alertas de vencimento.
+
+### Decisões
+- **Tipos:** Contrato de matrícula + Atestado médico + Termo de responsabilidade
+- **Upload:** Aluno pode enviar, sensei aprova
 
 ### Banco de Dados
-- **Tabela `contracts`**: `id`, `dojo_id`, `student_id`, `title`, `file_url` (storage), `signed_at`, `expires_at`, `status` (ativo/vencido/pendente), `notes`, `created_at`, `updated_at`
-- RLS: staff pode CRUD; aluno pode ver os próprios
+- **Tabela `student_documents`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `student_id` (uuid), `document_type` (text NOT NULL — valores: contrato/atestado_medico/termo_responsabilidade), `title` (text NOT NULL), `file_url` (text NOT NULL), `status` (text default 'pendente' — valores: pendente/aprovado/rejeitado/vencido), `expires_at` (date nullable), `notes` (text nullable), `reviewed_by` (uuid nullable), `reviewed_at` (timestamptz nullable), `uploaded_by` (uuid NOT NULL), `created_at`, `updated_at`
+- RLS: staff pode CRUD completo; aluno pode INSERT próprio + SELECT próprio
 
 ### Storage
-- Bucket `contracts` (privado) com políticas por dojo/aluno
+- Bucket `student-documents` (privado) com políticas por dojo/aluno
 
 ### Frontend
-- Nova aba "Contratos" dentro da página de Alunos ou perfil do aluno
-- Upload de PDF/imagem do contrato assinado
-- Indicador visual de contratos vencendo nos próximos 30 dias
-- Botão de download/visualização do contrato
-- Filtros: ativos / vencidos / vencendo em breve
+- Nova aba "Documentos" no perfil do aluno (visível para aluno e sensei)
+- Upload de PDF/imagem com seleção de tipo (contrato, atestado, termo)
+- Lista com status visual: pendente ⏳, aprovado ✓, rejeitado ✗, vencido ⚠️
+- Sensei: lista de documentos pendentes de aprovação com botões aprovar/rejeitar
+- Indicador visual de documentos vencendo nos próximos 30 dias no dashboard do sensei
+- Botão de download/visualização do documento
 
 ### Automação
-- Edge function agendada (cron) para marcar contratos vencidos e enviar notificação
+- Edge function cron para marcar documentos vencidos (expires_at < hoje) e enviar notificação
 
 ---
 
 ## 3. 🎥 Biblioteca de Técnicas
 
 ### Objetivo
-Catálogo de vídeos/descrições de golpes organizados por faixa e arte marcial.
+Catálogo de vídeos/descrições de golpes organizados por faixa, arte marcial e categoria.
+
+### Decisões
+- **Fonte de vídeos:** Links externos (YouTube/Vimeo) + Upload direto
+- **Categorias:** Judô clássico + BJJ clássico + sensei pode criar categorias personalizadas
 
 ### Banco de Dados
-- **Tabela `techniques`**: `id`, `dojo_id`, `title`, `description`, `video_url` (YouTube/Vimeo embed), `thumbnail_url`, `martial_art`, `belt_level`, `category` (nage-waza, katame-waza, etc.), `difficulty`, `created_by`, `created_at`, `updated_at`
-- **Tabela `technique_favorites`**: `id`, `technique_id`, `user_id`, `created_at` — para alunos favoritarem
-- RLS: todos do dojo podem ler; staff pode criar/editar/deletar
-
-### Frontend
-- Nova página `/tecnicas` no menu (ícone Video)
-- Grid de cards com thumbnail, título, faixa e categoria
-- Filtros: por arte marcial, faixa, categoria, busca por nome
-- Player embed de vídeo ao clicar
-- Botão de favoritar (coração) para alunos
-- Aba "Meus Favoritos" para acesso rápido
-- Sensei: formulário para adicionar/editar técnica
-
----
-
-## 4. 📊 Avaliações Físicas
-
-### Objetivo
-Registrar e acompanhar métricas físicas dos alunos com gráficos de evolução.
-
-### Banco de Dados
-- **Tabela `physical_assessments`**: `id`, `student_id`, `dojo_id`, `assessed_by`, `assessment_date`, `weight_kg`, `height_cm`, `flexibility_score` (0-10), `endurance_score` (0-10), `strength_score` (0-10), `notes`, `created_at`
-- RLS: staff pode criar/ver todos do dojo; aluno pode ver os próprios
-
-### Frontend
-- Nova aba "Avaliações" no perfil do aluno (visão aluno e visão sensei)
-- Formulário para registrar avaliação (peso, altura, flexibilidade, resistência, força)
-- Gráfico de evolução temporal (Recharts) por métrica
-- Card resumo com última avaliação e tendência (↑↓→)
-- Tabela histórica com todas as avaliações
-
----
-
-## 5. 📝 Justificativa de Faltas
-
-### Objetivo
-Permitir que alunos enviem justificativas para faltas, com aprovação pelo sensei.
-
-### Banco de Dados
-- **Tabela `absence_justifications`**: `id`, `attendance_id`, `student_id`, `reason` (texto), `document_url` (opcional, atestado médico), `status` (pendente/aprovada/rejeitada), `reviewed_by`, `reviewed_at`, `created_at`
-- RLS: aluno pode criar/ver os próprios; staff pode ver/aprovar todos do dojo
+- **Tabela `techniques`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `title` (text NOT NULL), `description` (text nullable), `video_url` (text nullable — link externo), `video_file_url` (text nullable — upload), `thumbnail_url` (text nullable), `martial_art` (text NOT NULL), `belt_level` (text NOT NULL), `category` (text NOT NULL), `difficulty` (text default 'medium'), `created_by` (uuid), `created_at`, `updated_at`
+- **Tabela `technique_categories`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `martial_art` (text NOT NULL), `name` (text NOT NULL), `icon` (text default '🥋'), `sort_order` (int default 0), `created_at` — unique(dojo_id, martial_art, name)
+- **Tabela `technique_favorites`**: `id` (uuid PK), `technique_id` (uuid FK techniques), `user_id` (uuid), `created_at` — unique(technique_id, user_id)
+- RLS: membros do dojo podem SELECT; staff pode INSERT/UPDATE/DELETE; alunos podem gerenciar próprios favoritos
+- Seed: inserir categorias padrão de Judô e BJJ na primeira criação
 
 ### Storage
-- Bucket `justifications` (privado) para upload de atestados
+- Bucket `technique-videos` (privado) para uploads diretos
+
+### Frontend
+- Nova página `/tecnicas` no menu (ícone Video) — visível para todos
+- Grid de cards com thumbnail, título, faixa, categoria e arte marcial
+- Filtros: por arte marcial, faixa, categoria, busca por nome
+- Player embed (YouTube/Vimeo) ou player nativo para uploads
+- Botão de favoritar (coração) para alunos
+- Aba "Meus Favoritos" para acesso rápido
+- Sensei: formulário para adicionar/editar técnica + gerenciar categorias personalizadas
+
+---
+
+## 4. 📝 Justificativa de Faltas
+
+### Objetivo
+Permitir que alunos registrem justificativas para faltas, sem necessidade de aprovação.
+
+### Decisões
+- **Aprovação:** Sem aprovação — aluno justifica e fica registrado
+- **Anexo:** Upload opcional de atestado médico
+
+### Banco de Dados
+- **Tabela `absence_justifications`**: `id` (uuid PK), `attendance_id` (uuid FK attendance), `student_id` (uuid), `reason` (text NOT NULL), `document_url` (text nullable), `created_at`
+- RLS: aluno pode INSERT/SELECT próprio; staff pode SELECT todos do dojo
+
+### Storage
+- Reusar bucket `student-documents` para atestados
 
 ### Frontend
 - Botão "Justificar" ao lado de cada falta na aba de presenças do aluno
-- Dialog com campo de texto + upload opcional de documento
-- Badge de "justificativa pendente" na aba de presenças do sensei
-- Lista de justificativas pendentes para aprovação (sensei)
-- Status visual na lista de presenças (justificada ✓, pendente ⏳, rejeitada ✗)
+- Dialog simples: campo de texto (motivo) + upload opcional de documento
+- Status visual na lista de presenças: falta com justificativa 📝 vs falta sem justificativa ✗
+- Sensei: pode ver justificativas ao clicar na falta do aluno
 
 ---
 
-## 6. 🎯 Simulados de Exame de Faixa
+## 5. 🎯 Simulados de Exame de Faixa
 
 ### Objetivo
 Simulados completos que combinam quizzes existentes em provas formatadas por faixa.
 
+### Decisões
+- **Tentativas:** Ilimitadas
+- **Timer:** Sem cronômetro — aluno faz no próprio ritmo
+
 ### Banco de Dados
-- **Tabela `belt_exams`**: `id`, `dojo_id`, `title`, `martial_art`, `target_belt`, `time_limit_minutes`, `passing_score` (%), `is_active`, `created_by`, `created_at`
-- **Tabela `belt_exam_questions`**: `id`, `exam_id`, `template_id` (FK task_templates), `order`, `points`
-- **Tabela `belt_exam_attempts`**: `id`, `exam_id`, `student_id`, `started_at`, `finished_at`, `score`, `total_points`, `passed`, `answers` (JSONB)
-- RLS: staff cria/edita exames; alunos fazem tentativas e veem próprios resultados
+- **Tabela `belt_exams`**: `id` (uuid PK), `dojo_id` (uuid FK dojos), `title` (text NOT NULL), `martial_art` (text NOT NULL), `target_belt` (text NOT NULL), `passing_score` (int NOT NULL — porcentagem 0-100), `is_active` (boolean default true), `created_by` (uuid), `created_at`, `updated_at`
+- **Tabela `belt_exam_questions`**: `id` (uuid PK), `exam_id` (uuid FK belt_exams), `template_id` (uuid FK task_templates), `sort_order` (int NOT NULL), `points` (int default 1)
+- **Tabela `belt_exam_attempts`**: `id` (uuid PK), `exam_id` (uuid FK belt_exams), `student_id` (uuid), `started_at` (timestamptz default now()), `finished_at` (timestamptz nullable), `score` (int nullable), `total_points` (int nullable), `passed` (boolean nullable), `answers` (jsonb nullable)
+- RLS: staff cria/edita exames e questões; alunos podem INSERT tentativas próprias + SELECT próprias
 
 ### Frontend
-- Nova página `/simulados` no menu do aluno
-- Lista de simulados disponíveis para a faixa atual do aluno
-- Tela de prova com timer, questões sequenciais, barra de progresso
-- Resultado ao final: nota, aprovado/reprovado, correção detalhada
-- Histórico de tentativas com gráfico de evolução
-- Sensei: tela para montar simulados selecionando questões do banco (task_templates)
+- Nova página `/simulados` no menu do aluno (ícone ClipboardCheck)
+- Lista de simulados disponíveis filtrados pela faixa atual do aluno
+- Tela de prova: questões sequenciais com barra de progresso, sem timer
+- Resultado ao final: nota, aprovado/reprovado, correção detalhada questão a questão
+- Histórico de tentativas com gráfico de evolução (Recharts)
+- Sensei: tela para montar simulados selecionando questões do banco (task_templates), definir faixa-alvo e nota mínima
 
 ---
 
-## 7. 📶 Modo Offline (PWA Aprimorado)
+## 6. 📄 Gestão de Contratos (Automação de Vencimento)
 
-### Objetivo
-Permitir marcação de presença e visualização de dados básicos sem internet.
+*(Cron job complementar ao item 2)*
 
-### Implementação
-- **Service Worker aprimorado**: cache de páginas principais e dados estáticos
-- **IndexedDB local**: armazenar presenças marcadas offline
-- **Sincronização**: ao reconectar, enviar presenças pendentes para o backend
-- **Indicador visual**: banner "Modo Offline" quando sem conexão
-- **Dados cacheados**: perfil do aluno, agenda da semana, últimos avisos
-
-### Frontend
-- Banner no topo quando offline (amarelo/laranja)
-- Ícone de sync com badge de pendências
-- Toast ao sincronizar dados com sucesso
-- Página de presenças funcional offline (com fila de envio)
+### Edge Function: `check-document-expiry`
+- Roda diariamente via pg_cron
+- Busca documentos com `expires_at < hoje` e `status = 'aprovado'`
+- Atualiza status para `'vencido'`
+- Envia notificação in-app + push para o aluno e senseis do dojo
 
 ---
 
-## Ordem de Implementação Sugerida
+## Ordem de Implementação
 
-| # | Funcionalidade | Complexidade | Dependências |
-|---|---------------|-------------|-------------|
-| 1 | Comunicação Interna | Média | Nenhuma |
-| 2 | Justificativa de Faltas | Baixa | Tabela attendance existente |
-| 3 | Biblioteca de Técnicas | Média | Nenhuma |
-| 4 | Simulados de Exame | Alta | task_templates existente |
-| 5 | Avaliações Físicas | Média | Nenhuma |
-| 6 | Gestão de Contratos | Média | Storage bucket |
-| 7 | Modo Offline | Alta | PWA existente |
+| # | Funcionalidade | Complexidade | Prioridade |
+|---|---------------|-------------|-----------|
+| 1 | Comunicação Interna (Avisos) | Média | Alta |
+| 2 | Justificativa de Faltas | Baixa | Alta |
+| 3 | Gestão de Documentos | Média | Média |
+| 4 | Biblioteca de Técnicas | Média-Alta | Média |
+| 5 | Simulados de Exame | Alta | Média |
 
 ---
 
