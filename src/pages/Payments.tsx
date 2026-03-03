@@ -27,7 +27,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   CreditCard, Plus, Loader2, DollarSign, CheckCircle2, Clock, AlertTriangle,
-  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent, ChevronDown, Trash2
+  Receipt, Users, Bell, QrCode, Save, User, ShieldAlert, ShieldCheck, Tag, Info, Percent, ChevronDown, Trash2, Upload, FileImage
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ReceiptViewButton } from "@/components/payments/ReceiptViewButton";
@@ -80,6 +80,7 @@ export default function PaymentsPage() {
   const [dailyInterestPercent, setDailyInterestPercent] = useState("0");
   const [graceDays, setGraceDays] = useState("0");
   const [lateFeeSaving, setLateFeeSaving] = useState(false);
+  const [staffReceiptUploading, setStaffReceiptUploading] = useState(false);
 
   // Fetch current dojo's data (PIX key + late fee settings)
   const { data: currentDojo } = useQuery({
@@ -521,6 +522,38 @@ export default function PaymentsPage() {
       toast({ title: "Erro", description: error.message || "Erro ao atualizar comprovante", variant: "destructive" });
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const handleStaffReceiptUpload = async (file: File) => {
+    if (!selectedPayment || !user) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Tipo inválido", description: "Envie JPG, PNG, WEBP ou PDF.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Arquivo grande demais", description: "Máximo 5MB.", variant: "destructive" });
+      return;
+    }
+    setStaffReceiptUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${selectedPayment.student_id}/${selectedPayment.id}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from("payment-receipts").upload(fileName, file);
+      if (uploadError) throw uploadError;
+      const { error: updateError } = await supabase
+        .from("payments")
+        .update({ receipt_url: fileName, receipt_status: "pendente_verificacao" })
+        .eq("id", selectedPayment.id);
+      if (updateError) throw updateError;
+      toast({ title: "✅ Comprovante anexado!", description: "O comprovante foi enviado com sucesso." });
+      setEditDialogOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+    } catch (err: any) {
+      toast({ title: "Erro ao enviar", description: err.message, variant: "destructive" });
+    } finally {
+      setStaffReceiptUploading(false);
     }
   };
 
@@ -1287,6 +1320,41 @@ export default function PaymentsPage() {
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* Staff Receipt Upload - for payments without receipt or with rejected receipt */}
+              {(!selectedPayment.receipt_url || selectedPayment.receipt_status === "rejeitado") && getPaymentStatus(selectedPayment) !== "pago" && (
+                <div className="p-4 bg-muted/30 border border-border/50 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Upload className="h-4 w-4 text-muted-foreground" />
+                    <Label className="text-sm font-medium">Anexar Comprovante</Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Envie o comprovante em nome do aluno (JPG, PNG, WEBP ou PDF, máx 5MB)
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    disabled={staffReceiptUploading}
+                    onClick={() => {
+                      const input = document.createElement("input");
+                      input.type = "file";
+                      input.accept = "image/jpeg,image/png,image/webp,application/pdf";
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) handleStaffReceiptUpload(file);
+                      };
+                      input.click();
+                    }}
+                  >
+                    {staffReceiptUploading ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                    ) : (
+                      <><FileImage className="h-4 w-4 mr-2" /> Selecionar Arquivo</>
+                    )}
+                  </Button>
                 </div>
               )}
 
