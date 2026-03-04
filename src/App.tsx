@@ -13,14 +13,26 @@ import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { PWAInstallGate } from "@/components/pwa/PWAInstallGate";
 
-// Retry wrapper — retries up to 3 times with increasing delay
+// Retry wrapper — retries up to 3 times with cache-busting
 function lazyRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): React.LazyExoticComponent<T> {
   return lazy(() => {
     const attempt = (retries: number): Promise<{ default: T }> =>
       factory().catch((err) => {
-        if (retries <= 0) throw err;
+        if (retries <= 0) {
+          // Last resort: force full page reload to get fresh chunks
+          if (
+            err?.message?.includes("Failed to fetch dynamically imported module") ||
+            err?.message?.includes("Loading chunk") ||
+            err?.message?.includes("error loading dynamically imported module")
+          ) {
+            window.location.reload();
+            // Return a never-resolving promise to avoid rendering errors during reload
+            return new Promise<{ default: T }>(() => {});
+          }
+          throw err;
+        }
         return new Promise<{ default: T }>((resolve) =>
           setTimeout(() => resolve(attempt(retries - 1)), 1000 * (4 - retries))
         );

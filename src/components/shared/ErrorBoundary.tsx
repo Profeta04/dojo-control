@@ -17,6 +17,16 @@ interface State {
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [500, 1000, 2000, 3000, 4000];
 
+function isChunkError(error: Error): boolean {
+  const msg = error?.message?.toLowerCase() || "";
+  return (
+    msg.includes("failed to fetch dynamically imported module") ||
+    msg.includes("loading chunk") ||
+    msg.includes("error loading dynamically imported module") ||
+    msg.includes("loading css chunk")
+  );
+}
+
 export class ErrorBoundary extends Component<Props, State> {
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -30,9 +40,16 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    console.error("ErrorBoundary caught:", error.message);
 
     const { retryCount } = this.state;
+
+    // For chunk errors, just reload the page immediately instead of retrying in-place
+    if (isChunkError(error)) {
+      console.warn("Chunk load error detected, reloading page...");
+      window.location.reload();
+      return;
+    }
 
     if (retryCount < MAX_RETRIES) {
       const delay = RETRY_DELAYS[retryCount] ?? 4000;
@@ -59,7 +76,6 @@ export class ErrorBoundary extends Component<Props, State> {
       const userId = user?.id;
 
       if (userId) {
-        // Find all admins/donos to notify
         const { data: admins } = await supabase
           .from("user_roles")
           .select("user_id")
@@ -80,7 +96,6 @@ export class ErrorBoundary extends Component<Props, State> {
       console.error("Failed to report error:", e);
     }
 
-    // Redirect to home
     window.location.href = "/";
   }
 
@@ -88,7 +103,6 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
 
-      // Show loading spinner while auto-retrying
       if (this.state.retryCount < MAX_RETRIES) {
         return this.props.inline ? (
           <div className="flex items-center justify-center p-6">
@@ -101,7 +115,6 @@ export class ErrorBoundary extends Component<Props, State> {
         );
       }
 
-      // Fallback while redirecting (should be brief)
       return (
         <div className="min-h-screen flex items-center justify-center bg-background">
           <DojoLoadingSpinner />
