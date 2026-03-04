@@ -72,6 +72,7 @@ export default function PaymentsPage() {
   const [notifyLoading, setNotifyLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
   const [receiptFilter, setReceiptFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [pixKeyInput, setPixKeyInput] = useState("");
   const [pixSaving, setPixSaving] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -241,8 +242,9 @@ export default function PaymentsPage() {
       : receiptFilter === "com_comprovante" ? !!p.receipt_url
       : receiptFilter === "sem_comprovante" ? !p.receipt_url
       : true;
-    return statusMatch && receiptMatch;
-  });
+    const categoryMatch = categoryFilter === "all" ? true : p.category === categoryFilter;
+    return statusMatch && receiptMatch && categoryMatch;
+  })?.sort((a, b) => b.amount - a.amount);
 
   const groupedPayments = {
     pendente_verificacao: filteredPayments?.filter((p) => p.receipt_status === "pendente_verificacao") || [],
@@ -860,6 +862,18 @@ export default function PaymentsPage() {
                 <SelectItem value="pendente_verificacao">📎 Pendentes verif.</SelectItem>
                 <SelectItem value="com_comprovante">Com comprovante</SelectItem>
                 <SelectItem value="sem_comprovante">Sem comprovante</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[150px] h-9"><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                <SelectItem value="mensalidade">Mensalidade</SelectItem>
+                <SelectItem value="matricula">Matrícula</SelectItem>
+                <SelectItem value="material">Material</SelectItem>
+                <SelectItem value="taxa_exame">Taxa de Exame</SelectItem>
+                <SelectItem value="evento">Evento</SelectItem>
+                <SelectItem value="outro">Outro</SelectItem>
               </SelectContent>
             </Select>
           </div>
