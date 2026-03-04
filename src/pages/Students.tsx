@@ -832,8 +832,10 @@ export default function Students() {
                 </div>
               </TableCell>
               <TableCell className="hidden sm:table-cell">
-                {student.is_blocked && (
+                {student.is_blocked ? (
                   <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
+                ) : (
+                  <RegistrationStatusBadge status={student.registration_status || "pendente"} />
                 )}
               </TableCell>
               {showActions && (
