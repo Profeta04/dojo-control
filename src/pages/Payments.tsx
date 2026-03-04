@@ -219,16 +219,38 @@ export default function PaymentsPage() {
 
   const getPaymentStatus = (p: Payment): PaymentStatus => (p.status as PaymentStatus) || "pendente";
 
-  // Calculate late fee for a payment
+  // Fetch fee plans for per-plan late fee settings
+  const { data: feePlans } = useQuery({
+    queryKey: ["monthly-fee-plans-for-late-fees", currentDojoId],
+    queryFn: async () => {
+      if (!currentDojoId) return [];
+      const { data, error } = await supabase
+        .from("monthly_fee_plans")
+        .select("name, late_fee_percent, late_fee_fixed, daily_interest_percent, grace_days")
+        .eq("dojo_id", currentDojoId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!currentDojoId,
+  });
+
+  // Calculate late fee for a payment (plan-specific overrides dojo defaults)
   const calculateLateFee = (payment: Payment): { fee: number; interest: number; total: number; daysLate: number } => {
     if (!currentDojo || getPaymentStatus(payment) !== "atrasado") return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
+    
+    // Find matching plan by description
+    const matchingPlan = feePlans?.find((p) => p.name === payment.description);
+    
+    const graceDays = matchingPlan?.grace_days ?? currentDojo.grace_days ?? 0;
     const dueDate = parseISO(payment.due_date);
     const today = new Date();
-    const daysLate = Math.max(0, differenceInDays(today, dueDate) - (currentDojo.grace_days || 0));
+    const daysLate = Math.max(0, differenceInDays(today, dueDate) - graceDays);
     if (daysLate <= 0) return { fee: 0, interest: 0, total: payment.amount, daysLate: 0 };
-    const feePercent = currentDojo.late_fee_percent || 0;
-    const interestPercent = currentDojo.daily_interest_percent || 0;
-    const fixedFee = currentDojo.late_fee_fixed || 0;
+    
+    const feePercent = matchingPlan?.late_fee_percent ?? currentDojo.late_fee_percent ?? 0;
+    const interestPercent = matchingPlan?.daily_interest_percent ?? currentDojo.daily_interest_percent ?? 0;
+    const fixedFee = matchingPlan?.late_fee_fixed ?? currentDojo.late_fee_fixed ?? 0;
+    
     const fee = payment.amount * (feePercent / 100) + fixedFee;
     const interest = payment.amount * (interestPercent / 100) * daysLate;
     return { fee, interest, total: payment.amount + fee + interest, daysLate };

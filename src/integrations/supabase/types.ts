@@ -652,10 +652,14 @@ export type Database = {
           amount: number
           created_at: string
           created_by: string
+          daily_interest_percent: number | null
           dojo_id: string
           due_day: number
+          grace_days: number | null
           id: string
           is_active: boolean
+          late_fee_fixed: number | null
+          late_fee_percent: number | null
           martial_art_type: string
           name: string
           updated_at: string
@@ -664,10 +668,14 @@ export type Database = {
           amount: number
           created_at?: string
           created_by: string
+          daily_interest_percent?: number | null
           dojo_id: string
           due_day?: number
+          grace_days?: number | null
           id?: string
           is_active?: boolean
+          late_fee_fixed?: number | null
+          late_fee_percent?: number | null
           martial_art_type?: string
           name: string
           updated_at?: string
@@ -676,10 +684,14 @@ export type Database = {
           amount?: number
           created_at?: string
           created_by?: string
+          daily_interest_percent?: number | null
           dojo_id?: string
           due_day?: number
+          grace_days?: number | null
           id?: string
           is_active?: boolean
+          late_fee_fixed?: number | null
+          late_fee_percent?: number | null
           martial_art_type?: string
           name?: string
           updated_at?: string

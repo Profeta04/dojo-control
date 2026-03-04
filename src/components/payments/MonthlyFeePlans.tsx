@@ -29,6 +29,10 @@ interface FeePlan {
   dojo_id: string;
   created_by: string;
   martial_art_type: string;
+  late_fee_percent: number | null;
+  late_fee_fixed: number | null;
+  daily_interest_percent: number | null;
+  grace_days: number | null;
 }
 
 const MARTIAL_ART_LABELS: Record<string, string> = {
@@ -55,6 +59,10 @@ export function MonthlyFeePlans() {
     amount: "",
     due_day: "10",
     martial_art_type: "judo" as string,
+    late_fee_percent: "",
+    late_fee_fixed: "",
+    daily_interest_percent: "",
+    grace_days: "",
   });
 
   const { data: plans, isLoading: plansLoading } = useQuery({
@@ -73,7 +81,7 @@ export function MonthlyFeePlans() {
   });
 
   const resetForm = () => {
-    setFormData({ name: "", amount: "", due_day: "10", martial_art_type: "judo" });
+    setFormData({ name: "", amount: "", due_day: "10", martial_art_type: "judo", late_fee_percent: "", late_fee_fixed: "", daily_interest_percent: "", grace_days: "" });
     setEditingPlan(null);
   };
 
@@ -89,6 +97,10 @@ export function MonthlyFeePlans() {
       amount: String(plan.amount),
       due_day: String(plan.due_day),
       martial_art_type: plan.martial_art_type || "judo",
+      late_fee_percent: plan.late_fee_percent != null ? String(plan.late_fee_percent) : "",
+      late_fee_fixed: plan.late_fee_fixed != null ? String(plan.late_fee_fixed) : "",
+      daily_interest_percent: plan.daily_interest_percent != null ? String(plan.daily_interest_percent) : "",
+      grace_days: plan.grace_days != null ? String(plan.grace_days) : "",
     });
     setDialogOpen(true);
   };
@@ -97,6 +109,13 @@ export function MonthlyFeePlans() {
     if (!formData.name || !formData.amount || !currentDojoId || !user) return;
     setSaving(true);
     try {
+      const lateFeeData = {
+        late_fee_percent: formData.late_fee_percent ? parseFloat(formData.late_fee_percent) : null,
+        late_fee_fixed: formData.late_fee_fixed ? parseFloat(formData.late_fee_fixed) : null,
+        daily_interest_percent: formData.daily_interest_percent ? parseFloat(formData.daily_interest_percent) : null,
+        grace_days: formData.grace_days ? parseInt(formData.grace_days) : null,
+      };
+
       if (editingPlan) {
         const { error } = await supabase
           .from("monthly_fee_plans")
@@ -105,6 +124,7 @@ export function MonthlyFeePlans() {
             amount: parseFloat(formData.amount),
             due_day: parseInt(formData.due_day),
             martial_art_type: formData.martial_art_type,
+            ...lateFeeData,
           })
           .eq("id", editingPlan.id);
         if (error) throw error;
@@ -119,6 +139,7 @@ export function MonthlyFeePlans() {
             due_day: parseInt(formData.due_day),
             created_by: user.id,
             martial_art_type: formData.martial_art_type,
+            ...lateFeeData,
           });
         if (error) throw error;
         toast({ title: "Plano criado com sucesso!" });
@@ -244,6 +265,11 @@ export function MonthlyFeePlans() {
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {formatCurrency(plan.amount)} • Vencimento dia {plan.due_day}
+                            {(plan.late_fee_percent != null || plan.late_fee_fixed != null || plan.daily_interest_percent != null) && (
+                              <span className="ml-1 text-warning-foreground">
+                                • Taxa personalizada
+                              </span>
+                            )}
                           </p>
                         </div>
                       </div>
@@ -335,6 +361,67 @@ export function MonthlyFeePlans() {
                 />
               </div>
             </div>
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground">
+                  <ChevronDown className="h-3 w-3 mr-1" /> Taxas de atraso personalizadas (opcional)
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  Deixe em branco para usar as taxas padrão do dojo.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Multa (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.late_fee_percent}
+                      onChange={(e) => setFormData({ ...formData, late_fee_percent: e.target.value })}
+                      placeholder="Padrão do dojo"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Multa fixa (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.late_fee_fixed}
+                      onChange={(e) => setFormData({ ...formData, late_fee_fixed: e.target.value })}
+                      placeholder="Padrão do dojo"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Juros diário (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      value={formData.daily_interest_percent}
+                      onChange={(e) => setFormData({ ...formData, daily_interest_percent: e.target.value })}
+                      placeholder="Padrão do dojo"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Carência (dias)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={formData.grace_days}
+                      onChange={(e) => setFormData({ ...formData, grace_days: e.target.value })}
+                      placeholder="Padrão do dojo"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
             <div className="p-3 bg-muted/30 rounded-xl border border-border/50">
               <p className="text-xs text-muted-foreground">
                 💡 A mensalidade será gerada automaticamente todo mês. Alunos bolsistas são ignorados. 

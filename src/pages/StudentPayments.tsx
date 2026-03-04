@@ -74,17 +74,37 @@ export default function StudentPaymentsPage() {
     enabled: !!profile?.dojo_id,
   });
 
+  // Fetch fee plans for per-plan late fee settings
+  const { data: feePlans } = useQuery({
+    queryKey: ["student-fee-plans", profile?.dojo_id],
+    queryFn: async () => {
+      if (!profile?.dojo_id) return [];
+      const { data, error } = await supabase
+        .from("monthly_fee_plans")
+        .select("name, late_fee_percent, late_fee_fixed, daily_interest_percent, grace_days")
+        .eq("dojo_id", profile.dojo_id);
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!profile?.dojo_id,
+  });
 
   const pixKey = dojoData?.pix_key || "Chave Pix não configurada";
 
   const calculateLateFees = (payment: Payment) => {
     if (payment.status !== "atrasado" || !dojoData) return null;
-    const graceDays = dojoData.grace_days || 0;
+    
+    // Find matching plan by description
+    const matchingPlan = feePlans?.find((p) => p.name === payment.description);
+    
+    const graceDays = matchingPlan?.grace_days ?? dojoData.grace_days ?? 0;
     const daysLate = differenceInCalendarDays(new Date(), parseISO(payment.due_date)) - graceDays;
     if (daysLate <= 0) return null;
-    const feePercent = dojoData.late_fee_percent || 0;
-    const fixedFee = dojoData.late_fee_fixed || 0;
-    const interestPercent = dojoData.daily_interest_percent || 0;
+    
+    const feePercent = matchingPlan?.late_fee_percent ?? dojoData.late_fee_percent ?? 0;
+    const fixedFee = matchingPlan?.late_fee_fixed ?? dojoData.late_fee_fixed ?? 0;
+    const interestPercent = matchingPlan?.daily_interest_percent ?? dojoData.daily_interest_percent ?? 0;
+    
     const fee = payment.amount * (feePercent / 100) + fixedFee;
     const interest = payment.amount * (interestPercent / 100) * daysLate;
     const total = payment.amount + fee + interest;
