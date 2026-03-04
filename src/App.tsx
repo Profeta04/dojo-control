@@ -13,18 +13,20 @@ import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { PWAInstallGate } from "@/components/pwa/PWAInstallGate";
 
-// Retry wrapper for lazy imports (handles chunk load failures in PWA)
+// Retry wrapper — retries up to 3 times with increasing delay
 function lazyRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): React.LazyExoticComponent<T> {
-  return lazy(() =>
-    factory().catch(() =>
-      // Wait 1s and retry once on chunk load failure
-      new Promise<{ default: T }>((resolve) =>
-        setTimeout(() => resolve(factory()), 1000)
-      )
-    )
-  );
+  return lazy(() => {
+    const attempt = (retries: number): Promise<{ default: T }> =>
+      factory().catch((err) => {
+        if (retries <= 0) throw err;
+        return new Promise<{ default: T }>((resolve) =>
+          setTimeout(() => resolve(attempt(retries - 1)), 1000 * (4 - retries))
+        );
+      });
+    return attempt(3);
+  });
 }
 
 // Lazy load all pages with retry
@@ -42,7 +44,6 @@ const PaymentHistory = lazyRetry(() => import("./pages/PaymentHistory"));
 const StudentPayments = lazyRetry(() => import("./pages/StudentPayments"));
 const Settings = lazyRetry(() => import("./pages/Settings"));
 const StudentProfile = lazyRetry(() => import("./pages/StudentProfile"));
-
 const StudentTasks = lazyRetry(() => import("./pages/StudentTasks"));
 const StudentConfig = lazyRetry(() => import("./pages/StudentConfig"));
 const StudentProgress = lazyRetry(() => import("./pages/StudentProgress"));
@@ -68,47 +69,58 @@ const queryClient = new QueryClient({
   },
 });
 
+const PageFallback = (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <DojoLoadingSpinner />
+  </div>
+);
+
+/** Wraps a lazy page with its own ErrorBoundary + Suspense so failures are isolated */
+function SafePage({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={PageFallback}>
+        <PageTransition>{children}</PageTransition>
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
+
 function AnimatedRoutes() {
   const location = useLocation();
-  
+
   return (
-    <AnimatePresence mode="wait">
-      <Suspense
-        key={location.pathname}
-        fallback={<div className="min-h-screen flex items-center justify-center bg-background"><DojoLoadingSpinner /></div>}
-      >
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<PageTransition><Index /></PageTransition>} />
-          <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
-          <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
-          <Route path="/dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
-          <Route path="/students" element={<PageTransition><Students /></PageTransition>} />
-          <Route path="/senseis" element={<PageTransition><Senseis /></PageTransition>} />
-          <Route path="/classes" element={<PageTransition><Classes /></PageTransition>} />
-          <Route path="/agenda" element={<PageTransition><StudentAgenda /></PageTransition>} />
-          <Route path="/payments" element={<PageTransition><Payments /></PageTransition>} />
-          <Route path="/mensalidade" element={<PageTransition><StudentPayments /></PageTransition>} />
-          <Route path="/payment-history" element={<PageTransition><PaymentHistory /></PageTransition>} />
-          <Route path="/graduations" element={<PageTransition><Graduations /></PageTransition>} />
-          <Route path="/settings" element={<PageTransition><Settings /></PageTransition>} />
-          <Route path="/perfil" element={<PageTransition><StudentProfile /></PageTransition>} />
-          
-          <Route path="/tarefas" element={<PageTransition><StudentTasks /></PageTransition>} />
-          <Route path="/config" element={<PageTransition><StudentConfig /></PageTransition>} />
-          <Route path="/progresso" element={<PageTransition><StudentProgress /></PageTransition>} />
-          <Route path="/checkin/:token" element={<PageTransition><Checkin /></PageTransition>} />
-          <Route path="/scanner" element={<PageTransition><Scanner /></PageTransition>} />
-          <Route path="/attendance" element={<PageTransition><Attendance /></PageTransition>} />
-          <Route path="/conquistas" element={<PageTransition><StudentAchievements /></PageTransition>} />
-          <Route path="/meu-progresso" element={<PageTransition><StudentMyProgress /></PageTransition>} />
-          <Route path="/historico-pagamentos" element={<PageTransition><StudentPaymentHistory /></PageTransition>} />
-          <Route path="/subscription-approvals" element={<PageTransition><SubscriptionApprovals /></PageTransition>} />
-          <Route path="/planos" element={<PageTransition><Plans /></PageTransition>} />
-          <Route path="/ajuda" element={<PageTransition><Help /></PageTransition>} />
-          <Route path="/compartilhar" element={<PageTransition><StudentPayments /></PageTransition>} />
-          <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
-        </Routes>
-      </Suspense>
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<SafePage><Index /></SafePage>} />
+        <Route path="/auth" element={<SafePage><Auth /></SafePage>} />
+        <Route path="/reset-password" element={<SafePage><ResetPassword /></SafePage>} />
+        <Route path="/dashboard" element={<SafePage><Dashboard /></SafePage>} />
+        <Route path="/students" element={<SafePage><Students /></SafePage>} />
+        <Route path="/senseis" element={<SafePage><Senseis /></SafePage>} />
+        <Route path="/classes" element={<SafePage><Classes /></SafePage>} />
+        <Route path="/agenda" element={<SafePage><StudentAgenda /></SafePage>} />
+        <Route path="/payments" element={<SafePage><Payments /></SafePage>} />
+        <Route path="/mensalidade" element={<SafePage><StudentPayments /></SafePage>} />
+        <Route path="/payment-history" element={<SafePage><PaymentHistory /></SafePage>} />
+        <Route path="/graduations" element={<SafePage><Graduations /></SafePage>} />
+        <Route path="/settings" element={<SafePage><Settings /></SafePage>} />
+        <Route path="/perfil" element={<SafePage><StudentProfile /></SafePage>} />
+        <Route path="/tarefas" element={<SafePage><StudentTasks /></SafePage>} />
+        <Route path="/config" element={<SafePage><StudentConfig /></SafePage>} />
+        <Route path="/progresso" element={<SafePage><StudentProgress /></SafePage>} />
+        <Route path="/checkin/:token" element={<SafePage><Checkin /></SafePage>} />
+        <Route path="/scanner" element={<SafePage><Scanner /></SafePage>} />
+        <Route path="/attendance" element={<SafePage><Attendance /></SafePage>} />
+        <Route path="/conquistas" element={<SafePage><StudentAchievements /></SafePage>} />
+        <Route path="/meu-progresso" element={<SafePage><StudentMyProgress /></SafePage>} />
+        <Route path="/historico-pagamentos" element={<SafePage><StudentPaymentHistory /></SafePage>} />
+        <Route path="/subscription-approvals" element={<SafePage><SubscriptionApprovals /></SafePage>} />
+        <Route path="/planos" element={<SafePage><Plans /></SafePage>} />
+        <Route path="/ajuda" element={<SafePage><Help /></SafePage>} />
+        <Route path="/compartilhar" element={<SafePage><StudentPayments /></SafePage>} />
+        <Route path="*" element={<SafePage><NotFound /></SafePage>} />
+      </Routes>
     </AnimatePresence>
   );
 }
