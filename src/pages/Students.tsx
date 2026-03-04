@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
+import { RegistrationStatusBadge, PaymentStatusBadge } from "@/components/shared/StatusBadge";
 import { StudentReportDialog } from "@/components/students/StudentReportDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,8 +153,32 @@ export default function Students() {
     enabled: !!user && canManageStudents,
   });
 
-  // Fetch all student_belts for the dojo's students
+  // Fetch payment status for each student
   const studentUserIds = students?.map((s) => s.user_id) || [];
+  const { data: studentPayments } = useQuery({
+    queryKey: ["student-payment-status", currentDojoId, studentUserIds.join(",")],
+    queryFn: async () => {
+      if (studentUserIds.length === 0) return [];
+      const { data } = await supabase
+        .from("payments")
+        .select("student_id, status, due_date")
+        .in("student_id", studentUserIds)
+        .order("due_date", { ascending: false });
+      return data || [];
+    },
+    enabled: studentUserIds.length > 0,
+  });
+
+  // Helper: get worst payment status for a student
+  const getStudentPaymentStatus = (userId: string): string | null => {
+    const payments = studentPayments?.filter((p) => p.student_id === userId) || [];
+    if (payments.length === 0) return null;
+    if (payments.some((p) => p.status === "atrasado")) return "atrasado";
+    if (payments.some((p) => p.status === "pendente")) return "pendente";
+    return "pago";
+  };
+
+  // Fetch all student_belts for the dojo's students
   const { data: allStudentBelts } = useQuery({
     queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
@@ -729,6 +753,7 @@ export default function Students() {
             )}
             <TableHead className="hidden md:table-cell">Federado</TableHead>
             <TableHead className="hidden md:table-cell">Bolsista</TableHead>
+            <TableHead className="hidden sm:table-cell">Mensalidade</TableHead>
             <TableHead className="hidden sm:table-cell">Status</TableHead>
             {(showActions || showManage || showPermanentDelete) && <TableHead className="text-right">Ações</TableHead>}
           </TableRow>
@@ -830,6 +855,13 @@ export default function Students() {
                     </Badge>
                   )}
                 </div>
+              </TableCell>
+              <TableCell className="hidden sm:table-cell">
+                {getStudentPaymentStatus(student.user_id) ? (
+                  <PaymentStatusBadge status={getStudentPaymentStatus(student.user_id)!} />
+                ) : (
+                  <span className="text-muted-foreground text-sm">—</span>
+                )}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
                 {student.is_blocked ? (
