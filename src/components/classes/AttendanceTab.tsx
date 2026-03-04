@@ -248,42 +248,59 @@ export function AttendanceTab() {
     setFormLoading(true);
 
     try {
-      // Only delete non-self-checked attendance records
-      const selfCheckedStudentIds = attendanceList
-        .filter((a) => a.selfCheckedIn)
-        .map((a) => a.student.user_id);
+      // Separate self-checked and manual students
+      const manualStudents = attendanceList.filter((item) => !item.selfCheckedIn);
 
-      // Delete existing manual attendance only
-      const { data: existingManual } = await supabase
-        .from("attendance")
-        .select("id, self_checked_in")
-        .eq("class_id", selectedSchedule.class_id)
-        .eq("date", selectedDate)
-        .eq("self_checked_in", false);
-
-      if (existingManual && existingManual.length > 0) {
-        await supabase
+      // For each manual student, upsert their attendance
+      for (const item of manualStudents) {
+        // Check if a manual record already exists
+        const { data: existing } = await supabase
           .from("attendance")
-          .delete()
-          .in("id", existingManual.map((r) => r.id));
+          .select("id")
+          .eq("class_id", selectedSchedule.class_id)
+          .eq("student_id", item.student.user_id)
+          .eq("date", selectedDate)
+          .eq("self_checked_in", false)
+          .maybeSingle();
+
+        if (existing) {
+          // Update existing manual record
+          await supabase
+            .from("attendance")
+            .update({
+              present: item.present,
+              notes: item.notes || null,
+              marked_by: user.id,
+            })
+            .eq("id", existing.id);
+        } else {
+          // Check if there's already a self-checked-in record for this student
+          const { data: selfRecord } = await supabase
+            .from("attendance")
+            .select("id")
+            .eq("class_id", selectedSchedule.class_id)
+            .eq("student_id", item.student.user_id)
+            .eq("date", selectedDate)
+            .eq("self_checked_in", true)
+            .maybeSingle();
+
+          // Only insert if no record at all exists
+          if (!selfRecord) {
+            const { error: insertError } = await supabase
+              .from("attendance")
+              .insert({
+                class_id: selectedSchedule.class_id,
+                student_id: item.student.user_id,
+                date: selectedDate,
+                present: item.present,
+                notes: item.notes || null,
+                marked_by: user.id,
+                self_checked_in: false,
+              });
+            if (insertError) throw insertError;
+          }
+        }
       }
-
-      // Only insert records for students who did NOT self-checkin
-      const attendanceRecords = attendanceList
-        .filter((item) => !item.selfCheckedIn)
-        .map((item) => ({
-        class_id: selectedSchedule.class_id,
-        student_id: item.student.user_id,
-        date: selectedDate,
-        present: item.present,
-        notes: item.notes || null,
-        marked_by: user.id,
-        self_checked_in: false,
-      }));
-
-      const { error } = await supabase.from("attendance").insert(attendanceRecords);
-
-      if (error) throw error;
 
       const presentCount = attendanceList.filter((a) => a.present).length;
       toast({
