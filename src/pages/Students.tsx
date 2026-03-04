@@ -109,6 +109,11 @@ export default function Students() {
   const [resetPwStudent, setResetPwStudent] = useState<Profile | null>(null);
   const [newPassword, setNewPassword] = useState("");
 
+  // Guardian info dialog
+  const [guardianInfoStudent, setGuardianInfoStudent] = useState<Profile | null>(null);
+  const [guardianProfile, setGuardianProfile] = useState<Profile | null>(null);
+  const [guardianLoading, setGuardianLoading] = useState(false);
+
   // Fetch dojo info for martial_arts
   const { data: dojoInfo } = useQuery({
     queryKey: ["dojo-info", currentDojoId],
@@ -933,6 +938,25 @@ export default function Students() {
                         <KeyRound className="h-4 w-4 mr-2" />
                         Redefinir senha
                       </DropdownMenuItem>
+                      {(student.guardian_email || student.guardian_user_id) && (
+                        <DropdownMenuItem onClick={async () => {
+                          setGuardianInfoStudent(student);
+                          setGuardianProfile(null);
+                          if (student.guardian_user_id) {
+                            setGuardianLoading(true);
+                            const { data } = await supabase
+                              .from("profiles")
+                              .select("*")
+                              .eq("user_id", student.guardian_user_id)
+                              .maybeSingle();
+                            setGuardianProfile(data);
+                            setGuardianLoading(false);
+                          }
+                        }}>
+                          <Users className="h-4 w-4 mr-2" />
+                          Ver Responsável
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => {
                         setBlockStudent(student);
                         setBlockReason(student.blocked_reason || "");
@@ -1577,6 +1601,55 @@ export default function Students() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Guardian Info Dialog */}
+      <Dialog open={!!guardianInfoStudent} onOpenChange={(open) => { if (!open) setGuardianInfoStudent(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-accent" />
+              Responsável de {guardianInfoStudent?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {guardianLoading ? (
+              <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+            ) : (
+              <>
+                {guardianInfoStudent?.guardian_email && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span>{guardianInfoStudent.guardian_email}</span>
+                  </div>
+                )}
+                {guardianProfile && (
+                  <>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{guardianProfile.name}</span>
+                    </div>
+                    {guardianProfile.phone && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="h-4 w-4 text-muted-foreground">📱</span>
+                        <span>{guardianProfile.phone}</span>
+                      </div>
+                    )}
+                    {guardianProfile.email && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{guardianProfile.email}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                {!guardianProfile && !guardianInfoStudent?.guardian_email && (
+                  <p className="text-sm text-muted-foreground">Nenhum dado de responsável encontrado.</p>
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
