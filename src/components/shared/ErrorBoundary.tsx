@@ -16,14 +16,17 @@ interface State {
 
 const MAX_RETRIES = 5;
 const RETRY_DELAYS = [500, 1000, 2000, 3000, 4000];
+const RELOAD_KEY = "eb-reload-ts";
+const RELOAD_COOLDOWN = 10_000;
 
 function isChunkError(error: Error): boolean {
-  const msg = error?.message?.toLowerCase() || "";
+  const msg = (error?.message || "").toLowerCase();
   return (
     msg.includes("failed to fetch dynamically imported module") ||
     msg.includes("loading chunk") ||
     msg.includes("error loading dynamically imported module") ||
-    msg.includes("loading css chunk")
+    msg.includes("loading css chunk") ||
+    msg.includes("unable to preload css")
   );
 }
 
@@ -42,14 +45,17 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("ErrorBoundary caught:", error.message);
 
-    const { retryCount } = this.state;
-
-    // For chunk errors, just reload the page immediately instead of retrying in-place
+    // Chunk errors → silent reload with cooldown (no admin notification)
     if (isChunkError(error)) {
-      console.warn("Chunk load error detected, reloading page...");
-      window.location.reload();
+      const lastReload = Number(sessionStorage.getItem(RELOAD_KEY) || "0");
+      if (Date.now() - lastReload > RELOAD_COOLDOWN) {
+        sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
       return;
     }
+
+    const { retryCount } = this.state;
 
     if (retryCount < MAX_RETRIES) {
       const delay = RETRY_DELAYS[retryCount] ?? 4000;
@@ -61,7 +67,6 @@ export class ErrorBoundary extends Component<Props, State> {
         }));
       }, delay);
     } else {
-      // All retries exhausted — report error and redirect
       this.reportErrorAndRedirect(error, errorInfo);
     }
   }
@@ -103,19 +108,11 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
 
-      if (this.state.retryCount < MAX_RETRIES) {
-        return this.props.inline ? (
-          <div className="flex items-center justify-center p-6">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="min-h-screen flex items-center justify-center bg-background">
-            <DojoLoadingSpinner />
-          </div>
-        );
-      }
-
-      return (
+      return this.props.inline ? (
+        <div className="flex items-center justify-center p-6">
+          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
         <div className="min-h-screen flex items-center justify-center bg-background">
           <DojoLoadingSpinner />
         </div>
