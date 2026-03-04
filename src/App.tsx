@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, ComponentType } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,40 +13,54 @@ import { DojoLoadingSpinner } from "@/components/shared/DojoLoadingSpinner";
 import { ErrorBoundary } from "@/components/shared/ErrorBoundary";
 import { PWAInstallGate } from "@/components/pwa/PWAInstallGate";
 
-// Lazy load all pages
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Students = lazy(() => import("./pages/Students"));
-const Senseis = lazy(() => import("./pages/Senseis"));
-const Classes = lazy(() => import("./pages/Classes"));
-const StudentAgenda = lazy(() => import("./pages/StudentAgenda"));
-const Graduations = lazy(() => import("./pages/Graduations"));
-const Payments = lazy(() => import("./pages/Payments"));
-const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
-const StudentPayments = lazy(() => import("./pages/StudentPayments"));
-const Settings = lazy(() => import("./pages/Settings"));
-const StudentProfile = lazy(() => import("./pages/StudentProfile"));
+// Retry wrapper for lazy imports (handles chunk load failures in PWA)
+function lazyRetry<T extends ComponentType<any>>(
+  factory: () => Promise<{ default: T }>,
+): React.LazyExoticComponent<T> {
+  return lazy(() =>
+    factory().catch(() =>
+      // Wait 1s and retry once on chunk load failure
+      new Promise<{ default: T }>((resolve) =>
+        setTimeout(() => resolve(factory()), 1000)
+      )
+    )
+  );
+}
 
-const StudentTasks = lazy(() => import("./pages/StudentTasks"));
-const StudentConfig = lazy(() => import("./pages/StudentConfig"));
-const StudentProgress = lazy(() => import("./pages/StudentProgress"));
-const Checkin = lazy(() => import("./pages/Checkin"));
-const Scanner = lazy(() => import("./pages/Scanner"));
-const Attendance = lazy(() => import("./pages/Attendance"));
-const StudentAchievements = lazy(() => import("./pages/StudentAchievements"));
-const StudentMyProgress = lazy(() => import("./pages/StudentMyProgress"));
-const StudentPaymentHistory = lazy(() => import("./pages/StudentPaymentHistory"));
-const SubscriptionApprovals = lazy(() => import("./pages/SubscriptionApprovals"));
-const Plans = lazy(() => import("./pages/Plans"));
-const Help = lazy(() => import("./pages/Help"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Lazy load all pages with retry
+const Index = lazyRetry(() => import("./pages/Index"));
+const Auth = lazyRetry(() => import("./pages/Auth"));
+const ResetPassword = lazyRetry(() => import("./pages/ResetPassword"));
+const Dashboard = lazyRetry(() => import("./pages/Dashboard"));
+const Students = lazyRetry(() => import("./pages/Students"));
+const Senseis = lazyRetry(() => import("./pages/Senseis"));
+const Classes = lazyRetry(() => import("./pages/Classes"));
+const StudentAgenda = lazyRetry(() => import("./pages/StudentAgenda"));
+const Graduations = lazyRetry(() => import("./pages/Graduations"));
+const Payments = lazyRetry(() => import("./pages/Payments"));
+const PaymentHistory = lazyRetry(() => import("./pages/PaymentHistory"));
+const StudentPayments = lazyRetry(() => import("./pages/StudentPayments"));
+const Settings = lazyRetry(() => import("./pages/Settings"));
+const StudentProfile = lazyRetry(() => import("./pages/StudentProfile"));
+
+const StudentTasks = lazyRetry(() => import("./pages/StudentTasks"));
+const StudentConfig = lazyRetry(() => import("./pages/StudentConfig"));
+const StudentProgress = lazyRetry(() => import("./pages/StudentProgress"));
+const Checkin = lazyRetry(() => import("./pages/Checkin"));
+const Scanner = lazyRetry(() => import("./pages/Scanner"));
+const Attendance = lazyRetry(() => import("./pages/Attendance"));
+const StudentAchievements = lazyRetry(() => import("./pages/StudentAchievements"));
+const StudentMyProgress = lazyRetry(() => import("./pages/StudentMyProgress"));
+const StudentPaymentHistory = lazyRetry(() => import("./pages/StudentPaymentHistory"));
+const SubscriptionApprovals = lazyRetry(() => import("./pages/SubscriptionApprovals"));
+const Plans = lazyRetry(() => import("./pages/Plans"));
+const Help = lazyRetry(() => import("./pages/Help"));
+const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 min cache
+      staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
       refetchOnWindowFocus: false,
       retry: 1,
@@ -58,8 +72,11 @@ function AnimatedRoutes() {
   const location = useLocation();
   
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><DojoLoadingSpinner /></div>}>
-      <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait">
+      <Suspense
+        key={location.pathname}
+        fallback={<div className="min-h-screen flex items-center justify-center bg-background"><DojoLoadingSpinner /></div>}
+      >
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><Index /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
@@ -91,8 +108,8 @@ function AnimatedRoutes() {
           <Route path="/compartilhar" element={<PageTransition><StudentPayments /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
         </Routes>
-      </AnimatePresence>
-    </Suspense>
+      </Suspense>
+    </AnimatePresence>
   );
 }
 
