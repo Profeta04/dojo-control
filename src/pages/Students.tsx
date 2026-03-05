@@ -515,34 +515,11 @@ export default function Students() {
     if (!permanentDeleteStudent) return;
     setActionLoading(true);
     try {
-      // Remove from class_students
-      await supabase.from("class_students").delete().eq("student_id", permanentDeleteStudent.user_id);
-      // Remove attendance records
-      await supabase.from("attendance").delete().eq("student_id", permanentDeleteStudent.user_id);
-      // Remove payments
-      await supabase.from("payments").delete().eq("student_id", permanentDeleteStudent.user_id);
-      // Remove student_belts
-      await supabase.from("student_belts").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove student_xp
-      await supabase.from("student_xp").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove student_achievements
-      await supabase.from("student_achievements").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove graduation_history
-      await supabase.from("graduation_history").delete().eq("student_id", permanentDeleteStudent.user_id);
-      // Remove season_xp
-      await supabase.from("season_xp").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove tasks
-      await supabase.from("tasks").delete().eq("assigned_to", permanentDeleteStudent.user_id);
-      // Remove user_onboarding
-      await supabase.from("user_onboarding").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove user_roles
-      await supabase.from("user_roles").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove notifications
-      await supabase.from("notifications").delete().eq("user_id", permanentDeleteStudent.user_id);
-      // Remove guardian_minors
-      await supabase.from("guardian_minors").delete().eq("minor_user_id", permanentDeleteStudent.user_id);
-      // Remove the profile
-      await supabase.from("profiles").delete().eq("user_id", permanentDeleteStudent.user_id);
+      // Atomic cascade delete via stored procedure
+      const { error: rpcError } = await supabase.rpc("delete_student_cascade", {
+        target_user_id: permanentDeleteStudent.user_id,
+      });
+      if (rpcError) throw rpcError;
 
       // Delete the auth.users entry via edge function to prevent zombie accounts
       await supabase.functions.invoke("delete-user", {
@@ -1043,6 +1020,11 @@ export default function Students() {
             <UserX className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Excluídos ({rejectedStudents.length})</span>
             <span className="sm:hidden">Excl. ({rejectedStudents.length})</span>
+          </TabsTrigger>
+          <TabsTrigger value="guardians" className="gap-1.5 text-xs sm:text-sm">
+            <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Responsáveis</span>
+            <span className="sm:hidden">Resp.</span>
           </TabsTrigger>
         </TabsList>
 

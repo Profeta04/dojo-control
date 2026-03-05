@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useEffect, useRef, createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AppRole } from "@/lib/constants";
@@ -31,24 +31,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    let initialSessionHandled = false;
+    isMounted.current = true;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // Skip if this is the INITIAL_SESSION and we already handled it
-        if (event === 'INITIAL_SESSION') {
-          if (initialSessionHandled) return;
-          initialSessionHandled = true;
-        }
+      (event, currentSession) => {
+        if (!isMounted.current) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
         
-        if (session?.user) {
+        if (currentSession?.user) {
           setTimeout(() => {
-            fetchUserData(session.user.id);
+            if (isMounted.current) {
+              fetchUserData(currentSession.user.id);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -58,22 +57,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // getSession triggers INITIAL_SESSION event in onAuthStateChange
-    // so we just need to call it to kick things off
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!initialSessionHandled) {
-        initialSessionHandled = true;
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          fetchUserData(session.user.id);
-        } else {
-          setLoading(false);
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted.current = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserData = async (userId: string) => {

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -22,11 +22,12 @@ export default function Dashboard() {
     if (!authLoading && !user) {
       navigate("/auth");
     }
-    // Students should not access dashboard, redirect to profile
-    if (!authLoading && user && isStudent && !canManageStudents) {
-      navigate("/perfil", { replace: true });
-    }
-  }, [user, authLoading, navigate, isStudent, canManageStudents]);
+  }, [user, authLoading, navigate]);
+
+  // Early return: redirect students before any content renders
+  if (!authLoading && user && isStudent && !canManageStudents) {
+    return <Navigate to="/perfil" replace />;
+  }
 
   if (authLoading) {
     return (
