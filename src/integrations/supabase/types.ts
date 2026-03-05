@@ -1400,6 +1400,10 @@ export type Database = {
         Args: { _class_id: string; _user_id: string }
         Returns: boolean
       }
+      delete_student_cascade: {
+        Args: { target_user_id: string }
+        Returns: undefined
+      }
       get_active_dojos_public: {
         Args: never
         Returns: {
