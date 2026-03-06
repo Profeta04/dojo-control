@@ -243,7 +243,7 @@ export function ClassesTab() {
       const enrolledIds = selectedClass.students?.map((s) => s.user_id) || [];
       return profiles.filter((p) => !enrolledIds.includes(p.user_id));
     },
-    enabled: !!selectedClass && enrollDialogOpen,
+    enabled: !!selectedClass && (enrollDialogOpen || manageStudentsDialogOpen),
   });
 
   const resetForm = () => {
@@ -893,7 +893,7 @@ export function ClassesTab() {
                   {selectedClass.students.map((student) => (
                     <div key={student.user_id} className="flex items-center justify-between px-3 py-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                        {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />}
                         <span className="text-sm truncate">{student.name}</span>
                       </div>
                       <Button
@@ -955,7 +955,7 @@ export function ClassesTab() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{student.name}</p>
                           </div>
-                          {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                          {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />}
                         </button>
                       );
                     })
@@ -1051,7 +1051,7 @@ export function ClassesTab() {
                           </p>
                         </div>
                         {student.belt_grade && (
-                          <BeltBadge grade={student.belt_grade as any} size="sm" />
+                          <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />
                         )}
                       </button>
                     );
