@@ -243,7 +243,7 @@ export function ClassesTab() {
       const enrolledIds = selectedClass.students?.map((s) => s.user_id) || [];
       return profiles.filter((p) => !enrolledIds.includes(p.user_id));
     },
-    enabled: !!selectedClass && enrollDialogOpen,
+    enabled: !!selectedClass && (enrollDialogOpen || manageStudentsDialogOpen),
   });
 
   const resetForm = () => {
