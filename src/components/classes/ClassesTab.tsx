@@ -893,7 +893,7 @@ export function ClassesTab() {
                   {selectedClass.students.map((student) => (
                     <div key={student.user_id} className="flex items-center justify-between px-3 py-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                        {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />}
                         <span className="text-sm truncate">{student.name}</span>
                       </div>
                       <Button
