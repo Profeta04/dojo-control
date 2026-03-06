@@ -724,11 +724,7 @@ export function ClassesTab() {
                         {cls.students.slice(0, 5).map((student) => (
                           <Badge key={student.user_id} variant="outline" className="text-xs">
                             {student.name?.split(" ")[0]}
-                            {canManageStudents && (
-                              <button onClick={() => { setSelectedClass(cls); handleRemoveStudent(student.user_id); }} className="ml-1 hover:text-destructive">
-                                <UserMinus className="h-3 w-3" />
-                              </button>
-                            )}
+                            <UserMinus className="h-3 w-3 ml-0.5 opacity-40" />
                           </Badge>
                         ))}
                         {cls.students.length > 5 && <Badge variant="outline" className="text-xs">+{cls.students.length - 5}</Badge>}
@@ -743,9 +739,9 @@ export function ClassesTab() {
                         <CalendarDays className="h-4 w-4 mr-1" />
                         Agendar
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => { setSelectedClass(cls); setEnrollDialogOpen(true); }}>
-                        <UserPlus className="h-4 w-4 mr-1" />
-                        Matricular
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedClass(cls); setManageStudentsDialogOpen(true); }}>
+                        <Users className="h-4 w-4 mr-1" />
+                        Alunos
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => openEditDialog(cls)}>
                         <Edit className="h-4 w-4" />
