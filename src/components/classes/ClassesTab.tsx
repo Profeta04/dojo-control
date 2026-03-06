@@ -872,6 +872,130 @@ export function ClassesTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Manage Students Dialog */}
+      <Dialog open={manageStudentsDialogOpen} onOpenChange={(open) => { setManageStudentsDialogOpen(open); if (!open) { setManageStudentSearch(""); setSelectedStudentIds([]); } }}>
+        <DialogContent className="sm:max-w-lg max-w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-accent" />
+              Gerenciar Alunos
+            </DialogTitle>
+            <DialogDescription>
+              Adicione ou remova alunos de <span className="font-medium text-foreground">{selectedClass?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Enrolled students list */}
+            <div>
+              <p className="text-sm font-medium mb-2">Matriculados ({selectedClass?.students?.length || 0})</p>
+              {selectedClass?.students && selectedClass.students.length > 0 ? (
+                <div className="border rounded-lg divide-y divide-border max-h-[200px] overflow-y-auto">
+                  {selectedClass.students.map((student) => (
+                    <div key={student.user_id} className="flex items-center justify-between px-3 py-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                        <span className="text-sm truncate">{student.name}</span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive flex-shrink-0"
+                        onClick={async () => {
+                          await handleRemoveStudent(student.user_id);
+                          // Refresh selectedClass data
+                          setSelectedClass(prev => prev ? {
+                            ...prev,
+                            students: prev.students?.filter(s => s.user_id !== student.user_id),
+                            studentCount: (prev.studentCount || 1) - 1,
+                          } : null);
+                        }}
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum aluno matriculado.</p>
+              )}
+            </div>
+
+            {/* Add students section */}
+            <div className="border-t border-border pt-4">
+              <p className="text-sm font-medium mb-2">Adicionar alunos</p>
+              <div className="relative mb-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar aluno por nome..."
+                  value={manageStudentSearch}
+                  onChange={(e) => setManageStudentSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="border rounded-lg divide-y divide-border max-h-[200px] overflow-y-auto">
+                {availableStudents && availableStudents.length > 0 ? (
+                  availableStudents
+                    .filter((s) => !manageStudentSearch || s.name.toLowerCase().includes(manageStudentSearch.toLowerCase()))
+                    .map((student) => {
+                      const isSelected = selectedStudentIds.includes(student.user_id);
+                      return (
+                        <button
+                          key={student.user_id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedStudentIds((prev) =>
+                              isSelected ? prev.filter((id) => id !== student.user_id) : [...prev, student.user_id]
+                            );
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-accent/10 ${isSelected ? "bg-accent/5" : ""}`}
+                        >
+                          <div className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-accent border-accent text-accent-foreground" : "border-muted-foreground/30"}`}>
+                            {isSelected && <Check className="h-3 w-3" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{student.name}</p>
+                          </div>
+                          {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                        </button>
+                      );
+                    })
+                ) : (
+                  <div className="p-4 text-center">
+                    <p className="text-sm text-muted-foreground">Nenhum aluno disponível</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-muted-foreground">
+                {selectedStudentIds.length > 0 ? `${selectedStudentIds.length} selecionado(s)` : ""}
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => { setManageStudentsDialogOpen(false); setManageStudentSearch(""); setSelectedStudentIds([]); }}>
+                  Fechar
+                </Button>
+                {selectedStudentIds.length > 0 && (
+                  <Button
+                    size="sm"
+                    className="bg-accent hover:bg-accent/90"
+                    onClick={async () => {
+                      await handleEnrollStudents();
+                      setManageStudentsDialogOpen(false);
+                      setManageStudentSearch("");
+                    }}
+                    disabled={formLoading}
+                  >
+                    {formLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    Matricular ({selectedStudentIds.length})
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Enroll Dialog */}
       <Dialog open={enrollDialogOpen} onOpenChange={(open) => { setEnrollDialogOpen(open); if (!open) { setSelectedStudentIds([]); setStudentSearch(""); } }}>
         <DialogContent className="sm:max-w-lg max-w-[95vw]">
