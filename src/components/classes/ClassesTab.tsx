@@ -1051,7 +1051,7 @@ export function ClassesTab() {
                           </p>
                         </div>
                         {student.belt_grade && (
-                          <BeltBadge grade={student.belt_grade as any} size="sm" />
+                          <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />
                         )}
                       </button>
                     );
