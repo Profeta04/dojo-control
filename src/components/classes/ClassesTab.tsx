@@ -955,7 +955,7 @@ export function ClassesTab() {
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{student.name}</p>
                           </div>
-                          {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" />}
+                          {student.belt_grade && <BeltBadge grade={student.belt_grade as any} size="sm" martialArt={selectedClass?.martial_art} />}
                         </button>
                       );
                     })
