@@ -71,6 +71,8 @@ export function ClassesTab() {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [manageStudentsDialogOpen, setManageStudentsDialogOpen] = useState(false);
+  const [manageStudentSearch, setManageStudentSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState<ClassWithDetails | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
