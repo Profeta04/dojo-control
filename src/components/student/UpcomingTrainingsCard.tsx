@@ -123,7 +123,7 @@ export function UpcomingTrainingsCard() {
           </div>
         ) : (
           <div className="space-y-2">
-            {trainings.map(t => (
+            {filteredTrainings.map(t => (
               <div
                 key={t.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border/40"
