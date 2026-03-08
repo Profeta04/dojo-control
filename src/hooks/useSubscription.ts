@@ -74,11 +74,17 @@ export function useSubscription() {
     refetchInterval: 60_000,
   });
 
+  const queryClient = useQueryClient();
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["dojo-subscription", currentDojoId] });
+  }, [queryClient, currentDojoId]);
+
   return {
     subscribed: state?.subscribed ?? false,
     tier: state?.tier ?? null,
     subscriptionEnd: state?.subscriptionEnd ?? null,
     status: state?.status ?? null,
     loading: isLoading,
+    refresh,
   };
 }
