@@ -456,9 +456,9 @@ export function ScheduleTab() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {enrichedSchedules && enrichedSchedules.filter(s => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled).length > 0 ? (
+          {filteredSchedules && filteredSchedules.filter(s => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled).length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {enrichedSchedules
+              {filteredSchedules
                 .filter((s) => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled)
                 .slice(0, 6)
                 .map((schedule) => (
