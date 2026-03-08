@@ -1474,6 +1474,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      grant_season_xp: {
+        Args: {
+          _base_xp: number
+          _season_id: string
+          _season_multiplier: number
+          _user_id: string
+        }
+        Returns: Json
+      }
+      grant_xp: { Args: { _base_xp: number; _user_id: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
