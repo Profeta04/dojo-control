@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Returns a function to get signed URLs with caching to avoid unnecessary requests.
  */
 export function useSignedUrl() {
-  const [loading, setLoading] = useState(false);
-  const [cache] = useState<Map<string, { url: string; expires: number }>>(new Map());
+  const cacheRef = useRef<Map<string, { url: string; expires: number }>>(new Map());
 
   const getSignedUrl = async (
     bucket: string, 
@@ -29,12 +28,11 @@ export function useSignedUrl() {
     
     // Check cache
     const cacheKey = `${bucket}:${storagePath}`;
-    const cached = cache.get(cacheKey);
+    const cached = cacheRef.current.get(cacheKey);
     if (cached && cached.expires > Date.now()) {
       return cached.url;
     }
 
-    setLoading(true);
     try {
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -46,7 +44,7 @@ export function useSignedUrl() {
       }
 
       // Cache the URL (expire 1 minute before actual expiry)
-      cache.set(cacheKey, {
+      cacheRef.current.set(cacheKey, {
         url: data.signedUrl,
         expires: Date.now() + (expiresInSeconds - 60) * 1000,
       });
@@ -55,10 +53,8 @@ export function useSignedUrl() {
     } catch (error) {
       console.error("Error in getSignedUrl:", error);
       return null;
-    } finally {
-      setLoading(false);
     }
   };
 
-  return { getSignedUrl, loading };
+  return { getSignedUrl };
 }

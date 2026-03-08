@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useDojoContext } from "./useDojoContext";
 import { useEffect } from "react";
 
 export type TaskStatus = "pendente" | "concluida" | "cancelada";
@@ -52,53 +53,81 @@ export interface TaskWithAssignee extends Task {
 
 export function useTasks() {
   const { user, isStudent, canManageStudents } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const queryClient = useQueryClient();
 
-  // Fetch tasks for current user (students see their own, admins/senseis see all)
+  // Fetch tasks for current user (students see their own, admins/senseis see dojo-filtered)
   const { data: tasks = [], isLoading, refetch } = useQuery({
-    queryKey: ["tasks", user?.id],
+    queryKey: ["tasks", user?.id, currentDojoId],
     queryFn: async () => {
       if (!user) return [];
 
-      // First get tasks
-      let query = supabase
-        .from("tasks")
-        .select("*")
-        .order("created_at", { ascending: false });
-
       // Students only see their own tasks
       if (isStudent && !canManageStudents) {
-        query = query.eq("assigned_to", user.id);
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("assigned_to", user.id)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return enrichTasks(data || []);
       }
 
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Fetch profile names for assigned_to and assigned_by
-      if (data && data.length > 0) {
-        const userIds = [...new Set([
-          ...data.map(t => t.assigned_to),
-          ...data.map(t => t.assigned_by)
-        ])];
-
-        const { data: profiles } = await supabase
+      // Staff: filter by dojo students for multi-tenant isolation
+      if (currentDojoId) {
+        const { data: dojoProfiles } = await supabase
           .from("profiles")
-          .select("user_id, name")
-          .in("user_id", userIds);
+          .select("user_id")
+          .eq("dojo_id", currentDojoId);
 
-        const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+        const studentIds = (dojoProfiles || []).map(p => p.user_id);
+        if (studentIds.length === 0) return [];
 
-        return data.map(task => ({
-          ...task,
-          assignee_name: profileMap.get(task.assigned_to) || "Desconhecido",
-          assigner_name: profileMap.get(task.assigned_by) || "Desconhecido",
-        })) as TaskWithAssignee[];
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .in("assigned_to", studentIds)
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (error) throw error;
+        return enrichTasks(data || []);
       }
 
-      return data as TaskWithAssignee[];
+      // Admin without dojo filter: all tasks (limited)
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return enrichTasks(data || []);
     },
     enabled: !!user,
+    staleTime: 15_000,
   });
+
+  // Helper to enrich tasks with profile names
+  async function enrichTasks(data: any[]): Promise<TaskWithAssignee[]> {
+    if (data.length === 0) return [];
+
+    const userIds = [...new Set([
+      ...data.map(t => t.assigned_to),
+      ...data.map(t => t.assigned_by)
+    ])];
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, name")
+      .in("user_id", userIds);
+
+    const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+
+    return data.map(task => ({
+      ...task,
+      assignee_name: profileMap.get(task.assigned_to) || "Desconhecido",
+      assigner_name: profileMap.get(task.assigned_by) || "Desconhecido",
+    })) as TaskWithAssignee[];
+  }
 
   // Real-time subscription
   useEffect(() => {
