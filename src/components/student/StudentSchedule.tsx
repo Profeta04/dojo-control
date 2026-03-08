@@ -60,6 +60,7 @@ export function StudentSchedule() {
   const [selectedAbsence, setSelectedAbsence] = useState<AttendanceRecord | null>(null);
   const [justification, setJustification] = useState("");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
   // Fetch student's classes
   const { data: myClasses, isLoading: loadingClasses } = useQuery({
