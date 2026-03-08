@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { SubscriptionTierKey } from "@/lib/subscriptionTiers";
+import { useCallback } from "react";
 
 interface SubscriptionState {
   subscribed: boolean;
