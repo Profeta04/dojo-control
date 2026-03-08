@@ -154,14 +154,77 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
   drawSectionTitle(doc, "Histórico de Presenças", yPos, headerBg, accentBg);
   yPos += 9;
   if (data.attendance.length > 0) {
+    // Summary stats
     doc.setFontSize(10); doc.setTextColor(80, 80, 80);
     doc.text(`Taxa de presença: ${attendanceRate}% (${presentCount}/${data.attendance.length} aulas)`, 20, yPos);
     yPos += 6;
 
+    // Calculate current streak
+    let currentStreak = 0;
+    const sortedAtt = [...data.attendance].sort((a, b) => b.date.localeCompare(a.date));
+    for (const r of sortedAtt) {
+      if (r.present) currentStreak++;
+      else break;
+    }
+
+    doc.text(`Sequência atual: ${currentStreak} aulas consecutivas  |  Maior sequência: ${data.gamification.longestStreak} dias`, 20, yPos);
+    yPos += 6;
+
+    // Monthly breakdown
+    const monthlyMap = new Map<string, { present: number; total: number }>();
+    for (const a of data.attendance) {
+      const key = a.date.substring(0, 7); // YYYY-MM
+      if (!monthlyMap.has(key)) monthlyMap.set(key, { present: 0, total: 0 });
+      const m = monthlyMap.get(key)!;
+      m.total++;
+      if (a.present) m.present++;
+    }
+
+    const monthlyRows = Array.from(monthlyMap.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 12)
+      .map(([month, stats]) => {
+        const pct = Math.round((stats.present / stats.total) * 100);
+        const [y, m] = month.split("-");
+        const monthLabel = format(new Date(parseInt(y), parseInt(m) - 1, 1), "MMMM yyyy", { locale: ptBR });
+        return [
+          monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1),
+          `${stats.total}`,
+          `${stats.present}`,
+          `${stats.total - stats.present}`,
+          `${pct}%`,
+        ];
+      });
+
+    if (monthlyRows.length > 0) {
+      autoTable(doc, {
+        startY: yPos,
+        head: [["Mês", "Aulas", "Presenças", "Faltas", "Taxa"]],
+        body: monthlyRows,
+        ...smallTbl,
+        didParseCell: (hookData: any) => {
+          if (hookData.section === "body" && hookData.column.index === 4) {
+            const val = parseInt(hookData.cell.raw);
+            if (val >= 80) hookData.cell.styles.textColor = STATUS_COLORS.pago;
+            else if (val < 60) hookData.cell.styles.textColor = STATUS_COLORS.atrasado;
+            hookData.cell.styles.fontStyle = "bold";
+          }
+        },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 8;
+    }
+
+    yPos = checkPageBreak(doc, yPos);
+
+    // Detailed table (last 50)
+    doc.setFontSize(9); doc.setTextColor(100, 100, 100);
+    doc.text("Detalhamento das últimas 50 aulas:", 20, yPos);
+    yPos += 5;
+
     autoTable(doc, {
       startY: yPos,
       head: [["Data", "Turma", "Presença", "Observações"]],
-      body: data.attendance.slice(0, 50).map((a) => [
+      body: sortedAtt.slice(0, 50).map((a) => [
         format(new Date(a.date), "dd/MM/yyyy", { locale: ptBR }),
         a.class_name,
         a.present ? "✓ Presente" : "✗ Ausente",
@@ -170,7 +233,7 @@ export function generateStudentReport(data: StudentReportData, logoBase64?: stri
       ...smallTbl,
       didParseCell: (hookData: any) => {
         if (hookData.section === "body" && hookData.column.index === 2) {
-          const present = data.attendance[hookData.row.index]?.present;
+          const present = sortedAtt[hookData.row.index]?.present;
           hookData.cell.styles.textColor = present ? STATUS_COLORS.pago : STATUS_COLORS.atrasado;
           hookData.cell.styles.fontStyle = "bold";
         }
