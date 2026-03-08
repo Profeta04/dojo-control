@@ -265,10 +265,10 @@ export default function StudentMyProgress() {
               value={daysInDojo > 365 ? `${Math.floor(daysInDojo / 365)}a ${Math.floor((daysInDojo % 365) / 30)}m` : `${monthsInDojo} meses`}
               sub={`${daysInDojo} dias`} />
             <StatCard icon={CalendarCheck} label="Total de treinos" value={attendanceData?.total || 0} sub={`~${avgPerMonth}/mês`} />
-            <StatCard icon={Flame} label="Melhor streak" value={`${xpData?.longest_streak || 0} dias`}
-              sub={xpData?.current_streak ? `Atual: ${xpData.current_streak} dias` : "Sem streak ativo"} />
-            <StatCard icon={Target} label="Nível" value={`Nv. ${xpData?.level || 1}`}
-              sub={`${xpData?.total_xp || 0} XP`} />
+            <StatCard icon={Flame} label="Melhor streak" value={`${longestStreak} dias`}
+              sub={effectiveStreak > 0 ? `Atual: ${effectiveStreak} dias` : "Sem streak ativo"} />
+            <StatCard icon={Target} label="Nível" value={`Nv. ${xpLevel}`}
+              sub={`${totalXp} XP`} />
           </div>
 
           {/* Dojo comparison */}
