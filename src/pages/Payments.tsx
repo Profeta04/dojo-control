@@ -201,7 +201,7 @@ export default function PaymentsPage() {
       if (!dojoStudents || dojoStudents.length === 0) return [];
       const dojoStudentIds = dojoStudents.map((s) => s.user_id);
       const studentMap = new Map(dojoStudents.map((s) => [s.user_id, s]));
-      const { data, error } = await supabase.from("payments").select("*").in("student_id", dojoStudentIds).order("due_date", { ascending: false });
+      const { data, error } = await supabase.from("payments").select("*").in("student_id", dojoStudentIds).order("due_date", { ascending: false }).limit(500);
       if (error) throw error;
       const enriched: PaymentWithStudent[] = (data || []).map((p) => {
         const student = studentMap.get(p.student_id);
