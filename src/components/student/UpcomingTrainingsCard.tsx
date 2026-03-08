@@ -1,20 +1,23 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, Users } from "lucide-react";
+import { Calendar, Clock, Users, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export function UpcomingTrainingsCard() {
   const { user } = useAuth();
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
-  const { data: trainings, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["upcoming-trainings", user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return { trainings: [], classes: [] };
 
       // Get student's class IDs
       const { data: enrollments } = await supabase
@@ -23,7 +26,7 @@ export function UpcomingTrainingsCard() {
         .eq("student_id", user.id);
 
       const activeClasses = enrollments?.filter(e => e.classes?.is_active) || [];
-      if (activeClasses.length === 0) return [];
+      if (activeClasses.length === 0) return { trainings: [], classes: [] };
 
       const classIds = activeClasses.map(e => e.class_id);
       const classNames = activeClasses.reduce((acc, e) => {
@@ -47,13 +50,19 @@ export function UpcomingTrainingsCard() {
 
       if (error) throw error;
 
-      return (schedules || []).map(s => ({
+      const allTrainings = (schedules || []).map(s => ({
         id: s.id,
         date: s.date,
         start_time: s.start_time,
         end_time: s.end_time,
         class_name: classNames[s.class_id] || "Treino",
+        class_id: s.class_id,
       }));
+
+      return {
+        trainings: allTrainings,
+        classes: activeClasses.map(e => ({ id: e.class_id, name: e.classes?.name || "Turma" })),
+      };
     },
     enabled: !!user?.id,
   });
@@ -75,6 +84,12 @@ export function UpcomingTrainingsCard() {
 
   const formatTime = (t: string) => t.slice(0, 5);
 
+  const classList = data?.classes || [];
+  const trainings = data?.trainings || [];
+  const filteredTrainings = selectedClassId === "all"
+    ? trainings
+    : trainings.filter(t => t.class_id === selectedClassId);
+
   const isToday = (dateStr: string) => {
     return dateStr === format(new Date(), "yyyy-MM-dd");
   };
@@ -86,16 +101,30 @@ export function UpcomingTrainingsCard() {
           <Calendar className="h-5 w-5 text-accent" />
           Próximos Treinos
         </CardTitle>
+        {classList.length > 1 && (
+          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+            <SelectTrigger className="w-full mt-1">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Todas as turmas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as turmas</SelectItem>
+              {classList.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </CardHeader>
       <CardContent>
-        {!trainings || trainings.length === 0 ? (
+        {!filteredTrainings || filteredTrainings.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Calendar className="h-10 w-10 mx-auto mb-2 opacity-40" />
             <p className="text-sm">Nenhum treino agendado</p>
           </div>
         ) : (
           <div className="space-y-2">
-            {trainings.map(t => (
+            {filteredTrainings.map(t => (
               <div
                 key={t.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors border border-border/40"

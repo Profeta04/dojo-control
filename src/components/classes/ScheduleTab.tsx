@@ -38,8 +38,10 @@ import {
   ChevronRight,
   XCircle,
   Loader2,
-  Undo2
+  Undo2,
+  Filter
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
 import { format, isSameDay, startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -67,6 +69,7 @@ export function ScheduleTab() {
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithClass | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
   // Fetch classes filtered by dojo and sensei
   const { data: classes, isLoading: classesLoading } = useQuery({
@@ -169,14 +172,19 @@ export function ScheduleTab() {
     });
   }, [schedules, classes, senseiProfiles]);
 
+  // Filter by selected class
+  const filteredSchedules = useMemo(() => {
+    if (selectedClassId === "all") return enrichedSchedules;
+    return enrichedSchedules.filter(s => s.classId === selectedClassId);
+  }, [enrichedSchedules, selectedClassId]);
+
   const getSchedulesForDate = (date: Date) => {
-    return enrichedSchedules.filter((s) => isSameDay(new Date(s.date + "T00:00:00"), date));
+    return filteredSchedules.filter((s) => isSameDay(new Date(s.date + "T00:00:00"), date));
   };
 
   const datesWithSchedules = useMemo(() => {
-    if (!enrichedSchedules) return [];
-    return enrichedSchedules.map((s) => new Date(s.date + "T00:00:00"));
-  }, [enrichedSchedules]);
+    return filteredSchedules.map((s) => new Date(s.date + "T00:00:00"));
+  }, [filteredSchedules]);
 
   const selectedDateSchedules = getSchedulesForDate(selectedDate);
 
@@ -322,6 +330,20 @@ export function ScheduleTab() {
                 </Button>
               </div>
             </div>
+            {classes && classes.length > 1 && (
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="w-full mt-2">
+                  <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Todas as turmas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {classes.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardHeader>
           <CardContent>
             <Calendar
@@ -434,9 +456,9 @@ export function ScheduleTab() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {enrichedSchedules && enrichedSchedules.filter(s => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled).length > 0 ? (
+          {filteredSchedules && filteredSchedules.filter(s => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled).length > 0 ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {enrichedSchedules
+              {filteredSchedules
                 .filter((s) => new Date(s.date + "T00:00:00") >= new Date() && !s.is_cancelled)
                 .slice(0, 6)
                 .map((schedule) => (

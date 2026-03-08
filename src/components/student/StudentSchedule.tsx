@@ -5,13 +5,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
-import { Calendar, Clock, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, MessageSquare, Bell } from "lucide-react";
+import { Calendar, Clock, Users, CheckCircle, XCircle, ChevronLeft, ChevronRight, MessageSquare, Bell, Filter } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -59,6 +60,7 @@ export function StudentSchedule() {
   const [selectedAbsence, setSelectedAbsence] = useState<AttendanceRecord | null>(null);
   const [justification, setJustification] = useState("");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
   // Fetch student's classes
   const { data: myClasses, isLoading: loadingClasses } = useQuery({
@@ -231,47 +233,59 @@ export function StudentSchedule() {
     return { total, present, absent, rate };
   }, [attendanceHistory]);
 
+  // Filter data by selected class
+  const filteredScheduledClasses = useMemo(() => {
+    if (!scheduledClasses) return [];
+    if (selectedClassId === "all") return scheduledClasses;
+    return scheduledClasses.filter(s => {
+      const classInfo = myClasses?.find(c => c.name === s.class_name);
+      return classInfo?.id === selectedClassId;
+    });
+  }, [scheduledClasses, selectedClassId, myClasses]);
+
+  const filteredAttendanceHistory = useMemo(() => {
+    if (!attendanceHistory) return [];
+    if (selectedClassId === "all") return attendanceHistory;
+    const className = myClasses?.find(c => c.id === selectedClassId)?.name;
+    return attendanceHistory.filter(a => a.class_name === className);
+  }, [attendanceHistory, selectedClassId, myClasses]);
+
   // Get dates with scheduled classes
   const datesWithClasses = useMemo(() => {
-    if (!scheduledClasses) return [];
-    return scheduledClasses
+    return filteredScheduledClasses
       .filter(s => !s.is_cancelled)
       .map(s => new Date(s.date + "T00:00:00"));
-  }, [scheduledClasses]);
+  }, [filteredScheduledClasses]);
 
   // Get dates with attendance
   const datesWithAttendance = useMemo(() => {
-    if (!attendanceHistory) return { present: [], absent: [] };
     return {
-      present: attendanceHistory.filter(a => a.present).map(a => new Date(a.date + "T00:00:00")),
-      absent: attendanceHistory.filter(a => !a.present).map(a => new Date(a.date + "T00:00:00")),
+      present: filteredAttendanceHistory.filter(a => a.present).map(a => new Date(a.date + "T00:00:00")),
+      absent: filteredAttendanceHistory.filter(a => !a.present).map(a => new Date(a.date + "T00:00:00")),
     };
-  }, [attendanceHistory]);
+  }, [filteredAttendanceHistory]);
 
   // Get schedules for selected date
   const selectedDateSchedules = useMemo(() => {
-    if (!scheduledClasses) return [];
-    return scheduledClasses.filter(s => 
+    return filteredScheduledClasses.filter(s => 
       isSameDay(new Date(s.date + "T00:00:00"), selectedDate)
     );
-  }, [scheduledClasses, selectedDate]);
+  }, [filteredScheduledClasses, selectedDate]);
 
   // Get attendance for selected date
   const selectedDateAttendance = useMemo(() => {
-    if (!attendanceHistory) return [];
-    return attendanceHistory.filter(a => 
+    return filteredAttendanceHistory.filter(a => 
       isSameDay(new Date(a.date + "T00:00:00"), selectedDate)
     );
-  }, [attendanceHistory, selectedDate]);
+  }, [filteredAttendanceHistory, selectedDate]);
 
   // Get upcoming classes for today
   const upcomingToday = useMemo(() => {
-    if (!scheduledClasses) return [];
     const today = new Date();
-    return scheduledClasses.filter(s => 
+    return filteredScheduledClasses.filter(s => 
       isSameDay(new Date(s.date + "T00:00:00"), today) && !s.is_cancelled
     );
-  }, [scheduledClasses]);
+  }, [filteredScheduledClasses]);
 
   const parseSchedule = (schedule: string) => {
     const parts = schedule.split(" - ");
@@ -359,6 +373,20 @@ export function StudentSchedule() {
                 </Button>
               </div>
             </div>
+            {myClasses && myClasses.length > 1 && (
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="w-full mt-2">
+                  <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Todas as turmas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {myClasses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardHeader>
           <CardContent>
             <CalendarComponent
