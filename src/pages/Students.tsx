@@ -88,6 +88,9 @@ export default function Students() {
   const [editBelt, setEditBelt] = useState<BeltGrade>("branca");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editStudentBelts, setEditStudentBelts] = useState<{ martial_art: string; belt_grade: string; id?: string }[]>([]);
+  const [editGuardianName, setEditGuardianName] = useState("");
+  const [editGuardianPhone, setEditGuardianPhone] = useState("");
+  const [editGuardianEmail, setEditGuardianEmail] = useState("");
 
   const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
   const [blockReason, setBlockReason] = useState("");
