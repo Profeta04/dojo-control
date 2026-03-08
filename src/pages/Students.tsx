@@ -915,7 +915,7 @@ export default function Students() {
                         <KeyRound className="h-4 w-4 mr-2" />
                         Redefinir senha
                       </DropdownMenuItem>
-                      {(student.guardian_email || student.guardian_user_id) && (
+                      {(student.guardian_email || student.guardian_user_id || (student as any).guardian_name || (student as any).guardian_phone) && (
                         <DropdownMenuItem onClick={async () => {
                           setGuardianInfoStudent(student);
                           setGuardianProfile(null);
