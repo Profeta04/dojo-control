@@ -200,7 +200,6 @@ export function useTasks() {
   return {
     tasks,
     isLoading,
-    createTask,
     updateTaskStatus,
     deleteTask,
     deleteBatchTasks,
