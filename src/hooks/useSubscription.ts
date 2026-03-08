@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
@@ -15,21 +15,14 @@ interface SubscriptionState {
 export function useSubscription() {
   const { user } = useAuth();
   const { currentDojoId } = useDojoContext();
-  const [state, setState] = useState<SubscriptionState>({
-    subscribed: false,
-    tier: null,
-    subscriptionEnd: null,
-    status: null,
-    loading: true,
-  });
 
-  const checkSubscription = useCallback(async () => {
-    if (!user || !currentDojoId) {
-      setState({ subscribed: false, tier: null, subscriptionEnd: null, status: null, loading: false });
-      return;
-    }
+  const { data: state, isLoading } = useQuery({
+    queryKey: ["dojo-subscription", currentDojoId],
+    queryFn: async (): Promise<Omit<SubscriptionState, "loading">> => {
+      if (!user || !currentDojoId) {
+        return { subscribed: false, tier: null, subscriptionEnd: null, status: null };
+      }
 
-    try {
       const { data, error } = await supabase
         .from("dojo_subscriptions")
         .select("*")
@@ -44,52 +37,47 @@ export function useSubscription() {
       if (data) {
         // Check if expired
         if (data.expires_at && new Date(data.expires_at) < new Date()) {
-          setState({
+          return {
             subscribed: false,
             tier: null,
             subscriptionEnd: data.expires_at,
             status: "expirado",
-            loading: false,
-          });
-        } else {
-          setState({
-            subscribed: true,
-            tier: data.tier as SubscriptionTierKey | "teste",
-            subscriptionEnd: data.expires_at,
-            status: data.status,
-            loading: false,
-          });
+          };
         }
-      } else {
-        // Check for pending subscriptions
-        const { data: pending } = await supabase
-          .from("dojo_subscriptions")
-          .select("*")
-          .eq("dojo_id", currentDojoId)
-          .eq("status", "pendente")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        setState({
-          subscribed: false,
-          tier: null,
-          subscriptionEnd: null,
-          status: pending ? "pendente" : null,
-          loading: false,
-        });
+        return {
+          subscribed: true,
+          tier: data.tier as SubscriptionTierKey | "teste",
+          subscriptionEnd: data.expires_at,
+          status: data.status,
+        };
       }
-    } catch (err) {
-      console.error("Error checking subscription:", err);
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  }, [user, currentDojoId]);
 
-  useEffect(() => {
-    checkSubscription();
-    const interval = setInterval(checkSubscription, 60_000);
-    return () => clearInterval(interval);
-  }, [checkSubscription]);
+      // Check for pending subscriptions
+      const { data: pending } = await supabase
+        .from("dojo_subscriptions")
+        .select("status")
+        .eq("dojo_id", currentDojoId)
+        .eq("status", "pendente")
+        .limit(1)
+        .maybeSingle();
 
-  return { ...state, refresh: checkSubscription };
+      return {
+        subscribed: false,
+        tier: null,
+        subscriptionEnd: null,
+        status: pending ? "pendente" : null,
+      };
+    },
+    enabled: !!user && !!currentDojoId,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+  });
+
+  return {
+    subscribed: state?.subscribed ?? false,
+    tier: state?.tier ?? null,
+    subscriptionEnd: state?.subscriptionEnd ?? null,
+    status: state?.status ?? null,
+    loading: isLoading,
+  };
 }

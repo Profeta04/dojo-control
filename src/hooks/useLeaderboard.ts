@@ -94,26 +94,20 @@ export function useLeaderboard() {
 
       const allUserIds = profiles.map((p) => p.user_id);
 
-      // Exclude users with admin/sensei roles from leaderboard
-      const { data: staffRoles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .in("user_id", allUserIds)
-        .in("role", ["admin", "sensei", "dono", "super_admin"]);
+      // Fetch staff roles, XP, achievements, enrollments, belts all in parallel
+      const [staffRolesRes, xpRes, achievementRes, enrollmentRes, beltsRes] = await Promise.all([
+        supabase.from("user_roles").select("user_id").in("user_id", allUserIds).in("role", ["admin", "sensei", "dono", "super_admin"]),
+        supabase.from("student_xp").select("*").in("user_id", allUserIds),
+        supabase.from("student_achievements").select("user_id").in("user_id", allUserIds),
+        supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", allUserIds),
+        supabase.from("student_belts").select("user_id, martial_art, belt_grade").in("user_id", allUserIds),
+      ]);
 
-      const staffIds = new Set((staffRoles || []).map((r) => r.user_id));
+      const staffIds = new Set((staffRolesRes.data || []).map((r) => r.user_id));
       const studentProfiles = profiles.filter((p) => !staffIds.has(p.user_id));
       if (studentProfiles.length === 0) return [];
 
       const userIds = studentProfiles.map((p) => p.user_id);
-
-      // Get XP data, achievements, class enrollments, and belts in parallel
-      const [xpRes, achievementRes, enrollmentRes, beltsRes] = await Promise.all([
-        supabase.from("student_xp").select("*").in("user_id", userIds),
-        supabase.from("student_achievements").select("user_id").in("user_id", userIds),
-        supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", userIds),
-        supabase.from("student_belts").select("user_id, martial_art, belt_grade").in("user_id", userIds),
-      ]);
 
       const achievementCounts = new Map<string, number>();
       achievementRes.data?.forEach((a) => {
@@ -141,24 +135,26 @@ export function useLeaderboard() {
         beltsByArtMap.get(b.user_id)![b.martial_art] = b.belt_grade;
       });
 
-      // Build entries (only students)
-      const entries: LeaderboardEntry[] = studentProfiles.map((p) => {
-        const xp = xpMap.get(p.user_id);
-        return {
-          user_id: p.user_id,
-          name: p.name,
-          avatar_url: p.avatar_url,
-          belt_grade: p.belt_grade,
-          total_xp: (xp?.total_xp as number) || 0,
-          level: (xp?.level as number) || 1,
-          current_streak: (xp?.current_streak as number) || 0,
-          rank: 0,
-          achievement_count: achievementCounts.get(p.user_id) || 0,
-          class_ids: classMap.get(p.user_id) || [],
-          martial_arts: [...(artMap.get(p.user_id) || [])],
-          belts_by_art: beltsByArtMap.get(p.user_id) || {},
-        };
-      });
+      // Build entries (only students with XP data, filter out staff)
+      const entries: LeaderboardEntry[] = studentProfiles
+        .filter((p) => !staffIds.has(p.user_id))
+        .map((p) => {
+          const xp = xpMap.get(p.user_id);
+          return {
+            user_id: p.user_id,
+            name: p.name,
+            avatar_url: p.avatar_url,
+            belt_grade: p.belt_grade,
+            total_xp: (xp?.total_xp as number) || 0,
+            level: (xp?.level as number) || 1,
+            current_streak: (xp?.current_streak as number) || 0,
+            rank: 0,
+            achievement_count: achievementCounts.get(p.user_id) || 0,
+            class_ids: classMap.get(p.user_id) || [],
+            martial_arts: [...(artMap.get(p.user_id) || [])],
+            belts_by_art: beltsByArtMap.get(p.user_id) || {},
+          };
+        });
 
       // Sort by XP descending
       entries.sort((a, b) => b.total_xp - a.total_xp);
@@ -171,6 +167,7 @@ export function useLeaderboard() {
       return entries;
     },
     enabled: !!effectiveDojoId,
+    staleTime: 30_000,
   });
 
   // Realtime for XP changes
