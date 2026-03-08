@@ -226,6 +226,7 @@ export function useLeaderboard() {
       return data as LeaderboardHistoryEntry[];
     },
     enabled: !!effectiveDojoId,
+    staleTime: 60_000,
   });
 
   // Current user's position
