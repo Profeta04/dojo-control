@@ -1364,6 +1364,25 @@ export default function Students() {
                 </Select>
               </div>
             )}
+            
+            {/* Guardian Info Section */}
+            <div className="pt-2 border-t">
+              <p className="text-sm font-medium text-muted-foreground mb-3">Dados do Responsável</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Nome do Responsável</Label>
+                  <Input value={editGuardianName} onChange={(e) => setEditGuardianName(e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Telefone do Responsável</Label>
+                  <Input value={editGuardianPhone} onChange={(e) => setEditGuardianPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email do Responsável</Label>
+                  <Input type="email" value={editGuardianEmail} onChange={(e) => setEditGuardianEmail(e.target.value)} placeholder="email@exemplo.com" />
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditStudent(null)}>Cancelar</Button>
