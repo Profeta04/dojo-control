@@ -49,7 +49,7 @@ Deno.serve(createHandler(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${anonKey}`,
+          Authorization: `Bearer ${serviceRoleKey}`,
         },
         body: JSON.stringify({
           userId,

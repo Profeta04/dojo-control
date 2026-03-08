@@ -210,9 +210,9 @@ export function useAchievements(targetUserId?: string) {
     async (achievementId: string) => {
       if (!userId) return;
 
-      await supabase.from("student_achievements").insert({
-        user_id: userId,
-        achievement_id: achievementId,
+      await supabase.rpc("award_achievement", {
+        _user_id: userId,
+        _achievement_id: achievementId,
       });
 
       queryClient.invalidateQueries({
