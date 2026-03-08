@@ -12,6 +12,7 @@ import { ptBR } from "date-fns/locale";
 
 export function UpcomingTrainingsCard() {
   const { user } = useAuth();
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
   const { data: trainings, isLoading } = useQuery({
     queryKey: ["upcoming-trainings", user?.id],
