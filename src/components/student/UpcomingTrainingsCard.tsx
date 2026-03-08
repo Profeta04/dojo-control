@@ -26,7 +26,7 @@ export function UpcomingTrainingsCard() {
         .eq("student_id", user.id);
 
       const activeClasses = enrollments?.filter(e => e.classes?.is_active) || [];
-      if (activeClasses.length === 0) return [];
+      if (activeClasses.length === 0) return { trainings: [], classes: [] };
 
       const classIds = activeClasses.map(e => e.class_id);
       const classNames = activeClasses.reduce((acc, e) => {
