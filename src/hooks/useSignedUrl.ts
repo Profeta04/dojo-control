@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Returns a function to get signed URLs with caching to avoid unnecessary requests.
  */
 export function useSignedUrl() {
-  const [loading, setLoading] = useState(false);
-  const [cache] = useState<Map<string, { url: string; expires: number }>>(new Map());
+  const cacheRef = useRef<Map<string, { url: string; expires: number }>>(new Map());
 
   const getSignedUrl = async (
     bucket: string, 
