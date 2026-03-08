@@ -184,7 +184,7 @@ export function StudentAttendanceOverview() {
                   <TableHead className="hidden sm:table-cell text-center w-20">Presenças</TableHead>
                   <TableHead className="hidden md:table-cell text-center w-20">Faltas</TableHead>
                   <TableHead className="text-center w-20">Sequência</TableHead>
-                  <TableHead className="hidden md:table-cell w-32">Progresso</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -210,9 +210,6 @@ export function StudentAttendanceOverview() {
                         {getStreakIcon(s.currentStreak)}
                         {s.currentStreak}
                       </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Progress value={s.percentage} className={`h-2 w-full ${getProgressColor(s.percentage)}`} />
                     </TableCell>
                   </TableRow>
                 ))}
