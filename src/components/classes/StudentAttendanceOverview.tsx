@@ -211,9 +211,6 @@ export function StudentAttendanceOverview() {
                         {s.currentStreak}
                       </span>
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Progress value={s.percentage} className={`h-2 w-full ${getProgressColor(s.percentage)}`} />
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
