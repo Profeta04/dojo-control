@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useXP } from "@/hooks/useXP";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
