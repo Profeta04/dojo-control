@@ -69,6 +69,7 @@ export function ScheduleTab() {
   const [selectedSchedule, setSelectedSchedule] = useState<ScheduleWithClass | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [formLoading, setFormLoading] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
   // Fetch classes filtered by dojo and sensei
   const { data: classes, isLoading: classesLoading } = useQuery({
