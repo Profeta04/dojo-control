@@ -1396,6 +1396,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      award_achievement: {
+        Args: { _achievement_id: string; _user_id: string }
+        Returns: boolean
+      }
       class_in_dojo: {
         Args: { _class_id: string; _user_id: string }
         Returns: boolean
