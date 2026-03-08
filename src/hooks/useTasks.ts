@@ -124,52 +124,7 @@ export function useTasks() {
     };
   }, [user, refetch]);
 
-  // Create task mutation
-  const createTask = useMutation({
-    mutationFn: async (taskData: {
-      title: string;
-      description?: string;
-      assigned_to: string;
-      due_date?: string;
-      priority?: TaskPriority;
-      category?: TaskCategory;
-    }) => {
-      if (!user) throw new Error("Usuário não autenticado");
-
-      const { data, error } = await supabase
-        .from("tasks")
-        .insert({
-          title: taskData.title,
-          description: taskData.description || null,
-          assigned_to: taskData.assigned_to,
-          assigned_by: user.id,
-          due_date: taskData.due_date || null,
-          priority: taskData.priority || "normal",
-          category: taskData.category || "outra",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Fire push notification for the assigned student (non-blocking)
-      if (data && taskData.assigned_to !== user.id) {
-        supabase.functions.invoke("send-push-notification", {
-          body: {
-            userId: taskData.assigned_to,
-            title: "📋 Nova Tarefa Atribuída",
-            body: taskData.title,
-            url: "/tarefas",
-          },
-        }).catch(() => {/* silent fail — push is optional */});
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["tasks"] });
-    },
-  });
+  // Task creation removed — tasks are managed via curriculum (admin-only DB inserts)
 
   // Update task status mutation
   const updateTaskStatus = useMutation({
