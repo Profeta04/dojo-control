@@ -1,28 +1,35 @@
 
 
-## Plano: Corrigir 4 Bugs Críticos
+## Plano: Filtro por turma na Agenda e Próximas Aulas
 
-### 1. Race Condition no `useAuth.tsx`
-**Problema:** `getSession()` e `onAuthStateChange` podem ambos disparar `fetchUserData`, causando duplo fetch.
-**Correção:** Remover o bloco `getSession().then(...)` redundante. O `onAuthStateChange` com `INITIAL_SESSION` já cobre o caso inicial. Usar um ref `isMounted` para evitar updates após unmount.
+Adicionar um seletor de turma nos três componentes de agenda para filtrar aulas exibidas.
 
-### 2. `handlePermanentDelete` sem transação (`Students.tsx`)
-**Problema:** 12+ deletes sequenciais no client-side; falha no meio = dados órfãos.
-**Correção:** Criar uma **stored procedure** `delete_student_cascade(target_user_id UUID)` que faz todos os deletes dentro de uma transação SQL. No frontend, chamar via `supabase.rpc('delete_student_cascade', { target_user_id })` seguido da edge function `delete-user` para remover de `auth.users`. Incluir tabelas faltantes: `push_subscriptions`, `season_rewards`, `season_xp`, `leaderboard_history`, `user_onboarding`.
+### Componentes afetados
 
-### 3. Aba de Responsáveis inacessível (`Students.tsx`)
-**Problema:** O conteúdo `TabsContent value="guardians"` existe mas falta o `TabsTrigger` correspondente no `TabsList`.
-**Correção:** Adicionar `<TabsTrigger value="guardians">Responsáveis</TabsTrigger>` no `TabsList`, ao lado das demais abas.
-
-### 4. Redirect do Dashboard com `navigate()` durante render
-**Problema:** `navigate()` é chamado dentro de `useEffect` mas pode causar flash de conteúdo antes do redirect para alunos.
-**Correção:** Adicionar early return **antes** do JSX principal: se `isStudent && !canManageStudents`, retornar `null` ou `<Navigate to="/perfil" replace />` imediatamente, evitando renderizar o dashboard por um frame.
-
-### Arquivos afetados
-| Arquivo | Mudança |
+| Componente | Contexto |
 |---|---|
-| `src/hooks/useAuth.tsx` | Remover `getSession` redundante, adicionar ref de controle |
-| `src/pages/Students.tsx` | Adicionar TabsTrigger "Responsáveis", substituir deletes por RPC |
-| `src/pages/Dashboard.tsx` | Early return com `<Navigate>` para alunos |
-| **Nova migration SQL** | Criar função `delete_student_cascade` |
+| `StudentSchedule.tsx` | Agenda do aluno (calendário + histórico) |
+| `UpcomingTrainingsCard.tsx` | Card "Próximos Treinos" no perfil do aluno |
+| `ScheduleTab.tsx` | Aba Agenda do sensei/admin (turmas) |
+
+### Implementação
+
+**1. StudentSchedule.tsx**
+- Adicionar estado `selectedClassId` (default `"all"`)
+- Renderizar um `<Select>` acima do calendário com as opções vindas de `myClasses` (já carregadas)
+- Filtrar `scheduledClasses`, `attendanceHistory`, e os memos derivados (`datesWithClasses`, `selectedDateSchedules`, `upcomingToday`) pelo `selectedClassId` quando diferente de `"all"`
+
+**2. UpcomingTrainingsCard.tsx**
+- Adicionar estado `selectedClassId`
+- Buscar as turmas ativas do aluno (já feito na query) e exibir um `<Select>` compacto no header do card
+- Filtrar a lista de `trainings` no render pelo `selectedClassId`
+
+**3. ScheduleTab.tsx**
+- Adicionar estado `selectedClassId`
+- Renderizar um `<Select>` ao lado do título do calendário, populado com `classes` (já carregadas)
+- Filtrar `enrichedSchedules` pelo `selectedClassId`, o que automaticamente filtra calendário, detalhe do dia e próximas aulas
+
+### UX
+- Select compacto com ícone de filtro, label "Todas as turmas" como default
+- Posicionado no header de cada card/seção, sem ocupar espaço extra
 
