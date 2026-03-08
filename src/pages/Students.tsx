@@ -909,6 +909,9 @@ export default function Students() {
                         setEditPhone(student.phone || "");
                         setEditBelt((student.belt_grade as BeltGrade) || "branca");
                         setEditBirthDate(student.birth_date || "");
+                        setEditGuardianName((student as any).guardian_name || "");
+                        setEditGuardianPhone((student as any).guardian_phone || "");
+                        setEditGuardianEmail(student.guardian_email || "");
                         // Load student belts from cached data
                         const belts = (allStudentBelts || []).filter(b => b.user_id === student.user_id);
                         // We need belt IDs - fetch them
