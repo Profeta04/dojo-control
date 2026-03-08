@@ -14,10 +14,10 @@ export function UpcomingTrainingsCard() {
   const { user } = useAuth();
   const [selectedClassId, setSelectedClassId] = useState<string>("all");
 
-  const { data: trainings, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["upcoming-trainings", user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return { trainings: [], classes: [] };
 
       // Get student's class IDs
       const { data: enrollments } = await supabase
