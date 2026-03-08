@@ -165,14 +165,13 @@ export function useAchievements(targetUserId?: string) {
         }
 
         if (qualifies) {
-          const { error } = await supabase
-            .from("student_achievements")
-            .insert({
-              user_id: userId,
-              achievement_id: achievement.id,
+          const { data: awarded, error } = await supabase
+            .rpc("award_achievement", {
+              _user_id: userId,
+              _achievement_id: achievement.id,
             });
 
-          if (!error) {
+          if (!error && awarded) {
             newlyUnlocked.push(achievement);
             // Create notification for the user
             await supabase.from("notifications").insert({
