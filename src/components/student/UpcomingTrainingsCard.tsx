@@ -116,7 +116,7 @@ export function UpcomingTrainingsCard() {
         )}
       </CardHeader>
       <CardContent>
-        {!trainings || trainings.length === 0 ? (
+        {!filteredTrainings || filteredTrainings.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <Calendar className="h-10 w-10 mx-auto mb-2 opacity-40" />
             <p className="text-sm">Nenhum treino agendado</p>
