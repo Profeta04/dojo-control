@@ -63,6 +63,7 @@ export function UpcomingTrainingsCard() {
         trainings: allTrainings,
         classes: activeClasses.map(e => ({ id: e.class_id, name: e.classes?.name || "Turma" })),
       };
+    },
     enabled: !!user?.id,
   });
 
