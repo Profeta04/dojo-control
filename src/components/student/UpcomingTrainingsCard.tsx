@@ -50,14 +50,19 @@ export function UpcomingTrainingsCard() {
 
       if (error) throw error;
 
-      return (schedules || []).map(s => ({
+      const allTrainings = (schedules || []).map(s => ({
         id: s.id,
         date: s.date,
         start_time: s.start_time,
         end_time: s.end_time,
         class_name: classNames[s.class_id] || "Treino",
+        class_id: s.class_id,
       }));
-    },
+
+      return {
+        trainings: allTrainings,
+        classes: activeClasses.map(e => ({ id: e.class_id, name: e.classes?.name || "Turma" })),
+      };
     enabled: !!user?.id,
   });
 
