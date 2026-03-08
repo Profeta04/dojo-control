@@ -100,6 +100,20 @@ export function UpcomingTrainingsCard() {
           <Calendar className="h-5 w-5 text-accent" />
           Próximos Treinos
         </CardTitle>
+        {classList.length > 1 && (
+          <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+            <SelectTrigger className="w-full mt-1">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue placeholder="Todas as turmas" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as turmas</SelectItem>
+              {classList.map(c => (
+                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </CardHeader>
       <CardContent>
         {!trainings || trainings.length === 0 ? (
