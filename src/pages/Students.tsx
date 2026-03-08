@@ -637,7 +637,15 @@ export default function Students() {
       // Update profile
       const { error } = await supabase
         .from("profiles")
-        .update({ name: editName, phone: editPhone, belt_grade: editBelt, birth_date: editBirthDate || null })
+        .update({ 
+          name: editName, 
+          phone: editPhone, 
+          belt_grade: editBelt, 
+          birth_date: editBirthDate || null,
+          guardian_name: editGuardianName || null,
+          guardian_phone: editGuardianPhone || null,
+          guardian_email: editGuardianEmail || null,
+        })
         .eq("user_id", editStudent.user_id);
       if (error) throw error;
 
