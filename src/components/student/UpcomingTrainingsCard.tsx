@@ -83,6 +83,12 @@ export function UpcomingTrainingsCard() {
 
   const formatTime = (t: string) => t.slice(0, 5);
 
+  const classList = data?.classes || [];
+  const trainings = data?.trainings || [];
+  const filteredTrainings = selectedClassId === "all"
+    ? trainings
+    : trainings.filter(t => t.class_id === selectedClassId);
+
   const isToday = (dateStr: string) => {
     return dateStr === format(new Date(), "yyyy-MM-dd");
   };
