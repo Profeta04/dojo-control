@@ -75,7 +75,7 @@ export function StudentAttendanceOverview() {
         // Current streak
         let currentStreak = 0;
         for (const r of records) {
-          if (r.present) currentStreak++;
+          if (r.present === true) currentStreak++;
           else break;
         }
 
