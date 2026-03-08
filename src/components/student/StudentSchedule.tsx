@@ -373,6 +373,20 @@ export function StudentSchedule() {
                 </Button>
               </div>
             </div>
+            {myClasses && myClasses.length > 1 && (
+              <Select value={selectedClassId} onValueChange={setSelectedClassId}>
+                <SelectTrigger className="w-full mt-2">
+                  <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <SelectValue placeholder="Todas as turmas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {myClasses.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </CardHeader>
           <CardContent>
             <CalendarComponent
