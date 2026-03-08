@@ -68,14 +68,14 @@ export function StudentAttendanceOverview() {
       return filteredStudents.map(s => {
         const records = byStudent.get(s.user_id) || [];
         const total = records.length;
-        const present = records.filter(r => r.present).length;
-        const absent = total - present;
+        const present = records.filter(r => r.present === true).length;
+        const absent = Math.max(0, total - present);
         const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
-        // Current streak
+        // Current streak (only count consecutive presents from most recent)
         let currentStreak = 0;
         for (const r of records) {
-          if (r.present) currentStreak++;
+          if (r.present === true) currentStreak++;
           else break;
         }
 
@@ -87,8 +87,8 @@ export function StudentAttendanceOverview() {
           total,
           present,
           absent,
-          percentage,
-          currentStreak,
+          percentage: Math.max(0, Math.min(100, percentage)),
+          currentStreak: Math.max(0, currentStreak),
           lastAttendance,
         };
       }).sort((a, b) => b.percentage - a.percentage);

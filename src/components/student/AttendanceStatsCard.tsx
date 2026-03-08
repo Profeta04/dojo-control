@@ -31,15 +31,15 @@ export function AttendanceStatsCard() {
       if (error) throw error;
 
       const total = data?.length || 0;
-      const present = data?.filter(a => a.present).length || 0;
-      const absent = total - present;
+      const present = data?.filter(a => a.present === true).length || 0;
+      const absent = Math.max(0, total - present);
       const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
       // Calculate current streak
       let currentStreak = 0;
       if (data) {
         for (const record of data) {
-          if (record.present) {
+          if (record.present === true) {
             currentStreak++;
           } else {
             break;
@@ -47,7 +47,7 @@ export function AttendanceStatsCard() {
         }
       }
 
-      return { total, present, absent, percentage, currentStreak };
+      return { total, present, absent, percentage: Math.max(0, Math.min(100, percentage)), currentStreak: Math.max(0, currentStreak) };
     },
     enabled: !!user?.id,
   });
