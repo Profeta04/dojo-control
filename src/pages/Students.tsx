@@ -88,6 +88,9 @@ export default function Students() {
   const [editBelt, setEditBelt] = useState<BeltGrade>("branca");
   const [editBirthDate, setEditBirthDate] = useState("");
   const [editStudentBelts, setEditStudentBelts] = useState<{ martial_art: string; belt_grade: string; id?: string }[]>([]);
+  const [editGuardianName, setEditGuardianName] = useState("");
+  const [editGuardianPhone, setEditGuardianPhone] = useState("");
+  const [editGuardianEmail, setEditGuardianEmail] = useState("");
 
   const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
   const [blockReason, setBlockReason] = useState("");
@@ -634,7 +637,15 @@ export default function Students() {
       // Update profile
       const { error } = await supabase
         .from("profiles")
-        .update({ name: editName, phone: editPhone, belt_grade: editBelt, birth_date: editBirthDate || null })
+        .update({ 
+          name: editName, 
+          phone: editPhone, 
+          belt_grade: editBelt, 
+          birth_date: editBirthDate || null,
+          guardian_name: editGuardianName || null,
+          guardian_phone: editGuardianPhone || null,
+          guardian_email: editGuardianEmail || null,
+        })
         .eq("user_id", editStudent.user_id);
       if (error) throw error;
 
@@ -898,6 +909,9 @@ export default function Students() {
                         setEditPhone(student.phone || "");
                         setEditBelt((student.belt_grade as BeltGrade) || "branca");
                         setEditBirthDate(student.birth_date || "");
+                        setEditGuardianName((student as any).guardian_name || "");
+                        setEditGuardianPhone((student as any).guardian_phone || "");
+                        setEditGuardianEmail(student.guardian_email || "");
                         // Load student belts from cached data
                         const belts = (allStudentBelts || []).filter(b => b.user_id === student.user_id);
                         // We need belt IDs - fetch them
@@ -1350,6 +1364,25 @@ export default function Students() {
                 </Select>
               </div>
             )}
+            
+            {/* Guardian Info Section */}
+            <div className="pt-2 border-t">
+              <p className="text-sm font-medium text-muted-foreground mb-3">Dados do Responsável</p>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Nome do Responsável</Label>
+                  <Input value={editGuardianName} onChange={(e) => setEditGuardianName(e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Telefone do Responsável</Label>
+                  <Input value={editGuardianPhone} onChange={(e) => setEditGuardianPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Email do Responsável</Label>
+                  <Input type="email" value={editGuardianEmail} onChange={(e) => setEditGuardianEmail(e.target.value)} placeholder="email@exemplo.com" />
+                </div>
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditStudent(null)}>Cancelar</Button>
