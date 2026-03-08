@@ -233,47 +233,59 @@ export function StudentSchedule() {
     return { total, present, absent, rate };
   }, [attendanceHistory]);
 
+  // Filter data by selected class
+  const filteredScheduledClasses = useMemo(() => {
+    if (!scheduledClasses) return [];
+    if (selectedClassId === "all") return scheduledClasses;
+    return scheduledClasses.filter(s => {
+      const classInfo = myClasses?.find(c => c.name === s.class_name);
+      return classInfo?.id === selectedClassId;
+    });
+  }, [scheduledClasses, selectedClassId, myClasses]);
+
+  const filteredAttendanceHistory = useMemo(() => {
+    if (!attendanceHistory) return [];
+    if (selectedClassId === "all") return attendanceHistory;
+    const className = myClasses?.find(c => c.id === selectedClassId)?.name;
+    return attendanceHistory.filter(a => a.class_name === className);
+  }, [attendanceHistory, selectedClassId, myClasses]);
+
   // Get dates with scheduled classes
   const datesWithClasses = useMemo(() => {
-    if (!scheduledClasses) return [];
-    return scheduledClasses
+    return filteredScheduledClasses
       .filter(s => !s.is_cancelled)
       .map(s => new Date(s.date + "T00:00:00"));
-  }, [scheduledClasses]);
+  }, [filteredScheduledClasses]);
 
   // Get dates with attendance
   const datesWithAttendance = useMemo(() => {
-    if (!attendanceHistory) return { present: [], absent: [] };
     return {
-      present: attendanceHistory.filter(a => a.present).map(a => new Date(a.date + "T00:00:00")),
-      absent: attendanceHistory.filter(a => !a.present).map(a => new Date(a.date + "T00:00:00")),
+      present: filteredAttendanceHistory.filter(a => a.present).map(a => new Date(a.date + "T00:00:00")),
+      absent: filteredAttendanceHistory.filter(a => !a.present).map(a => new Date(a.date + "T00:00:00")),
     };
-  }, [attendanceHistory]);
+  }, [filteredAttendanceHistory]);
 
   // Get schedules for selected date
   const selectedDateSchedules = useMemo(() => {
-    if (!scheduledClasses) return [];
-    return scheduledClasses.filter(s => 
+    return filteredScheduledClasses.filter(s => 
       isSameDay(new Date(s.date + "T00:00:00"), selectedDate)
     );
-  }, [scheduledClasses, selectedDate]);
+  }, [filteredScheduledClasses, selectedDate]);
 
   // Get attendance for selected date
   const selectedDateAttendance = useMemo(() => {
-    if (!attendanceHistory) return [];
-    return attendanceHistory.filter(a => 
+    return filteredAttendanceHistory.filter(a => 
       isSameDay(new Date(a.date + "T00:00:00"), selectedDate)
     );
-  }, [attendanceHistory, selectedDate]);
+  }, [filteredAttendanceHistory, selectedDate]);
 
   // Get upcoming classes for today
   const upcomingToday = useMemo(() => {
-    if (!scheduledClasses) return [];
     const today = new Date();
-    return scheduledClasses.filter(s => 
+    return filteredScheduledClasses.filter(s => 
       isSameDay(new Date(s.date + "T00:00:00"), today) && !s.is_cancelled
     );
-  }, [scheduledClasses]);
+  }, [filteredScheduledClasses]);
 
   const parseSchedule = (schedule: string) => {
     const parts = schedule.split(" - ");
