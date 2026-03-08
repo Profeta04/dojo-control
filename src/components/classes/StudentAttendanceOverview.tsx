@@ -112,7 +112,7 @@ export function StudentAttendanceOverview() {
 
   const getStreakIcon = (streak: number) => {
     if (streak >= 5) return <TrendingUp className="h-3.5 w-3.5 text-success" />;
-    if (streak >= 1) returActivitynus className="h-3.5 w-3.5 text-muted-foreground" />;
+    if (streak >= 1) return <Activity className="h-3.5 w-3.5 text-muted-foreground" />;
     return <TrendingDown className="h-3.5 w-3.5 text-destructive" />;
   };
 
