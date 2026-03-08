@@ -83,17 +83,8 @@ export default function StudentMyProgress() {
     enabled: !!user?.id,
   });
 
-  // Fetch XP and streak
-  const { data: xpData } = useQuery({
-    queryKey: ["my-progress-xp", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase.from("student_xp").select("*").eq("user_id", user.id).maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  // Use the centralized XP hook which handles effective streak
+  const { xpData: xpRaw, currentStreak: effectiveStreak, longestStreak, level: xpLevel, totalXp } = useXP();
 
   // Fetch student's martial arts from enrolled classes
   const { data: studentMartialArts = [] } = useQuery({
