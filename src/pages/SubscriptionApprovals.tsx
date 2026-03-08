@@ -39,17 +39,19 @@ interface SubscriptionRow {
 }
 
 function ReceiptPreview({ receiptUrl }: { receiptUrl: string | null }) {
-  const { getSignedUrl, loading } = useSignedUrl();
+  const { getSignedUrl } = useSignedUrl();
   const [url, setUrl] = useState<string | null>(null);
+  const [loadingUrl, setLoadingUrl] = useState(false);
 
   useEffect(() => {
     if (receiptUrl) {
-      getSignedUrl("subscription-receipts", receiptUrl).then(setUrl);
+      setLoadingUrl(true);
+      getSignedUrl("subscription-receipts", receiptUrl).then(u => { setUrl(u); setLoadingUrl(false); });
     }
   }, [receiptUrl]);
 
   if (!receiptUrl) return <span className="text-muted-foreground text-sm">Sem comprovante</span>;
-  if (loading || !url) return <Loader2 className="h-4 w-4 animate-spin" />;
+  if (loadingUrl || !url) return <Loader2 className="h-4 w-4 animate-spin" />;
 
   const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(receiptUrl);
 
