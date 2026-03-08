@@ -161,6 +161,19 @@ export function useXP(targetUserId?: string) {
   const neededForNext = xpForNextLevel(level);
   const progressPercent = Math.min((currentProgress / neededForNext) * 100, 100);
 
+  // Compute effective streak: if last_activity_date is stale (>1 day ago), streak is effectively 0
+  const effectiveStreak = (() => {
+    if (!xpData?.last_activity_date || !xpData?.current_streak) return 0;
+    const lastDate = new Date(xpData.last_activity_date);
+    const today = new Date();
+    // Reset time portions for comparison
+    lastDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays <= 1) return xpData.current_streak;
+    return 0; // Streak broken
+  })();
+
   return {
     xpData,
     isLoading,
@@ -171,8 +184,8 @@ export function useXP(targetUserId?: string) {
     currentProgress,
     neededForNext,
     progressPercent,
-    currentStreak: xpData?.current_streak || 0,
+    currentStreak: effectiveStreak,
     longestStreak: xpData?.longest_streak || 0,
-    streakMultiplier: getStreakMultiplier(xpData?.current_streak || 0),
+    streakMultiplier: getStreakMultiplier(effectiveStreak),
   };
 }

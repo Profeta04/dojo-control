@@ -915,7 +915,7 @@ export default function Students() {
                         <KeyRound className="h-4 w-4 mr-2" />
                         Redefinir senha
                       </DropdownMenuItem>
-                      {(student.guardian_email || student.guardian_user_id) && (
+                      {(student.guardian_email || student.guardian_user_id || (student as any).guardian_name || (student as any).guardian_phone) && (
                         <DropdownMenuItem onClick={async () => {
                           setGuardianInfoStudent(student);
                           setGuardianProfile(null);
@@ -1600,25 +1600,41 @@ export default function Students() {
               <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
             ) : (
               <>
+                {/* Guardian name from profile metadata */}
+                {(guardianInfoStudent as any)?.guardian_name && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">{(guardianInfoStudent as any).guardian_name}</span>
+                  </div>
+                )}
                 {guardianInfoStudent?.guardian_email && (
                   <div className="flex items-center gap-3 text-sm">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <span>{guardianInfoStudent.guardian_email}</span>
                   </div>
                 )}
+                {(guardianInfoStudent as any)?.guardian_phone && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="h-4 w-4 text-muted-foreground">📱</span>
+                    <span>{(guardianInfoStudent as any).guardian_phone}</span>
+                  </div>
+                )}
+                {/* Fallback to linked guardian profile if exists */}
                 {guardianProfile && (
                   <>
-                    <div className="flex items-center gap-3 text-sm">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>{guardianProfile.name}</span>
-                    </div>
-                    {guardianProfile.phone && (
+                    {!(guardianInfoStudent as any)?.guardian_name && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span>{guardianProfile.name}</span>
+                      </div>
+                    )}
+                    {!(guardianInfoStudent as any)?.guardian_phone && guardianProfile.phone && (
                       <div className="flex items-center gap-3 text-sm">
                         <span className="h-4 w-4 text-muted-foreground">📱</span>
                         <span>{guardianProfile.phone}</span>
                       </div>
                     )}
-                    {guardianProfile.email && (
+                    {!guardianInfoStudent?.guardian_email && guardianProfile.email && (
                       <div className="flex items-center gap-3 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <span>{guardianProfile.email}</span>
@@ -1626,7 +1642,7 @@ export default function Students() {
                     )}
                   </>
                 )}
-                {!guardianProfile && !guardianInfoStudent?.guardian_email && (
+                {!guardianProfile && !guardianInfoStudent?.guardian_email && !(guardianInfoStudent as any)?.guardian_name && (
                   <p className="text-sm text-muted-foreground">Nenhum dado de responsável encontrado.</p>
                 )}
               </>

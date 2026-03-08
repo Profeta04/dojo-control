@@ -1,12 +1,16 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Mail, Phone } from "lucide-react";
+import { Users, Mail, Phone, User } from "lucide-react";
 
 export function GuardianInfoCard() {
   const { profile } = useAuth();
 
-  // Only show if guardian_email is set on the student profile
-  if (!profile?.guardian_email) return null;
+  const guardianName = (profile as any)?.guardian_name;
+  const guardianEmail = profile?.guardian_email;
+  const guardianPhone = (profile as any)?.guardian_phone;
+
+  // Only show if any guardian info exists
+  if (!guardianEmail && !guardianName && !guardianPhone) return null;
 
   return (
     <Card data-tour="guardian-card">
@@ -18,10 +22,24 @@ export function GuardianInfoCard() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="flex items-center gap-3 text-sm">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span>{profile.guardian_email}</span>
-          </div>
+          {guardianName && (
+            <div className="flex items-center gap-3 text-sm">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{guardianName}</span>
+            </div>
+          )}
+          {guardianEmail && (
+            <div className="flex items-center gap-3 text-sm">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>{guardianEmail}</span>
+            </div>
+          )}
+          {guardianPhone && (
+            <div className="flex items-center gap-3 text-sm">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span>{guardianPhone}</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

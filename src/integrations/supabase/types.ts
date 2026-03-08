@@ -811,6 +811,8 @@ export type Database = {
           dojo_id: string | null
           email: string | null
           guardian_email: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
           guardian_user_id: string | null
           is_blocked: boolean
           is_federated: boolean
@@ -833,6 +835,8 @@ export type Database = {
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           guardian_user_id?: string | null
           is_blocked?: boolean
           is_federated?: boolean
@@ -855,6 +859,8 @@ export type Database = {
           dojo_id?: string | null
           email?: string | null
           guardian_email?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           guardian_user_id?: string | null
           is_blocked?: boolean
           is_federated?: boolean
