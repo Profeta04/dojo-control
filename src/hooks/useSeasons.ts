@@ -154,66 +154,30 @@ export function useSeasons(targetUserId?: string) {
     };
   }, [userId, activeSeason, queryClient]);
 
-  // Grant season XP mutation
+  // Grant season XP mutation — atomic server-side via RPC
   const grantSeasonXP = useMutation({
     mutationFn: async ({ baseXP }: { baseXP: number }) => {
       if (!userId || !activeSeason) throw new Error("No user or season");
 
-      const { data: current } = await supabase
-        .from("season_xp")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("season_id", activeSeason.id)
-        .maybeSingle();
-
-      const today = new Date().toISOString().split("T")[0];
-      let currentStreak = current?.current_streak || 0;
-      let longestStreak = current?.longest_streak || 0;
-      const lastActivity = current?.last_activity_date;
-
-      if (lastActivity) {
-        const diff = Math.floor(
-          (new Date(today).getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
-        );
-        if (diff === 1) currentStreak += 1;
-        else if (diff > 1) currentStreak = 1;
-      } else {
-        currentStreak = 1;
-      }
-
-      if (currentStreak > longestStreak) longestStreak = currentStreak;
-
-      const multiplier = getStreakMultiplier(currentStreak);
       const seasonMultiplier = Number(activeSeason.xp_multiplier) || 1;
-      const finalXP = Math.round(baseXP * multiplier * seasonMultiplier);
-      const newTotal = (current?.total_xp || 0) + finalXP;
-      const newLevel = calculateLevel(newTotal);
 
-      if (current) {
-        await supabase
-          .from("season_xp")
-          .update({
-            total_xp: newTotal,
-            level: newLevel,
-            current_streak: currentStreak,
-            longest_streak: longestStreak,
-            last_activity_date: today,
-          })
-          .eq("user_id", userId)
-          .eq("season_id", activeSeason.id);
-      } else {
-        await supabase.from("season_xp").insert({
-          user_id: userId,
-          season_id: activeSeason.id,
-          total_xp: finalXP,
-          level: calculateLevel(finalXP),
-          current_streak: 1,
-          longest_streak: 1,
-          last_activity_date: today,
-        });
-      }
+      const { data, error } = await supabase.rpc("grant_season_xp", {
+        _user_id: userId,
+        _season_id: activeSeason.id,
+        _base_xp: baseXP,
+        _season_multiplier: seasonMultiplier,
+      });
 
-      return { xpGranted: finalXP, newTotal, newLevel };
+      if (error) throw error;
+
+      const result = data as {
+        xpGranted: number;
+        multiplier: number;
+        newTotal: number;
+        newLevel: number;
+      };
+
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["season-xp", userId, activeSeason?.id] });

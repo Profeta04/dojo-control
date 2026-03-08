@@ -113,7 +113,7 @@ export function useXP(targetUserId?: string) {
     };
   }, [userId, queryClient]);
 
-  // Grant XP mutation (called after task completion/approval)
+  // Grant XP mutation — atomic server-side via RPC
   const grantXP = useMutation({
     mutationFn: async ({
       baseXP,
@@ -124,97 +124,28 @@ export function useXP(targetUserId?: string) {
     }) => {
       if (!userId) throw new Error("No user");
 
-      // Get current XP data
-      const { data: current, error: fetchError } = await supabase
-        .from("student_xp")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("grant_xp", {
+        _user_id: userId,
+        _base_xp: baseXP,
+      });
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      const today = new Date().toISOString().split("T")[0];
-      let currentStreak = current?.current_streak || 0;
-      let longestStreak = current?.longest_streak || 0;
-      const lastActivity = current?.last_activity_date;
-
-      // Calculate streak
-      if (lastActivity) {
-        const lastDate = new Date(lastActivity);
-        const todayDate = new Date(today);
-        const diffDays = Math.floor(
-          (todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        if (diffDays === 1) {
-          // Consecutive day
-          currentStreak += 1;
-        } else if (diffDays === 0) {
-          // Same day, keep streak
-        } else {
-          // Streak broken
-          currentStreak = 1;
-        }
-      } else {
-        currentStreak = 1;
-      }
-
-      if (currentStreak > longestStreak) {
-        longestStreak = currentStreak;
-      }
-
-      // Apply streak multiplier
-      const multiplier = getStreakMultiplier(currentStreak);
-      const finalXP = Math.round(baseXP * multiplier);
-
-      const newTotalXP = (current?.total_xp || 0) + finalXP;
-      const newLevel = calculateLevel(newTotalXP);
-
-      if (current) {
-        const { error } = await supabase
-          .from("student_xp")
-          .update({
-            total_xp: newTotalXP,
-            level: newLevel,
-            current_streak: currentStreak,
-            longest_streak: longestStreak,
-            last_activity_date: today,
-          })
-          .eq("user_id", userId);
-
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("student_xp").insert({
-          user_id: userId,
-          total_xp: finalXP,
-          level: calculateLevel(finalXP),
-          current_streak: 1,
-          longest_streak: 1,
-          last_activity_date: today,
-        });
-
-        if (error) throw error;
-      }
-
-      // Notify on level up
-      const previousLevel = current ? calculateLevel(current.total_xp) : 0;
-      const leveledUp = newLevel > previousLevel;
-
-      if (leveledUp) {
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          title: `⬆️ Subiu de nível!`,
-          message: `Parabéns! Você alcançou o Nível ${newLevel}!`,
-          type: "level_up",
-        });
-      }
+      const result = data as {
+        xpGranted: number;
+        multiplier: number;
+        newTotal: number;
+        newLevel: number;
+        leveledUp: boolean;
+        currentStreak: number;
+      };
 
       return {
-        xpGranted: finalXP,
-        multiplier,
-        newTotal: newTotalXP,
-        newLevel,
-        leveledUp,
+        xpGranted: result.xpGranted,
+        multiplier: result.multiplier,
+        newTotal: result.newTotal,
+        newLevel: result.newLevel,
+        leveledUp: result.leveledUp,
         reason,
       };
     },

@@ -50,7 +50,7 @@ function useThemeColors() {
       });
     }, 50);
     return () => clearTimeout(timer);
-  });
+  }, []);
 
   return colors;
 }

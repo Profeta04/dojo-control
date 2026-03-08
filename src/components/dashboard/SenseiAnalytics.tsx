@@ -34,7 +34,7 @@ export function SenseiAnalytics() {
       });
     }, 50);
     return () => clearTimeout(timer);
-  });
+  }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["sensei-analytics", currentDojoId],
