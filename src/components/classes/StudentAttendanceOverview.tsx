@@ -68,7 +68,7 @@ export function StudentAttendanceOverview() {
       return filteredStudents.map(s => {
         const records = byStudent.get(s.user_id) || [];
         const total = records.length;
-        const present = records.filter(r => r.present).length;
+        const present = records.filter(r => r.present === true).length;
         const absent = total - present;
         const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
 
