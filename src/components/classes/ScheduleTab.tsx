@@ -172,14 +172,19 @@ export function ScheduleTab() {
     });
   }, [schedules, classes, senseiProfiles]);
 
+  // Filter by selected class
+  const filteredSchedules = useMemo(() => {
+    if (selectedClassId === "all") return enrichedSchedules;
+    return enrichedSchedules.filter(s => s.classId === selectedClassId);
+  }, [enrichedSchedules, selectedClassId]);
+
   const getSchedulesForDate = (date: Date) => {
-    return enrichedSchedules.filter((s) => isSameDay(new Date(s.date + "T00:00:00"), date));
+    return filteredSchedules.filter((s) => isSameDay(new Date(s.date + "T00:00:00"), date));
   };
 
   const datesWithSchedules = useMemo(() => {
-    if (!enrichedSchedules) return [];
-    return enrichedSchedules.map((s) => new Date(s.date + "T00:00:00"));
-  }, [enrichedSchedules]);
+    return filteredSchedules.map((s) => new Date(s.date + "T00:00:00"));
+  }, [filteredSchedules]);
 
   const selectedDateSchedules = getSchedulesForDate(selectedDate);
 
