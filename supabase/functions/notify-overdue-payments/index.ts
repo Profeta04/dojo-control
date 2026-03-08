@@ -10,7 +10,7 @@ Deno.serve(createHandler(async (req) => {
 
   const supabaseAdmin = getServiceClient();
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
   // Find overdue payments
   const { data: overduePayments } = await supabaseAdmin
@@ -48,7 +48,7 @@ Deno.serve(createHandler(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${anonKey}`,
+          Authorization: `Bearer ${serviceRoleKey}`,
         },
         body: JSON.stringify({
           userId: studentId,

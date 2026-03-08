@@ -116,11 +116,7 @@ Deno.serve(createHandler(async (req) => {
     const adminClient = getServiceClient();
     const { data: isStaff } = await adminClient.rpc("is_staff", { _user_id: auth.userId });
 
-    // Also allow anon key calls from other edge functions
-    const authHeader = req.headers.get("Authorization");
-    const token = authHeader?.replace("Bearer ", "") || "";
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    if (!isStaff && token !== anonKey) {
+    if (!isStaff) {
       return errorResponse("Forbidden", 403);
     }
   }
