@@ -1661,7 +1661,7 @@ export default function Students() {
                         <span>{guardianProfile.name}</span>
                       </div>
                     )}
-                    {!(guardianInfoStudent as any)?.guardian_phone && guardianProfile.phone && (
+                    {!guardianInfoStudent?.guardian_phone && guardianProfile.phone && (
                       <div className="flex items-center gap-3 text-sm">
                         <span className="h-4 w-4 text-muted-foreground">📱</span>
                         <span>{guardianProfile.phone}</span>
