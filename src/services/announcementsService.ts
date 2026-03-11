@@ -52,6 +52,7 @@ export async function createAnnouncement(
     title: string;
     content: string;
     image_url?: string | null;
+    file_url?: string | null;
     is_urgent?: boolean;
     is_pinned?: boolean;
     expires_at?: string | null;
