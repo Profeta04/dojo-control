@@ -68,6 +68,37 @@ export function AnnouncementsBanner() {
   const dojoId = currentDojoId || profile?.dojo_id || "";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+
+  const updateHeight = useCallback(() => {
+    if (!carouselApi) return;
+    const engine = carouselApi.internalEngine();
+    const selectedIndex = carouselApi.selectedScrollSnap();
+    const slides = carouselApi.slideNodes();
+    const slide = slides[selectedIndex];
+    if (slide) {
+      setContainerHeight(slide.scrollHeight);
+    }
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    updateHeight();
+    carouselApi.on("select", updateHeight);
+    carouselApi.on("reInit", updateHeight);
+    // Also update after images load
+    const observer = new MutationObserver(updateHeight);
+    const container = carouselApi.rootNode();
+    if (container) {
+      observer.observe(container, { childList: true, subtree: true, attributes: true });
+    }
+    return () => {
+      carouselApi.off("select", updateHeight);
+      carouselApi.off("reInit", updateHeight);
+      observer.disconnect();
+    };
+  }, [carouselApi, updateHeight]);
 
   const { data: announcements } = useQuery({
     queryKey: ["announcements", dojoId],
