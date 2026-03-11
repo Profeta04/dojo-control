@@ -37,7 +37,7 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  uploadAnnouncementImage,
+  uploadAnnouncementFile,
   notifyDojoStudents,
   Announcement,
 } from "@/services/announcementsService";
