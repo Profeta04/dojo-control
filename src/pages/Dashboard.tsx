@@ -13,6 +13,7 @@ import { SenseiAnalytics } from "@/components/dashboard/SenseiAnalytics";
 import { XPBar } from "@/components/gamification/XPBar";
 import { AchievementsPanel } from "@/components/gamification/AchievementsPanel";
 import { FeatureGate } from "@/components/shared/FeatureGate";
+import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -68,6 +69,9 @@ export default function Dashboard() {
           <AchievementsPanel compact maxVisible={8} />
         </div>
       )}
+
+      {/* Announcements Banner */}
+      <AnnouncementsBanner />
 
       {/* Dashboard Stats Component - Only for admins/senseis */}
       {canManageStudents && (
