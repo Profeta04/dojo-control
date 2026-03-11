@@ -58,16 +58,24 @@ export async function verifyAuth(req: Request): Promise<AuthResult | Response> {
 
   const token = authHeader.replace("Bearer ", "");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
 
   // Service role bypass for cron/internal
   if (token === serviceRoleKey) {
     return { userId: "service_role", isServiceRole: true };
   }
 
-  // Anon key bypass for cron jobs that use anon key
-  if (anonKey && token === anonKey) {
-    return { userId: "cron_anon", isServiceRole: true };
+  // Decode JWT payload to check if it's an anon/service_role key (used by cron jobs)
+  try {
+    const payloadPart = token.split(".")[1];
+    if (payloadPart) {
+      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decoded.role === "anon" || decoded.role === "service_role") {
+        // This is a Supabase API key (anon or service_role), allow as internal caller
+        return { userId: "cron_key", isServiceRole: true };
+      }
+    }
+  } catch {
+    // Not a valid JWT structure, continue to user verification
   }
 
   // Verify user token
