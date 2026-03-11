@@ -211,7 +211,7 @@ export function AnnouncementsBanner() {
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
                   <div
-                    className={`rounded-lg border p-3 h-full ${
+                    className={`rounded-lg border p-3 ${
                       ann.is_urgent
                         ? "border-destructive/50 bg-destructive/5"
                         : "border-border/60 bg-muted/30"
