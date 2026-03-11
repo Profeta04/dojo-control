@@ -69,7 +69,6 @@ export function AnnouncementsBanner() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const updateHeight = useCallback(() => {
