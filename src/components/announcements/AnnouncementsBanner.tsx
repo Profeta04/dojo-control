@@ -248,9 +248,11 @@ export function AnnouncementsBanner() {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                {ann.content}
-              </p>
+              {!ann.image_url && ann.content && (
+                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                  {ann.content}
+                </p>
+              )}
               {ann.image_url && (
                 <img
                   src={ann.image_url}
@@ -258,6 +260,11 @@ export function AnnouncementsBanner() {
                   className="mt-2 rounded-md max-h-40 object-cover w-full"
                   loading="lazy"
                 />
+              )}
+              {ann.image_url && ann.content && (
+                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                  {ann.content}
+                </p>
               )}
               <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
                 <span>{ann.author_name}</span>
@@ -326,8 +333,8 @@ function AnnouncementForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error("Preencha título e conteúdo.");
+    if (!title.trim()) {
+      toast.error("Preencha o título.");
       return;
     }
     onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
@@ -351,9 +358,8 @@ function AnnouncementForm({
           id="ann-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Escreva o conteúdo do aviso..."
-          rows={4}
-          required
+          placeholder="Escreva o conteúdo do aviso (opcional)..."
+          rows={3}
         />
       </div>
       <div className="space-y-2">

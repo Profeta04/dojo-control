@@ -232,14 +232,19 @@ export default function Announcements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
+                {!ann.image_url && ann.content && (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
+                )}
                 {ann.image_url && (
                   <img
                     src={ann.image_url}
                     alt="Imagem do aviso"
-                    className="mt-3 rounded-lg max-h-64 object-cover w-full"
+                    className="mt-1 rounded-lg max-h-64 object-cover w-full"
                     loading="lazy"
                   />
+                )}
+                {ann.image_url && ann.content && (
+                  <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{ann.content}</p>
                 )}
                 <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                   <span>Por {ann.author_name}</span>
@@ -303,8 +308,8 @@ function AnnouncementForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error("Preencha título e conteúdo.");
+    if (!title.trim()) {
+      toast.error("Preencha o título.");
       return;
     }
     onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
@@ -323,14 +328,13 @@ function AnnouncementForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="content">Conteúdo</Label>
+        <Label htmlFor="content">Conteúdo (opcional)</Label>
         <Textarea
           id="content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Escreva o conteúdo do aviso..."
-          rows={4}
-          required
+          placeholder="Escreva o conteúdo do aviso (opcional)..."
+          rows={3}
         />
       </div>
 
