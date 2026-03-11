@@ -250,10 +250,12 @@ function PromptScreen({
   deferredPrompt,
   isIOS,
   onInstall,
+  onSkip,
 }: {
   deferredPrompt: BeforeInstallPromptEvent | null;
   isIOS: boolean;
   onInstall: () => void;
+  onSkip: () => void;
 }) {
   const steps = isIOS
     ? [
@@ -369,12 +371,17 @@ function PromptScreen({
           )}
         </motion.div>
 
-        <motion.p
-          className="text-xs text-muted-foreground/60 mt-8"
-          variants={itemVariants}
-        >
-          O aplicativo é gratuito e funciona offline.
-        </motion.p>
+        <motion.div className="mt-6 flex flex-col items-center gap-2" variants={itemVariants}>
+          <p className="text-xs text-muted-foreground/60">
+            O aplicativo é gratuito e funciona offline.
+          </p>
+          <button
+            onClick={onSkip}
+            className="text-xs text-muted-foreground/50 hover:text-muted-foreground underline underline-offset-2 transition-colors"
+          >
+            Usar sem instalar
+          </button>
+        </motion.div>
       </motion.div>
     </motion.div>
   );
@@ -384,6 +391,7 @@ function PromptScreen({
 
 export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [installed, setInstalled] = useState(true);
+  const [skipped, setSkipped] = useState(false);
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const isIOS = isIOSDevice();
@@ -439,8 +447,8 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeout);
   }, [phase, markSuccess]);
 
-  // Desktop or already standalone → show app
-  if (installed && phase !== "success" && phase !== "installing") {
+  // Desktop, already standalone, or user skipped → show app
+  if ((installed || skipped) && phase !== "success" && phase !== "installing") {
     return <>{children}</>;
   }
 
@@ -477,6 +485,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
           deferredPrompt={deferredPrompt}
           isIOS={isIOS}
           onInstall={handleInstallClick}
+          onSkip={() => setSkipped(true)}
         />
       )}
     </AnimatePresence>
