@@ -232,14 +232,19 @@ export default function Announcements() {
                 </div>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
+                {!ann.image_url && ann.content && (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
+                )}
                 {ann.image_url && (
                   <img
                     src={ann.image_url}
                     alt="Imagem do aviso"
-                    className="mt-3 rounded-lg max-h-64 object-cover w-full"
+                    className="mt-1 rounded-lg max-h-64 object-cover w-full"
                     loading="lazy"
                   />
+                )}
+                {ann.image_url && ann.content && (
+                  <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{ann.content}</p>
                 )}
                 <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                   <span>Por {ann.author_name}</span>
