@@ -357,9 +357,8 @@ function AnnouncementForm({
           id="ann-content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Escreva o conteúdo do aviso..."
-          rows={4}
-          required
+          placeholder="Escreva o conteúdo do aviso (opcional)..."
+          rows={3}
         />
       </div>
       <div className="space-y-2">
