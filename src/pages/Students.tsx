@@ -1646,10 +1646,10 @@ export default function Students() {
                     <span>{guardianInfoStudent.guardian_email}</span>
                   </div>
                 )}
-                {(guardianInfoStudent as any)?.guardian_phone && (
+                {guardianInfoStudent?.guardian_phone && (
                   <div className="flex items-center gap-3 text-sm">
                     <span className="h-4 w-4 text-muted-foreground">📱</span>
-                    <span>{(guardianInfoStudent as any).guardian_phone}</span>
+                    <span>{guardianInfoStudent.guardian_phone}</span>
                   </div>
                 )}
                 {/* Fallback to linked guardian profile if exists */}
