@@ -98,7 +98,7 @@ export async function deleteAnnouncement(id: string) {
   if (error) throw error;
 }
 
-export async function uploadAnnouncementImage(file: File): Promise<string> {
+export async function uploadAnnouncementFile(file: File): Promise<string> {
   const ext = file.name.split(".").pop();
   const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
