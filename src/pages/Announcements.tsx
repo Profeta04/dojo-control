@@ -308,8 +308,8 @@ function AnnouncementForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error("Preencha título e conteúdo.");
+    if (!title.trim()) {
+      toast.error("Preencha o título.");
       return;
     }
     onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
@@ -328,14 +328,13 @@ function AnnouncementForm({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="content">Conteúdo</Label>
+        <Label htmlFor="content">Conteúdo (opcional)</Label>
         <Textarea
           id="content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Escreva o conteúdo do aviso..."
-          rows={4}
-          required
+          placeholder="Escreva o conteúdo do aviso (opcional)..."
+          rows={3}
         />
       </div>
 
