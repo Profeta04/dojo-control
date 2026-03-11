@@ -79,8 +79,9 @@ export function AnnouncementsBanner() {
     const viewport = carouselApi.rootNode();
 
     if (slide && viewport) {
-      viewport.style.transition = "height 0.3s ease";
-      viewport.style.height = `${slide.scrollHeight}px`;
+      const h = slide.getBoundingClientRect().height;
+      viewport.style.transition = "height 0.4s cubic-bezier(0.4, 0, 0.2, 1)";
+      viewport.style.height = `${h}px`;
     }
   }, [carouselApi]);
 
