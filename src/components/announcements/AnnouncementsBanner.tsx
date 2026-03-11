@@ -13,6 +13,13 @@ import {
 } from "@/services/announcementsService";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -180,112 +187,123 @@ export function AnnouncementsBanner() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         {!hasAnnouncements ? (
           <p className="text-sm text-muted-foreground text-center py-4">
             Nenhum aviso publicado. Clique em "Novo Aviso" para criar um.
           </p>
         ) : (
-          allAnnouncements.map((ann) => (
-            <div
-              key={ann.id}
-              className={`rounded-lg border p-3 ${
-                ann.is_urgent
-                  ? "border-destructive/50 bg-destructive/5"
-                  : "border-border/60 bg-muted/30"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap min-w-0">
-                  {ann.is_urgent && (
-                    <Badge variant="destructive" className="gap-1 text-xs">
-                      <AlertTriangle className="h-3 w-3" /> Urgente
-                    </Badge>
-                  )}
-                  {ann.is_pinned && (
-                    <Badge variant="secondary" className="gap-1 text-xs">
-                      <Pin className="h-3 w-3" /> Fixado
-                    </Badge>
-                  )}
-                  <span className="font-semibold text-sm">{ann.title}</span>
-                </div>
-                {canManageStudents && (
-                  <div className="flex gap-0.5 flex-shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => {
-                        setEditing(ann);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remover aviso?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteMutation.mutate(ann.id)}
+          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full">
+            <CarouselContent>
+              {allAnnouncements.map((ann) => (
+                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
+                  <div
+                    className={`rounded-lg border p-3 h-full ${
+                      ann.is_urgent
+                        ? "border-destructive/50 bg-destructive/5"
+                        : "border-border/60 bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        {ann.is_urgent && (
+                          <Badge variant="destructive" className="gap-1 text-xs">
+                            <AlertTriangle className="h-3 w-3" /> Urgente
+                          </Badge>
+                        )}
+                        {ann.is_pinned && (
+                          <Badge variant="secondary" className="gap-1 text-xs">
+                            <Pin className="h-3 w-3" /> Fixado
+                          </Badge>
+                        )}
+                        <span className="font-semibold text-sm">{ann.title}</span>
+                      </div>
+                      {canManageStudents && (
+                        <div className="flex gap-0.5 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() => {
+                              setEditing(ann);
+                              setDialogOpen(true);
+                            }}
                           >
-                            Remover
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7">
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remover aviso?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteMutation.mutate(ann.id)}
+                                >
+                                  Remover
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      )}
+                    </div>
+                    {!ann.image_url && ann.content && (
+                      <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                        {ann.content}
+                      </p>
+                    )}
+                    {ann.image_url && (
+                      <img
+                        src={ann.image_url}
+                        alt=""
+                        className="mt-2 rounded-md max-h-40 object-cover w-full"
+                        loading="lazy"
+                      />
+                    )}
+                    {ann.image_url && ann.content && (
+                      <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                        {ann.content}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
+                      <span>{ann.author_name}</span>
+                      <span>•</span>
+                      <span>
+                        {format(new Date(ann.created_at), "dd MMM yyyy", {
+                          locale: ptBR,
+                        })}
+                      </span>
+                      {ann.expires_at && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-0.5">
+                            <CalendarClock className="h-3 w-3" />
+                            Expira {format(new Date(ann.expires_at), "dd/MM/yyyy")}
+                          </span>
+                        </>
+                      )}
+                    </div>
                   </div>
-                )}
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {allAnnouncements.length > 1 && (
+              <div className="flex justify-end gap-1 mt-2">
+                <CarouselPrevious className="static translate-y-0 h-7 w-7" />
+                <CarouselNext className="static translate-y-0 h-7 w-7" />
               </div>
-              {!ann.image_url && ann.content && (
-                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                  {ann.content}
-                </p>
-              )}
-              {ann.image_url && (
-                <img
-                  src={ann.image_url}
-                  alt=""
-                  className="mt-2 rounded-md max-h-40 object-cover w-full"
-                  loading="lazy"
-                />
-              )}
-              {ann.image_url && ann.content && (
-                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                  {ann.content}
-                </p>
-              )}
-              <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
-                <span>{ann.author_name}</span>
-                <span>•</span>
-                <span>
-                  {format(new Date(ann.created_at), "dd MMM yyyy", {
-                    locale: ptBR,
-                  })}
-                </span>
-                {ann.expires_at && (
-                  <>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5">
-                      <CalendarClock className="h-3 w-3" />
-                      Expira {format(new Date(ann.expires_at), "dd/MM/yyyy")}
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          ))
+            )}
+          </Carousel>
         )}
       </CardContent>
     </Card>
