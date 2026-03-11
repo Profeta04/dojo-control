@@ -1655,7 +1655,7 @@ export default function Students() {
                 {/* Fallback to linked guardian profile if exists */}
                 {guardianProfile && (
                   <>
-                    {!(guardianInfoStudent as any)?.guardian_name && (
+                    {!guardianInfoStudent?.guardian_name && (
                       <div className="flex items-center gap-3 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{guardianProfile.name}</span>
