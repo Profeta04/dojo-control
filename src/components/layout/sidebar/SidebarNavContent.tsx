@@ -20,6 +20,7 @@ import {
   Receipt,
   Crown,
   HelpCircle,
+  Megaphone,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
