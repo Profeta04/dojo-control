@@ -75,10 +75,12 @@ export function AnnouncementsBanner() {
     if (!carouselApi) return;
     const idx = carouselApi.selectedScrollSnap();
     setSelectedIndex(idx);
-    const slides = carouselApi.slideNodes();
-    const slide = slides[idx];
-    if (slide) {
-      setContainerHeight(slide.scrollHeight);
+    const slide = carouselApi.slideNodes()[idx];
+    const viewport = carouselApi.rootNode();
+
+    if (slide && viewport) {
+      viewport.style.transition = "height 0.3s ease";
+      viewport.style.height = `${slide.scrollHeight}px`;
     }
   }, [carouselApi]);
 
