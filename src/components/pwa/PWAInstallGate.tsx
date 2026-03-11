@@ -447,8 +447,8 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(timeout);
   }, [phase, markSuccess]);
 
-  // Desktop or already standalone → show app
-  if (installed && phase !== "success" && phase !== "installing") {
+  // Desktop, already standalone, or user skipped → show app
+  if ((installed || skipped) && phase !== "success" && phase !== "installing") {
     return <>{children}</>;
   }
 
