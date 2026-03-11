@@ -83,7 +83,7 @@ describe("JoinVictus - TaskCard", () => {
 
   it("não exibe badge de XP para tarefa concluída", () => {
     const { queryByText } = render(<TaskCard task={completedTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
-    expect(queryByText("15 XP")).not.toBeInTheDocument();
+    expect(queryByText("15 XP")).toBeNull();
   });
 
   it("exibe nome do responsável pela atribuição", () => {
