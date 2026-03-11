@@ -313,6 +313,7 @@ export function AnnouncementsBanner() {
                         alt=""
                         className="mt-2 rounded-md w-full object-contain max-h-64"
                         loading="lazy"
+                        onLoad={updateHeight}
                       />
                     )}
                     {ann.image_url && ann.content && (
