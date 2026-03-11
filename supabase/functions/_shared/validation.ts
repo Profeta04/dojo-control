@@ -58,20 +58,26 @@ export async function verifyAuth(req: Request): Promise<AuthResult | Response> {
 
   const token = authHeader.replace("Bearer ", "");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
 
   // Service role bypass for cron/internal
   if (token === serviceRoleKey) {
     return { userId: "service_role", isServiceRole: true };
   }
 
-  // Verify user token via getClaims (faster than getUser)
+  // Anon key bypass for cron jobs that use anon key
+  if (anonKey && token === anonKey) {
+    return { userId: "cron_anon", isServiceRole: true };
+  }
+
+  // Verify user token
   const anonClient = getAnonClient(authHeader);
-  const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data: { user }, error } = await anonClient.auth.getUser(token);
+  if (error || !user) {
     return errorResponse("Unauthorized: invalid token", 401);
   }
 
-  return { userId: claimsData.claims.sub as string, isServiceRole: false };
+  return { userId: user.id, isServiceRole: false };
 }
 
 /**
