@@ -194,9 +194,13 @@ export function AnnouncementsBanner() {
     <Card className="mb-6">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Megaphone className="h-5 w-5 text-primary" />
-            Mural de Avisos
+          <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
+            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10">
+              <Megaphone className="h-5 w-5 text-primary" />
+            </div>
+            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              Mural de Avisos
+            </span>
           </CardTitle>
           {canManageStudents && (
             <Dialog
