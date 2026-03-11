@@ -369,19 +369,18 @@ function PromptScreen({
               </ol>
             </motion.div>
           )}
-        </motion.div>
 
-        <motion.div className="mt-6 flex flex-col items-center gap-2" variants={itemVariants}>
-          <p className="text-xs text-muted-foreground/60">
-            O aplicativo é gratuito e funciona offline.
-          </p>
           <button
             onClick={onSkip}
-            className="text-sm text-accent font-medium hover:text-accent/80 underline underline-offset-4 transition-colors"
+            className="w-full text-sm text-accent font-medium hover:text-accent/80 underline underline-offset-4 transition-colors pt-2"
           >
             Usar sem instalar
           </button>
         </motion.div>
+
+        <motion.p className="text-xs text-muted-foreground/60 mt-4" variants={itemVariants}>
+          O aplicativo é gratuito e funciona offline.
+        </motion.p>
       </motion.div>
     </motion.div>
   );
