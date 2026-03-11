@@ -70,13 +70,14 @@ export function AnnouncementsBanner() {
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const updateHeight = useCallback(() => {
     if (!carouselApi) return;
-    const engine = carouselApi.internalEngine();
-    const selectedIndex = carouselApi.selectedScrollSnap();
+    const idx = carouselApi.selectedScrollSnap();
+    setSelectedIndex(idx);
     const slides = carouselApi.slideNodes();
-    const slide = slides[selectedIndex];
+    const slide = slides[idx];
     if (slide) {
       setContainerHeight(slide.scrollHeight);
     }
@@ -358,9 +359,25 @@ export function AnnouncementsBanner() {
               ))}
             </CarouselContent>
             {allAnnouncements.length > 1 && (
-              <div className="flex justify-end gap-1 mt-2">
-                <CarouselPrevious className="static translate-y-0 h-7 w-7" />
-                <CarouselNext className="static translate-y-0 h-7 w-7" />
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex gap-1.5 items-center">
+                  {allAnnouncements.map((_, i) => (
+                    <button
+                      key={i}
+                      className={`rounded-full transition-all duration-300 ${
+                        i === selectedIndex
+                          ? "w-5 h-2 bg-primary"
+                          : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                      }`}
+                      onClick={() => carouselApi?.scrollTo(i)}
+                      aria-label={`Ir para aviso ${i + 1}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  <CarouselPrevious className="static translate-y-0 h-7 w-7" />
+                  <CarouselNext className="static translate-y-0 h-7 w-7" />
+                </div>
               </div>
             )}
           </Carousel>
