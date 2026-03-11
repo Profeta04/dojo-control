@@ -391,6 +391,7 @@ function PromptScreen({
 
 export function PWAInstallGate({ children }: { children: React.ReactNode }) {
   const [installed, setInstalled] = useState(true);
+  const [skipped, setSkipped] = useState(false);
   const [phase, setPhase] = useState<InstallPhase>("prompt");
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const isIOS = isIOSDevice();
