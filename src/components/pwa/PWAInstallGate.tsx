@@ -485,6 +485,7 @@ export function PWAInstallGate({ children }: { children: React.ReactNode }) {
           deferredPrompt={deferredPrompt}
           isIOS={isIOS}
           onInstall={handleInstallClick}
+          onSkip={() => setSkipped(true)}
         />
       )}
     </AnimatePresence>
