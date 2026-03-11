@@ -83,7 +83,7 @@ describe("JoinVictus - TaskCard", () => {
 
   it("não exibe badge de XP para tarefa concluída", () => {
     const { queryByText } = render(<TaskCard task={completedTask} onStatusChange={vi.fn()} xpValue={15} />, { wrapper: createWrapper() });
-    expect(queryByText("15 XP")).not.toBeInTheDocument();
+    expect(queryByText("15 XP")).toBeNull();
   });
 
   it("exibe nome do responsável pela atribuição", () => {
@@ -115,7 +115,7 @@ describe("JoinVictus - TaskCard", () => {
   it("não exibe vídeo (funcionalidade removida)", () => {
     const { container, queryByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(container.querySelector("a[href*='youtube']")).toBeNull();
-    expect(queryByText("Assistir vídeo")).not.toBeInTheDocument();
+    expect(queryByText("Assistir vídeo")).toBeNull();
   });
 
   it("exibe botão de excluir quando onDelete é fornecido", () => {
