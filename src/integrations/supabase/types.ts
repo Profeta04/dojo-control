@@ -66,6 +66,7 @@ export type Database = {
           created_by: string
           dojo_id: string
           expires_at: string | null
+          file_url: string | null
           id: string
           image_url: string | null
           is_pinned: boolean
@@ -79,6 +80,7 @@ export type Database = {
           created_by: string
           dojo_id: string
           expires_at?: string | null
+          file_url?: string | null
           id?: string
           image_url?: string | null
           is_pinned?: boolean
@@ -92,6 +94,7 @@ export type Database = {
           created_by?: string
           dojo_id?: string
           expires_at?: string | null
+          file_url?: string | null
           id?: string
           image_url?: string | null
           is_pinned?: boolean
