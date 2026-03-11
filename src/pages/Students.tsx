@@ -909,8 +909,8 @@ export default function Students() {
                         setEditPhone(student.phone || "");
                         setEditBelt((student.belt_grade as BeltGrade) || "branca");
                         setEditBirthDate(student.birth_date || "");
-                        setEditGuardianName((student as any).guardian_name || "");
-                        setEditGuardianPhone((student as any).guardian_phone || "");
+                        setEditGuardianName(student.guardian_name || "");
+                        setEditGuardianPhone(student.guardian_phone || "");
                         setEditGuardianEmail(student.guardian_email || "");
                         // Load student belts from cached data
                         const belts = (allStudentBelts || []).filter(b => b.user_id === student.user_id);
@@ -929,7 +929,7 @@ export default function Students() {
                         <KeyRound className="h-4 w-4 mr-2" />
                         Redefinir senha
                       </DropdownMenuItem>
-                      {(student.guardian_email || student.guardian_user_id || (student as any).guardian_name || (student as any).guardian_phone) && (
+                      {(student.guardian_email || student.guardian_user_id || student.guardian_name || student.guardian_phone) && (
                         <DropdownMenuItem onClick={async () => {
                           setGuardianInfoStudent(student);
                           setGuardianProfile(null);
@@ -1634,10 +1634,10 @@ export default function Students() {
             ) : (
               <>
                 {/* Guardian name from profile metadata */}
-                {(guardianInfoStudent as any)?.guardian_name && (
+                {guardianInfoStudent?.guardian_name && (
                   <div className="flex items-center gap-3 text-sm">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{(guardianInfoStudent as any).guardian_name}</span>
+                    <span className="font-medium">{guardianInfoStudent.guardian_name}</span>
                   </div>
                 )}
                 {guardianInfoStudent?.guardian_email && (
@@ -1646,22 +1646,22 @@ export default function Students() {
                     <span>{guardianInfoStudent.guardian_email}</span>
                   </div>
                 )}
-                {(guardianInfoStudent as any)?.guardian_phone && (
+                {guardianInfoStudent?.guardian_phone && (
                   <div className="flex items-center gap-3 text-sm">
                     <span className="h-4 w-4 text-muted-foreground">📱</span>
-                    <span>{(guardianInfoStudent as any).guardian_phone}</span>
+                    <span>{guardianInfoStudent.guardian_phone}</span>
                   </div>
                 )}
                 {/* Fallback to linked guardian profile if exists */}
                 {guardianProfile && (
                   <>
-                    {!(guardianInfoStudent as any)?.guardian_name && (
+                    {!guardianInfoStudent?.guardian_name && (
                       <div className="flex items-center gap-3 text-sm">
                         <Users className="h-4 w-4 text-muted-foreground" />
                         <span>{guardianProfile.name}</span>
                       </div>
                     )}
-                    {!(guardianInfoStudent as any)?.guardian_phone && guardianProfile.phone && (
+                    {!guardianInfoStudent?.guardian_phone && guardianProfile.phone && (
                       <div className="flex items-center gap-3 text-sm">
                         <span className="h-4 w-4 text-muted-foreground">📱</span>
                         <span>{guardianProfile.phone}</span>
@@ -1675,7 +1675,7 @@ export default function Students() {
                     )}
                   </>
                 )}
-                {!guardianProfile && !guardianInfoStudent?.guardian_email && !(guardianInfoStudent as any)?.guardian_name && (
+                {!guardianProfile && !guardianInfoStudent?.guardian_email && !guardianInfoStudent?.guardian_name && !guardianInfoStudent?.guardian_phone && (
                   <p className="text-sm text-muted-foreground">Nenhum dado de responsável encontrado.</p>
                 )}
               </>
