@@ -70,6 +70,9 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Announcements Banner */}
+      <AnnouncementsBanner />
+
       {/* Dashboard Stats Component - Only for admins/senseis */}
       {canManageStudents && (
         <DashboardStats isAdmin={isAdmin} canManageStudents={canManageStudents} />

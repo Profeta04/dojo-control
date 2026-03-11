@@ -92,7 +92,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   // Group items into sections
   const mainItems = filteredNavItems.filter(i => 
-    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas"].includes(i.href)
+    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas", "/announcements"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
