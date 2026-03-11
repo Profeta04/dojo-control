@@ -348,7 +348,7 @@ function AnnouncementForm({
           className="hidden"
         />
         <Button type="button" variant="outline" onClick={() => fileRef.current?.click()} className="gap-2 w-full">
-          <Image className="h-4 w-4" /> {preview ? "Trocar imagem" : "Adicionar imagem"}
+          <Image className="h-4 w-4" /> {preview ? "Trocar imagem" : "Adicionar foto"}
         </Button>
         {preview && (
           <img src={preview} alt="Preview" className="rounded-lg max-h-32 object-cover w-full mt-2" />

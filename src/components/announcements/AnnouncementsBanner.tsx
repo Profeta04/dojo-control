@@ -457,7 +457,7 @@ function AnnouncementForm({
           className="gap-2 w-full"
         >
           <Image className="h-4 w-4" />{" "}
-          {preview ? "Trocar imagem" : "Adicionar imagem"}
+          {preview ? "Trocar imagem" : "Adicionar foto"}
         </Button>
         {preview && (
           <img
