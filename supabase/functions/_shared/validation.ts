@@ -64,14 +64,28 @@ export async function verifyAuth(req: Request): Promise<AuthResult | Response> {
     return { userId: "service_role", isServiceRole: true };
   }
 
-  // Verify user token via getClaims (faster than getUser)
+  // Decode JWT payload to check if it's an anon/service_role key (used by cron jobs)
+  try {
+    const payloadPart = token.split(".")[1];
+    if (payloadPart) {
+      const decoded = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
+      if (decoded.role === "anon" || decoded.role === "service_role") {
+        // This is a Supabase API key (anon or service_role), allow as internal caller
+        return { userId: "cron_key", isServiceRole: true };
+      }
+    }
+  } catch {
+    // Not a valid JWT structure, continue to user verification
+  }
+
+  // Verify user token
   const anonClient = getAnonClient(authHeader);
-  const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
-  if (claimsError || !claimsData?.claims) {
+  const { data: { user }, error } = await anonClient.auth.getUser(token);
+  if (error || !user) {
     return errorResponse("Unauthorized: invalid token", 401);
   }
 
-  return { userId: claimsData.claims.sub as string, isServiceRole: false };
+  return { userId: user.id, isServiceRole: false };
 }
 
 /**
