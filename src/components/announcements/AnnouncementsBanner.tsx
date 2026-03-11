@@ -333,12 +333,11 @@ function AnnouncementForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error("Preencha título e conteúdo.");
+    if (!title.trim()) {
+      toast.error("Preencha o título.");
       return;
     }
     onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
