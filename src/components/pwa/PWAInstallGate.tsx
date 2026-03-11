@@ -377,7 +377,7 @@ function PromptScreen({
           </p>
           <button
             onClick={onSkip}
-            className="text-xs text-muted-foreground/50 hover:text-muted-foreground underline underline-offset-2 transition-colors"
+            className="text-sm text-accent font-medium hover:text-accent/80 underline underline-offset-4 transition-colors"
           >
             Usar sem instalar
           </button>
