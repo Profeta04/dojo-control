@@ -338,6 +338,7 @@ function AnnouncementForm({
       return;
     }
     onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
