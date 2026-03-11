@@ -21,11 +21,11 @@ export default function StudentProfile() {
   return (
     <RequireApproval>
       <DashboardLayout>
+        <AnnouncementsBanner />
         <PageHeader 
           title="Meus Dados" 
           description="Seus dados, frequência e evolução no judô" 
         />
-        <AnnouncementsBanner />
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-6">
             <StudentProfileCard />
