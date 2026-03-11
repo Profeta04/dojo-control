@@ -36,7 +36,7 @@ describe("JoinVictus - PaymentStatsCards (Admin)", () => {
   it("não exibe card de comprovantes quando pendingReceipts é 0", () => {
     const stats = { ...adminStats, pendingReceipts: 0 };
     const { queryByText } = render(<PaymentStatsCards stats={stats} formatCurrency={mockFormatCurrency} variant="admin" />);
-    expect(queryByText("Comprovantes")).not.toBeInTheDocument();
+    expect(queryByText("Comprovantes")).toBeNull();
   });
 });
 
