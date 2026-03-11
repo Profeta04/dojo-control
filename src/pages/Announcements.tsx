@@ -95,7 +95,7 @@ export default function Announcements() {
     mutationFn: async ({ id, form }: { id: string; form: FormState }) => {
       let imageUrl: string | null | undefined = undefined;
       if (form.imageFile) {
-        imageUrl = await uploadAnnouncementImage(form.imageFile);
+        imageUrl = await uploadAnnouncementFile(form.imageFile);
       }
       return updateAnnouncement(id, {
         title: form.title,
