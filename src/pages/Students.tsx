@@ -1675,7 +1675,7 @@ export default function Students() {
                     )}
                   </>
                 )}
-                {!guardianProfile && !guardianInfoStudent?.guardian_email && !(guardianInfoStudent as any)?.guardian_name && (
+                {!guardianProfile && !guardianInfoStudent?.guardian_email && !guardianInfoStudent?.guardian_name && !guardianInfoStudent?.guardian_phone && (
                   <p className="text-sm text-muted-foreground">Nenhum dado de responsável encontrado.</p>
                 )}
               </>
