@@ -248,9 +248,11 @@ export function AnnouncementsBanner() {
                   </div>
                 )}
               </div>
-              <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                {ann.content}
-              </p>
+              {!ann.image_url && ann.content && (
+                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                  {ann.content}
+                </p>
+              )}
               {ann.image_url && (
                 <img
                   src={ann.image_url}
@@ -258,6 +260,11 @@ export function AnnouncementsBanner() {
                   className="mt-2 rounded-md max-h-40 object-cover w-full"
                   loading="lazy"
                 />
+              )}
+              {ann.image_url && ann.content && (
+                <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
+                  {ann.content}
+                </p>
               )}
               <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
                 <span>{ann.author_name}</span>
