@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,6 +19,7 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,37 @@ export function AnnouncementsBanner() {
   const dojoId = currentDojoId || profile?.dojo_id || "";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+
+  const updateHeight = useCallback(() => {
+    if (!carouselApi) return;
+    const engine = carouselApi.internalEngine();
+    const selectedIndex = carouselApi.selectedScrollSnap();
+    const slides = carouselApi.slideNodes();
+    const slide = slides[selectedIndex];
+    if (slide) {
+      setContainerHeight(slide.scrollHeight);
+    }
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    updateHeight();
+    carouselApi.on("select", updateHeight);
+    carouselApi.on("reInit", updateHeight);
+    // Also update after images load
+    const observer = new MutationObserver(updateHeight);
+    const container = carouselApi.rootNode();
+    if (container) {
+      observer.observe(container, { childList: true, subtree: true, attributes: true });
+    }
+    return () => {
+      carouselApi.off("select", updateHeight);
+      carouselApi.off("reInit", updateHeight);
+      observer.disconnect();
+    };
+  }, [carouselApi, updateHeight]);
 
   const { data: announcements } = useQuery({
     queryKey: ["announcements", dojoId],
@@ -206,8 +238,8 @@ export function AnnouncementsBanner() {
             Nenhum aviso publicado. Clique em "Novo Aviso" para criar um.
           </p>
         ) : (
-          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full">
-            <CarouselContent>
+          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full" setApi={setCarouselApi}>
+            <CarouselContent style={{ height: containerHeight ? `${containerHeight}px` : 'auto', transition: 'height 0.3s ease' }}>
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
                   <div
@@ -281,6 +313,7 @@ export function AnnouncementsBanner() {
                         alt=""
                         className="mt-2 rounded-md w-full object-contain max-h-64"
                         loading="lazy"
+                        onLoad={updateHeight}
                       />
                     )}
                     {ann.image_url && ann.content && (
