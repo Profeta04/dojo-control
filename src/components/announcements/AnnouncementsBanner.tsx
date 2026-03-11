@@ -69,35 +69,36 @@ export function AnnouncementsBanner() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Announcement | null>(null);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const updateHeight = useCallback(() => {
     if (!carouselApi) return;
     const idx = carouselApi.selectedScrollSnap();
     setSelectedIndex(idx);
-    const slides = carouselApi.slideNodes();
-    const slide = slides[idx];
-    if (slide) {
-      setContainerHeight(slide.scrollHeight);
+    const slide = carouselApi.slideNodes()[idx];
+    const viewport = carouselApi.rootNode();
+
+    if (slide && viewport) {
+      viewport.style.transition = "height 0.3s ease";
+      viewport.style.height = `${slide.scrollHeight}px`;
     }
   }, [carouselApi]);
 
   useEffect(() => {
     if (!carouselApi) return;
+
     updateHeight();
     carouselApi.on("select", updateHeight);
     carouselApi.on("reInit", updateHeight);
-    // Also update after images load
-    const observer = new MutationObserver(updateHeight);
-    const container = carouselApi.rootNode();
-    if (container) {
-      observer.observe(container, { childList: true, subtree: true, attributes: true });
-    }
+
     return () => {
       carouselApi.off("select", updateHeight);
       carouselApi.off("reInit", updateHeight);
-      observer.disconnect();
+      const viewport = carouselApi.rootNode();
+      if (viewport) {
+        viewport.style.height = "";
+        viewport.style.transition = "";
+      }
     };
   }, [carouselApi, updateHeight]);
 
@@ -239,8 +240,12 @@ export function AnnouncementsBanner() {
             Nenhum aviso publicado. Clique em "Novo Aviso" para criar um.
           </p>
         ) : (
-          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full" setApi={setCarouselApi}>
-            <CarouselContent style={{ height: containerHeight ? `${containerHeight}px` : 'auto', transition: 'height 0.3s ease' }}>
+          <Carousel
+            opts={{ align: "start", loop: allAnnouncements.length > 1 }}
+            className="w-full"
+            setApi={setCarouselApi}
+          >
+            <CarouselContent className="items-start">
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
                   <div
