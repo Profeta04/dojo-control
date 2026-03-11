@@ -9,6 +9,7 @@ import { GraduationTimeline } from "@/components/student/GraduationTimeline";
 import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { StudentXPCard } from "@/components/student/StudentXPCard";
+import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
 
 export default function StudentProfile() {
   const { loading: authLoading } = useAuth();
