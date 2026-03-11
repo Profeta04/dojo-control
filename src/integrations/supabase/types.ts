@@ -59,6 +59,56 @@ export type Database = {
         }
         Relationships: []
       }
+      announcements: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          dojo_id: string
+          expires_at: string | null
+          id: string
+          image_url: string | null
+          is_pinned: boolean
+          is_urgent: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          dojo_id: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_pinned?: boolean
+          is_urgent?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          dojo_id?: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_pinned?: boolean
+          is_urgent?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance: {
         Row: {
           class_id: string
