@@ -250,10 +250,12 @@ function PromptScreen({
   deferredPrompt,
   isIOS,
   onInstall,
+  onSkip,
 }: {
   deferredPrompt: BeforeInstallPromptEvent | null;
   isIOS: boolean;
   onInstall: () => void;
+  onSkip: () => void;
 }) {
   const steps = isIOS
     ? [
