@@ -86,19 +86,19 @@ export function AnnouncementsBanner() {
 
   useEffect(() => {
     if (!carouselApi) return;
+
     updateHeight();
     carouselApi.on("select", updateHeight);
     carouselApi.on("reInit", updateHeight);
-    // Also update after images load
-    const observer = new MutationObserver(updateHeight);
-    const container = carouselApi.rootNode();
-    if (container) {
-      observer.observe(container, { childList: true, subtree: true, attributes: true });
-    }
+
     return () => {
       carouselApi.off("select", updateHeight);
       carouselApi.off("reInit", updateHeight);
-      observer.disconnect();
+      const viewport = carouselApi.rootNode();
+      if (viewport) {
+        viewport.style.height = "";
+        viewport.style.transition = "";
+      }
     };
   }, [carouselApi, updateHeight]);
 
