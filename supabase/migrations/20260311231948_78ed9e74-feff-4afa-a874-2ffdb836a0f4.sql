@@ -1,0 +1,1 @@
+ALTER TABLE public.announcements ADD COLUMN file_url text DEFAULT NULL;

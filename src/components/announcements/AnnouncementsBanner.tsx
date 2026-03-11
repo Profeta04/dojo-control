@@ -7,7 +7,7 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  uploadAnnouncementImage,
+  uploadAnnouncementFile,
   notifyDojoStudents,
   Announcement,
 } from "@/services/announcementsService";
@@ -52,6 +52,9 @@ import {
   Trash2,
   CalendarClock,
   Image,
+  Paperclip,
+  FileText,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -75,8 +78,12 @@ export function AnnouncementsBanner() {
   const createMutation = useMutation({
     mutationFn: async (form: FormState) => {
       let imageUrl: string | null = null;
+      let fileUrl: string | null = null;
       if (form.imageFile) {
-        imageUrl = await uploadAnnouncementImage(form.imageFile);
+        imageUrl = await uploadAnnouncementFile(form.imageFile);
+      }
+      if (form.attachFile) {
+        fileUrl = await uploadAnnouncementFile(form.attachFile);
       }
       const ann = await createAnnouncement({
         dojo_id: dojoId,
@@ -84,6 +91,7 @@ export function AnnouncementsBanner() {
         title: form.title,
         content: form.content,
         image_url: imageUrl,
+        file_url: fileUrl,
         is_urgent: form.isUrgent,
         is_pinned: form.isPinned,
         expires_at: form.expiresAt || null,
@@ -106,13 +114,18 @@ export function AnnouncementsBanner() {
   const updateMutation = useMutation({
     mutationFn: async ({ id, form }: { id: string; form: FormState }) => {
       let imageUrl: string | null | undefined = undefined;
+      let fileUrl: string | null | undefined = undefined;
       if (form.imageFile) {
-        imageUrl = await uploadAnnouncementImage(form.imageFile);
+        imageUrl = await uploadAnnouncementFile(form.imageFile);
+      }
+      if (form.attachFile) {
+        fileUrl = await uploadAnnouncementFile(form.attachFile);
       }
       return updateAnnouncement(id, {
         title: form.title,
         content: form.content,
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
+        ...(fileUrl !== undefined ? { file_url: fileUrl } : {}),
         is_urgent: form.isUrgent,
         is_pinned: form.isPinned,
         expires_at: form.expiresAt || null,
@@ -275,6 +288,20 @@ export function AnnouncementsBanner() {
                         {ann.content}
                       </p>
                     )}
+                    {ann.file_url && (
+                      <a
+                        href={ann.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 flex items-center gap-2 text-xs text-primary hover:underline bg-primary/5 rounded-md px-2.5 py-2 border border-primary/20"
+                      >
+                        <FileText className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate flex-1">
+                          {getFileName(ann.file_url)}
+                        </span>
+                        <Download className="h-3.5 w-3.5 flex-shrink-0" />
+                      </a>
+                    )}
                     <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
                       <span>{ann.author_name}</span>
                       <span>•</span>
@@ -310,6 +337,22 @@ export function AnnouncementsBanner() {
   );
 }
 
+function getFileName(url: string): string {
+  try {
+    const parts = url.split("/");
+    const last = parts[parts.length - 1];
+    // Remove UUID prefix if present (format: uuid.ext)
+    const dotIdx = last.lastIndexOf(".");
+    if (dotIdx > 0) {
+      const ext = last.substring(dotIdx);
+      return `Arquivo anexo${ext}`;
+    }
+    return "Arquivo anexo";
+  } catch {
+    return "Arquivo anexo";
+  }
+}
+
 interface FormState {
   title: string;
   content: string;
@@ -317,6 +360,7 @@ interface FormState {
   isPinned: boolean;
   expiresAt: string;
   imageFile: File | null;
+  attachFile: File | null;
 }
 
 function AnnouncementForm({
@@ -336,16 +380,33 @@ function AnnouncementForm({
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [attachFile, setAttachFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
     initial?.image_url || null
   );
+  const [attachName, setAttachName] = useState<string | null>(
+    initial?.file_url ? getFileName(initial.file_url) : null
+  );
   const fileRef = useRef<HTMLInputElement>(null);
+  const attachRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
       setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("Arquivo muito grande. Máximo: 10MB.");
+        return;
+      }
+      setAttachFile(file);
+      setAttachName(file.name);
     }
   };
 
@@ -355,7 +416,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
+    onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile, attachFile });
   };
 
   return (
@@ -386,7 +447,7 @@ function AnnouncementForm({
           ref={fileRef}
           type="file"
           accept="image/*"
-          onChange={handleFile}
+          onChange={handleImage}
           className="hidden"
         />
         <Button
@@ -404,6 +465,31 @@ function AnnouncementForm({
             alt="Preview"
             className="rounded-lg max-h-32 object-cover w-full mt-2"
           />
+        )}
+      </div>
+      <div className="space-y-2">
+        <Label>Arquivo anexo (opcional)</Label>
+        <input
+          ref={attachRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip"
+          onChange={handleAttach}
+          className="hidden"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => attachRef.current?.click()}
+          className="gap-2 w-full"
+        >
+          <Paperclip className="h-4 w-4" />{" "}
+          {attachName ? "Trocar arquivo" : "Anexar arquivo"}
+        </Button>
+        {attachName && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 mt-1">
+            <FileText className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{attachName}</span>
+          </div>
         )}
       </div>
       <div className="flex items-center justify-between">

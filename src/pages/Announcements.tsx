@@ -37,7 +37,7 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
-  uploadAnnouncementImage,
+  uploadAnnouncementFile,
   notifyDojoStudents,
   Announcement,
 } from "@/services/announcementsService";
@@ -63,7 +63,7 @@ export default function Announcements() {
     mutationFn: async (form: FormState) => {
       let imageUrl: string | null = null;
       if (form.imageFile) {
-        imageUrl = await uploadAnnouncementImage(form.imageFile);
+        imageUrl = await uploadAnnouncementFile(form.imageFile);
       }
       const ann = await createAnnouncement({
         dojo_id: dojoId,
@@ -95,7 +95,7 @@ export default function Announcements() {
     mutationFn: async ({ id, form }: { id: string; form: FormState }) => {
       let imageUrl: string | null | undefined = undefined;
       if (form.imageFile) {
-        imageUrl = await uploadAnnouncementImage(form.imageFile);
+        imageUrl = await uploadAnnouncementFile(form.imageFile);
       }
       return updateAnnouncement(id, {
         title: form.title,

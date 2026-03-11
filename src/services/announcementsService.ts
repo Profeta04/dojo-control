@@ -7,6 +7,7 @@ export interface Announcement {
   title: string;
   content: string;
   image_url: string | null;
+  file_url: string | null;
   is_urgent: boolean;
   is_pinned: boolean;
   expires_at: string | null;
@@ -51,6 +52,7 @@ export async function createAnnouncement(
     title: string;
     content: string;
     image_url?: string | null;
+    file_url?: string | null;
     is_urgent?: boolean;
     is_pinned?: boolean;
     expires_at?: string | null;
@@ -72,6 +74,7 @@ export async function updateAnnouncement(
     title: string;
     content: string;
     image_url: string | null;
+    file_url: string | null;
     is_urgent: boolean;
     is_pinned: boolean;
     expires_at: string | null;
@@ -97,7 +100,7 @@ export async function deleteAnnouncement(id: string) {
   if (error) throw error;
 }
 
-export async function uploadAnnouncementImage(file: File): Promise<string> {
+export async function uploadAnnouncementFile(file: File): Promise<string> {
   const ext = file.name.split(".").pop();
   const path = `${crypto.randomUUID()}.${ext}`;
   const { error } = await supabase.storage
