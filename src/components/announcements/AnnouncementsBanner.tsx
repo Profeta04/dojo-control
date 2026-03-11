@@ -238,8 +238,8 @@ export function AnnouncementsBanner() {
             Nenhum aviso publicado. Clique em "Novo Aviso" para criar um.
           </p>
         ) : (
-          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full">
-            <CarouselContent>
+          <Carousel opts={{ align: "start", loop: allAnnouncements.length > 1 }} className="w-full" setApi={setCarouselApi}>
+            <CarouselContent style={{ height: containerHeight ? `${containerHeight}px` : 'auto', transition: 'height 0.3s ease' }}>
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
                   <div
