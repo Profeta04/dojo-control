@@ -115,7 +115,7 @@ describe("JoinVictus - TaskCard", () => {
   it("não exibe vídeo (funcionalidade removida)", () => {
     const { container, queryByText } = render(<TaskCard task={basePendingTask} onStatusChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(container.querySelector("a[href*='youtube']")).toBeNull();
-    expect(queryByText("Assistir vídeo")).not.toBeInTheDocument();
+    expect(queryByText("Assistir vídeo")).toBeNull();
   });
 
   it("exibe botão de excluir quando onDelete é fornecido", () => {

@@ -106,6 +106,6 @@ describe("JoinVictus - TaskQuizCard", () => {
   it("não exibe link de vídeo (funcionalidade removida)", () => {
     const { container, queryByText } = render(<TaskQuizCard task={quizTask} options={options} correctOption={1} />, { wrapper: createWrapper() });
     expect(container.querySelector("a[href*='youtube']")).toBeNull();
-    expect(queryByText("Assistir vídeo de apoio")).not.toBeInTheDocument();
+    expect(queryByText("Assistir vídeo de apoio")).toBeNull();
   });
 });

@@ -54,6 +54,6 @@ describe("JoinVictus - PaymentStatsCards (Student)", () => {
     
     expect(getByText("Total")).toBeInTheDocument();
     expect(getByText("6")).toBeInTheDocument();
-    expect(queryByText("Comprovantes")).not.toBeInTheDocument();
+    expect(queryByText("Comprovantes")).toBeNull();
   });
 });
