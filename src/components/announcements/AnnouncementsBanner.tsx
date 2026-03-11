@@ -74,10 +74,10 @@ export function AnnouncementsBanner() {
 
   const updateHeight = useCallback(() => {
     if (!carouselApi) return;
-    const engine = carouselApi.internalEngine();
-    const selectedIndex = carouselApi.selectedScrollSnap();
+    const idx = carouselApi.selectedScrollSnap();
+    setSelectedIndex(idx);
     const slides = carouselApi.slideNodes();
-    const slide = slides[selectedIndex];
+    const slide = slides[idx];
     if (slide) {
       setContainerHeight(slide.scrollHeight);
     }
