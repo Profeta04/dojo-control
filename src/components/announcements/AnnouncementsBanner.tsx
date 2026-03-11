@@ -211,7 +211,7 @@ export function AnnouncementsBanner() {
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
                   <div
-                    className={`rounded-lg border p-3 h-full ${
+                    className={`rounded-lg border p-3 ${
                       ann.is_urgent
                         ? "border-destructive/50 bg-destructive/5"
                         : "border-border/60 bg-muted/30"
@@ -279,7 +279,7 @@ export function AnnouncementsBanner() {
                       <img
                         src={ann.image_url}
                         alt=""
-                        className="mt-2 rounded-md max-h-40 object-cover w-full"
+                        className="mt-2 rounded-md w-full object-contain max-h-64"
                         loading="lazy"
                       />
                     )}
