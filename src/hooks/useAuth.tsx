@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
   };
 
-  const isAdmin = roles.includes("admin");
+  const isAdmin = roles.includes("admin") || roles.includes("dono") || roles.includes("super_admin");
   const isSensei = roles.includes("sensei");
   const isStudent = roles.includes("student");
   const canManageStudents = isAdmin || isSensei;

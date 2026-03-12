@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,6 @@ import { Calendar, CheckCircle2, XCircle, Users, Clock, Loader2, Save, CalendarD
 import { format, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-// Manual types until Supabase types are regenerated
 interface ClassSchedule {
   id: string;
   class_id: string;
@@ -111,68 +111,101 @@ export function AttendanceTab() {
     enabled: !!user,
   });
 
-  // Fetch scheduled classes for selected date
+  // Fetch scheduled classes for selected date — BATCHED to avoid N+1
   const { data: schedules, isLoading } = useQuery({
     queryKey: ["schedules", selectedDate, accessibleClassIds],
     queryFn: async () => {
       if (accessibleClassIds.length === 0) return [];
 
-      const { data: schedulesData, error } = await supabase
-        .from("class_schedule")
-        .select("*")
-        .eq("date", selectedDate)
-        .eq("is_cancelled", false)
-        .in("class_id", accessibleClassIds)
-        .order("start_time");
+      // Use batching for the .in() query on class IDs
+      const schedulesData = await batchedInQuery<ClassSchedule>({
+        table: "class_schedule",
+        column: "class_id",
+        values: accessibleClassIds,
+        select: "*",
+        additionalFilters: (q: any) => q.eq("date", selectedDate).eq("is_cancelled", false),
+        orderBy: { column: "start_time", ascending: true },
+      });
 
-      if (error) throw error;
-      if (!schedulesData) return [];
+      if (schedulesData.length === 0) return [];
 
-      const schedulesWithDetails: ScheduleWithDetails[] = await Promise.all(
-        schedulesData.map(async (schedule) => {
-          const { data: classData } = await supabase
-            .from("classes")
-            .select("name")
-            .eq("id", schedule.class_id)
-            .single();
+      // Collect all unique class IDs from schedules
+      const classIds = [...new Set(schedulesData.map((s) => s.class_id))];
 
-          const { data: enrollments } = await supabase
-            .from("class_students")
-            .select("student_id")
-            .eq("class_id", schedule.class_id);
+      // Batch fetch: class names, enrollments, and attendance in parallel
+      const [classNames, enrollments, attendanceRecords] = await Promise.all([
+        // 1. All class names in one query
+        batchedInQuery<{ id: string; name: string }>({
+          table: "classes",
+          column: "id",
+          values: classIds,
+          select: "id, name",
+        }),
+        // 2. All enrollments for these classes in one query
+        batchedInQuery<{ class_id: string; student_id: string }>({
+          table: "class_students",
+          column: "class_id",
+          values: classIds,
+          select: "class_id, student_id",
+        }),
+        // 3. All attendance for these classes on this date in one query
+        batchedInQuery<Attendance>({
+          table: "attendance",
+          column: "class_id",
+          values: classIds,
+          select: "*",
+          additionalFilters: (q: any) => q.eq("date", selectedDate),
+        }),
+      ]);
 
-          let students: Profile[] = [];
-          if (enrollments && enrollments.length > 0) {
-            const studentIds = enrollments.map((e) => e.student_id);
-            const { data: studentProfiles } = await supabase
-              .from("profiles")
-              .select("*")
-              .in("user_id", studentIds)
-              .order("name");
-            students = studentProfiles || [];
-          }
+      // Build lookup maps
+      const classNameMap = new Map(classNames.map((c) => [c.id, c.name]));
+      const enrollmentsByClass = new Map<string, string[]>();
+      for (const e of enrollments) {
+        const list = enrollmentsByClass.get(e.class_id) || [];
+        list.push(e.student_id);
+        enrollmentsByClass.set(e.class_id, list);
+      }
+      const attendanceByClass = new Map<string, Attendance[]>();
+      for (const a of attendanceRecords) {
+        const list = attendanceByClass.get(a.class_id) || [];
+        list.push(a);
+        attendanceByClass.set(a.class_id, list);
+      }
 
-          const { data: attendanceData } = await supabase
-            .from("attendance")
-            .select("*")
-            .eq("class_id", schedule.class_id)
-            .eq("date", selectedDate);
+      // Fetch all unique student profiles in one batch
+      const allStudentIds = [...new Set(enrollments.map((e) => e.student_id))];
+      let profileMap = new Map<string, Profile>();
+      if (allStudentIds.length > 0) {
+        const profiles = await batchedInQuery<Profile>({
+          table: "profiles",
+          column: "user_id",
+          values: allStudentIds,
+          select: "*",
+        });
+        profileMap = new Map(profiles.map((p) => [p.user_id, p]));
+      }
 
-          return {
-            ...schedule,
-            className: classData?.name || "Turma desconhecida",
-            students,
-            attendance: attendanceData || [],
-          };
-        })
-      );
+      // Assemble the final data
+      return schedulesData.map((schedule) => {
+        const studentIds = enrollmentsByClass.get(schedule.class_id) || [];
+        const students = studentIds
+          .map((id) => profileMap.get(id))
+          .filter(Boolean)
+          .sort((a, b) => (a!.name || "").localeCompare(b!.name || "")) as Profile[];
 
-      return schedulesWithDetails;
+        return {
+          ...schedule,
+          className: classNameMap.get(schedule.class_id) || "Turma desconhecida",
+          students,
+          attendance: attendanceByClass.get(schedule.class_id) || [],
+        };
+      }) as ScheduleWithDetails[];
     },
     enabled: !!user && accessibleClassIds.length > 0,
   });
 
-  // Get available dates with scheduled classes
+  // Get available dates with scheduled classes — batched
   const { data: availableDates } = useQuery({
     queryKey: ["available-dates", accessibleClassIds],
     queryFn: async () => {
@@ -184,17 +217,19 @@ export function AttendanceTab() {
       const endDate = new Date(today);
       endDate.setDate(endDate.getDate() + 30);
 
-      const { data, error } = await supabase
-        .from("class_schedule")
-        .select("date")
-        .in("class_id", accessibleClassIds)
-        .gte("date", format(startDate, "yyyy-MM-dd"))
-        .lte("date", format(endDate, "yyyy-MM-dd"))
-        .eq("is_cancelled", false)
-        .order("date");
+      const data = await batchedInQuery<{ date: string }>({
+        table: "class_schedule",
+        column: "class_id",
+        values: accessibleClassIds,
+        select: "date",
+        additionalFilters: (q: any) =>
+          q.gte("date", format(startDate, "yyyy-MM-dd"))
+            .lte("date", format(endDate, "yyyy-MM-dd"))
+            .eq("is_cancelled", false),
+        orderBy: { column: "date", ascending: true },
+      });
 
-      if (error) throw error;
-      return [...new Set(data?.map((d) => d.date) || [])];
+      return [...new Set(data.map((d) => d.date))];
     },
     enabled: !!user && accessibleClassIds.length > 0,
   });
@@ -248,59 +283,92 @@ export function AttendanceTab() {
     setFormLoading(true);
 
     try {
-      // Separate self-checked and manual students
       const manualStudents = attendanceList.filter((item) => !item.selfCheckedIn);
+      const manualStudentIds = manualStudents.map((item) => item.student.user_id);
 
-      // For each manual student, upsert their attendance
-      for (const item of manualStudents) {
-        // Check if a manual record already exists
-        const { data: existing } = await supabase
-          .from("attendance")
-          .select("id")
-          .eq("class_id", selectedSchedule.class_id)
-          .eq("student_id", item.student.user_id)
-          .eq("date", selectedDate)
-          .eq("self_checked_in", false)
-          .maybeSingle();
+      // Batch fetch all existing attendance for these students in one query
+      let existingRecords: Attendance[] = [];
+      if (manualStudentIds.length > 0) {
+        existingRecords = await batchedInQuery<Attendance>({
+          table: "attendance",
+          column: "student_id",
+          values: manualStudentIds,
+          select: "*",
+          additionalFilters: (q: any) =>
+            q.eq("class_id", selectedSchedule.class_id).eq("date", selectedDate),
+        });
+      }
 
-        if (existing) {
-          // Update existing manual record
-          await supabase
-            .from("attendance")
-            .update({
-              present: item.present,
-              notes: item.notes || null,
-              marked_by: user.id,
-            })
-            .eq("id", existing.id);
+      // Build lookup maps
+      const manualRecordMap = new Map<string, Attendance>();
+      const selfRecordSet = new Set<string>();
+      for (const rec of existingRecords) {
+        if (rec.self_checked_in) {
+          selfRecordSet.add(rec.student_id);
         } else {
-          // Check if there's already a self-checked-in record for this student
-          const { data: selfRecord } = await supabase
-            .from("attendance")
-            .select("id")
-            .eq("class_id", selectedSchedule.class_id)
-            .eq("student_id", item.student.user_id)
-            .eq("date", selectedDate)
-            .eq("self_checked_in", true)
-            .maybeSingle();
-
-          // Only insert if no record at all exists
-          if (!selfRecord) {
-            const { error: insertError } = await supabase
-              .from("attendance")
-              .insert({
-                class_id: selectedSchedule.class_id,
-                student_id: item.student.user_id,
-                date: selectedDate,
-                present: item.present,
-                notes: item.notes || null,
-                marked_by: user.id,
-                self_checked_in: false,
-              });
-            if (insertError) throw insertError;
-          }
+          manualRecordMap.set(rec.student_id, rec);
         }
       }
+
+      // Prepare bulk operations
+      const toUpdate: { id: string; present: boolean; notes: string | null; marked_by: string }[] = [];
+      const toInsert: {
+        class_id: string;
+        student_id: string;
+        date: string;
+        present: boolean;
+        notes: string | null;
+        marked_by: string;
+        self_checked_in: boolean;
+      }[] = [];
+
+      for (const item of manualStudents) {
+        const existing = manualRecordMap.get(item.student.user_id);
+        if (existing) {
+          toUpdate.push({
+            id: existing.id,
+            present: item.present,
+            notes: item.notes || null,
+            marked_by: user.id,
+          });
+        } else if (!selfRecordSet.has(item.student.user_id)) {
+          toInsert.push({
+            class_id: selectedSchedule.class_id,
+            student_id: item.student.user_id,
+            date: selectedDate,
+            present: item.present,
+            notes: item.notes || null,
+            marked_by: user.id,
+            self_checked_in: false,
+          });
+        }
+      }
+
+      // Execute bulk operations in parallel
+      const ops: Promise<any>[] = [];
+
+      if (toInsert.length > 0) {
+        ops.push(
+          supabase.from("attendance").insert(toInsert).then(({ error }) => {
+            if (error) throw error;
+          })
+        );
+      }
+
+      // Updates must be individual due to different IDs, but we run them in parallel
+      for (const upd of toUpdate) {
+        ops.push(
+          supabase
+            .from("attendance")
+            .update({ present: upd.present, notes: upd.notes, marked_by: upd.marked_by })
+            .eq("id", upd.id)
+            .then(({ error }) => {
+              if (error) throw error;
+            })
+        );
+      }
+
+      await Promise.all(ops);
 
       const presentCount = attendanceList.filter((a) => a.present).length;
       toast({
@@ -490,7 +558,6 @@ export function AttendanceTab() {
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    {/* P and F buttons */}
                     {item.selfCheckedIn ? (
                       <Badge variant="secondary" className="text-xs gap-1 px-2 py-1">
                         <Smartphone className="h-3 w-3" />
