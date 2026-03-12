@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { useDojoContext } from "@/hooks/useDojoContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -59,14 +60,13 @@ export function SenseiAnalytics() {
       const studentIds = profiles.map(p => p.user_id);
       if (studentIds.length === 0) return { ranking: [], monthlyAcertos: [], completionRate: 0, totalAcertos: 0 };
 
-      // Fetch completed tasks and XP in parallel
-      const [tasksRes, xpRes] = await Promise.all([
-        supabase.from("tasks").select("completed_at, assigned_to, status").in("assigned_to", studentIds),
-        supabase.from("student_xp").select("*").in("user_id", studentIds),
+      // Fetch completed tasks and XP in parallel (batched for large student lists)
+      const [tasks, xpList] = await Promise.all([
+        batchedInQuery({ table: "tasks", column: "assigned_to", values: studentIds, select: "completed_at, assigned_to, status" }),
+        batchedInQuery({ table: "student_xp", column: "user_id", values: studentIds, select: "*" }),
       ]);
 
-      const tasks = tasksRes.data || [];
-      const xpList = xpRes.data || [];
+      // tasks and xpList are already arrays from batchedInQuery
 
       // Completion rate & total
       const completedTasks = tasks.filter(t => t.status === "concluida");

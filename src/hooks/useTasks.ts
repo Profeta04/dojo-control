@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useDojoContext } from "./useDojoContext";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { batchedInQuery } from "@/lib/batchedQuery";
 
 export type TaskStatus = "pendente" | "concluida" | "cancelada";
 export type TaskPriority = "baixa" | "normal" | "alta";
@@ -83,14 +84,15 @@ export function useTasks() {
         const studentIds = (dojoProfiles || []).map(p => p.user_id);
         if (studentIds.length === 0) return [];
 
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .in("assigned_to", studentIds)
-          .order("created_at", { ascending: false })
-          .limit(500);
-        if (error) throw error;
-        return enrichTasks(data || []);
+        const data = await batchedInQuery({
+          table: "tasks",
+          column: "assigned_to",
+          values: studentIds,
+          select: "*",
+          orderBy: { column: "created_at", ascending: false },
+          limit: 500,
+        });
+        return enrichTasks(data);
       }
 
       // Admin without dojo filter: all tasks (limited)
@@ -106,7 +108,7 @@ export function useTasks() {
     staleTime: 15_000,
   });
 
-  // Helper to enrich tasks with profile names
+  // Helper to enrich tasks with profile names (batched)
   async function enrichTasks(data: any[]): Promise<TaskWithAssignee[]> {
     if (data.length === 0) return [];
 
@@ -115,12 +117,14 @@ export function useTasks() {
       ...data.map(t => t.assigned_by)
     ])];
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, name")
-      .in("user_id", userIds);
+    const profiles = await batchedInQuery({
+      table: "profiles",
+      column: "user_id",
+      values: userIds,
+      select: "user_id, name",
+    });
 
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+    const profileMap = new Map(profiles.map((p: any) => [p.user_id, p.name]));
 
     return data.map(task => ({
       ...task,
@@ -129,9 +133,15 @@ export function useTasks() {
     })) as TaskWithAssignee[];
   }
 
-  // Real-time subscription
+  // Real-time subscription — debounced, filtered by user for students
   useEffect(() => {
     if (!user) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    const filter = isStudent && !canManageStudents
+      ? `assigned_to=eq.${user.id}`
+      : undefined;
 
     const channel = supabase
       .channel("tasks-changes")
@@ -141,17 +151,20 @@ export function useTasks() {
           event: "*",
           schema: "public",
           table: "tasks",
+          ...(filter ? { filter } : {}),
         },
         () => {
-          refetch();
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => refetch(), 800);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [user, refetch]);
+  }, [user, isStudent, canManageStudents, refetch]);
 
   // Task creation removed — tasks are managed via curriculum (admin-only DB inserts)
 

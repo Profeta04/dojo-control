@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Award, Plus, ChevronRight, History, Loader2, User, GraduationCap, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BeltGrade, BELT_LABELS, BJJ_DEGREE_BELTS, BJJ_BELT_ORDER, JUDO_BELT_ORDER, getBjjBeltLabel } from "@/lib/constants";
@@ -86,19 +87,18 @@ export default function GraduationsPage() {
 
       const studentIds = roleData.map((r) => r.user_id);
 
-      let query = supabase
-        .from("profiles")
-        .select("*")
-        .in("user_id", studentIds)
-        .eq("registration_status", "aprovado")
-        .order("name");
-
-      if (currentDojoId) {
-        query = query.eq("dojo_id", currentDojoId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await batchedInQuery({
+        table: "profiles",
+        column: "user_id",
+        values: studentIds,
+        select: "*",
+        additionalFilters: (q: any) => {
+          let query = q.eq("registration_status", "aprovado");
+          if (currentDojoId) query = query.eq("dojo_id", currentDojoId);
+          return query;
+        },
+        orderBy: { column: "name", ascending: true },
+      });
       return data as Profile[];
     },
     enabled: !!user && (isAdmin || !!currentDojoId),
@@ -126,12 +126,12 @@ export default function GraduationsPage() {
     queryFn: async () => {
       const studentIds = students?.map(s => s.user_id) || [];
       if (studentIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("student_belts")
-        .select("user_id, martial_art, belt_grade, degree")
-        .in("user_id", studentIds);
-      if (error) throw error;
-      return data || [];
+      return batchedInQuery({
+        table: "student_belts",
+        column: "user_id",
+        values: studentIds,
+        select: "user_id, martial_art, belt_grade, degree",
+      });
     },
     enabled: !!students && students.length > 0,
   });
