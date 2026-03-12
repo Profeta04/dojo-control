@@ -35,6 +35,7 @@ import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
 import { MonthlyFeePlans } from "@/components/payments/MonthlyFeePlans";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PaymentStatus, PAYMENT_STATUS_LABELS, ReceiptStatus, PaymentCategory, PAYMENT_CATEGORY_LABELS } from "@/lib/constants";
@@ -170,10 +171,18 @@ export default function PaymentsPage() {
       if (roleError) throw roleError;
       if (!roleData || roleData.length === 0) return [];
       const studentIds = roleData.map((r) => r.user_id);
-      let query = supabase.from("profiles").select("*").in("user_id", studentIds).eq("registration_status", "aprovado").order("name");
-      if (currentDojoId) query = query.eq("dojo_id", currentDojoId);
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await batchedInQuery({
+        table: "profiles",
+        column: "user_id",
+        values: studentIds,
+        select: "*",
+        additionalFilters: (q: any) => {
+          let query = q.eq("registration_status", "aprovado");
+          if (currentDojoId) query = query.eq("dojo_id", currentDojoId);
+          return query;
+        },
+        orderBy: { column: "name", ascending: true },
+      });
       return data as Profile[];
     },
     enabled: !!user && (isAdmin || !!currentDojoId),
@@ -201,9 +210,15 @@ export default function PaymentsPage() {
       if (!dojoStudents || dojoStudents.length === 0) return [];
       const dojoStudentIds = dojoStudents.map((s) => s.user_id);
       const studentMap = new Map(dojoStudents.map((s) => [s.user_id, s]));
-      const { data, error } = await supabase.from("payments").select("*").in("student_id", dojoStudentIds).order("due_date", { ascending: false }).limit(500);
-      if (error) throw error;
-      const enriched: PaymentWithStudent[] = (data || []).map((p) => {
+      const data = await batchedInQuery({
+        table: "payments",
+        column: "student_id",
+        values: dojoStudentIds,
+        select: "*",
+        orderBy: { column: "due_date", ascending: false },
+        limit: 500,
+      });
+      const enriched: PaymentWithStudent[] = (data || []).map((p: any) => {
         const student = studentMap.get(p.student_id);
         return {
           ...p,

@@ -37,6 +37,7 @@ import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown
 import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -167,12 +168,13 @@ export default function Students() {
     queryKey: ["student-payment-status", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
       if (studentUserIds.length === 0) return [];
-      const { data } = await supabase
-        .from("payments")
-        .select("student_id, status, due_date")
-        .in("student_id", studentUserIds)
-        .order("due_date", { ascending: false });
-      return data || [];
+      return batchedInQuery({
+        table: "payments",
+        column: "student_id",
+        values: studentUserIds,
+        select: "student_id, status, due_date",
+        orderBy: { column: "due_date", ascending: false },
+      });
     },
     enabled: studentUserIds.length > 0,
   });
@@ -191,11 +193,12 @@ export default function Students() {
     queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
       if (studentUserIds.length === 0) return [];
-      const { data } = await supabase
-        .from("student_belts")
-        .select("user_id, martial_art, belt_grade")
-        .in("user_id", studentUserIds);
-      return data || [];
+      return batchedInQuery({
+        table: "student_belts",
+        column: "user_id",
+        values: studentUserIds,
+        select: "user_id, martial_art, belt_grade",
+      });
     },
     enabled: studentUserIds.length > 0,
   });

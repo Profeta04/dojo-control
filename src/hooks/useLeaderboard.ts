@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useDojoContext } from "./useDojoContext";
 import { useEffect } from "react";
+import { batchedInQuery } from "@/lib/batchedQuery";
 
 export interface LeaderboardEntry {
   user_id: string;
@@ -94,32 +95,30 @@ export function useLeaderboard() {
 
       const allUserIds = profiles.map((p) => p.user_id);
 
-      // Fetch staff roles, XP, achievements, enrollments, belts all in parallel
-      const [staffRolesRes, xpRes, achievementRes, enrollmentRes, beltsRes] = await Promise.all([
+      // Fetch staff roles, XP, achievements, enrollments, belts all in parallel (batched)
+      const [staffRolesRes, xpData, achievementData, enrollmentData, beltsData] = await Promise.all([
         supabase.from("user_roles").select("user_id").in("user_id", allUserIds).in("role", ["admin", "sensei", "dono", "super_admin"]),
-        supabase.from("student_xp").select("*").in("user_id", allUserIds),
-        supabase.from("student_achievements").select("user_id").in("user_id", allUserIds),
-        supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", allUserIds),
-        supabase.from("student_belts").select("user_id, martial_art, belt_grade").in("user_id", allUserIds),
+        batchedInQuery({ table: "student_xp", column: "user_id", values: allUserIds, select: "*" }),
+        batchedInQuery({ table: "student_achievements", column: "user_id", values: allUserIds, select: "user_id" }),
+        batchedInQuery({ table: "class_students", column: "student_id", values: allUserIds, select: "student_id, class_id, classes(martial_art)" }),
+        batchedInQuery({ table: "student_belts", column: "user_id", values: allUserIds, select: "user_id, martial_art, belt_grade" }),
       ]);
 
       const staffIds = new Set((staffRolesRes.data || []).map((r) => r.user_id));
       const studentProfiles = profiles.filter((p) => !staffIds.has(p.user_id));
       if (studentProfiles.length === 0) return [];
 
-      const userIds = studentProfiles.map((p) => p.user_id);
-
       const achievementCounts = new Map<string, number>();
-      achievementRes.data?.forEach((a) => {
+      achievementData.forEach((a: any) => {
         achievementCounts.set(a.user_id, (achievementCounts.get(a.user_id) || 0) + 1);
       });
 
-      const xpMap = new Map((xpRes.data || []).map((x) => [x.user_id, x]));
+      const xpMap = new Map(xpData.map((x: any) => [x.user_id, x]));
 
       // Build class enrollment map
       const classMap = new Map<string, string[]>();
       const artMap = new Map<string, Set<string>>();
-      (enrollmentRes.data || []).forEach((e: any) => {
+      enrollmentData.forEach((e: any) => {
         if (!classMap.has(e.student_id)) classMap.set(e.student_id, []);
         classMap.get(e.student_id)!.push(e.class_id);
         if (!artMap.has(e.student_id)) artMap.set(e.student_id, new Set());
@@ -128,7 +127,7 @@ export function useLeaderboard() {
 
       // Build per-art belt map and fallback martial arts from student_belts
       const beltsByArtMap = new Map<string, Record<string, string>>();
-      (beltsRes.data || []).forEach((b: any) => {
+      beltsData.forEach((b: any) => {
         if (!artMap.has(b.user_id)) artMap.set(b.user_id, new Set());
         artMap.get(b.user_id)!.add(b.martial_art);
         if (!beltsByArtMap.has(b.user_id)) beltsByArtMap.set(b.user_id, {});
@@ -170,9 +169,11 @@ export function useLeaderboard() {
     staleTime: 30_000,
   });
 
-  // Realtime for XP changes
+  // Realtime for XP changes — debounced to avoid excessive refetches
   useEffect(() => {
     if (!effectiveDojoId) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
     const channel = supabase
       .channel(`leaderboard-${effectiveDojoId}`)
@@ -180,12 +181,15 @@ export function useLeaderboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "student_xp" },
         () => {
-          refetch();
+          // Debounce: multiple XP changes in quick succession only trigger one refetch
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => refetch(), 1000);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [effectiveDojoId, refetch]);
