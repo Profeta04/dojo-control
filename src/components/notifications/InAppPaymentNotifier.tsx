@@ -6,8 +6,9 @@ import { toast } from "sonner";
 import { CreditCard, AlertTriangle } from "lucide-react";
 
 /**
- * Component that shows in-app toasts for payment-related events
- * even when the app is open (complementing push notifications).
+ * Component that shows in-app toasts for payment-related events.
+ * Students: filtered by own user_id (server-side filter).
+ * Senseis: subscribe to all payments, then client-filter by dojo_id.
  */
 export function InAppPaymentNotifier() {
   const { user, canManageStudents } = useAuth();
@@ -19,7 +20,7 @@ export function InAppPaymentNotifier() {
     if (!user || canManageStudents) return;
 
     const channel = supabase
-      .channel("payment-status-changes")
+      .channel("student-payments-combined")
       .on(
         "postgres_changes",
         {
@@ -35,7 +36,6 @@ export function InAppPaymentNotifier() {
           if (!newRow || shownIds.current.has(newRow.id + newRow.status)) return;
           shownIds.current.add(newRow.id + newRow.status);
 
-          // Payment became overdue
           if (newRow.status === "atrasado" && oldRow.status !== "atrasado") {
             toast.warning("Pagamento em atraso! ⚠️", {
               description: `Sua mensalidade de R$ ${Number(newRow.amount).toFixed(2)} está atrasada. Regularize para evitar bloqueio.`,
@@ -44,7 +44,6 @@ export function InAppPaymentNotifier() {
             });
           }
 
-          // Payment approved
           if (newRow.status === "pago" && oldRow.status !== "pago") {
             toast.success("Pagamento confirmado! ✅", {
               description: `Seu pagamento de R$ ${Number(newRow.amount).toFixed(2)} foi confirmado.`,
@@ -53,7 +52,6 @@ export function InAppPaymentNotifier() {
             });
           }
 
-          // Receipt approved/rejected
           if (newRow.receipt_status !== oldRow.receipt_status) {
             if (newRow.receipt_status === "aprovado") {
               toast.success("Comprovante aprovado! ✅", {
@@ -69,19 +67,6 @@ export function InAppPaymentNotifier() {
           }
         }
       )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user, canManageStudents]);
-
-  // For students: new payments created (new charges)
-  useEffect(() => {
-    if (!user || canManageStudents) return;
-
-    const channel = supabase
-      .channel("new-payments-student")
       .on(
         "postgres_changes",
         {

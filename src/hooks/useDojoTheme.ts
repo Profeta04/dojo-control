@@ -25,7 +25,6 @@ const DARK_THEME: DojoTheme = {
   dark_mode: true,
 };
 
-// Parse HSL string "H S% L%" and return components
 function parseHSL(hsl: string): { h: number; s: number; l: number } | null {
   const parts = hsl.trim().split(/\s+/);
   if (parts.length < 3) return null;
@@ -36,112 +35,69 @@ function parseHSL(hsl: string): { h: number; s: number; l: number } | null {
   };
 }
 
-// Invert lightness for dark mode: light colors become dark and vice versa
 function invertForDarkMode(hsl: string): string {
   const parsed = parseHSL(hsl);
   if (!parsed) return hsl;
-  // Invert lightness: 10% -> 90%, 20% -> 80%, 92% -> 8%
   const invertedL = 100 - parsed.l;
   return `${parsed.h} ${parsed.s}% ${invertedL}%`;
 }
 
-// Check if a color is "light" (lightness > 50%)
 function isLightColor(hsl: string): boolean {
   const parsed = parseHSL(hsl);
   if (!parsed) return false;
   return parsed.l > 50;
 }
 
-// Ensure minimum lightness for readability
 function ensureMinLightness(hsl: string, minL: number): string {
   const parsed = parseHSL(hsl);
   if (!parsed) return hsl;
-  if (parsed.l < minL) {
-    return `${parsed.h} ${parsed.s}% ${minL}%`;
-  }
+  if (parsed.l < minL) return `${parsed.h} ${parsed.s}% ${minL}%`;
   return hsl;
 }
 
-// Ensure maximum lightness for readability on light backgrounds
 function ensureMaxLightness(hsl: string, maxL: number): string {
   const parsed = parseHSL(hsl);
   if (!parsed) return hsl;
-  if (parsed.l > maxL) {
-    return `${parsed.h} ${parsed.s}% ${maxL}%`;
-  }
+  if (parsed.l > maxL) return `${parsed.h} ${parsed.s}% ${maxL}%`;
   return hsl;
 }
 
-// Generate derived colors from the 3 main colors
 function generateDerivedColors(theme: DojoTheme) {
   const isDark = theme.dark_mode;
   
-  // For dark mode, we need to invert primary/secondary if they were designed for light mode
   let effectivePrimary = theme.color_primary;
   let effectiveSecondary = theme.color_secondary;
   
   if (isDark) {
-    // If primary is dark (designed for light mode text), invert it for dark mode
-    if (!isLightColor(effectivePrimary)) {
-      effectivePrimary = invertForDarkMode(effectivePrimary);
-    }
-    // If secondary is light (designed for light mode backgrounds), invert it
-    if (isLightColor(effectiveSecondary)) {
-      effectiveSecondary = invertForDarkMode(effectiveSecondary);
-    }
-    // Ensure primary text is bright enough to read on dark backgrounds
+    if (!isLightColor(effectivePrimary)) effectivePrimary = invertForDarkMode(effectivePrimary);
+    if (isLightColor(effectiveSecondary)) effectiveSecondary = invertForDarkMode(effectiveSecondary);
     effectivePrimary = ensureMinLightness(effectivePrimary, 85);
-    // Ensure secondary backgrounds are dark enough
     effectiveSecondary = ensureMaxLightness(effectiveSecondary, 20);
   }
   
-  // Accent: bump lightness slightly in dark mode for visibility
   let effectiveAccent = theme.color_tertiary;
-  if (isDark) {
-    effectiveAccent = ensureMinLightness(effectiveAccent, 50);
-  }
+  if (isDark) effectiveAccent = ensureMinLightness(effectiveAccent, 50);
 
   return {
-    // Core
     primary: effectivePrimary,
     secondary: effectiveSecondary,
     accent: effectiveAccent,
-    
-    // Background & foreground
     background: isDark ? "220 15% 8%" : "220 15% 96%",
     foreground: isDark ? "220 10% 93%" : "220 15% 10%",
-    
-    // Card
     card: isDark ? "220 15% 12%" : "0 0% 100%",
     cardForeground: isDark ? "220 10% 93%" : "220 15% 10%",
-    
-    // Popover
     popover: isDark ? "220 15% 12%" : "0 0% 100%",
     popoverForeground: isDark ? "220 10% 93%" : "220 15% 10%",
-    
-    // Primary foreground (contrasting)
     primaryForeground: isDark ? "220 15% 8%" : "0 0% 98%",
-    
-    // Secondary foreground
     secondaryForeground: isDark ? "220 10% 88%" : "220 15% 15%",
-    
-    // Accent foreground (always white for visibility)
     accentForeground: "0 0% 100%",
-    
-    // Muted
     muted: isDark ? "220 10% 18%" : "220 10% 94%",
     mutedForeground: isDark ? "220 10% 65%" : "220 10% 40%",
-    
-    // Destructive
     destructive: isDark ? "0 65% 55%" : "0 72% 51%",
     destructiveForeground: "0 0% 98%",
-    
-    // Border & input - slightly brighter in dark mode
     border: isDark ? "220 13% 25%" : "220 13% 88%",
     input: isDark ? "220 13% 25%" : "220 13% 88%",
     ring: effectiveAccent,
-    
-    // Sidebar - ensure readable in dark mode
     sidebarBackground: isDark ? "220 15% 6%" : theme.color_primary,
     sidebarForeground: isDark ? "220 10% 88%" : "0 0% 95%",
     sidebarPrimary: effectiveAccent,
@@ -154,32 +110,15 @@ function generateDerivedColors(theme: DojoTheme) {
 }
 
 export function useDojoTheme() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { currentDojoId } = useDojoContext();
-
   const dojoId = currentDojoId;
 
-  // Fetch user's dark mode preference from profile
-  const { data: userDarkMode } = useQuery({
-    queryKey: ["user-dark-mode", user?.id],
-    queryFn: async () => {
-      if (!user?.id) return false;
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("dark_mode")
-        .eq("user_id", user.id)
-        .single();
-      if (error || !data) return false;
-      return data.dark_mode ?? false;
-    },
-    enabled: !!user?.id,
-    staleTime: 10 * 60 * 1000,
-  });
-
+  // Single query: fetch dojo colors + use profile dark_mode from auth context
   const { data: theme, isLoading } = useQuery({
-    queryKey: ["dojo-theme", dojoId, userDarkMode],
+    queryKey: ["dojo-theme", dojoId, profile?.dark_mode],
     queryFn: async () => {
-      const isDarkMode = userDarkMode ?? false;
+      const isDarkMode = profile?.dark_mode ?? false;
 
       if (!dojoId) {
         return { ...DEFAULT_THEME, dark_mode: isDarkMode };
@@ -208,12 +147,10 @@ export function useDojoTheme() {
     staleTime: 10 * 60 * 1000,
   });
 
-  // Apply theme to CSS variables and dark mode class
   useEffect(() => {
     const currentTheme = theme || DEFAULT_THEME;
     const root = document.documentElement;
 
-    // Toggle dark mode class
     if (currentTheme.dark_mode) {
       root.classList.add("dark");
     } else {
@@ -222,7 +159,6 @@ export function useDojoTheme() {
 
     const derived = generateDerivedColors(currentTheme);
 
-    // Apply all CSS variables
     root.style.setProperty("--color-primary", currentTheme.color_primary);
     root.style.setProperty("--color-secondary", currentTheme.color_secondary);
     root.style.setProperty("--color-tertiary", currentTheme.color_tertiary);

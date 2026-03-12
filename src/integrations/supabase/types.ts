@@ -1474,6 +1474,7 @@ export type Database = {
           name: string
         }[]
       }
+      get_dashboard_stats: { Args: { _dojo_id?: string }; Returns: Json }
       get_dojo_by_checkin_token: {
         Args: { _token: string }
         Returns: {

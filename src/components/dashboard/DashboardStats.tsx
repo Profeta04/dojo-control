@@ -9,11 +9,9 @@ import {
   CalendarCheck 
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import {
   AreaChart, Area, PieChart, Pie, Cell, ResponsiveContainer,
-  BarChart, Bar, XAxis, Tooltip
+  XAxis, Tooltip
 } from "recharts";
 
 interface DashboardStatsProps {
@@ -38,7 +36,6 @@ function useThemeColors() {
   });
 
   React.useEffect(() => {
-    // Small delay to let theme CSS vars apply
     const timer = setTimeout(() => {
       setColors({
         success: getCSSColor("--success"),
@@ -55,162 +52,57 @@ function useThemeColors() {
   return colors;
 }
 
+interface DashboardStatsData {
+  totalStudents: number;
+  activeClasses: number;
+  pendingApprovals: number;
+  pendingPayments: number;
+  totalSenseis: number;
+  presentCount: number;
+  totalAttendance: number;
+  attendanceRate: number;
+  totalReceived: number;
+  overduePayments: number;
+  recentGraduations: number;
+  monthlyAttendance: { name: string; presencas: number; total: number; taxa: number }[];
+}
+
 export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsProps) {
   const { currentDojoId } = useDojoContext();
   const COLORS = useThemeColors();
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ["dashboard-complete-stats", currentDojoId],
-    queryFn: async () => {
-      const now = new Date();
-      const currentMonthStart = format(startOfMonth(now), "yyyy-MM-dd");
-      const currentMonthEnd = format(endOfMonth(now), "yyyy-MM-dd");
+    queryFn: async (): Promise<DashboardStatsData> => {
+      // Single server-side RPC call instead of 10+ parallel queries
+      const { data, error } = await supabase.rpc("get_dashboard_stats", {
+        _dojo_id: currentDojoId || null,
+      });
 
-      // Helper to add dojo filter to profile queries
-      const addDojoFilter = (query: any) => {
-        if (currentDojoId) {
-          return query.eq("dojo_id", currentDojoId);
-        }
-        return query;
-      };
+      if (error) throw error;
 
-      // Get student user_ids for the current dojo to filter related tables
-      let studentUserIds: string[] = [];
-      if (currentDojoId) {
-        // Get all users with sensei/admin roles to exclude
-        const { data: nonStudentRoles } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .in("role", ["sensei", "admin", "dono", "super_admin"]);
-        const excludeIds = new Set((nonStudentRoles || []).map(r => r.user_id));
-
-        const { data: dojoProfiles } = await supabase
-          .from("profiles")
-          .select("user_id")
-          .eq("dojo_id", currentDojoId)
-          .eq("registration_status", "aprovado");
-
-        studentUserIds = (dojoProfiles || [])
-          .filter(p => !excludeIds.has(p.user_id))
-          .map(p => p.user_id);
-      }
-      
-      // Fetch all data in parallel
-      const [
-        studentsRes,
-        classesRes,
-        pendingRes,
-        paymentsRes,
-        senseisRes,
-        attendanceRes,
-        monthlyAttendanceRes,
-        paidPaymentsRes,
-        overduePaymentsRes,
-        recentGraduationsRes
-      ] = await Promise.all([
-        // Total approved students (use filtered studentUserIds count)
-        // We still query to get count when no dojo filter
-        currentDojoId
-          ? Promise.resolve({ count: studentUserIds.length, data: null, error: null })
-          : (async () => {
-              // Without dojo filter, exclude staff from total count
-              const { data: allApproved } = await supabase.from("profiles").select("user_id").eq("registration_status", "aprovado");
-              const { data: allStaff } = await supabase.from("user_roles").select("user_id").in("role", ["sensei", "admin", "dono", "super_admin"]);
-              const staffSet = new Set((allStaff || []).map(r => r.user_id));
-              const studentCount = (allApproved || []).filter(p => !staffSet.has(p.user_id)).length;
-              return { count: studentCount, data: null, error: null };
-            })(),
-        // Active classes
-        currentDojoId
-          ? supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true).eq("dojo_id", currentDojoId)
-          : supabase.from("classes").select("id", { count: "exact" }).eq("is_active", true),
-        // Pending approvals
-        addDojoFilter(supabase.from("profiles").select("user_id", { count: "exact" }).eq("registration_status", "pendente")),
-        // Pending payments - filter by student_ids if dojo selected
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente").in("student_id", studentUserIds)
-          : currentDojoId 
-            ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente").eq("student_id", "none")
-            : supabase.from("payments").select("id", { count: "exact" }).eq("status", "pendente"),
-        // Total senseis
-        supabase.from("user_roles").select("id", { count: "exact" }).eq("role", "sensei"),
-        // Total attendance records this month
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd).in("student_id", studentUserIds)
-          : currentDojoId
-            ? supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd).eq("student_id", "none")
-            : supabase.from("attendance").select("id, present", { count: "exact" }).gte("date", currentMonthStart).lte("date", currentMonthEnd),
-        // Monthly attendance breakdown for chart
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")).in("student_id", studentUserIds)
-          : currentDojoId
-            ? supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")).eq("student_id", "none")
-            : supabase.from("attendance").select("present, date").gte("date", format(subMonths(now, 5), "yyyy-MM-dd")),
-        // Paid payments
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("payments").select("amount").eq("status", "pago").in("student_id", studentUserIds)
-          : currentDojoId
-            ? supabase.from("payments").select("amount").eq("status", "pago").eq("student_id", "none")
-            : supabase.from("payments").select("amount").eq("status", "pago"),
-        // Overdue payments
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado").in("student_id", studentUserIds)
-          : currentDojoId
-            ? supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado").eq("student_id", "none")
-            : supabase.from("payments").select("id", { count: "exact" }).eq("status", "atrasado"),
-        // Recent graduations (last 3 months)
-        currentDojoId && studentUserIds.length > 0
-          ? supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd")).in("student_id", studentUserIds)
-          : currentDojoId
-            ? supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd")).eq("student_id", "none")
-            : supabase.from("graduation_history").select("id", { count: "exact" }).gte("graduation_date", format(subMonths(now, 3), "yyyy-MM-dd"))
-      ]);
-
-      // Calculate attendance stats
-      const attendanceData = attendanceRes.data || [];
-      const presentCount = attendanceData.filter(a => a.present).length;
-      const totalAttendance = attendanceData.length;
-      const attendanceRate = totalAttendance > 0 ? Math.round((presentCount / totalAttendance) * 100) : 0;
-
-      // Calculate monthly attendance for chart
-      const monthlyData = [];
-      for (let i = 5; i >= 0; i--) {
-        const monthDate = subMonths(now, i);
-        const monthKey = format(monthDate, "yyyy-MM");
-        const monthName = format(monthDate, "MMM", { locale: ptBR });
-        
-        const monthRecords = (monthlyAttendanceRes.data || []).filter(a => 
-          a.date.startsWith(monthKey)
-        );
-        const monthPresent = monthRecords.filter(a => a.present).length;
-        const monthTotal = monthRecords.length;
-        
-        monthlyData.push({
-          name: monthName,
-          presencas: monthPresent,
-          total: monthTotal,
-          taxa: monthTotal > 0 ? Math.round((monthPresent / monthTotal) * 100) : 0
-        });
-      }
-
-      // Calculate payment totals
-      const totalReceived = (paidPaymentsRes.data || []).reduce((sum, p) => sum + (p.amount || 0), 0);
-
+      const result = data as any;
       return {
-        totalStudents: studentsRes.count || 0,
-        activeClasses: classesRes.count || 0,
-        pendingApprovals: pendingRes.count || 0,
-        pendingPayments: paymentsRes.count || 0,
-        totalSenseis: senseisRes.count || 0,
-        attendanceRate,
-        presentCount,
-        totalAttendance,
-        monthlyAttendance: monthlyData,
-        totalReceived,
-        overduePayments: overduePaymentsRes.count || 0,
-        recentGraduations: recentGraduationsRes.count || 0
+        totalStudents: result.totalStudents || 0,
+        activeClasses: result.activeClasses || 0,
+        pendingApprovals: result.pendingApprovals || 0,
+        pendingPayments: result.pendingPayments || 0,
+        totalSenseis: result.totalSenseis || 0,
+        presentCount: result.presentCount || 0,
+        totalAttendance: result.totalAttendance || 0,
+        attendanceRate: result.attendanceRate || 0,
+        totalReceived: Number(result.totalReceived) || 0,
+        overduePayments: result.overduePayments || 0,
+        recentGraduations: result.recentGraduations || 0,
+        monthlyAttendance: (result.monthlyAttendance || []).map((m: any) => ({
+          name: m.name,
+          presencas: Number(m.presencas) || 0,
+          total: Number(m.total) || 0,
+          taxa: Number(m.taxa) || 0,
+        })),
       };
-    }
+    },
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes
   });
 
   if (isLoading) {
@@ -291,22 +183,20 @@ export function DashboardStats({ isAdmin, canManageStudents }: DashboardStatsPro
         </Link>
 
         {canManageStudents && (
-          <>
-            <Link to="/students">
-              <Card className="hover:border-warning/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 group">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Aprovações Pendentes</CardTitle>
-                  <Clock className="h-4 w-4 text-warning transition-transform duration-300 group-hover:scale-110" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.pendingApprovals}</div>
-                  {(stats?.pendingApprovals || 0) > 0 && (
-                    <p className="text-xs text-warning mt-1">Aguardando revisão</p>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          </>
+          <Link to="/students">
+            <Card className="hover:border-warning/50 transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:-translate-y-0.5 group">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Aprovações Pendentes</CardTitle>
+                <Clock className="h-4 w-4 text-warning transition-transform duration-300 group-hover:scale-110" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats?.pendingApprovals}</div>
+                {(stats?.pendingApprovals || 0) > 0 && (
+                  <p className="text-xs text-warning mt-1">Aguardando revisão</p>
+                )}
+              </CardContent>
+            </Card>
+          </Link>
         )}
       </div>
 
