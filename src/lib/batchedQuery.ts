@@ -28,7 +28,7 @@ export async function batchedInQuery<T = any>({
   additionalFilters,
   orderBy,
   limit,
-}: BatchedInQueryOptions<T>): Promise<T[]> {
+}: BatchedInQueryOptions): Promise<T[]> {
   if (values.length === 0) return [];
 
   // If small enough, do a single query
