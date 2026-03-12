@@ -108,7 +108,7 @@ export function useTasks() {
     staleTime: 15_000,
   });
 
-  // Helper to enrich tasks with profile names
+  // Helper to enrich tasks with profile names (batched)
   async function enrichTasks(data: any[]): Promise<TaskWithAssignee[]> {
     if (data.length === 0) return [];
 
@@ -117,12 +117,14 @@ export function useTasks() {
       ...data.map(t => t.assigned_by)
     ])];
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id, name")
-      .in("user_id", userIds);
+    const profiles = await batchedInQuery({
+      table: "profiles",
+      column: "user_id",
+      values: userIds,
+      select: "user_id, name",
+    });
 
-    const profileMap = new Map(profiles?.map(p => [p.user_id, p.name]) || []);
+    const profileMap = new Map(profiles.map((p: any) => [p.user_id, p.name]));
 
     return data.map(task => ({
       ...task,
