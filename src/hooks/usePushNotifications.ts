@@ -23,19 +23,30 @@ async function getVapidPublicKey(): Promise<string> {
   return "";
 }
 
-/** Detect if running on iOS/iPadOS */
 function isIOSDevice(): boolean {
   if (typeof navigator === "undefined") return false;
   const ua = navigator.userAgent;
   return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-/** Detect if app is running in standalone/PWA mode */
 function isStandalonePWA(): boolean {
   if (typeof window === "undefined") return false;
   return (
     (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
     (navigator as any).standalone === true
+  );
+}
+
+/** Sync a push subscription to the database */
+async function syncSubscriptionToDB(userId: string, subJSON: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+  await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: userId,
+      endpoint: subJSON.endpoint,
+      p256dh: subJSON.keys.p256dh,
+      auth_key: subJSON.keys.auth,
+    },
+    { onConflict: "user_id,endpoint" }
   );
 }
 
@@ -48,12 +59,12 @@ export function usePushNotifications() {
   const [isIOS, setIsIOS] = useState(false);
   const [needsInstall, setNeedsInstall] = useState(false);
 
+  // On mount: check support, permission, and validate existing subscription
   useEffect(() => {
     const isiOS = isIOSDevice();
     const isPWA = isStandalonePWA();
     setIsIOS(isiOS);
 
-    // On iOS, push only works inside installed PWA (iOS 16.4+)
     if (isiOS && !isPWA) {
       setNeedsInstall(true);
       setIsSupported(false);
@@ -71,24 +82,79 @@ export function usePushNotifications() {
 
     if (supported) {
       setPermission(Notification.permission);
-      navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
-        const pm = reg && (reg as any).pushManager;
-        if (pm) {
-          pm.getSubscription().then((sub: PushSubscription | null) => {
-            setIsSubscribed(!!sub);
-          });
-        }
-      });
+
+      // Validate subscription on load — re-sync if needed
+      if (user && Notification.permission === "granted") {
+        navigator.serviceWorker.ready.then(async (reg) => {
+          try {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) {
+              setIsSubscribed(true);
+              // Re-sync to DB to ensure it's fresh
+              const subJSON = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
+              await syncSubscriptionToDB(user.id, subJSON);
+            } else {
+              // Permission granted but no subscription — auto re-subscribe
+              const vapidKey = await getVapidPublicKey();
+              if (vapidKey) {
+                const newSub = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(vapidKey),
+                });
+                const newSubJSON = newSub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } };
+                await syncSubscriptionToDB(user.id, newSubJSON);
+                setIsSubscribed(true);
+              }
+            }
+          } catch (err) {
+            console.warn("Push subscription validation failed:", err);
+          }
+        });
+      } else {
+        navigator.serviceWorker.getRegistration("/sw.js").then((reg) => {
+          const pm = reg && (reg as any).pushManager;
+          if (pm) {
+            pm.getSubscription().then((sub: PushSubscription | null) => {
+              setIsSubscribed(!!sub);
+            });
+          }
+        });
+      }
     }
-  }, []);
+  }, [user]);
+
+  // Listen for pushsubscriptionchange messages from SW
+  useEffect(() => {
+    if (!user) return;
+
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED" && event.data.subscription) {
+        const subJSON = event.data.subscription;
+        const oldEndpoint = event.data.oldEndpoint;
+
+        // Remove old endpoint from DB if it changed
+        if (oldEndpoint) {
+          await supabase.from("push_subscriptions").delete().eq("user_id", user.id).eq("endpoint", oldEndpoint);
+        }
+
+        // Save new subscription
+        if (subJSON.endpoint && subJSON.keys) {
+          await syncSubscriptionToDB(user.id, subJSON);
+          setIsSubscribed(true);
+        }
+      }
+    };
+
+    navigator.serviceWorker?.addEventListener("message", handleMessage);
+    return () => navigator.serviceWorker?.removeEventListener("message", handleMessage);
+  }, [user]);
 
   const subscribe = useCallback(async () => {
     if (!user || !isSupported) return false;
     setIsLoading(true);
 
     try {
-      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
+      const registration = await navigator.serviceWorker.ready;
 
       const perm = await Notification.requestPermission();
       setPermission(perm);
@@ -105,7 +171,6 @@ export function usePushNotifications() {
         return false;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pm = (registration as any).pushManager;
       if (!pm) {
         console.error("PushManager not supported on this device/browser");
@@ -126,6 +191,9 @@ export function usePushNotifications() {
         endpoint: string;
         keys: { p256dh: string; auth: string };
       };
+
+      // Clean up old subscriptions for this user
+      await supabase.from("push_subscriptions").delete().eq("user_id", user.id);
 
       const { error } = await supabase.from("push_subscriptions").upsert(
         {
@@ -157,7 +225,6 @@ export function usePushNotifications() {
     setIsLoading(true);
     try {
       const registration = await navigator.serviceWorker.getRegistration("/sw.js");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const pm = registration && (registration as any).pushManager;
       if (pm) {
         const subscription = await pm.getSubscription();

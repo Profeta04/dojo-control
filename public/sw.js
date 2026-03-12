@@ -1,5 +1,5 @@
 // Service Worker — Dojo Control (Push + Share Target + iOS PWA)
-const SW_VERSION = '2.0.0';
+const SW_VERSION = '2.1.0';
 
 self.addEventListener('install', (event) => {
   console.log('[SW] Install v' + SW_VERSION);
@@ -23,7 +23,6 @@ self.addEventListener('push', (event) => {
         const parsed = JSON.parse(raw);
         data = { ...data, ...parsed };
       } catch (_) {
-        // Payload is plain text — use as body
         data.body = raw;
       }
     }
@@ -35,8 +34,10 @@ self.addEventListener('push', (event) => {
     body: data.body,
     icon: data.icon || '/favicon.png',
     badge: '/favicon.png',
+    tag: 'dojo-' + Date.now(),
+    renotify: true,
+    requireInteraction: false,
     data: { url: data.url || '/' },
-    // iOS PWA requires these to be simple; avoid unsupported options
     ...(isIOS() ? {} : { vibrate: [200, 100, 200] }),
   };
 
@@ -49,23 +50,49 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      // Try to focus an existing window
       for (const client of windowClients) {
         if ('focus' in client) {
           client.focus();
-          // navigate() may not be available on all clients (e.g., iOS)
           if ('navigate' in client) {
             client.navigate(url);
           } else {
-            // Fallback: post message to client to navigate
             client.postMessage({ type: 'NAVIGATE', url });
           }
           return;
         }
       }
-      // No existing window — open a new one
       if (clients.openWindow) return clients.openWindow(url);
     })
+  );
+});
+
+// ─── Auto re-subscribe when browser refreshes the push subscription ───
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('[SW] pushsubscriptionchange fired');
+  event.waitUntil(
+    (async () => {
+      try {
+        const oldSub = event.oldSubscription;
+        const newSub = event.newSubscription || await self.registration.pushManager.subscribe(
+          oldSub ? { userVisibleOnly: true, applicationServerKey: oldSub.options.applicationServerKey } : { userVisibleOnly: true }
+        );
+
+        if (newSub) {
+          const subJSON = newSub.toJSON();
+          // Notify all open clients to sync the new subscription to the database
+          const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+          for (const client of allClients) {
+            client.postMessage({
+              type: 'PUSH_SUBSCRIPTION_CHANGED',
+              subscription: subJSON,
+              oldEndpoint: oldSub?.endpoint || null,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('[SW] Failed to re-subscribe on pushsubscriptionchange:', e);
+      }
+    })()
   );
 });
 
@@ -73,7 +100,6 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Only intercept share target POST requests
   if (url.pathname === '/compartilhar' && event.request.method === 'POST') {
     event.respondWith(handleShareTarget(event.request));
     return;
@@ -87,11 +113,7 @@ async function handleShareTarget(request) {
 
     if (file && file instanceof File) {
       const cache = await caches.open('shared-files');
-
-      // Read the file into an ArrayBuffer first for iOS compatibility
-      // (iOS Safari may not correctly clone File objects across contexts)
       const arrayBuffer = await file.arrayBuffer();
-
       const response = new Response(arrayBuffer, {
         headers: {
           'Content-Type': file.type || 'application/octet-stream',
@@ -102,19 +124,15 @@ async function handleShareTarget(request) {
       await cache.put('/shared-file-latest', response);
     }
 
-    // Redirect to the payments page
     return Response.redirect('/mensalidade?shared=1', 303);
   } catch (error) {
     console.error('[SW] Share target error:', error);
-    // Even on error, redirect to avoid blank screen
     return Response.redirect('/mensalidade', 303);
   }
 }
 
 // ─── Utility ───
 function isIOS() {
-  // Service worker context doesn't have navigator.userAgent in all cases,
-  // but we can safely check if vibrate-like features should be skipped
   try {
     return /iPad|iPhone|iPod/.test(self.navigator?.userAgent || '');
   } catch {
