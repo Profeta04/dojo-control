@@ -109,19 +109,17 @@ export function useLeaderboard() {
       const studentProfiles = profiles.filter((p) => !staffIds.has(p.user_id));
       if (studentProfiles.length === 0) return [];
 
-      const userIds = studentProfiles.map((p) => p.user_id);
-
       const achievementCounts = new Map<string, number>();
-      achievementRes.data?.forEach((a) => {
+      achievementData.forEach((a: any) => {
         achievementCounts.set(a.user_id, (achievementCounts.get(a.user_id) || 0) + 1);
       });
 
-      const xpMap = new Map((xpRes.data || []).map((x) => [x.user_id, x]));
+      const xpMap = new Map(xpData.map((x: any) => [x.user_id, x]));
 
       // Build class enrollment map
       const classMap = new Map<string, string[]>();
       const artMap = new Map<string, Set<string>>();
-      (enrollmentRes.data || []).forEach((e: any) => {
+      enrollmentData.forEach((e: any) => {
         if (!classMap.has(e.student_id)) classMap.set(e.student_id, []);
         classMap.get(e.student_id)!.push(e.class_id);
         if (!artMap.has(e.student_id)) artMap.set(e.student_id, new Set());
@@ -130,7 +128,7 @@ export function useLeaderboard() {
 
       // Build per-art belt map and fallback martial arts from student_belts
       const beltsByArtMap = new Map<string, Record<string, string>>();
-      (beltsRes.data || []).forEach((b: any) => {
+      beltsData.forEach((b: any) => {
         if (!artMap.has(b.user_id)) artMap.set(b.user_id, new Set());
         artMap.get(b.user_id)!.add(b.martial_art);
         if (!beltsByArtMap.has(b.user_id)) beltsByArtMap.set(b.user_id, {});
