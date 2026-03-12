@@ -117,7 +117,7 @@ export async function uploadAnnouncementFile(file: File): Promise<string> {
 }
 
 export async function notifyDojoStudents(dojoId: string, title: string, message: string) {
-  // Get all students in this dojo
+  // Get all approved students in this dojo
   const { data: students } = await supabase
     .from("profiles")
     .select("user_id")
@@ -126,9 +126,11 @@ export async function notifyDojoStudents(dojoId: string, title: string, message:
 
   if (!students || students.length === 0) return;
 
-  // Insert in-app notifications
-  const notifications = students.map((s: any) => ({
-    user_id: s.user_id,
+  const userIds = students.map((s: any) => s.user_id);
+
+  // Insert in-app notifications (batch)
+  const notifications = userIds.map((uid: string) => ({
+    user_id: uid,
     title,
     message,
     type: "announcement",
@@ -136,22 +138,14 @@ export async function notifyDojoStudents(dojoId: string, title: string, message:
 
   await supabase.from("notifications").insert(notifications);
 
-  // Send push notifications
-  const { data: subscriptions } = await supabase
-    .from("push_subscriptions")
-    .select("*")
-    .in("user_id", students.map((s: any) => s.user_id));
-
-  if (subscriptions && subscriptions.length > 0) {
-    await supabase.functions.invoke("send-push-notification", {
-      body: {
-        subscriptions: subscriptions.map((sub: any) => ({
-          endpoint: sub.endpoint,
-          keys: { p256dh: sub.p256dh, auth: sub.auth_key },
-        })),
-        title,
-        body: message,
-      },
-    });
-  }
+  // Send push notifications via edge function (server-side reads subscriptions with service role)
+  await supabase.functions.invoke("send-push-notification", {
+    body: {
+      userIds,
+      title,
+      body: message,
+      url: "/",
+      icon: "/favicon.png",
+    },
+  });
 }
