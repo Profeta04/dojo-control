@@ -37,6 +37,7 @@ import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown
 import { BELT_LABELS, BeltGrade } from "@/lib/constants";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
