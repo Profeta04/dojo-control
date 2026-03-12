@@ -60,10 +60,10 @@ export function SenseiAnalytics() {
       const studentIds = profiles.map(p => p.user_id);
       if (studentIds.length === 0) return { ranking: [], monthlyAcertos: [], completionRate: 0, totalAcertos: 0 };
 
-      // Fetch completed tasks and XP in parallel
-      const [tasksRes, xpRes] = await Promise.all([
-        supabase.from("tasks").select("completed_at, assigned_to, status").in("assigned_to", studentIds),
-        supabase.from("student_xp").select("*").in("user_id", studentIds),
+      // Fetch completed tasks and XP in parallel (batched for large student lists)
+      const [tasks, xpList] = await Promise.all([
+        batchedInQuery({ table: "tasks", column: "assigned_to", values: studentIds, select: "completed_at, assigned_to, status" }),
+        batchedInQuery({ table: "student_xp", column: "user_id", values: studentIds, select: "*" }),
       ]);
 
       const tasks = tasksRes.data || [];
