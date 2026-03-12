@@ -96,13 +96,13 @@ export function useLeaderboard() {
 
       const allUserIds = profiles.map((p) => p.user_id);
 
-      // Fetch staff roles, XP, achievements, enrollments, belts all in parallel
-      const [staffRolesRes, xpRes, achievementRes, enrollmentRes, beltsRes] = await Promise.all([
+      // Fetch staff roles, XP, achievements, enrollments, belts all in parallel (batched)
+      const [staffRolesRes, xpData, achievementData, enrollmentData, beltsData] = await Promise.all([
         supabase.from("user_roles").select("user_id").in("user_id", allUserIds).in("role", ["admin", "sensei", "dono", "super_admin"]),
-        supabase.from("student_xp").select("*").in("user_id", allUserIds),
-        supabase.from("student_achievements").select("user_id").in("user_id", allUserIds),
-        supabase.from("class_students").select("student_id, class_id, classes(martial_art)").in("student_id", allUserIds),
-        supabase.from("student_belts").select("user_id, martial_art, belt_grade").in("user_id", allUserIds),
+        batchedInQuery({ table: "student_xp", column: "user_id", values: allUserIds, select: "*" }),
+        batchedInQuery({ table: "student_achievements", column: "user_id", values: allUserIds, select: "user_id" }),
+        batchedInQuery({ table: "class_students", column: "student_id", values: allUserIds, select: "student_id, class_id, classes(martial_art)" }),
+        batchedInQuery({ table: "student_belts", column: "user_id", values: allUserIds, select: "user_id, martial_art, belt_grade" }),
       ]);
 
       const staffIds = new Set((staffRolesRes.data || []).map((r) => r.user_id));
