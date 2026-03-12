@@ -66,8 +66,7 @@ export function SenseiAnalytics() {
         batchedInQuery({ table: "student_xp", column: "user_id", values: studentIds, select: "*" }),
       ]);
 
-      const tasks = tasksRes.data || [];
-      const xpList = xpRes.data || [];
+      // tasks and xpList are already arrays from batchedInQuery
 
       // Completion rate & total
       const completedTasks = tasks.filter(t => t.status === "concluida");
