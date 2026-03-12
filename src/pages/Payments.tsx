@@ -171,10 +171,18 @@ export default function PaymentsPage() {
       if (roleError) throw roleError;
       if (!roleData || roleData.length === 0) return [];
       const studentIds = roleData.map((r) => r.user_id);
-      let query = supabase.from("profiles").select("*").in("user_id", studentIds).eq("registration_status", "aprovado").order("name");
-      if (currentDojoId) query = query.eq("dojo_id", currentDojoId);
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await batchedInQuery({
+        table: "profiles",
+        column: "user_id",
+        values: studentIds,
+        select: "*",
+        additionalFilters: (q: any) => {
+          let query = q.eq("registration_status", "aprovado");
+          if (currentDojoId) query = query.eq("dojo_id", currentDojoId);
+          return query;
+        },
+        orderBy: { column: "name", ascending: true },
+      });
       return data as Profile[];
     },
     enabled: !!user && (isAdmin || !!currentDojoId),
