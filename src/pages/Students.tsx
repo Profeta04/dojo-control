@@ -9,56 +9,27 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { RequireApproval } from "@/components/auth/RequireApproval";
 import { BeltBadge } from "@/components/shared/BeltBadge";
-import { RegistrationStatusBadge, PaymentStatusBadge } from "@/components/shared/StatusBadge";
+import { RegistrationStatusBadge } from "@/components/shared/StatusBadge";
 import { StudentReportDialog } from "@/components/students/StudentReportDialog";
-import { Button } from "@/components/ui/button";
+import { StudentTable } from "@/components/students/StudentTable";
+import {
+  ApprovalDialog,
+  ScholarshipDialog,
+  EditStudentDialog,
+  BlockStudentDialog,
+  DeleteStudentDialog,
+  EnrollmentDialog,
+  CrossArtBeltDialog,
+  ResetPasswordDialog,
+  GuardianInfoDialog,
+} from "@/components/students/StudentDialogs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Users, UserCheck, UserX, Clock, Mail, Loader2, ShieldCheck, ChevronDown, ChevronUp, Building, Shield, GraduationCap, MoreHorizontal, Ban, Trash2, Edit, Unlock, Plus, KeyRound } from "lucide-react";
-import { BELT_LABELS, BeltGrade } from "@/lib/constants";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Users, UserCheck, UserX, Clock, Ban, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { BeltGrade } from "@/lib/constants";
 import { Tables } from "@/integrations/supabase/types";
 import { batchedInQuery } from "@/lib/batchedQuery";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 type Profile = Tables<"profiles">;
 
@@ -74,6 +45,7 @@ export default function Students() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Dialog state
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -82,7 +54,7 @@ export default function Students() {
   const [approvalBelts, setApprovalBelts] = useState<{ martial_art: string; belt_grade: BeltGrade }[]>([]);
   const [loadingBelts, setLoadingBelts] = useState(false);
 
-  // Student management dialogs
+  // Edit student
   const [editStudent, setEditStudent] = useState<Profile | null>(null);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
@@ -93,32 +65,24 @@ export default function Students() {
   const [editGuardianPhone, setEditGuardianPhone] = useState("");
   const [editGuardianEmail, setEditGuardianEmail] = useState("");
 
+  // Other dialogs
   const [blockStudent, setBlockStudent] = useState<Profile | null>(null);
   const [blockReason, setBlockReason] = useState("");
-
   const [deleteStudent, setDeleteStudent] = useState<Profile | null>(null);
   const [permanentDeleteStudent, setPermanentDeleteStudent] = useState<Profile | null>(null);
-
-  // Enrollment after approval
   const [enrollStudent, setEnrollStudent] = useState<Profile | null>(null);
   const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string; martial_art: string }[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<Set<string>>(new Set());
   const [enrollLoading, setEnrollLoading] = useState(false);
-
-  // Cross-art belt assignment
   const [crossArtDialog, setCrossArtDialog] = useState<{ student: Profile; missingArts: string[] } | null>(null);
   const [crossArtBelts, setCrossArtBelts] = useState<Record<string, BeltGrade>>({});
-
-  // Password reset
   const [resetPwStudent, setResetPwStudent] = useState<Profile | null>(null);
   const [newPassword, setNewPassword] = useState("");
-
-  // Guardian info dialog
   const [guardianInfoStudent, setGuardianInfoStudent] = useState<Profile | null>(null);
   const [guardianProfile, setGuardianProfile] = useState<Profile | null>(null);
   const [guardianLoading, setGuardianLoading] = useState(false);
 
-  // Fetch dojo info for martial_arts
+  // ─── Data queries ────────────────────────────────────────
   const { data: dojoInfo } = useQuery({
     queryKey: ["dojo-info", currentDojoId],
     queryFn: async () => {
@@ -134,7 +98,6 @@ export default function Students() {
   const { data: students, isLoading } = useQuery({
     queryKey: ["students", currentDojoId],
     queryFn: async () => {
-      // Get all users with sensei or admin role (to exclude them)
       const { data: staffRoles } = await supabase
         .from("user_roles")
         .select("user_id")
@@ -142,28 +105,24 @@ export default function Students() {
 
       const excludeIds = [...new Set((staffRoles || []).map((r) => r.user_id))];
 
-      // Get all profiles that are students (not admins or senseis)
       let query = supabase.from("profiles").select("*").order("created_at", { ascending: false });
 
-      // Exclude senseis and admins
       if (excludeIds.length > 0) {
         query = query.not("user_id", "in", `(${excludeIds.join(",")})`);
       }
 
-      // Filter by dojo if selected
       if (currentDojoId) {
         query = query.eq("dojo_id", currentDojoId);
       }
 
       const { data: profiles } = await query;
-
       return (profiles || []) as Profile[];
     },
     enabled: !!user && canManageStudents,
   });
 
-  // Fetch payment status for each student
   const studentUserIds = students?.map((s) => s.user_id) || [];
+
   const { data: studentPayments } = useQuery({
     queryKey: ["student-payment-status", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
@@ -179,16 +138,6 @@ export default function Students() {
     enabled: studentUserIds.length > 0,
   });
 
-  // Helper: get worst payment status for a student
-  const getStudentPaymentStatus = (userId: string): string | null => {
-    const payments = studentPayments?.filter((p) => p.student_id === userId) || [];
-    if (payments.length === 0) return null;
-    if (payments.some((p) => p.status === "atrasado")) return "atrasado";
-    if (payments.some((p) => p.status === "pendente")) return "pendente";
-    return "pago";
-  };
-
-  // Fetch all student_belts for the dojo's students
   const { data: allStudentBelts } = useQuery({
     queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
@@ -203,73 +152,52 @@ export default function Students() {
     enabled: studentUserIds.length > 0,
   });
 
-  // Helper: get belt for a student + martial_art
-  const getStudentBelt = (userId: string, martialArt: string): string | null => {
-    const belt = allStudentBelts?.find((b) => b.user_id === userId && b.martial_art === martialArt);
-    return belt?.belt_grade || null;
-  };
-
-  // Fetch guardians with their minors
   const { data: guardiansWithMinors, isLoading: isLoadingGuardians } = useQuery({
     queryKey: ["guardians-with-minors", currentDojoId],
     queryFn: async () => {
-      // Get all profiles that have a guardian (minors)
-      let minorQuery = supabase
-        .from("profiles")
-        .select("*")
-        .not("guardian_user_id", "is", null);
-
-      if (currentDojoId) {
-        minorQuery = minorQuery.eq("dojo_id", currentDojoId);
-      }
-
+      let minorQuery = supabase.from("profiles").select("*").not("guardian_user_id", "is", null);
+      if (currentDojoId) minorQuery = minorQuery.eq("dojo_id", currentDojoId);
       const { data: minorProfiles } = await minorQuery;
-
       if (!minorProfiles || minorProfiles.length === 0) return [];
 
-      // Get unique guardian user IDs
       const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
-
-      // Fetch guardian profiles
-      const { data: guardianProfiles } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("user_id", guardianUserIds);
-
+      const { data: guardianProfiles } = await supabase.from("profiles").select("*").in("user_id", guardianUserIds);
       if (!guardianProfiles) return [];
 
-      // Group minors by guardian
       const guardiansMap = new Map<string, GuardianWithMinors>();
-      
       for (const guardian of guardianProfiles) {
         guardiansMap.set(guardian.user_id, {
           guardian,
           minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
         });
       }
-
       return Array.from(guardiansMap.values());
     },
     enabled: !!user && canManageStudents,
   });
 
-  // Redirect if not authorized (after all hooks)
-  if (!authLoading && !canManageStudents) {
-    navigate("/dashboard");
-    return null;
-  }
+  // ─── Helpers ─────────────────────────────────────────────
+  const getStudentPaymentStatus = (userId: string): string | null => {
+    const payments = studentPayments?.filter((p: any) => p.student_id === userId) || [];
+    if (payments.length === 0) return null;
+    if (payments.some((p: any) => p.status === "atrasado")) return "atrasado";
+    if (payments.some((p: any) => p.status === "pendente")) return "pendente";
+    return "pago";
+  };
 
+  const getStudentBelt = (userId: string, martialArt: string): string | null => {
+    const belt = allStudentBelts?.find((b: any) => b.user_id === userId && b.martial_art === martialArt);
+    return belt?.belt_grade || null;
+  };
+
+  // ─── Action handlers ────────────────────────────────────
   const fetchStudentBelts = async (studentId: string) => {
     setLoadingBelts(true);
     try {
-      const { data } = await supabase
-        .from("student_belts")
-        .select("martial_art, belt_grade")
-        .eq("user_id", studentId);
+      const { data } = await supabase.from("student_belts").select("martial_art, belt_grade").eq("user_id", studentId);
       if (data && data.length > 0) {
         setApprovalBelts(data.map((b) => ({ martial_art: b.martial_art, belt_grade: b.belt_grade as BeltGrade })));
       } else {
-        // Fallback: use profile belt_grade
         const student = students?.find((s) => s.user_id === studentId);
         setApprovalBelts([{ martial_art: "judo", belt_grade: (student?.belt_grade as BeltGrade) || "branca" }]);
       }
@@ -280,72 +208,39 @@ export default function Students() {
     }
   };
 
-  const MARTIAL_ART_LABELS: Record<string, string> = {
-    judo: "Judô",
-    bjj: "Jiu-Jitsu",
-  };
-
   const handleApprove = async () => {
     if (!selectedStudent) return;
     setActionLoading(true);
-
     try {
-      // Use the first belt as profile belt_grade
       const primaryBelt = approvalBelts[0]?.belt_grade || "branca";
+      await supabase.from("profiles").update({
+        registration_status: "aprovado",
+        approved_at: new Date().toISOString(),
+        approved_by: user!.id,
+        belt_grade: primaryBelt,
+      }).eq("user_id", selectedStudent.user_id);
 
-      // Update profile status
-      await supabase
-        .from("profiles")
-        .update({
-          registration_status: "aprovado",
-          approved_at: new Date().toISOString(),
-          approved_by: user!.id,
-          belt_grade: primaryBelt,
-        })
-        .eq("user_id", selectedStudent.user_id);
-
-      // Update each student_belt record
       for (const belt of approvalBelts) {
-        await supabase
-          .from("student_belts")
-          .update({ belt_grade: belt.belt_grade })
-          .eq("user_id", selectedStudent.user_id)
-          .eq("martial_art", belt.martial_art);
+        await supabase.from("student_belts").update({ belt_grade: belt.belt_grade }).eq("user_id", selectedStudent.user_id).eq("martial_art", belt.martial_art);
       }
 
-      // Assign student role
-      await supabase.rpc("assign_user_role", {
-        _user_id: selectedStudent.user_id,
-        _role: "student",
-      });
+      await supabase.rpc("assign_user_role", { _user_id: selectedStudent.user_id, _role: "student" });
 
-      // Send push notification to the approved student
       supabase.functions.invoke("send-push-notification", {
-        body: {
-          userId: selectedStudent.user_id,
-          title: "🎉 Cadastro Aprovado!",
-          body: `Bem-vindo ao dojo, ${selectedStudent.name}! Seu cadastro foi aprovado. Vamos treinar!`,
-          url: "/dashboard",
-        },
-      }).catch(() => {}); // fire-and-forget
+        body: { userId: selectedStudent.user_id, title: "🎉 Cadastro Aprovado!", body: `Bem-vindo ao dojo, ${selectedStudent.name}! Seu cadastro foi aprovado. Vamos treinar!`, url: "/dashboard" },
+      }).catch(() => {});
 
-      // In-app notification for the student (fire-and-forget)
       void supabase.from("notifications").insert({
         user_id: selectedStudent.user_id,
         title: "🎉 Cadastro Aprovado!",
-        message: `Seu cadastro foi aprovado! Bem-vindo ao dojo.`,
+        message: "Seu cadastro foi aprovado! Bem-vindo ao dojo.",
         type: "info",
       });
 
-      toast({
-        title: "Aluno aprovado!",
-        description: `${selectedStudent.name} foi aprovado com sucesso.`,
-      });
-
+      toast({ title: "Aluno aprovado!", description: `${selectedStudent.name} foi aprovado com sucesso.` });
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
 
-      // Fetch available classes for enrollment dialog
       const approvedStudent = selectedStudent;
       setActionLoading(false);
       setSelectedStudent(null);
@@ -361,40 +256,41 @@ export default function Students() {
           setEnrollStudent(approvedStudent);
         }
       } catch {}
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao aprovar aluno",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao aprovar aluno", variant: "destructive" });
       setActionLoading(false);
       setSelectedStudent(null);
       setActionType(null);
     }
   };
 
-  const MARTIAL_ART_CLASS_LABELS: Record<string, string> = {
-    judo: "Judô",
-    bjj: "Jiu-Jitsu",
+  const handleReject = async () => {
+    if (!selectedStudent) return;
+    setActionLoading(true);
+    try {
+      await supabase.from("profiles").update({ registration_status: "rejeitado" }).eq("user_id", selectedStudent.user_id);
+      toast({ title: "Cadastro rejeitado", description: `O cadastro de ${selectedStudent.name} foi rejeitado.` });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    } catch {
+      toast({ title: "Erro", description: "Erro ao rejeitar cadastro", variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setSelectedStudent(null);
+      setActionType(null);
+    }
   };
 
   const handleEnrollAfterApproval = async () => {
     if (!enrollStudent || selectedClassIds.size === 0) return;
     setEnrollLoading(true);
     try {
-      // Check which martial arts the student already has belts for
-      const { data: existingBelts } = await supabase
-        .from("student_belts")
-        .select("martial_art")
-        .eq("user_id", enrollStudent.user_id);
+      const { data: existingBelts } = await supabase.from("student_belts").select("martial_art").eq("user_id", enrollStudent.user_id);
       const existingArts = new Set((existingBelts || []).map((b) => b.martial_art));
-
-      // Check which arts the selected classes require
       const selectedClasses = availableClasses.filter(c => selectedClassIds.has(c.id));
-      const requiredArts = new Set(selectedClasses.map(c => c.martial_art as string));
+      const requiredArts = new Set(selectedClasses.map(c => c.martial_art));
       const missingArts = [...requiredArts].filter(art => !existingArts.has(art));
 
-      // If there are missing arts, prompt for belt assignment first
       if (missingArts.length > 0) {
         const defaults: Record<string, BeltGrade> = {};
         missingArts.forEach(art => { defaults[art] = "branca"; });
@@ -403,8 +299,6 @@ export default function Students() {
         setEnrollLoading(false);
         return;
       }
-
-      // Proceed with enrollment
       await doEnrollment(enrollStudent);
     } catch {
       toast({ title: "Erro", description: "Erro ao matricular aluno", variant: "destructive" });
@@ -416,7 +310,6 @@ export default function Students() {
     if (!crossArtDialog) return;
     setEnrollLoading(true);
     try {
-      // Insert belt records for missing arts
       for (const art of crossArtDialog.missingArts) {
         await supabase.from("student_belts").upsert({
           user_id: crossArtDialog.student.user_id,
@@ -427,7 +320,6 @@ export default function Students() {
         }, { onConflict: "user_id,martial_art" });
       }
       setCrossArtDialog(null);
-      // Now proceed with enrollment
       await doEnrollment(crossArtDialog.student);
     } catch {
       toast({ title: "Erro", description: "Erro ao definir faixa", variant: "destructive" });
@@ -438,15 +330,9 @@ export default function Students() {
   const doEnrollment = async (student: Profile) => {
     try {
       for (const classId of selectedClassIds) {
-        await supabase.from("class_students").insert({
-          class_id: classId,
-          student_id: student.user_id,
-        });
+        await supabase.from("class_students").insert({ class_id: classId, student_id: student.user_id });
       }
-      toast({
-        title: "Aluno matriculado!",
-        description: `${student.name} foi adicionado a ${selectedClassIds.size} turma(s).`,
-      });
+      toast({ title: "Aluno matriculado!", description: `${student.name} foi adicionado a ${selectedClassIds.size} turma(s).` });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
       queryClient.invalidateQueries({ queryKey: ["student-belts"] });
@@ -458,137 +344,29 @@ export default function Students() {
     }
   };
 
-  const handleReject = async () => {
-    if (!selectedStudent) return;
-    setActionLoading(true);
-
-    try {
-      await supabase
-        .from("profiles")
-        .update({
-          registration_status: "rejeitado",
-        })
-        .eq("user_id", selectedStudent.user_id);
-
-      toast({
-        title: "Cadastro rejeitado",
-        description: `O cadastro de ${selectedStudent.name} foi rejeitado.`,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["students"] });
-      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao rejeitar cadastro",
-        variant: "destructive",
-      });
-    } finally {
-      setActionLoading(false);
-      setSelectedStudent(null);
-      setActionType(null);
-    }
-  };
-
-  const toggleGuardianExpanded = (guardianId: string) => {
-    setExpandedGuardians((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(guardianId)) {
-        newSet.delete(guardianId);
-      } else {
-        newSet.add(guardianId);
-      }
-      return newSet;
-    });
-  };
-
-  if (authLoading || isLoading) {
-    return (
-      <DashboardLayout>
-        <LoadingSpinner />
-      </DashboardLayout>
-    );
-  }
-
-  const pendingStudents = students?.filter((s) => s.registration_status === "pendente") || [];
-  const approvedStudents = students?.filter((s) => s.registration_status === "aprovado" && !s.is_blocked) || [];
-  const blockedStudents = students?.filter((s) => s.registration_status === "aprovado" && s.is_blocked) || [];
-  const rejectedStudents = students?.filter((s) => s.registration_status === "rejeitado") || [];
-
-
-
-  const handlePermanentDelete = async () => {
-    if (!permanentDeleteStudent) return;
-    setActionLoading(true);
-    try {
-      // Atomic cascade delete via stored procedure
-      const { error: rpcError } = await supabase.rpc("delete_student_cascade", {
-        target_user_id: permanentDeleteStudent.user_id,
-      });
-      if (rpcError) throw rpcError;
-
-      // Delete the auth.users entry via edge function to prevent zombie accounts
-      await supabase.functions.invoke("delete-user", {
-        body: { userId: permanentDeleteStudent.user_id },
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["students"] });
-      toast({ title: "Aluno excluído permanentemente", description: `${permanentDeleteStudent.name} foi removido completamente.` });
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : "Erro ao excluir aluno";
-      toast({ title: "Erro", description: msg, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-      setPermanentDeleteStudent(null);
-    }
-  };
-
   const handleToggleFederated = async (student: Profile) => {
     const newValue = !student.is_federated;
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_federated: newValue })
-        .eq("user_id", student.user_id);
-      
+      const { error } = await supabase.from("profiles").update({ is_federated: newValue }).eq("user_id", student.user_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["students"] });
-      toast({
-        title: newValue ? "Aluno federado" : "Federação removida",
-        description: `${student.name} foi ${newValue ? "marcado como federado" : "desmarcado"}.`,
-      });
+      toast({ title: newValue ? "Aluno federado" : "Federação removida", description: `${student.name} foi ${newValue ? "marcado como federado" : "desmarcado"}.` });
     } catch {
       toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
     }
   };
 
-
   const handleToggleScholarship = async (student: Profile, cancelPending: boolean = false) => {
     const newValue = !student.is_scholarship;
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_scholarship: newValue })
-        .eq("user_id", student.user_id);
-      
+      const { error } = await supabase.from("profiles").update({ is_scholarship: newValue }).eq("user_id", student.user_id);
       if (error) throw error;
-
-      // If marking as scholarship and user chose to cancel pending payments
       if (newValue && cancelPending) {
-        await supabase
-          .from("payments")
-          .delete()
-          .eq("student_id", student.user_id)
-          .eq("status", "pendente")
-          .eq("category", "mensalidade");
+        await supabase.from("payments").delete().eq("student_id", student.user_id).eq("status", "pendente").eq("category", "mensalidade");
       }
-
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["payments"] });
-      toast({
-        title: newValue ? "Aluno marcado como bolsista" : "Bolsa removida",
-        description: `${student.name} ${newValue ? "não receberá mensalidades programadas" : "voltará a receber mensalidades"}.`,
-      });
+      toast({ title: newValue ? "Aluno marcado como bolsista" : "Bolsa removida", description: `${student.name} ${newValue ? "não receberá mensalidades programadas" : "voltará a receber mensalidades"}.` });
     } catch {
       toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
     } finally {
@@ -598,14 +376,7 @@ export default function Students() {
 
   const handleScholarshipToggleClick = async (student: Profile) => {
     if (!student.is_scholarship) {
-      // Turning ON scholarship — check for pending payments
-      const { data: pendingPayments } = await supabase
-        .from("payments")
-        .select("id")
-        .eq("student_id", student.user_id)
-        .eq("status", "pendente")
-        .eq("category", "mensalidade");
-
+      const { data: pendingPayments } = await supabase.from("payments").select("id").eq("student_id", student.user_id).eq("status", "pendente").eq("category", "mensalidade");
       if (pendingPayments && pendingPayments.length > 0) {
         setScholarshipConfirm(student);
         return;
@@ -614,54 +385,21 @@ export default function Students() {
     handleToggleScholarship(student, false);
   };
 
-  const handleResetPassword = async () => {
-    if (!resetPwStudent || !newPassword.trim()) return;
-    setActionLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("reset-user-password", {
-        body: { userId: resetPwStudent.user_id, newPassword: newPassword.trim() },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast({ title: "Senha redefinida!", description: `A senha de ${resetPwStudent.name} foi alterada com sucesso.` });
-      setResetPwStudent(null);
-      setNewPassword("");
-    } catch (err: any) {
-      toast({ title: "Erro ao redefinir senha", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleEditStudent = async () => {
     if (!editStudent) return;
     setActionLoading(true);
     try {
-      // Update profile
-      const { error } = await supabase
-        .from("profiles")
-        .update({ 
-          name: editName, 
-          phone: editPhone, 
-          belt_grade: editBelt, 
-          birth_date: editBirthDate || null,
-          guardian_name: editGuardianName || null,
-          guardian_phone: editGuardianPhone || null,
-          guardian_email: editGuardianEmail || null,
-        })
-        .eq("user_id", editStudent.user_id);
+      const { error } = await supabase.from("profiles").update({
+        name: editName, phone: editPhone, belt_grade: editBelt, birth_date: editBirthDate || null,
+        guardian_name: editGuardianName || null, guardian_phone: editGuardianPhone || null, guardian_email: editGuardianEmail || null,
+      }).eq("user_id", editStudent.user_id);
       if (error) throw error;
 
-      // Update each belt
       for (const belt of editStudentBelts) {
         if (belt.id) {
-          await supabase
-            .from("student_belts")
-            .update({ belt_grade: belt.belt_grade })
-            .eq("id", belt.id);
+          await supabase.from("student_belts").update({ belt_grade: belt.belt_grade }).eq("id", belt.id);
         }
       }
-
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["all-student-belts"] });
       toast({ title: "Aluno atualizado", description: `${editName} foi atualizado com sucesso.` });
@@ -690,19 +428,13 @@ export default function Students() {
     setActionLoading(true);
     const isCurrentlyBlocked = blockStudent.is_blocked;
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          is_blocked: !isCurrentlyBlocked,
-          blocked_reason: isCurrentlyBlocked ? null : (blockReason || "Bloqueado pelo administrador"),
-        })
-        .eq("user_id", blockStudent.user_id);
+      const { error } = await supabase.from("profiles").update({
+        is_blocked: !isCurrentlyBlocked,
+        blocked_reason: isCurrentlyBlocked ? null : (blockReason || "Bloqueado pelo administrador"),
+      }).eq("user_id", blockStudent.user_id);
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ["students"] });
-      toast({
-        title: isCurrentlyBlocked ? "Aluno desbloqueado" : "Aluno bloqueado",
-        description: `${blockStudent.name} foi ${isCurrentlyBlocked ? "desbloqueado" : "bloqueado"}.`,
-      });
+      toast({ title: isCurrentlyBlocked ? "Aluno desbloqueado" : "Aluno bloqueado", description: `${blockStudent.name} foi ${isCurrentlyBlocked ? "desbloqueado" : "bloqueado"}.` });
     } catch {
       toast({ title: "Erro", description: "Erro ao atualizar status", variant: "destructive" });
     } finally {
@@ -716,11 +448,7 @@ export default function Students() {
     if (!deleteStudent) return;
     setActionLoading(true);
     try {
-      // Soft delete: set status to 'rejeitado' and remove student role
-      await supabase
-        .from("profiles")
-        .update({ registration_status: "rejeitado" })
-        .eq("user_id", deleteStudent.user_id);
+      await supabase.from("profiles").update({ registration_status: "rejeitado" }).eq("user_id", deleteStudent.user_id);
       await supabase.rpc("remove_user_role", { _user_id: deleteStudent.user_id, _role: "student" });
       queryClient.invalidateQueries({ queryKey: ["students"] });
       toast({ title: "Aluno removido", description: `${deleteStudent.name} foi removido do sistema.` });
@@ -732,266 +460,102 @@ export default function Students() {
     }
   };
 
-  const StudentTable = ({ data, showActions = false, showManage = false, showPermanentDelete = false }: { data: Profile[]; showActions?: boolean; showManage?: boolean; showPermanentDelete?: boolean }) => (
-    <div className="overflow-x-auto -mx-4 sm:mx-0">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="min-w-[120px]">Nome</TableHead>
-            <TableHead className="hidden sm:table-cell">Email</TableHead>
-            {isMultiArt ? (
-              <>
-                <TableHead>Judô</TableHead>
-                <TableHead>BJJ</TableHead>
-              </>
-            ) : (
-              <TableHead>Faixa</TableHead>
-            )}
-            <TableHead className="hidden md:table-cell">Federado</TableHead>
-            <TableHead className="hidden md:table-cell">Bolsista</TableHead>
-            <TableHead className="hidden sm:table-cell">Mensalidade</TableHead>
-            <TableHead className="hidden sm:table-cell">Status</TableHead>
-            {(showActions || showManage || showPermanentDelete) && <TableHead className="text-right">Ações</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((student) => (
-            <TableRow key={student.user_id} className={student.is_blocked ? "opacity-60" : ""}>
-              <TableCell>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <p className="font-medium">{student.name}</p>
-                    {student.is_blocked && (
-                      <Ban className="h-3.5 w-3.5 text-destructive" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground sm:hidden">{student.email}</p>
-                  <div className="sm:hidden mt-1">
-                    <RegistrationStatusBadge status={student.registration_status || "pendente"} />
-                  </div>
-                  <div className="md:hidden flex items-center gap-3 mt-1.5">
-                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Switch
-                        checked={student.is_federated ?? false}
-                        onCheckedChange={() => handleToggleFederated(student)}
-                        aria-label={`Federado`}
-                        className="scale-75 origin-left"
-                      />
-                      {student.is_federated ? <Shield className="h-3 w-3 text-primary" /> : null}
-                      Fed.
-                    </label>
-                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Switch
-                        checked={student.is_scholarship ?? false}
-                        onCheckedChange={() => handleScholarshipToggleClick(student)}
-                        aria-label={`Bolsista`}
-                        className="scale-75 origin-left"
-                      />
-                      {student.is_scholarship ? <GraduationCap className="h-3 w-3 text-accent-foreground" /> : null}
-                      Bolsa
-                    </label>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                  <Mail className="h-3 w-3 flex-shrink-0" />
-                  <span className="truncate max-w-[180px]">{student.email}</span>
-                </div>
-              </TableCell>
-              {isMultiArt ? (
-                <>
-                  <TableCell>
-                    {getStudentBelt(student.user_id, "judo") ? (
-                      <BeltBadge grade={getStudentBelt(student.user_id, "judo")!} size="sm" />
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {getStudentBelt(student.user_id, "bjj") ? (
-                      <BeltBadge grade={getStudentBelt(student.user_id, "bjj")!} size="sm" />
-                    ) : (
-                      <span className="text-muted-foreground text-sm">—</span>
-                    )}
-                  </TableCell>
-                </>
-              ) : (
-                <TableCell>
-                  {student.belt_grade ? (
-                    <BeltBadge grade={student.belt_grade} size="sm" />
-                  ) : (
-                    <span className="text-muted-foreground text-sm">Branca</span>
-                  )}
-                </TableCell>
-              )}
-              <TableCell className="hidden md:table-cell">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={student.is_federated ?? false}
-                    onCheckedChange={() => handleToggleFederated(student)}
-                    aria-label={`Marcar ${student.name} como federado`}
-                  />
-                  {student.is_federated && (
-                    <Shield className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={student.is_scholarship ?? false}
-                    onCheckedChange={() => handleScholarshipToggleClick(student)}
-                    aria-label={`Marcar ${student.name} como bolsista`}
-                  />
-                  {student.is_scholarship && (
-                    <Badge variant="outline" className="text-xs gap-1 border-accent text-accent-foreground">
-                      <GraduationCap className="h-3 w-3" />
-                      Bolsista
-                    </Badge>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                {getStudentPaymentStatus(student.user_id) ? (
-                  <PaymentStatusBadge status={getStudentPaymentStatus(student.user_id)!} />
-                ) : (
-                  <span className="text-muted-foreground text-sm">—</span>
-                )}
-              </TableCell>
-              <TableCell className="hidden sm:table-cell">
-                {student.is_blocked ? (
-                  <Badge variant="destructive" className="text-xs">Bloqueado</Badge>
-                ) : (
-                  <RegistrationStatusBadge status={student.registration_status || "pendente"} />
-                )}
-              </TableCell>
-              {showActions && (
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1 sm:gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-success hover:text-success/80 hover:bg-success/10 h-8 px-2 sm:px-3"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        fetchStudentBelts(student.user_id);
-                        setActionType("approve");
-                      }}
-                    >
-                      <UserCheck className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Aprovar</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-8 px-2 sm:px-3"
-                      onClick={() => {
-                        setSelectedStudent(student);
-                        setActionType("reject");
-                      }}
-                    >
-                      <UserX className="h-4 w-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Rejeitar</span>
-                    </Button>
-                  </div>
-                </TableCell>
-              )}
-              {showManage && (
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => {
-                        setEditStudent(student);
-                        setEditName(student.name);
-                        setEditPhone(student.phone || "");
-                        setEditBelt((student.belt_grade as BeltGrade) || "branca");
-                        setEditBirthDate(student.birth_date || "");
-                        setEditGuardianName(student.guardian_name || "");
-                        setEditGuardianPhone(student.guardian_phone || "");
-                        setEditGuardianEmail(student.guardian_email || "");
-                        // Load student belts from cached data
-                        const belts = (allStudentBelts || []).filter(b => b.user_id === student.user_id);
-                        // We need belt IDs - fetch them
-                        supabase.from("student_belts").select("id, martial_art, belt_grade").eq("user_id", student.user_id).then(({ data }) => {
-                          setEditStudentBelts(data || []);
-                        });
-                      }}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        setResetPwStudent(student);
-                        setNewPassword("");
-                      }}>
-                        <KeyRound className="h-4 w-4 mr-2" />
-                        Redefinir senha
-                      </DropdownMenuItem>
-                      {(student.guardian_email || student.guardian_user_id || student.guardian_name || student.guardian_phone) && (
-                        <DropdownMenuItem onClick={async () => {
-                          setGuardianInfoStudent(student);
-                          setGuardianProfile(null);
-                          if (student.guardian_user_id) {
-                            setGuardianLoading(true);
-                            const { data } = await supabase
-                              .from("profiles")
-                              .select("*")
-                              .eq("user_id", student.guardian_user_id)
-                              .maybeSingle();
-                            setGuardianProfile(data);
-                            setGuardianLoading(false);
-                          }
-                        }}>
-                          <Users className="h-4 w-4 mr-2" />
-                          Ver Responsável
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem onClick={() => {
-                        setBlockStudent(student);
-                        setBlockReason(student.blocked_reason || "");
-                      }}>
-                        {student.is_blocked ? (
-                          <><Unlock className="h-4 w-4 mr-2" />Desbloquear</>
-                        ) : (
-                          <><Ban className="h-4 w-4 mr-2" />Bloquear</>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => setDeleteStudent(student)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir do sistema
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              )}
-              {showPermanentDelete && (
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8"
-                    onClick={() => setPermanentDeleteStudent(student)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Excluir</span>
-                  </Button>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
+  const handlePermanentDelete = async () => {
+    if (!permanentDeleteStudent) return;
+    setActionLoading(true);
+    try {
+      const { error: rpcError } = await supabase.rpc("delete_student_cascade", { target_user_id: permanentDeleteStudent.user_id });
+      if (rpcError) throw rpcError;
+      await supabase.functions.invoke("delete-user", { body: { userId: permanentDeleteStudent.user_id } });
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast({ title: "Aluno excluído permanentemente", description: `${permanentDeleteStudent.name} foi removido completamente.` });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Erro ao excluir aluno";
+      toast({ title: "Erro", description: msg, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+      setPermanentDeleteStudent(null);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPwStudent || !newPassword.trim()) return;
+    setActionLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { userId: resetPwStudent.user_id, newPassword: newPassword.trim() },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast({ title: "Senha redefinida!", description: `A senha de ${resetPwStudent.name} foi alterada com sucesso.` });
+      setResetPwStudent(null);
+      setNewPassword("");
+    } catch (err: any) {
+      toast({ title: "Erro ao redefinir senha", description: err.message, variant: "destructive" });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ─── Table callbacks ─────────────────────────────────────
+  const onApproveClick = (student: Profile) => {
+    setSelectedStudent(student);
+    fetchStudentBelts(student.user_id);
+    setActionType("approve");
+  };
+
+  const onRejectClick = (student: Profile) => {
+    setSelectedStudent(student);
+    setActionType("reject");
+  };
+
+  const onEditClick = (student: Profile) => {
+    setEditStudent(student);
+    setEditName(student.name);
+    setEditPhone(student.phone || "");
+    setEditBelt((student.belt_grade as BeltGrade) || "branca");
+    setEditBirthDate(student.birth_date || "");
+    setEditGuardianName(student.guardian_name || "");
+    setEditGuardianPhone(student.guardian_phone || "");
+    setEditGuardianEmail(student.guardian_email || "");
+    supabase.from("student_belts").select("id, martial_art, belt_grade").eq("user_id", student.user_id).then(({ data }) => {
+      setEditStudentBelts(data || []);
+    });
+  };
+
+  const onViewGuardianClick = async (student: Profile) => {
+    setGuardianInfoStudent(student);
+    setGuardianProfile(null);
+    if (student.guardian_user_id) {
+      setGuardianLoading(true);
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", student.guardian_user_id).maybeSingle();
+      setGuardianProfile(data);
+      setGuardianLoading(false);
+    }
+  };
+
+  // ─── Redirect if not authorized ──────────────────────────
+  if (!authLoading && !canManageStudents) {
+    navigate("/dashboard");
+    return null;
+  }
+
+  if (authLoading || isLoading) {
+    return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
+  }
+
+  const pendingStudents = students?.filter((s) => s.registration_status === "pendente") || [];
+  const approvedStudents = students?.filter((s) => s.registration_status === "aprovado" && !s.is_blocked) || [];
+  const blockedStudents = students?.filter((s) => s.registration_status === "aprovado" && s.is_blocked) || [];
+  const rejectedStudents = students?.filter((s) => s.registration_status === "rejeitado") || [];
+
+  const toggleGuardianExpanded = (guardianId: string) => {
+    setExpandedGuardians((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(guardianId)) newSet.delete(guardianId); else newSet.add(guardianId);
+      return newSet;
+    });
+  };
 
   const EmptyState = ({ message }: { message: string }) => (
     <div className="text-center py-8 text-muted-foreground">
@@ -1000,20 +564,33 @@ export default function Students() {
     </div>
   );
 
+  const tableProps = {
+    isMultiArt,
+    getStudentBelt,
+    getStudentPaymentStatus,
+    onApprove: onApproveClick,
+    onReject: onRejectClick,
+    onEdit: onEditClick,
+    onResetPassword: (s: Profile) => { setResetPwStudent(s); setNewPassword(""); },
+    onViewGuardian: onViewGuardianClick,
+    onBlock: (s: Profile) => { setBlockStudent(s); setBlockReason(s.blocked_reason || ""); },
+    onDelete: setDeleteStudent,
+    onPermanentDelete: setPermanentDeleteStudent,
+    onToggleFederated: handleToggleFederated,
+    onToggleScholarship: handleScholarshipToggleClick,
+  };
+
   return (
     <RequireApproval>
     <DashboardLayout>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <PageHeader
-          title="Alunos"
-          description="Gerencie os alunos do dojo"
-        />
+        <PageHeader title="Alunos" description="Gerencie os alunos do dojo" />
         <StudentReportDialog />
       </div>
 
       <Tabs defaultValue="pending" className="mt-6">
         <TabsList className="flex-wrap">
-        <TabsTrigger value="pending" className="gap-1.5 text-xs sm:text-sm">
+          <TabsTrigger value="pending" className="gap-1.5 text-xs sm:text-sm">
             <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Pendentes</span>
             <span className="sm:hidden">Pend.</span>
@@ -1054,11 +631,7 @@ export default function Students() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {pendingStudents.length > 0 ? (
-                <StudentTable data={pendingStudents} showActions />
-              ) : (
-                <EmptyState message="Nenhum cadastro pendente de aprovação." />
-              )}
+              {pendingStudents.length > 0 ? <StudentTable data={pendingStudents} showActions {...tableProps} /> : <EmptyState message="Nenhum cadastro pendente de aprovação." />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1072,11 +645,7 @@ export default function Students() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {approvedStudents.length > 0 ? (
-                <StudentTable data={approvedStudents} showManage />
-              ) : (
-                <EmptyState message="Nenhum aluno aprovado ainda." />
-              )}
+              {approvedStudents.length > 0 ? <StudentTable data={approvedStudents} showManage {...tableProps} /> : <EmptyState message="Nenhum aluno aprovado ainda." />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1090,11 +659,7 @@ export default function Students() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {blockedStudents.length > 0 ? (
-                <StudentTable data={blockedStudents} showManage />
-              ) : (
-                <EmptyState message="Nenhum aluno bloqueado." />
-              )}
+              {blockedStudents.length > 0 ? <StudentTable data={blockedStudents} showManage {...tableProps} /> : <EmptyState message="Nenhum aluno bloqueado." />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1108,13 +673,7 @@ export default function Students() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {rejectedStudents.length > 0 ? (
-                <div>
-                  <StudentTable data={rejectedStudents} showPermanentDelete />
-                </div>
-              ) : (
-                <EmptyState message="Nenhum aluno excluído." />
-              )}
+              {rejectedStudents.length > 0 ? <StudentTable data={rejectedStudents} showPermanentDelete {...tableProps} /> : <EmptyState message="Nenhum aluno excluído." />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1136,10 +695,7 @@ export default function Students() {
                     const isExpanded = expandedGuardians.has(guardian.user_id);
                     return (
                       <Card key={guardian.user_id} className="border-border/50 overflow-hidden">
-                        <div
-                          className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => toggleGuardianExpanded(guardian.user_id)}
-                        >
+                        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => toggleGuardianExpanded(guardian.user_id)}>
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                               <ShieldCheck className="h-5 w-5 text-primary" />
@@ -1150,26 +706,16 @@ export default function Students() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                              {minors.length} dep.
-                            </span>
-                            {isExpanded ? (
-                              <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                            )}
+                            <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">{minors.length} dep.</span>
+                            {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                           </div>
                         </div>
-                        
                         {isExpanded && (
                           <div className="px-4 pb-4 border-t bg-muted/20">
                             <p className="text-xs font-medium text-muted-foreground py-3">Dependentes:</p>
                             <div className="space-y-2">
                               {minors.map((minor) => (
-                                <div
-                                  key={minor.user_id}
-                                  className="flex items-center justify-between p-3 bg-background rounded-lg border border-border/50"
-                                >
+                                <div key={minor.user_id} className="flex items-center justify-between p-3 bg-background rounded-lg border border-border/50">
                                   <div className="flex items-center gap-2 min-w-0">
                                     <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                     <div className="min-w-0">
@@ -1198,494 +744,73 @@ export default function Students() {
         </TabsContent>
       </Tabs>
 
-      {/* Confirmation Dialog */}
-      <AlertDialog open={!!actionType} onOpenChange={() => { setActionType(null); setSelectedStudent(null); setApprovalBelts([]); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {actionType === "approve" ? "Aprovar Aluno" : "Rejeitar Cadastro"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {actionType === "approve"
-                ? `Tem certeza que deseja aprovar o cadastro de ${selectedStudent?.name}? O aluno poderá acessar o sistema.`
-                : `Tem certeza que deseja rejeitar o cadastro de ${selectedStudent?.name}?`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+      {/* All dialogs */}
+      <ApprovalDialog
+        actionType={actionType}
+        selectedStudent={selectedStudent}
+        approvalBelts={approvalBelts}
+        loadingBelts={loadingBelts}
+        actionLoading={actionLoading}
+        onClose={() => { setActionType(null); setSelectedStudent(null); setApprovalBelts([]); }}
+        onApprove={handleApprove}
+        onReject={handleReject}
+        onBeltChange={(idx, v) => setApprovalBelts(prev => prev.map((b, i) => i === idx ? { ...b, belt_grade: v } : b))}
+      />
 
-          {/* Belt selector - only on approve */}
-          {actionType === "approve" && (
-            <div className="space-y-3 py-2">
-              <label className="text-sm font-medium">Confirmação de Faixa(s)</label>
-              {loadingBelts ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando faixas...
-                </div>
-              ) : approvalBelts.length > 0 ? (
-                approvalBelts.map((belt, idx) => (
-                  <div key={belt.martial_art} className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground">
-                      🥋 {MARTIAL_ART_LABELS[belt.martial_art] || belt.martial_art}
-                    </label>
-                    <Select
-                      value={belt.belt_grade}
-                      onValueChange={(v) => {
-                        setApprovalBelts((prev) =>
-                          prev.map((b, i) => i === idx ? { ...b, belt_grade: v as BeltGrade } : b)
-                        );
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(BELT_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-foreground">Nenhuma faixa registrada.</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Confirme a(s) faixa(s) do aluno antes de aprovar.
-              </p>
-            </div>
-          )}
+      <ScholarshipDialog
+        student={scholarshipConfirm}
+        onClose={() => setScholarshipConfirm(null)}
+        onKeep={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, false)}
+        onCancel={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, true)}
+      />
 
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={actionType === "approve" ? handleApprove : handleReject}
-              className={actionType === "approve" ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}
-              disabled={actionLoading}
-            >
-              {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {actionType === "approve" ? "Aprovar" : "Rejeitar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EditStudentDialog
+        student={editStudent}
+        editName={editName} editPhone={editPhone} editBelt={editBelt} editBirthDate={editBirthDate}
+        editStudentBelts={editStudentBelts} editGuardianName={editGuardianName}
+        editGuardianPhone={editGuardianPhone} editGuardianEmail={editGuardianEmail}
+        actionLoading={actionLoading}
+        onClose={() => setEditStudent(null)}
+        onSave={handleEditStudent}
+        onDeleteBelt={handleDeleteBelt}
+        setEditName={setEditName} setEditPhone={setEditPhone} setEditBelt={setEditBelt}
+        setEditBirthDate={setEditBirthDate} setEditStudentBelts={setEditStudentBelts}
+        setEditGuardianName={setEditGuardianName} setEditGuardianPhone={setEditGuardianPhone}
+        setEditGuardianEmail={setEditGuardianEmail}
+      />
 
-      {/* Scholarship Confirmation Dialog */}
-      <AlertDialog open={!!scholarshipConfirm} onOpenChange={(open) => { if (!open) setScholarshipConfirm(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Marcar como bolsista</AlertDialogTitle>
-            <AlertDialogDescription>
-              {scholarshipConfirm?.name} possui mensalidades pendentes. Deseja cancelá-las ao marcá-lo como bolsista?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <Button
-              variant="outline"
-              onClick={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, false)}
-            >
-              Manter pendentes
-            </Button>
-            <AlertDialogAction
-              onClick={() => scholarshipConfirm && handleToggleScholarship(scholarshipConfirm, true)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Cancelar pendentes
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <BlockStudentDialog
+        student={blockStudent} blockReason={blockReason} actionLoading={actionLoading}
+        onClose={() => { setBlockStudent(null); setBlockReason(""); }}
+        onConfirm={handleBlockStudent} setBlockReason={setBlockReason}
+      />
 
-      {/* Edit Student Dialog */}
-      <Dialog open={!!editStudent} onOpenChange={(open) => { if (!open) setEditStudent(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Aluno</DialogTitle>
-            <DialogDescription>Atualize as informações do aluno.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Nome</Label>
-              <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="(00) 00000-0000" />
-            </div>
-            <div className="space-y-2">
-              <Label>Data de Nascimento</Label>
-              <Input type="date" value={editBirthDate} onChange={(e) => setEditBirthDate(e.target.value)} />
-            </div>
-            {editStudentBelts.length > 0 ? (
-              <div className="space-y-2">
-                <Label>Faixas por Arte Marcial</Label>
-                {editStudentBelts.map((belt, idx) => (
-                  <div key={belt.id || idx} className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground w-20 shrink-0">
-                      {belt.martial_art === "judo" ? "Judô" : belt.martial_art === "bjj" ? "Jiu-Jitsu" : belt.martial_art}
-                    </span>
-                    <Select
-                      value={belt.belt_grade}
-                      onValueChange={(v) => {
-                        setEditStudentBelts(prev => prev.map((b, i) => i === idx ? { ...b, belt_grade: v } : b));
-                      }}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(BELT_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>{label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive shrink-0"
-                      onClick={() => belt.id && handleDeleteBelt(belt.id, belt.martial_art)}
-                      title="Remover faixa"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Label>Faixa</Label>
-                <Select value={editBelt} onValueChange={(v) => setEditBelt(v as BeltGrade)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(BELT_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            {/* Guardian Info Section */}
-            <div className="pt-2 border-t">
-              <p className="text-sm font-medium text-muted-foreground mb-3">Dados do Responsável</p>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Nome do Responsável</Label>
-                  <Input value={editGuardianName} onChange={(e) => setEditGuardianName(e.target.value)} placeholder="Nome completo" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Telefone do Responsável</Label>
-                  <Input value={editGuardianPhone} onChange={(e) => setEditGuardianPhone(e.target.value)} placeholder="(00) 00000-0000" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Email do Responsável</Label>
-                  <Input type="email" value={editGuardianEmail} onChange={(e) => setEditGuardianEmail(e.target.value)} placeholder="email@exemplo.com" />
-                </div>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditStudent(null)}>Cancelar</Button>
-            <Button onClick={handleEditStudent} disabled={actionLoading}>
-              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Salvar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteStudentDialog student={deleteStudent} actionLoading={actionLoading} onClose={() => setDeleteStudent(null)} onConfirm={handleDeleteStudent} />
+      <DeleteStudentDialog student={permanentDeleteStudent} actionLoading={actionLoading} onClose={() => setPermanentDeleteStudent(null)} onConfirm={handlePermanentDelete} permanent />
 
-      {/* Block Student Dialog */}
-      <AlertDialog open={!!blockStudent} onOpenChange={(open) => { if (!open) { setBlockStudent(null); setBlockReason(""); } }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {blockStudent?.is_blocked ? "Desbloquear Aluno" : "Bloquear Aluno"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {blockStudent?.is_blocked
-                ? `Deseja desbloquear ${blockStudent?.name}? O aluno poderá acessar o sistema novamente.`
-                : `Deseja bloquear ${blockStudent?.name}? O aluno não poderá acessar o sistema.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {!blockStudent?.is_blocked && (
-            <div className="space-y-2 py-2">
-              <Label>Motivo do bloqueio (opcional)</Label>
-              <Textarea
-                value={blockReason}
-                onChange={(e) => setBlockReason(e.target.value)}
-                placeholder="Ex: Inadimplência, indisciplina..."
-                rows={2}
-              />
-            </div>
-          )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleBlockStudent}
-              disabled={actionLoading}
-              className={blockStudent?.is_blocked ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-destructive hover:bg-destructive/90 text-destructive-foreground"}
-            >
-              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              {blockStudent?.is_blocked ? "Desbloquear" : "Bloquear"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <EnrollmentDialog
+        student={enrollStudent} availableClasses={availableClasses}
+        selectedClassIds={selectedClassIds} enrollLoading={enrollLoading}
+        onClose={() => setEnrollStudent(null)} onEnroll={handleEnrollAfterApproval}
+        setSelectedClassIds={setSelectedClassIds}
+      />
 
-      {/* Delete Student Dialog */}
-      <AlertDialog open={!!deleteStudent} onOpenChange={(open) => { if (!open) setDeleteStudent(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Aluno</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir {deleteStudent?.name} do sistema? O aluno será movido para a aba de rejeitados e perderá o acesso.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteStudent}
-              disabled={actionLoading}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-            >
-              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CrossArtBeltDialog
+        dialog={crossArtDialog} crossArtBelts={crossArtBelts} enrollLoading={enrollLoading}
+        onClose={() => setCrossArtDialog(null)} onConfirm={handleCrossArtConfirm}
+        setCrossArtBelts={setCrossArtBelts}
+      />
 
-      {/* Enrollment After Approval Dialog */}
-      <Dialog open={!!enrollStudent} onOpenChange={(open) => { if (!open) setEnrollStudent(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
-              Matricular em Turma
-            </DialogTitle>
-            <DialogDescription>
-              {enrollStudent?.name} foi aprovado! Selecione as turmas para matriculá-lo.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2 max-h-[300px] overflow-y-auto">
-            {availableClasses.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma turma disponível.</p>
-            ) : (
-              availableClasses.map((cls) => (
-                <label
-                  key={cls.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/60 hover:bg-muted/30 cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={selectedClassIds.has(cls.id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedClassIds((prev) => {
-                        const next = new Set(prev);
-                        if (checked) next.add(cls.id);
-                        else next.delete(cls.id);
-                        return next;
-                      });
-                    }}
-                  />
-                  <div>
-                    <p className="text-sm font-medium">{cls.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {MARTIAL_ART_CLASS_LABELS[cls.martial_art] || cls.martial_art}
-                    </p>
-                  </div>
-                </label>
-              ))
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEnrollStudent(null)}>Pular</Button>
-            <Button
-              onClick={handleEnrollAfterApproval}
-              disabled={enrollLoading || selectedClassIds.size === 0}
-            >
-              {enrollLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Matricular ({selectedClassIds.size})
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ResetPasswordDialog
+        student={resetPwStudent} newPassword={newPassword} actionLoading={actionLoading}
+        onClose={() => { setResetPwStudent(null); setNewPassword(""); }}
+        onConfirm={handleResetPassword} setNewPassword={setNewPassword}
+      />
 
-      {/* Cross-Art Belt Assignment Dialog */}
-      <Dialog open={!!crossArtDialog} onOpenChange={(open) => { if (!open) setCrossArtDialog(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-accent" />
-              Definir Faixa em Nova Arte
-            </DialogTitle>
-            <DialogDescription>
-              {crossArtDialog?.student.name} será matriculado em uma turma de arte marcial diferente. Defina a faixa inicial.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            {crossArtDialog?.missingArts.map((art) => (
-              <div key={art} className="space-y-2">
-                <Label className="text-sm font-medium">
-                  🥋 {MARTIAL_ART_LABELS[art] || art}
-                </Label>
-                <Select
-                  value={crossArtBelts[art] || "branca"}
-                  onValueChange={(v) => setCrossArtBelts(prev => ({ ...prev, [art]: v as BeltGrade }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(BELT_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        <div className="flex items-center gap-2">
-                          <BeltBadge grade={value} size="sm" martialArt={art} />
-                          <span>{label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCrossArtDialog(null)}>Cancelar</Button>
-            <Button onClick={handleCrossArtConfirm} disabled={enrollLoading}>
-              {enrollLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmar e Matricular
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      {/* Permanent Delete Dialog */}
-      <AlertDialog open={!!permanentDeleteStudent} onOpenChange={(open) => !open && setPermanentDeleteStudent(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é irreversível. Todos os dados de <strong>{permanentDeleteStudent?.name}</strong> serão removidos permanentemente, incluindo presenças, pagamentos, conquistas e XP.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handlePermanentDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={actionLoading}
-            >
-              {actionLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Excluir Permanentemente
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Reset Password Dialog */}
-      <Dialog open={!!resetPwStudent} onOpenChange={(open) => { if (!open) { setResetPwStudent(null); setNewPassword(""); } }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-accent" />
-              Redefinir Senha
-            </DialogTitle>
-            <DialogDescription>
-              Digite a nova senha para <strong>{resetPwStudent?.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); handleResetPassword(); }} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">Nova senha</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                minLength={6}
-                autoFocus
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setResetPwStudent(null); setNewPassword(""); }}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={actionLoading || newPassword.trim().length < 6}>
-                {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Salvar nova senha
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Guardian Info Dialog */}
-      <Dialog open={!!guardianInfoStudent} onOpenChange={(open) => { if (!open) setGuardianInfoStudent(null); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-accent" />
-              Responsável de {guardianInfoStudent?.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            {guardianLoading ? (
-              <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-            ) : (
-              <>
-                {/* Guardian name from profile metadata */}
-                {guardianInfoStudent?.guardian_name && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{guardianInfoStudent.guardian_name}</span>
-                  </div>
-                )}
-                {guardianInfoStudent?.guardian_email && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{guardianInfoStudent.guardian_email}</span>
-                  </div>
-                )}
-                {guardianInfoStudent?.guardian_phone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="h-4 w-4 text-muted-foreground">📱</span>
-                    <span>{guardianInfoStudent.guardian_phone}</span>
-                  </div>
-                )}
-                {/* Fallback to linked guardian profile if exists */}
-                {guardianProfile && (
-                  <>
-                    {!guardianInfoStudent?.guardian_name && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span>{guardianProfile.name}</span>
-                      </div>
-                    )}
-                    {!guardianInfoStudent?.guardian_phone && guardianProfile.phone && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="h-4 w-4 text-muted-foreground">📱</span>
-                        <span>{guardianProfile.phone}</span>
-                      </div>
-                    )}
-                    {!guardianInfoStudent?.guardian_email && guardianProfile.email && (
-                      <div className="flex items-center gap-3 text-sm">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <span>{guardianProfile.email}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                {!guardianProfile && !guardianInfoStudent?.guardian_email && !guardianInfoStudent?.guardian_name && !guardianInfoStudent?.guardian_phone && (
-                  <p className="text-sm text-muted-foreground">Nenhum dado de responsável encontrado.</p>
-                )}
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <GuardianInfoDialog
+        student={guardianInfoStudent} guardianProfile={guardianProfile}
+        guardianLoading={guardianLoading} onClose={() => setGuardianInfoStudent(null)}
+      />
     </DashboardLayout>
     </RequireApproval>
   );
