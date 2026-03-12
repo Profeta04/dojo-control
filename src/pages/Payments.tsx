@@ -35,6 +35,7 @@ import { ReceiptStatusBadge } from "@/components/payments/ReceiptStatusBadge";
 import { ExportFinancialReportButton } from "@/components/payments/ExportFinancialReportButton";
 import { MonthlyFeePlans } from "@/components/payments/MonthlyFeePlans";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { format, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PaymentStatus, PAYMENT_STATUS_LABELS, ReceiptStatus, PaymentCategory, PAYMENT_CATEGORY_LABELS } from "@/lib/constants";
