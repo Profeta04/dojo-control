@@ -10,8 +10,8 @@ const BATCH_SIZE = 200;
 
 type SupabaseTable = Parameters<typeof supabase.from>[0];
 
-interface BatchedInQueryOptions<T> {
-  table: SupabaseTable;
+interface BatchedInQueryOptions {
+  table: string;
   column: string;
   values: string[];
   select?: string;
