@@ -191,7 +191,7 @@ export function AnnouncementsBanner() {
   if (!hasAnnouncements && !canManageStudents) return null;
 
   return (
-    <Card className="mb-6">
+    <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-md">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
