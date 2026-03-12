@@ -65,21 +65,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async (userId: string) => {
     try {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+      // Fetch profile and roles in parallel
+      const [profileResult, rolesResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .single(),
+        supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userId),
+      ]);
 
-      setProfile(profileData);
+      setProfile(profileResult.data);
 
-      const { data: rolesData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-
-      if (rolesData) {
-        setRoles(rolesData.map((r) => r.role));
+      if (rolesResult.data) {
+        setRoles(rolesResult.data.map((r) => r.role));
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
@@ -120,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles([]);
   };
 
-  const isAdmin = roles.includes("admin");
+  const isAdmin = roles.includes("admin") || roles.includes("dono") || roles.includes("super_admin");
   const isSensei = roles.includes("sensei");
   const isStudent = roles.includes("student");
   const canManageStudents = isAdmin || isSensei;
