@@ -169,9 +169,11 @@ export function useLeaderboard() {
     staleTime: 30_000,
   });
 
-  // Realtime for XP changes
+  // Realtime for XP changes — debounced to avoid excessive refetches
   useEffect(() => {
     if (!effectiveDojoId) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
 
     const channel = supabase
       .channel(`leaderboard-${effectiveDojoId}`)
@@ -179,12 +181,15 @@ export function useLeaderboard() {
         "postgres_changes",
         { event: "*", schema: "public", table: "student_xp" },
         () => {
-          refetch();
+          // Debounce: multiple XP changes in quick succession only trigger one refetch
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => refetch(), 1000);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, [effectiveDojoId, refetch]);
