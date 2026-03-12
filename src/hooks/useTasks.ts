@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useDojoContext } from "./useDojoContext";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { batchedInQuery } from "@/lib/batchedQuery";
 
 export type TaskStatus = "pendente" | "concluida" | "cancelada";
 export type TaskPriority = "baixa" | "normal" | "alta";
