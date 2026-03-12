@@ -84,14 +84,15 @@ export function useTasks() {
         const studentIds = (dojoProfiles || []).map(p => p.user_id);
         if (studentIds.length === 0) return [];
 
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .in("assigned_to", studentIds)
-          .order("created_at", { ascending: false })
-          .limit(500);
-        if (error) throw error;
-        return enrichTasks(data || []);
+        const data = await batchedInQuery({
+          table: "tasks",
+          column: "assigned_to",
+          values: studentIds,
+          select: "*",
+          orderBy: { column: "created_at", ascending: false },
+          limit: 500,
+        });
+        return enrichTasks(data);
       }
 
       // Admin without dojo filter: all tasks (limited)
