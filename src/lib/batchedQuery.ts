@@ -8,8 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
  */
 const BATCH_SIZE = 200;
 
-type SupabaseTable = Parameters<typeof supabase.from>[0];
-
 interface BatchedInQueryOptions {
   table: string;
   column: string;
@@ -31,9 +29,17 @@ export async function batchedInQuery<T = any>({
 }: BatchedInQueryOptions): Promise<T[]> {
   if (values.length === 0) return [];
 
+  const runChunk = async (chunk: string[]): Promise<T[]> => {
+    let query = (supabase.from as any)(table).select(select).in(column, chunk);
+    if (additionalFilters) query = additionalFilters(query);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []) as T[];
+  };
+
   // If small enough, do a single query
   if (values.length <= BATCH_SIZE) {
-    let query = supabase.from(table).select(select).in(column, values);
+    let query = (supabase.from as any)(table).select(select).in(column, values);
     if (additionalFilters) query = additionalFilters(query);
     if (orderBy) query = query.order(orderBy.column, { ascending: orderBy.ascending ?? true });
     if (limit) query = query.limit(limit);
@@ -48,17 +54,7 @@ export async function batchedInQuery<T = any>({
     chunks.push(values.slice(i, i + BATCH_SIZE));
   }
 
-  const results = await Promise.all(
-    chunks.map(async (chunk) => {
-      let query = supabase.from(table).select(select).in(column, chunk);
-      if (additionalFilters) query = additionalFilters(query);
-      // Don't apply limit per chunk - apply after merge
-      const { data, error } = await query;
-      if (error) throw error;
-      return (data || []) as T[];
-    })
-  );
-
+  const results = await Promise.all(chunks.map(runChunk));
   let merged = results.flat();
 
   // Sort after merge if needed
