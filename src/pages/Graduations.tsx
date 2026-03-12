@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Award, Plus, ChevronRight, History, Loader2, User, GraduationCap, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tables } from "@/integrations/supabase/types";
+import { batchedInQuery } from "@/lib/batchedQuery";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BeltGrade, BELT_LABELS, BJJ_DEGREE_BELTS, BJJ_BELT_ORDER, JUDO_BELT_ORDER, getBjjBeltLabel } from "@/lib/constants";
