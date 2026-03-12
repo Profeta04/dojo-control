@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { useDojoContext } from "./useDojoContext";
 import { useEffect } from "react";
+import { batchedInQuery } from "@/lib/batchedQuery";
+import { useEffect } from "react";
 
 export interface LeaderboardEntry {
   user_id: string;
