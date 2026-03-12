@@ -168,12 +168,13 @@ export default function Students() {
     queryKey: ["student-payment-status", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
       if (studentUserIds.length === 0) return [];
-      const { data } = await supabase
-        .from("payments")
-        .select("student_id, status, due_date")
-        .in("student_id", studentUserIds)
-        .order("due_date", { ascending: false });
-      return data || [];
+      return batchedInQuery({
+        table: "payments",
+        column: "student_id",
+        values: studentUserIds,
+        select: "student_id, status, due_date",
+        orderBy: { column: "due_date", ascending: false },
+      });
     },
     enabled: studentUserIds.length > 0,
   });
