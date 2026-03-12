@@ -345,26 +345,27 @@ export function AttendanceTab() {
       }
 
       // Execute bulk operations in parallel
-      const ops: Promise<any>[] = [];
+      const ops: Promise<void>[] = [];
 
       if (toInsert.length > 0) {
         ops.push(
-          supabase.from("attendance").insert(toInsert).then(({ error }) => {
+          (async () => {
+            const { error } = await supabase.from("attendance").insert(toInsert);
             if (error) throw error;
-          })
+          })()
         );
       }
 
       // Updates must be individual due to different IDs, but we run them in parallel
       for (const upd of toUpdate) {
         ops.push(
-          supabase
-            .from("attendance")
-            .update({ present: upd.present, notes: upd.notes, marked_by: upd.marked_by })
-            .eq("id", upd.id)
-            .then(({ error }) => {
-              if (error) throw error;
-            })
+          (async () => {
+            const { error } = await supabase
+              .from("attendance")
+              .update({ present: upd.present, notes: upd.notes, marked_by: upd.marked_by })
+              .eq("id", upd.id);
+            if (error) throw error;
+          })()
         );
       }
 
