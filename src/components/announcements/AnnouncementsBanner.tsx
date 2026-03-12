@@ -346,24 +346,6 @@ export function AnnouncementsBanner() {
                         <Download className="h-3.5 w-3.5 flex-shrink-0" />
                       </a>
                     )}
-                    <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
-                      <span>{ann.author_name}</span>
-                      <span>•</span>
-                      <span>
-                        {format(new Date(ann.created_at), "dd MMM yyyy", {
-                          locale: ptBR,
-                        })}
-                      </span>
-                      {ann.expires_at && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center gap-0.5">
-                            <CalendarClock className="h-3 w-3" />
-                            Expira {format(new Date(ann.expires_at), "dd/MM/yyyy")}
-                          </span>
-                        </>
-                      )}
-                    </div>
                   </div>
                 </CarouselItem>
               ))}
