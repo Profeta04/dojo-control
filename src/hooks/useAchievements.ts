@@ -53,7 +53,7 @@ export function useAchievements(targetUserId?: string) {
     },
   });
 
-  // Fetch user's unlocked achievements
+  // Fetch user's unlocked achievements — depends on allAchievements being loaded
   const { data: unlockedAchievements = [], isLoading } = useQuery({
     queryKey: ["student-achievements", userId],
     queryFn: async () => {
@@ -66,24 +66,16 @@ export function useAchievements(targetUserId?: string) {
 
       if (error) throw error;
 
-      // Enrich with achievement details
+      // Enrich with achievement details from already-loaded definitions
       const achievementMap = new Map<string, Achievement>();
-      if (allAchievements.length > 0) {
-        allAchievements.forEach((a) => achievementMap.set(a.id, a));
-      } else {
-        // Fetch if not loaded yet
-        const { data: achData } = await supabase
-          .from("achievements")
-          .select("*");
-        achData?.forEach((a) => achievementMap.set(a.id, a as Achievement));
-      }
+      allAchievements.forEach((a) => achievementMap.set(a.id, a));
 
       return (data as StudentAchievement[]).map((sa) => ({
         ...sa,
         achievement: achievementMap.get(sa.achievement_id),
       }));
     },
-    enabled: !!userId,
+    enabled: !!userId && allAchievements.length > 0,
   });
 
   // Realtime for new achievements

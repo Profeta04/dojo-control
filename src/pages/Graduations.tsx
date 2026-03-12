@@ -126,12 +126,12 @@ export default function GraduationsPage() {
     queryFn: async () => {
       const studentIds = students?.map(s => s.user_id) || [];
       if (studentIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("student_belts")
-        .select("user_id, martial_art, belt_grade, degree")
-        .in("user_id", studentIds);
-      if (error) throw error;
-      return data || [];
+      return batchedInQuery({
+        table: "student_belts",
+        column: "user_id",
+        values: studentIds,
+        select: "user_id, martial_art, belt_grade, degree",
+      });
     },
     enabled: !!students && students.length > 0,
   });

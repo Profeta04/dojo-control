@@ -133,9 +133,15 @@ export function useTasks() {
     })) as TaskWithAssignee[];
   }
 
-  // Real-time subscription
+  // Real-time subscription — debounced, filtered by user for students
   useEffect(() => {
     if (!user) return;
+
+    let debounceTimer: ReturnType<typeof setTimeout>;
+
+    const filter = isStudent && !canManageStudents
+      ? `assigned_to=eq.${user.id}`
+      : undefined;
 
     const channel = supabase
       .channel("tasks-changes")
@@ -145,17 +151,20 @@ export function useTasks() {
           event: "*",
           schema: "public",
           table: "tasks",
+          ...(filter ? { filter } : {}),
         },
         () => {
-          refetch();
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => refetch(), 800);
         }
       )
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [user, refetch]);
+  }, [user, isStudent, canManageStudents, refetch]);
 
   // Task creation removed — tasks are managed via curriculum (admin-only DB inserts)
 
