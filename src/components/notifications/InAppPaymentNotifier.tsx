@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDojoContext } from "@/hooks/useDojoContext";
 import { toast } from "sonner";
 import { CreditCard, AlertTriangle } from "lucide-react";
 
@@ -11,6 +11,7 @@ import { CreditCard, AlertTriangle } from "lucide-react";
  */
 export function InAppPaymentNotifier() {
   const { user, canManageStudents } = useAuth();
+  const { currentDojoId } = useDojoContext();
   const shownIds = useRef<Set<string>>(new Set());
 
   // For students: watch their own payments for status changes
@@ -108,9 +109,9 @@ export function InAppPaymentNotifier() {
     };
   }, [user, canManageStudents]);
 
-  // For senseis: receipt submitted by students
+  // For senseis: receipt submitted by students (filtered by dojo)
   useEffect(() => {
-    if (!user || !canManageStudents) return;
+    if (!user || !canManageStudents || !currentDojoId) return;
 
     const channel = supabase
       .channel("receipt-submissions-sensei")
@@ -121,22 +122,31 @@ export function InAppPaymentNotifier() {
           schema: "public",
           table: "payments",
         },
-        (payload) => {
+        async (payload) => {
           const newRow = payload.new as any;
           const oldRow = payload.old as any;
 
           if (
-            newRow.receipt_status === "pendente_verificacao" &&
-            oldRow.receipt_status !== "pendente_verificacao" &&
-            !shownIds.current.has(newRow.id + "receipt")
-          ) {
-            shownIds.current.add(newRow.id + "receipt");
-            toast.info("Novo comprovante recebido 📄", {
-              description: "Um aluno enviou um comprovante de pagamento para verificação.",
-              duration: 6000,
-              icon: <CreditCard className="h-5 w-5 text-primary" />,
-            });
-          }
+            newRow.receipt_status !== "pendente_verificacao" ||
+            oldRow.receipt_status === "pendente_verificacao" ||
+            shownIds.current.has(newRow.id + "receipt")
+          ) return;
+
+          // Filter by dojo: check if the student belongs to current dojo
+          const { data: studentProfile } = await supabase
+            .from("profiles")
+            .select("dojo_id")
+            .eq("user_id", newRow.student_id)
+            .single();
+
+          if (!studentProfile || studentProfile.dojo_id !== currentDojoId) return;
+
+          shownIds.current.add(newRow.id + "receipt");
+          toast.info("Novo comprovante recebido 📄", {
+            description: "Um aluno enviou um comprovante de pagamento para verificação.",
+            duration: 6000,
+            icon: <CreditCard className="h-5 w-5 text-primary" />,
+          });
         }
       )
       .subscribe();
@@ -144,7 +154,7 @@ export function InAppPaymentNotifier() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, canManageStudents]);
+  }, [user, canManageStudents, currentDojoId]);
 
   return null;
 }

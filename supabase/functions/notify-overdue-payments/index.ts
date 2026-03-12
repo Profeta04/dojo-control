@@ -4,7 +4,6 @@ import {
 } from "../_shared/validation.ts";
 
 Deno.serve(createHandler(async (req) => {
-  // Only allow service role or anon key (internal cron calls)
   const auth = await verifyAuth(req);
   if (auth instanceof Response) return auth;
 
@@ -37,12 +36,37 @@ Deno.serve(createHandler(async (req) => {
     }
   }
 
-  let notified = 0;
+  // Insert in-app notifications in batch
+  const notificationRows = [];
+  const pushPayloads = [];
+
   for (const [studentId, info] of studentMap) {
     const body = info.count === 1
       ? "Você possui 1 pagamento em atraso. Regularize para evitar bloqueio."
       : `Você possui ${info.count} pagamentos em atraso. Regularize para evitar bloqueio.`;
 
+    notificationRows.push({
+      user_id: studentId,
+      title: "⚠️ Pagamento em Atraso",
+      message: body,
+      type: "payment",
+    });
+
+    pushPayloads.push({ studentId, body });
+  }
+
+  // Batch insert in-app notifications
+  if (notificationRows.length > 0) {
+    await supabaseAdmin.from("notifications").insert(notificationRows);
+  }
+
+  // Batch push notification — single call with all userIds
+  const allStudentIds = [...studentMap.keys()];
+  let sent = 0;
+
+  // Send in chunks of 500 to stay within limits
+  for (let i = 0; i < allStudentIds.length; i += 500) {
+    const chunk = allStudentIds.slice(i, i + 500);
     try {
       const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
         method: "POST",
@@ -51,28 +75,25 @@ Deno.serve(createHandler(async (req) => {
           Authorization: `Bearer ${serviceRoleKey}`,
         },
         body: JSON.stringify({
-          userId: studentId,
+          userIds: chunk,
           title: "⚠️ Pagamento em Atraso",
-          body,
+          body: "Você possui pagamentos em atraso. Regularize para evitar bloqueio.",
           url: "/mensalidade",
           icon: "/favicon.png",
         }),
       });
 
       if (pushRes.ok) {
-        await supabaseAdmin.from("notifications").insert({
-          user_id: studentId,
-          title: "⚠️ Pagamento em Atraso",
-          message: body,
-          type: "payment",
-        });
-        notified++;
+        const result = await pushRes.json();
+        sent += result.sent || 0;
+      } else {
+        await pushRes.text();
       }
     } catch {
-      // Continue with other students
+      // Continue
     }
   }
 
-  safeLog("OVERDUE_NOTIFICATIONS_SENT", { notified, total: studentMap.size });
-  return jsonResponse({ notified, total: studentMap.size });
+  safeLog("OVERDUE_NOTIFICATIONS_SENT", { notified: sent, total: studentMap.size });
+  return jsonResponse({ notified: sent, total: studentMap.size });
 }, { rateLimit: false }));

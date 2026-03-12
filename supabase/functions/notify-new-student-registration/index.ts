@@ -5,7 +5,6 @@ import {
 } from "../_shared/validation.ts";
 
 Deno.serve(createHandler(async (req) => {
-  // Any authenticated user can trigger this (newly registered student)
   const auth = await verifyAuth(req);
   if (auth instanceof Response) return auth;
 
@@ -42,35 +41,43 @@ Deno.serve(createHandler(async (req) => {
     return jsonResponse({ notified: 0, message: "No staff found for this dojo" });
   }
 
+  // Batch insert in-app notifications
+  const allStaffIds = [...staffUserIds];
+  const notificationRows = allStaffIds.map((userId) => ({
+    user_id: userId,
+    title: "🆕 Novo Cadastro Pendente",
+    message: `${studentName} se cadastrou no dojo e aguarda aprovação.`,
+    type: "info",
+  }));
+
+  await supabaseAdmin.from("notifications").insert(notificationRows);
+
+  // Single batch push call
   let notified = 0;
-  for (const userId of staffUserIds) {
-    try {
-      const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${serviceRoleKey}`,
-        },
-        body: JSON.stringify({
-          userId,
-          title: "🆕 Novo Cadastro Pendente",
-          body: `${studentName} se cadastrou e aguarda aprovação.`,
-          url: "/students",
-          icon: "/favicon.png",
-        }),
-      });
-
-      await supabaseAdmin.from("notifications").insert({
-        user_id: userId,
+  try {
+    const pushRes = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        userIds: allStaffIds,
         title: "🆕 Novo Cadastro Pendente",
-        message: `${studentName} se cadastrou no dojo e aguarda aprovação.`,
-        type: "info",
-      });
+        body: `${studentName} se cadastrou e aguarda aprovação.`,
+        url: "/students",
+        icon: "/favicon.png",
+      }),
+    });
 
-      if (pushRes.ok) notified++;
-    } catch {
-      // Continue notifying others even if one fails
+    if (pushRes.ok) {
+      const result = await pushRes.json();
+      notified = result.sent || 0;
+    } else {
+      await pushRes.text();
     }
+  } catch {
+    // Silent
   }
 
   return jsonResponse({ notified, totalStaff: staffUserIds.size });
