@@ -193,11 +193,12 @@ export default function Students() {
     queryKey: ["all-student-belts", currentDojoId, studentUserIds.join(",")],
     queryFn: async () => {
       if (studentUserIds.length === 0) return [];
-      const { data } = await supabase
-        .from("student_belts")
-        .select("user_id, martial_art, belt_grade")
-        .in("user_id", studentUserIds);
-      return data || [];
+      return batchedInQuery({
+        table: "student_belts",
+        column: "user_id",
+        values: studentUserIds,
+        select: "user_id, martial_art, belt_grade",
+      });
     },
     enabled: studentUserIds.length > 0,
   });
