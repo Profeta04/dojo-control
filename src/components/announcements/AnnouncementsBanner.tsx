@@ -249,7 +249,7 @@ export function AnnouncementsBanner() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="pb-4 px-3">
         {!hasAnnouncements ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="h-12 w-12 rounded-full bg-muted/60 flex items-center justify-center mb-3">
