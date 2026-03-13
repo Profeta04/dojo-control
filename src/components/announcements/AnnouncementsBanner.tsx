@@ -282,7 +282,7 @@ export function AnnouncementsBanner() {
                         <img
                           src={ann.image_url}
                           alt=""
-                          className="w-full object-cover max-h-48"
+                          className="w-full object-contain"
                           loading="lazy"
                           onLoad={updateHeight}
                         />
