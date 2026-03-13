@@ -194,7 +194,7 @@ export function AnnouncementsBanner() {
   if (!hasAnnouncements && !canManageStudents) return null;
 
   return (
-    <Card className="mb-6 overflow-hidden border-0 shadow-xl bg-gradient-to-br from-primary/8 via-card to-accent/6 rounded-xl">
+    <Card className="mb-6 overflow-hidden border-0 shadow-xl rounded-xl" style={{ background: 'linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--card)), hsl(var(--accent) / 0.06))' }}>
       {/* Header with gradient accent bar */}
       <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-accent" />
       <CardHeader className="pb-2 pt-4">
