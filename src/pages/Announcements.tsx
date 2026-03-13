@@ -311,7 +311,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, expiresAt, imageFile });
+    onSubmit({ title, content, isUrgent, imageDownloadable, expiresAt, imageFile });
   };
 
   return (
