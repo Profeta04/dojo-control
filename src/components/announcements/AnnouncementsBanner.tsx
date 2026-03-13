@@ -294,6 +294,18 @@ export function AnnouncementsBanner() {
                             </Badge>
                           </div>
                         )}
+                        {(ann as any).image_downloadable && (
+                          <a
+                            href={ann.image_url}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-2 right-2 flex items-center justify-center h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-background transition-colors"
+                            title="Baixar imagem"
+                          >
+                            <ArrowDownToLine className="h-3.5 w-3.5 text-foreground" />
+                          </a>
+                        )}
                       </div>
                     )}
 
