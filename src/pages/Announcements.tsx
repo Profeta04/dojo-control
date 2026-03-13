@@ -102,7 +102,7 @@ export default function Announcements() {
         content: form.content,
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
     },
