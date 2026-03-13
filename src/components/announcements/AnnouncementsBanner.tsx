@@ -264,14 +264,14 @@ export function AnnouncementsBanner() {
             className="w-full"
             setApi={setCarouselApi}
           >
-            <CarouselContent className="items-start -ml-3">
+            <CarouselContent className="items-start -ml-1">
               {allAnnouncements.map((ann) => (
-                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-3">
+                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-1">
                   <div
-                    className={`relative rounded-xl overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md ${
+                    className={`relative overflow-hidden flex flex-col ${
                       ann.is_urgent
-                        ? "ring-1 ring-destructive/40 bg-destructive/5"
-                        : "ring-1 ring-border/50 bg-card"
+                        ? "bg-destructive/5"
+                        : ""
                     }`}
                   >
                     {/* Urgent indicator stripe */}
