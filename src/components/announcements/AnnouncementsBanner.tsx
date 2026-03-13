@@ -451,7 +451,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile, attachFile });
+    onSubmit({ title, content, isUrgent, expiresAt, imageFile, attachFile });
   };
 
   return (
