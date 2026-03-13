@@ -130,6 +130,7 @@ export function AnnouncementsBanner() {
         file_url: fileUrl,
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
       await notifyDojoStudents(
