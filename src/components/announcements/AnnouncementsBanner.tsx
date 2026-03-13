@@ -453,6 +453,7 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
+  imageDownloadable: boolean;
   expiresAt: string;
   imageFile: File | null;
   attachFile: File | null;
