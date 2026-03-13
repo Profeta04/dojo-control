@@ -162,7 +162,7 @@ export function AnnouncementsBanner() {
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
         ...(fileUrl !== undefined ? { file_url: fileUrl } : {}),
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
     },
