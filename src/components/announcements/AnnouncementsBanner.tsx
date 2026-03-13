@@ -312,7 +312,7 @@ export function AnnouncementsBanner() {
                     )}
 
                     {/* Content body */}
-                    <div className="p-3.5 flex flex-col flex-1">
+                    <div className="px-3 py-2.5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                           {ann.is_urgent && !ann.image_url && (
