@@ -10,6 +10,7 @@ export interface Announcement {
   file_url: string | null;
   is_urgent: boolean;
   is_pinned: boolean;
+  image_downloadable: boolean;
   expires_at: string | null;
   created_at: string;
   updated_at: string;
