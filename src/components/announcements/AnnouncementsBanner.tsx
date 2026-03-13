@@ -261,11 +261,11 @@ export function AnnouncementsBanner() {
             className="w-full"
             setApi={setCarouselApi}
           >
-            <CarouselContent className="items-stretch -ml-3">
+            <CarouselContent className="items-start -ml-3">
               {allAnnouncements.map((ann) => (
                 <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-3">
                   <div
-                    className={`relative rounded-xl overflow-hidden h-full flex flex-col transition-shadow duration-200 hover:shadow-md ${
+                    className={`relative rounded-xl overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md ${
                       ann.is_urgent
                         ? "ring-1 ring-destructive/40 bg-destructive/5"
                         : "ring-1 ring-border/50 bg-card"
