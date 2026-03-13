@@ -565,6 +565,18 @@ function AnnouncementForm({
           />
         )}
       </div>
+      {(preview || initial?.image_url) && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor="ann-downloadable" className="flex items-center gap-2 cursor-pointer">
+            <ArrowDownToLine className="h-4 w-4 text-primary" /> Permitir download da imagem
+          </Label>
+          <Switch
+            id="ann-downloadable"
+            checked={imageDownloadable}
+            onCheckedChange={setImageDownloadable}
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Arquivo anexo (opcional)</Label>
         <input
