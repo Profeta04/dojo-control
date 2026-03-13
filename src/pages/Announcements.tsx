@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, AlertTriangle, Image, CalendarClock, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle, Image, CalendarClock, Megaphone, ArrowDownToLine } from "lucide-react";
 import {
   fetchAnnouncements,
   createAnnouncement,
