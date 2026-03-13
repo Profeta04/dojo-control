@@ -73,6 +73,7 @@ export default function Announcements() {
         image_url: imageUrl,
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
       // Notify students
