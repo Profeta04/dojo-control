@@ -267,11 +267,6 @@ export function AnnouncementsBanner() {
                             <AlertTriangle className="h-3 w-3" /> Urgente
                           </Badge>
                         )}
-                        {ann.is_pinned && (
-                          <Badge variant="secondary" className="gap-1 text-xs">
-                            <Pin className="h-3 w-3" /> Fixado
-                          </Badge>
-                        )}
                         <span className="font-semibold text-sm">{ann.title}</span>
                       </div>
                       {canManageStudents && (
