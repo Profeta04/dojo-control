@@ -191,16 +191,23 @@ export function AnnouncementsBanner() {
   if (!hasAnnouncements && !canManageStudents) return null;
 
   return (
-    <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/5 shadow-md">
-      <CardHeader className="pb-3">
+    <Card className="mb-6 overflow-hidden border-border/40 shadow-lg">
+      {/* Header with gradient accent bar */}
+      <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-accent" />
+      <CardHeader className="pb-2 pt-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2.5 text-lg font-bold tracking-tight">
-            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-destructive/10">
-              <Megaphone className="h-5 w-5 text-destructive" />
+          <CardTitle className="flex items-center gap-2.5 text-base font-bold tracking-tight">
+            <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary/10 ring-1 ring-primary/20">
+              <Megaphone className="h-5 w-5 text-primary" />
             </div>
-            <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-              Mural de Avisos
-            </span>
+            <div>
+              <span className="text-foreground">Mural de Avisos</span>
+              {hasAnnouncements && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  {allAnnouncements.length} {allAnnouncements.length === 1 ? "aviso" : "avisos"}
+                </span>
+              )}
+            </div>
           </CardTitle>
           {canManageStudents && (
             <Dialog
@@ -211,8 +218,8 @@ export function AnnouncementsBanner() {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm" className="gap-1.5">
-                  <Plus className="h-4 w-4" /> Novo Aviso
+                <Button size="sm" className="gap-1.5 rounded-lg shadow-sm">
+                  <Plus className="h-4 w-4" /> Novo
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -239,122 +246,159 @@ export function AnnouncementsBanner() {
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-4">
         {!hasAnnouncements ? (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nenhum aviso publicado. Clique em "Novo Aviso" para criar um.
-          </p>
+          <div className="flex flex-col items-center py-8 text-center">
+            <div className="h-12 w-12 rounded-full bg-muted/60 flex items-center justify-center mb-3">
+              <Megaphone className="h-6 w-6 text-muted-foreground/40" />
+            </div>
+            <p className="text-sm text-muted-foreground">Nenhum aviso publicado.</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Clique em "Novo" para criar o primeiro aviso.</p>
+          </div>
         ) : (
           <Carousel
             opts={{ align: "start", loop: allAnnouncements.length > 1 }}
             className="w-full"
             setApi={setCarouselApi}
           >
-            <CarouselContent className="items-start">
+            <CarouselContent className="items-stretch -ml-3">
               {allAnnouncements.map((ann) => (
-                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2">
+                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-3">
                   <div
-                    className={`rounded-lg border p-3 ${
+                    className={`relative rounded-xl overflow-hidden h-full flex flex-col transition-shadow duration-200 hover:shadow-md ${
                       ann.is_urgent
-                        ? "border-destructive/50 bg-destructive/5"
-                        : "border-border/60 bg-muted/30"
+                        ? "ring-1 ring-destructive/40 bg-destructive/5"
+                        : "ring-1 ring-border/50 bg-card"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        {ann.is_urgent && (
-                          <Badge variant="destructive" className="gap-1 text-xs">
-                            <AlertTriangle className="h-3 w-3" /> Urgente
-                          </Badge>
-                        )}
-                        <span className="font-semibold text-sm">{ann.title}</span>
-                      </div>
-                      {canManageStudents && (
-                        <div className="flex gap-0.5 flex-shrink-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => {
-                              setEditing(ann);
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7">
-                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remover aviso?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteMutation.mutate(ann.id)}
-                                >
-                                  Remover
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
-                    </div>
-                    {!ann.image_url && ann.content && (
-                      <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                        {ann.content}
-                      </p>
+                    {/* Urgent indicator stripe */}
+                    {ann.is_urgent && (
+                      <div className="h-0.5 bg-gradient-to-r from-destructive via-destructive/80 to-destructive/40" />
                     )}
+
+                    {/* Image section */}
                     {ann.image_url && (
-                      <img
-                        src={ann.image_url}
-                        alt=""
-                        className="mt-2 rounded-md w-full object-contain max-h-64"
-                        loading="lazy"
-                        onLoad={updateHeight}
-                      />
+                      <div className="relative w-full">
+                        <img
+                          src={ann.image_url}
+                          alt=""
+                          className="w-full object-cover max-h-48"
+                          loading="lazy"
+                          onLoad={updateHeight}
+                        />
+                        {ann.is_urgent && (
+                          <div className="absolute top-2 left-2">
+                            <Badge variant="destructive" className="gap-1 text-xs shadow-sm">
+                              <AlertTriangle className="h-3 w-3" /> Urgente
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
                     )}
-                    {ann.image_url && ann.content && (
-                      <p className="text-xs text-foreground/80 mt-1.5 whitespace-pre-wrap">
-                        {ann.content}
-                      </p>
-                    )}
-                    {ann.file_url && (
-                      <a
-                        href={ann.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 flex items-center gap-2 text-xs text-primary hover:underline bg-primary/5 rounded-md px-2.5 py-2 border border-primary/20"
-                      >
-                        <FileText className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate flex-1">
-                          {getFileName(ann.file_url)}
-                        </span>
-                        <Download className="h-3.5 w-3.5 flex-shrink-0" />
-                      </a>
-                    )}
+
+                    {/* Content body */}
+                    <div className="p-3.5 flex flex-col flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                          {ann.is_urgent && !ann.image_url && (
+                            <Badge variant="destructive" className="gap-1 text-xs">
+                              <AlertTriangle className="h-3 w-3" /> Urgente
+                            </Badge>
+                          )}
+                          <h3 className="font-semibold text-sm text-foreground leading-tight">
+                            {ann.title}
+                          </h3>
+                        </div>
+                        {canManageStudents && (
+                          <div className="flex gap-0.5 flex-shrink-0 -mt-0.5">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 rounded-lg hover:bg-muted"
+                              onClick={() => {
+                                setEditing(ann);
+                                setDialogOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-destructive/10">
+                                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover aviso?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMutation.mutate(ann.id)}
+                                  >
+                                    Remover
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        )}
+                      </div>
+
+                      {ann.content && (
+                        <p className="text-xs text-muted-foreground mt-2 whitespace-pre-wrap leading-relaxed line-clamp-4">
+                          {ann.content}
+                        </p>
+                      )}
+
+                      {ann.file_url && (
+                        <a
+                          href={ann.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2.5 flex items-center gap-2 text-xs text-primary hover:text-primary/80 bg-primary/5 hover:bg-primary/10 rounded-lg px-2.5 py-2 border border-primary/15 transition-colors"
+                        >
+                          <FileText className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate flex-1">{getFileName(ann.file_url)}</span>
+                          <Download className="h-3.5 w-3.5 flex-shrink-0" />
+                        </a>
+                      )}
+
+                      <div className="mt-auto pt-2.5">
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground/70">
+                          <CalendarClock className="h-3 w-3" />
+                          <span>
+                            {format(new Date(ann.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </span>
+                          {ann.expires_at && (
+                            <>
+                              <span className="text-muted-foreground/40">•</span>
+                              <span>
+                                Expira {format(new Date(ann.expires_at), "dd/MM", { locale: ptBR })}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
             {allAnnouncements.length > 1 && (
-              <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center justify-between mt-3 px-1">
                 <div className="flex gap-1.5 items-center">
                   {allAnnouncements.map((_, i) => (
                     <button
                       key={i}
                       className={`rounded-full transition-all duration-300 ${
                         i === selectedIndex
-                          ? "w-5 h-2 bg-primary"
-                          : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                          ? "w-6 h-1.5 bg-primary"
+                          : "w-1.5 h-1.5 bg-muted-foreground/25 hover:bg-muted-foreground/40"
                       }`}
                       onClick={() => carouselApi?.scrollTo(i)}
                       aria-label={`Ir para aviso ${i + 1}`}
@@ -362,8 +406,8 @@ export function AnnouncementsBanner() {
                   ))}
                 </div>
                 <div className="flex gap-1">
-                  <CarouselPrevious className="static translate-y-0 h-7 w-7" />
-                  <CarouselNext className="static translate-y-0 h-7 w-7" />
+                  <CarouselPrevious className="static translate-y-0 h-7 w-7 rounded-lg" />
+                  <CarouselNext className="static translate-y-0 h-7 w-7 rounded-lg" />
                 </div>
               </div>
             )}
