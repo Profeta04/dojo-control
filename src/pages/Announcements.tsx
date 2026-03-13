@@ -355,13 +355,6 @@ function AnnouncementForm({
         <Switch id="urgent" checked={isUrgent} onCheckedChange={setIsUrgent} />
       </div>
 
-      <div className="flex items-center justify-between">
-        <Label htmlFor="pinned" className="flex items-center gap-2 cursor-pointer">
-          <Pin className="h-4 w-4" /> Fixar no topo
-        </Label>
-        <Switch id="pinned" checked={isPinned} onCheckedChange={setIsPinned} />
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="expires" className="flex items-center gap-2">
           <CalendarClock className="h-4 w-4" /> Data de expiração (opcional)
