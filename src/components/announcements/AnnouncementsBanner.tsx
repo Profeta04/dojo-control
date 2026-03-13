@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   AlertTriangle,
-  Pin,
+  
   Megaphone,
   Plus,
   Pencil,
@@ -128,7 +128,7 @@ export function AnnouncementsBanner() {
         image_url: imageUrl,
         file_url: fileUrl,
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
       await notifyDojoStudents(
@@ -162,7 +162,7 @@ export function AnnouncementsBanner() {
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
         ...(fileUrl !== undefined ? { file_url: fileUrl } : {}),
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
     },
@@ -265,11 +265,6 @@ export function AnnouncementsBanner() {
                         {ann.is_urgent && (
                           <Badge variant="destructive" className="gap-1 text-xs">
                             <AlertTriangle className="h-3 w-3" /> Urgente
-                          </Badge>
-                        )}
-                        {ann.is_pinned && (
-                          <Badge variant="secondary" className="gap-1 text-xs">
-                            <Pin className="h-3 w-3" /> Fixado
                           </Badge>
                         )}
                         <span className="font-semibold text-sm">{ann.title}</span>
@@ -399,7 +394,6 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
-  isPinned: boolean;
   expiresAt: string;
   imageFile: File | null;
   attachFile: File | null;
@@ -417,7 +411,6 @@ function AnnouncementForm({
   const [title, setTitle] = useState(initial?.title || "");
   const [content, setContent] = useState(initial?.content || "");
   const [isUrgent, setIsUrgent] = useState(initial?.is_urgent || false);
-  const [isPinned, setIsPinned] = useState(initial?.is_pinned || false);
   const [expiresAt, setExpiresAt] = useState(
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
@@ -458,7 +451,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile, attachFile });
+    onSubmit({ title, content, isUrgent, expiresAt, imageFile, attachFile });
   };
 
   return (
@@ -547,19 +540,8 @@ function AnnouncementForm({
           onCheckedChange={setIsUrgent}
         />
       </div>
-      <div className="flex items-center justify-between">
-        <Label
-          htmlFor="ann-pinned"
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <Pin className="h-4 w-4" /> Fixar no topo
-        </Label>
-        <Switch
-          id="ann-pinned"
-          checked={isPinned}
-          onCheckedChange={setIsPinned}
-        />
-      </div>
+
+
       <div className="space-y-2">
         <Label htmlFor="ann-expires" className="flex items-center gap-2">
           <CalendarClock className="h-4 w-4" /> Expiração (opcional)

@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Pin, AlertTriangle, Image, CalendarClock, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle, Image, CalendarClock, Megaphone } from "lucide-react";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -72,7 +72,7 @@ export default function Announcements() {
         content: form.content,
         image_url: imageUrl,
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
       // Notify students
@@ -102,7 +102,7 @@ export default function Announcements() {
         content: form.content,
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
         is_urgent: form.isUrgent,
-        is_pinned: form.isPinned,
+        is_pinned: false,
         expires_at: form.expiresAt || null,
       });
     },
@@ -187,11 +187,6 @@ export default function Announcements() {
                         <AlertTriangle className="h-3 w-3" /> Urgente
                       </Badge>
                     )}
-                    {ann.is_pinned && (
-                      <Badge variant="secondary" className="gap-1">
-                        <Pin className="h-3 w-3" /> Fixado
-                      </Badge>
-                    )}
                     <CardTitle className="text-lg">{ann.title}</CardTitle>
                   </div>
                   {canManageStudents && (
@@ -273,7 +268,6 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
-  isPinned: boolean;
   expiresAt: string;
   imageFile: File | null;
 }
@@ -290,7 +284,6 @@ function AnnouncementForm({
   const [title, setTitle] = useState(initial?.title || "");
   const [content, setContent] = useState(initial?.content || "");
   const [isUrgent, setIsUrgent] = useState(initial?.is_urgent || false);
-  const [isPinned, setIsPinned] = useState(initial?.is_pinned || false);
   const [expiresAt, setExpiresAt] = useState(
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
@@ -312,7 +305,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, isPinned, expiresAt, imageFile });
+    onSubmit({ title, content, isUrgent, expiresAt, imageFile });
   };
 
   return (
@@ -360,13 +353,6 @@ function AnnouncementForm({
           <AlertTriangle className="h-4 w-4 text-destructive" /> Urgente
         </Label>
         <Switch id="urgent" checked={isUrgent} onCheckedChange={setIsUrgent} />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <Label htmlFor="pinned" className="flex items-center gap-2 cursor-pointer">
-          <Pin className="h-4 w-4" /> Fixar no topo
-        </Label>
-        <Switch id="pinned" checked={isPinned} onCheckedChange={setIsPinned} />
       </div>
 
       <div className="space-y-2">
