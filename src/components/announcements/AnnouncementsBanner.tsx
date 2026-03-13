@@ -471,6 +471,9 @@ function AnnouncementForm({
   const [title, setTitle] = useState(initial?.title || "");
   const [content, setContent] = useState(initial?.content || "");
   const [isUrgent, setIsUrgent] = useState(initial?.is_urgent || false);
+  const [imageDownloadable, setImageDownloadable] = useState(
+    (initial as any)?.image_downloadable || false
+  );
   const [expiresAt, setExpiresAt] = useState(
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
@@ -511,7 +514,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, expiresAt, imageFile, attachFile });
+    onSubmit({ title, content, isUrgent, imageDownloadable, expiresAt, imageFile, attachFile });
   };
 
   return (
