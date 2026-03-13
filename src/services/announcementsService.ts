@@ -23,7 +23,6 @@ export async function fetchAnnouncements(dojoId: string): Promise<Announcement[]
     .select("*")
     .eq("dojo_id", dojoId)
     .or(`expires_at.is.null,expires_at.gt.${now}`)
-    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false });
 
   if (error) throw error;
