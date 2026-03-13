@@ -394,7 +394,6 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
-  isPinned: boolean;
   expiresAt: string;
   imageFile: File | null;
   attachFile: File | null;
