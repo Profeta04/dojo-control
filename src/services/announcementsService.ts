@@ -10,6 +10,7 @@ export interface Announcement {
   file_url: string | null;
   is_urgent: boolean;
   is_pinned: boolean;
+  image_downloadable: boolean;
   expires_at: string | null;
   created_at: string;
   updated_at: string;
@@ -54,6 +55,7 @@ export async function createAnnouncement(
     file_url?: string | null;
     is_urgent?: boolean;
     is_pinned?: boolean;
+    image_downloadable?: boolean;
     expires_at?: string | null;
   }
 ) {
@@ -76,6 +78,7 @@ export async function updateAnnouncement(
     file_url: string | null;
     is_urgent: boolean;
     is_pinned: boolean;
+    image_downloadable: boolean;
     expires_at: string | null;
   }>
 ) {
@@ -137,7 +140,7 @@ export async function notifyDojoStudents(dojoId: string, title: string, message:
 
   await supabase.from("notifications").insert(notifications);
 
-  // Send push notifications via edge function (server-side reads subscriptions with service role)
+  // Send push notifications via edge function
   await supabase.functions.invoke("send-push-notification", {
     body: {
       userIds,

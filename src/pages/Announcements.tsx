@@ -31,7 +31,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, AlertTriangle, Image, CalendarClock, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, AlertTriangle, Image, CalendarClock, Megaphone, ArrowDownToLine } from "lucide-react";
 import {
   fetchAnnouncements,
   createAnnouncement,
@@ -73,6 +73,7 @@ export default function Announcements() {
         image_url: imageUrl,
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
       // Notify students
@@ -103,6 +104,7 @@ export default function Announcements() {
         ...(imageUrl !== undefined ? { image_url: imageUrl } : {}),
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
     },
@@ -231,12 +233,26 @@ export default function Announcements() {
                   <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
                 )}
                 {ann.image_url && (
-                  <img
-                    src={ann.image_url}
-                    alt="Imagem do aviso"
-                    className="mt-1 rounded-lg max-h-64 object-cover w-full"
-                    loading="lazy"
-                  />
+                  <div className="relative">
+                    <img
+                      src={ann.image_url}
+                      alt="Imagem do aviso"
+                      className="mt-1 rounded-lg max-h-64 object-cover w-full"
+                      loading="lazy"
+                    />
+                    {(ann as any).image_downloadable && (
+                      <a
+                        href={ann.image_url}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute bottom-2 right-2 flex items-center justify-center h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-background transition-colors"
+                        title="Baixar imagem"
+                      >
+                        <ArrowDownToLine className="h-3.5 w-3.5 text-foreground" />
+                      </a>
+                    )}
+                  </div>
                 )}
                 {ann.image_url && ann.content && (
                   <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{ann.content}</p>
@@ -268,6 +284,7 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
+  imageDownloadable: boolean;
   expiresAt: string;
   imageFile: File | null;
 }
@@ -284,6 +301,9 @@ function AnnouncementForm({
   const [title, setTitle] = useState(initial?.title || "");
   const [content, setContent] = useState(initial?.content || "");
   const [isUrgent, setIsUrgent] = useState(initial?.is_urgent || false);
+  const [imageDownloadable, setImageDownloadable] = useState(
+    (initial as any)?.image_downloadable || false
+  );
   const [expiresAt, setExpiresAt] = useState(
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
@@ -305,7 +325,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, expiresAt, imageFile });
+    onSubmit({ title, content, isUrgent, imageDownloadable, expiresAt, imageFile });
   };
 
   return (
@@ -347,6 +367,15 @@ function AnnouncementForm({
           <img src={preview} alt="Preview" className="rounded-lg max-h-32 object-cover w-full mt-2" />
         )}
       </div>
+
+      {(preview || initial?.image_url) && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor="downloadable" className="flex items-center gap-2 cursor-pointer">
+            <ArrowDownToLine className="h-4 w-4 text-primary" /> Permitir download
+          </Label>
+          <Switch id="downloadable" checked={imageDownloadable} onCheckedChange={setImageDownloadable} />
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <Label htmlFor="urgent" className="flex items-center gap-2 cursor-pointer">

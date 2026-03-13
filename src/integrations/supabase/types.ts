@@ -68,6 +68,7 @@ export type Database = {
           expires_at: string | null
           file_url: string | null
           id: string
+          image_downloadable: boolean
           image_url: string | null
           is_pinned: boolean
           is_urgent: boolean
@@ -82,6 +83,7 @@ export type Database = {
           expires_at?: string | null
           file_url?: string | null
           id?: string
+          image_downloadable?: boolean
           image_url?: string | null
           is_pinned?: boolean
           is_urgent?: boolean
@@ -96,6 +98,7 @@ export type Database = {
           expires_at?: string | null
           file_url?: string | null
           id?: string
+          image_downloadable?: boolean
           image_url?: string | null
           is_pinned?: boolean
           is_urgent?: boolean

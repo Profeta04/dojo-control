@@ -1,0 +1,1 @@
+ALTER TABLE public.announcements ADD COLUMN image_downloadable boolean NOT NULL DEFAULT false;

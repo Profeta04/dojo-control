@@ -56,6 +56,7 @@ import {
   Paperclip,
   FileText,
   Download,
+  ArrowDownToLine,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -129,6 +130,7 @@ export function AnnouncementsBanner() {
         file_url: fileUrl,
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
       await notifyDojoStudents(
@@ -163,6 +165,7 @@ export function AnnouncementsBanner() {
         ...(fileUrl !== undefined ? { file_url: fileUrl } : {}),
         is_urgent: form.isUrgent,
         is_pinned: false,
+        image_downloadable: form.imageDownloadable,
         expires_at: form.expiresAt || null,
       });
     },
@@ -292,6 +295,18 @@ export function AnnouncementsBanner() {
                               <AlertTriangle className="h-3 w-3" /> Urgente
                             </Badge>
                           </div>
+                        )}
+                        {(ann as any).image_downloadable && (
+                          <a
+                            href={ann.image_url}
+                            download
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute bottom-2 right-2 flex items-center justify-center h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-background transition-colors"
+                            title="Baixar imagem"
+                          >
+                            <ArrowDownToLine className="h-3.5 w-3.5 text-foreground" />
+                          </a>
                         )}
                       </div>
                     )}
@@ -438,6 +453,7 @@ interface FormState {
   title: string;
   content: string;
   isUrgent: boolean;
+  imageDownloadable: boolean;
   expiresAt: string;
   imageFile: File | null;
   attachFile: File | null;
@@ -455,6 +471,9 @@ function AnnouncementForm({
   const [title, setTitle] = useState(initial?.title || "");
   const [content, setContent] = useState(initial?.content || "");
   const [isUrgent, setIsUrgent] = useState(initial?.is_urgent || false);
+  const [imageDownloadable, setImageDownloadable] = useState(
+    (initial as any)?.image_downloadable || false
+  );
   const [expiresAt, setExpiresAt] = useState(
     initial?.expires_at ? initial.expires_at.split("T")[0] : ""
   );
@@ -495,7 +514,7 @@ function AnnouncementForm({
       toast.error("Preencha o título.");
       return;
     }
-    onSubmit({ title, content, isUrgent, expiresAt, imageFile, attachFile });
+    onSubmit({ title, content, isUrgent, imageDownloadable, expiresAt, imageFile, attachFile });
   };
 
   return (
@@ -546,6 +565,18 @@ function AnnouncementForm({
           />
         )}
       </div>
+      {(preview || initial?.image_url) && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor="ann-downloadable" className="flex items-center gap-2 cursor-pointer">
+            <ArrowDownToLine className="h-4 w-4 text-primary" /> Permitir download da imagem
+          </Label>
+          <Switch
+            id="ann-downloadable"
+            checked={imageDownloadable}
+            onCheckedChange={setImageDownloadable}
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <Label>Arquivo anexo (opcional)</Label>
         <input
