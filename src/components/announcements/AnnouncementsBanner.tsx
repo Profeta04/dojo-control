@@ -194,7 +194,7 @@ export function AnnouncementsBanner() {
   if (!hasAnnouncements && !canManageStudents) return null;
 
   return (
-    <Card className="mb-6 overflow-hidden border-border/40 shadow-lg">
+    <Card className="mb-6 overflow-hidden border-0 shadow-lg bg-gradient-to-br from-card via-card to-muted/30 rounded-xl">
       {/* Header with gradient accent bar */}
       <div className="h-1 bg-gradient-to-r from-primary via-primary/60 to-accent" />
       <CardHeader className="pb-2 pt-4">
@@ -249,7 +249,7 @@ export function AnnouncementsBanner() {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-4">
+      <CardContent className="pb-4 px-3">
         {!hasAnnouncements ? (
           <div className="flex flex-col items-center py-8 text-center">
             <div className="h-12 w-12 rounded-full bg-muted/60 flex items-center justify-center mb-3">
@@ -264,14 +264,14 @@ export function AnnouncementsBanner() {
             className="w-full"
             setApi={setCarouselApi}
           >
-            <CarouselContent className="items-start -ml-3">
+            <CarouselContent className="items-start -ml-1">
               {allAnnouncements.map((ann) => (
-                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-3">
+                <CarouselItem key={ann.id} className="md:basis-1/2 lg:basis-1/2 pl-1">
                   <div
-                    className={`relative rounded-xl overflow-hidden flex flex-col transition-shadow duration-200 hover:shadow-md ${
+                    className={`relative overflow-hidden flex flex-col ${
                       ann.is_urgent
-                        ? "ring-1 ring-destructive/40 bg-destructive/5"
-                        : "ring-1 ring-border/50 bg-card"
+                        ? "bg-destructive/5"
+                        : ""
                     }`}
                   >
                     {/* Urgent indicator stripe */}
@@ -312,7 +312,7 @@ export function AnnouncementsBanner() {
                     )}
 
                     {/* Content body */}
-                    <div className="p-3.5 flex flex-col flex-1">
+                    <div className="px-3 py-2.5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
                           {ann.is_urgent && !ann.image_url && (
