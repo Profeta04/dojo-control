@@ -354,6 +354,15 @@ function AnnouncementForm({
         )}
       </div>
 
+      {(preview || initial?.image_url) && (
+        <div className="flex items-center justify-between">
+          <Label htmlFor="downloadable" className="flex items-center gap-2 cursor-pointer">
+            <ArrowDownToLine className="h-4 w-4 text-primary" /> Permitir download
+          </Label>
+          <Switch id="downloadable" checked={imageDownloadable} onCheckedChange={setImageDownloadable} />
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <Label htmlFor="urgent" className="flex items-center gap-2 cursor-pointer">
           <AlertTriangle className="h-4 w-4 text-destructive" /> Urgente
