@@ -233,12 +233,26 @@ export default function Announcements() {
                   <p className="text-sm text-foreground whitespace-pre-wrap">{ann.content}</p>
                 )}
                 {ann.image_url && (
-                  <img
-                    src={ann.image_url}
-                    alt="Imagem do aviso"
-                    className="mt-1 rounded-lg max-h-64 object-cover w-full"
-                    loading="lazy"
-                  />
+                  <div className="relative">
+                    <img
+                      src={ann.image_url}
+                      alt="Imagem do aviso"
+                      className="mt-1 rounded-lg max-h-64 object-cover w-full"
+                      loading="lazy"
+                    />
+                    {(ann as any).image_downloadable && (
+                      <a
+                        href={ann.image_url}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="absolute bottom-2 right-2 flex items-center justify-center h-7 w-7 rounded-full bg-background/80 backdrop-blur-sm border border-border/50 shadow-sm hover:bg-background transition-colors"
+                        title="Baixar imagem"
+                      >
+                        <ArrowDownToLine className="h-3.5 w-3.5 text-foreground" />
+                      </a>
+                    )}
+                  </div>
                 )}
                 {ann.image_url && ann.content && (
                   <p className="text-sm text-foreground whitespace-pre-wrap mt-2">{ann.content}</p>
