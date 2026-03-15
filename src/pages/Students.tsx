@@ -155,22 +155,56 @@ export default function Students() {
   const { data: guardiansWithMinors, isLoading: isLoadingGuardians } = useQuery({
     queryKey: ["guardians-with-minors", currentDojoId],
     queryFn: async () => {
+      // 1) Students with a linked guardian account
       let minorQuery = supabase.from("profiles").select("*").not("guardian_user_id", "is", null);
       if (currentDojoId) minorQuery = minorQuery.eq("dojo_id", currentDojoId);
       const { data: minorProfiles } = await minorQuery;
-      if (!minorProfiles || minorProfiles.length === 0) return [];
-
-      const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
-      const { data: guardianProfiles } = await supabase.from("profiles").select("*").in("user_id", guardianUserIds);
-      if (!guardianProfiles) return [];
 
       const guardiansMap = new Map<string, GuardianWithMinors>();
-      for (const guardian of guardianProfiles) {
-        guardiansMap.set(guardian.user_id, {
-          guardian,
-          minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
-        });
+
+      if (minorProfiles && minorProfiles.length > 0) {
+        const guardianUserIds = [...new Set(minorProfiles.map((p) => p.guardian_user_id).filter(Boolean))] as string[];
+        const { data: guardianProfiles } = await supabase.from("profiles").select("*").in("user_id", guardianUserIds);
+        if (guardianProfiles) {
+          for (const guardian of guardianProfiles) {
+            guardiansMap.set(guardian.user_id, {
+              guardian,
+              minors: minorProfiles.filter((m) => m.guardian_user_id === guardian.user_id),
+            });
+          }
+        }
       }
+
+      // 2) Students with manual guardian info (no linked account)
+      let manualQuery = supabase.from("profiles").select("*").is("guardian_user_id", null);
+      if (currentDojoId) manualQuery = manualQuery.eq("dojo_id", currentDojoId);
+      // At least one guardian field must be filled
+      manualQuery = manualQuery.or("guardian_name.neq.,guardian_email.neq.,guardian_phone.neq.");
+      const { data: manualProfiles } = await manualQuery;
+
+      if (manualProfiles && manualProfiles.length > 0) {
+        // Group by guardian_name+guardian_email as key
+        for (const student of manualProfiles) {
+          if (!student.guardian_name && !student.guardian_email && !student.guardian_phone) continue;
+          const key = `manual_${student.guardian_name || ""}_${student.guardian_email || ""}`;
+          if (guardiansMap.has(key)) {
+            guardiansMap.get(key)!.minors.push(student);
+          } else {
+            guardiansMap.set(key, {
+              guardian: {
+                user_id: key,
+                name: student.guardian_name || "Responsável",
+                email: student.guardian_email || null,
+                phone: student.guardian_phone || null,
+                // Mark as manual (no account)
+                registration_status: null,
+              } as any,
+              minors: [student],
+            });
+          }
+        }
+      }
+
       return Array.from(guardiansMap.values());
     },
     enabled: !!user && canManageStudents,
