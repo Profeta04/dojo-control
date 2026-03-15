@@ -736,7 +736,18 @@ export default function Students() {
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium truncate">{guardian.name}</p>
-                              <p className="text-sm text-muted-foreground truncate">{guardian.email || guardian.phone || "Sem contato"}</p>
+                              {guardian.email && (
+                                <p className="text-sm text-muted-foreground truncate">📧 {guardian.email}</p>
+                              )}
+                              {guardian.phone && (
+                                <p className="text-sm text-muted-foreground truncate">📱 {guardian.phone}</p>
+                              )}
+                              {(guardian as any).guardian_phone && !(guardian.phone) && (
+                                <p className="text-sm text-muted-foreground truncate">📱 {(guardian as any).guardian_phone}</p>
+                              )}
+                              {!guardian.email && !guardian.phone && !(guardian as any).guardian_phone && (
+                                <p className="text-sm text-muted-foreground truncate">Sem contato</p>
+                              )}
                               {guardian.user_id.startsWith("manual_") && (
                                 <span className="text-xs text-muted-foreground/70 italic">Cadastro manual</span>
                               )}
