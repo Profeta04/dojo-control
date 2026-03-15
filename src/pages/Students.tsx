@@ -736,7 +736,10 @@ export default function Students() {
                             </div>
                             <div className="min-w-0">
                               <p className="font-medium truncate">{guardian.name}</p>
-                              <p className="text-sm text-muted-foreground truncate">{guardian.email}</p>
+                              <p className="text-sm text-muted-foreground truncate">{guardian.email || guardian.phone || "Sem contato"}</p>
+                              {guardian.user_id.startsWith("manual_") && (
+                                <span className="text-xs text-muted-foreground/70 italic">Cadastro manual</span>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
