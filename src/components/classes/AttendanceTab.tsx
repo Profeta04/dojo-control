@@ -409,30 +409,44 @@ export function AttendanceTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Label htmlFor="date-select" className="sr-only">Selecionar data</Label>
-        <Select value={selectedDate} onValueChange={setSelectedDate}>
-          <SelectTrigger className="w-[200px]" id="date-select" data-tour="attendance-date">
-            <Calendar className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {availableDates?.map((date) => (
-              <SelectItem key={date} value={date}>
-                {format(new Date(date + "T12:00:00"), "EEEE, dd/MM", { locale: ptBR })}
-                {isToday(new Date(date + "T12:00:00")) && " (Hoje)"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-[260px] justify-start text-left font-normal",
+                !selectedDate && "text-muted-foreground"
+              )}
+              data-tour="attendance-date"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              {format(new Date(selectedDate + "T12:00:00"), "EEEE, dd/MM/yyyy", { locale: ptBR })}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={new Date(selectedDate + "T12:00:00")}
+              onSelect={(date) => date && setSelectedDate(format(date, "yyyy-MM-dd"))}
+              locale={ptBR}
+              className="pointer-events-auto"
+              modifiers={{
+                hasSchedule: (availableDates || []).map(d => new Date(d + "T12:00:00")),
+              }}
+              modifiersClassNames={{
+                hasSchedule: "bg-accent/30 font-bold ring-1 ring-accent/50",
+              }}
+            />
+          </PopoverContent>
+        </Popover>
 
-      {/* Date indicator */}
-      <div>
-        <Badge variant={isToday(new Date(selectedDate + "T12:00:00")) ? "default" : "secondary"} className="text-sm">
-          <CalendarDays className="h-4 w-4 mr-1" />
-          {format(new Date(selectedDate + "T12:00:00"), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-        </Badge>
+        {isToday(new Date(selectedDate + "T12:00:00")) && (
+          <Badge variant="default" className="text-sm">
+            <CalendarDays className="h-4 w-4 mr-1" />
+            Hoje
+          </Badge>
+        )}
       </div>
 
       {schedules && schedules.length > 0 ? (
