@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      absence_justifications: {
+        Row: {
+          attachment_url: string | null
+          attendance_id: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          attendance_id: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          attendance_id?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absence_justifications_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_student"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       achievements: {
         Row: {
           annual_year: number | null
