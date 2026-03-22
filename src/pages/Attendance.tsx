@@ -54,7 +54,7 @@ export default function Attendance() {
         <PageHeader title="Presenças" description="Gerencie presenças e check-in automático" />
 
         <Tabs defaultValue="manual" className="mt-4 sm:mt-6">
-          <TabsList className="w-full grid grid-cols-3 max-w-md">
+          <TabsList className="w-full grid grid-cols-4 max-w-lg">
             <TabsTrigger value="manual" className="gap-1.5 text-xs sm:text-sm">
               <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Chamada</span>
@@ -62,6 +62,10 @@ export default function Attendance() {
             <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
               <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Frequência</span>
+            </TabsTrigger>
+            <TabsTrigger value="justificativas" className="gap-1.5 text-xs sm:text-sm">
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Justificativas</span>
             </TabsTrigger>
             <TabsTrigger value="qrcode" className="gap-1.5 text-xs sm:text-sm">
               <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
