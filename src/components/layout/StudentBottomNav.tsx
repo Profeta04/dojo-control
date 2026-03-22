@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ClipboardList,
   Calendar,
+  FileText,
   CreditCard,
   Settings,
   Users,
