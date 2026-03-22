@@ -81,6 +81,10 @@ export default function Attendance() {
             <StudentAttendanceOverview />
           </TabsContent>
 
+          <TabsContent value="justificativas" className="mt-4">
+            <JustificationApprovalPanel />
+          </TabsContent>
+
           <TabsContent value="qrcode" className="mt-4" data-tour="attendance-qrcode">
             <FeatureGate feature="qr_checkin">
               {currentDojo ? (
