@@ -10,8 +10,9 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardCheck, QrCode, BarChart3 } from "lucide-react";
+import { ClipboardCheck, QrCode, BarChart3, FileText } from "lucide-react";
 import { FeatureGate } from "@/components/shared/FeatureGate";
+import { JustificationApprovalPanel } from "@/components/justifications/JustificationApprovalPanel";
 import { StudentAttendanceOverview } from "@/components/classes/StudentAttendanceOverview";
 
 export default function Attendance() {
@@ -53,7 +54,7 @@ export default function Attendance() {
         <PageHeader title="Presenças" description="Gerencie presenças e check-in automático" />
 
         <Tabs defaultValue="manual" className="mt-4 sm:mt-6">
-          <TabsList className="w-full grid grid-cols-3 max-w-md">
+          <TabsList className="w-full grid grid-cols-4 max-w-lg">
             <TabsTrigger value="manual" className="gap-1.5 text-xs sm:text-sm">
               <ClipboardCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Chamada</span>
@@ -61,6 +62,10 @@ export default function Attendance() {
             <TabsTrigger value="overview" className="gap-1.5 text-xs sm:text-sm">
               <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               <span>Frequência</span>
+            </TabsTrigger>
+            <TabsTrigger value="justificativas" className="gap-1.5 text-xs sm:text-sm">
+              <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              <span>Justificativas</span>
             </TabsTrigger>
             <TabsTrigger value="qrcode" className="gap-1.5 text-xs sm:text-sm">
               <QrCode className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -74,6 +79,10 @@ export default function Attendance() {
 
           <TabsContent value="overview" className="mt-4">
             <StudentAttendanceOverview />
+          </TabsContent>
+
+          <TabsContent value="justificativas" className="mt-4">
+            <JustificationApprovalPanel />
           </TabsContent>
 
           <TabsContent value="qrcode" className="mt-4" data-tour="attendance-qrcode">

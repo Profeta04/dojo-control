@@ -69,6 +69,7 @@ const SubscriptionApprovals = lazyRetry(() => import("./pages/SubscriptionApprov
 const Plans = lazyRetry(() => import("./pages/Plans"));
 const Help = lazyRetry(() => import("./pages/Help"));
 const Announcements = lazyRetry(() => import("./pages/Announcements"));
+const StudentJustifications = lazyRetry(() => import("./pages/StudentJustifications"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -132,6 +133,7 @@ function AnimatedRoutes() {
         <Route path="/planos" element={<SafePage><Plans /></SafePage>} />
         <Route path="/ajuda" element={<SafePage><Help /></SafePage>} />
         <Route path="/announcements" element={<SafePage><Announcements /></SafePage>} />
+        <Route path="/justificativas" element={<SafePage><StudentJustifications /></SafePage>} />
         <Route path="/compartilhar" element={<SafePage><StudentPayments /></SafePage>} />
         <Route path="*" element={<SafePage><NotFound /></SafePage>} />
       </Routes>
