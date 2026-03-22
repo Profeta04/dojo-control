@@ -10,8 +10,9 @@ import { useSignedUrl } from "@/hooks/useSignedUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardCheck, QrCode, BarChart3 } from "lucide-react";
+import { ClipboardCheck, QrCode, BarChart3, FileText } from "lucide-react";
 import { FeatureGate } from "@/components/shared/FeatureGate";
+import { JustificationApprovalPanel } from "@/components/justifications/JustificationApprovalPanel";
 import { StudentAttendanceOverview } from "@/components/classes/StudentAttendanceOverview";
 
 export default function Attendance() {
