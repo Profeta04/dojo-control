@@ -48,7 +48,7 @@ const studentPage1: TabItem[] = [
 
 const studentPage2: TabItem[] = [
   { title: "Agenda", href: "/agenda", icon: Calendar },
-  { title: "Progresso", href: "/meu-progresso", icon: TrendingUp },
+  { title: "Faltas", href: "/justificativas", icon: FileText },
   { title: "Conquistas", href: "/conquistas", icon: Trophy },
   { title: "Ajuda", href: "/ajuda", icon: HelpCircle },
 ];
