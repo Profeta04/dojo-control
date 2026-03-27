@@ -15,6 +15,7 @@ import { ptBR } from "date-fns/locale";
 import { CalendarCheck, Flame, Clock, Target, TrendingUp, Award, Swords } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { StudentJustificationForm } from "@/components/justifications/StudentJustificationForm";
 
 const MARTIAL_ART_LABELS: Record<string, string> = {
   judo: "Judô",
@@ -303,6 +304,10 @@ export default function StudentMyProgress() {
           )}
 
           <GraduationTimeline />
+
+          <div className="mt-2">
+            <StudentJustificationForm />
+          </div>
         </div>
       </DashboardLayout>
     </RequireApproval>

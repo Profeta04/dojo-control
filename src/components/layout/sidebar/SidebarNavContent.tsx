@@ -58,7 +58,7 @@ const navItems: NavItem[] = [
   { title: "Turmas", href: "/classes", icon: <GraduationCap className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Presenças", href: "/attendance", icon: <ClipboardCheck className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Conquistas", href: "/conquistas", icon: <Trophy className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
-  { title: "Justificativas", href: "/justificativas", icon: <FileText className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  
   { title: "Pagamentos", href: "/payments", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Histórico", href: "/payment-history", icon: <Receipt className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Pagamentos", href: "/mensalidade", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
