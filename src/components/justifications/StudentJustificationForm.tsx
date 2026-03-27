@@ -161,9 +161,12 @@ export function StudentJustificationForm() {
   const getStatusInfo = (status: string) =>
     JUSTIFICATION_STATUS[status as keyof typeof JUSTIFICATION_STATUS] || JUSTIFICATION_STATUS.pendente;
 
+  const hasAbsences = !loadingAbsences && absences && absences.length > 0;
+
   return (
     <div className="space-y-4">
-      {/* Unjustified absences */}
+      {/* Unjustified absences - only show when there are absences */}
+      {(loadingAbsences || hasAbsences) && (
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -176,10 +179,6 @@ export function StudentJustificationForm() {
             <div className="space-y-2">
               {[1, 2].map(i => <Skeleton key={i} className="h-12" />)}
             </div>
-          ) : !absences || absences.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              🎉 Nenhuma falta pendente de justificativa!
-            </p>
           ) : (
             <div className="space-y-2">
               {absences.map((absence) => {
