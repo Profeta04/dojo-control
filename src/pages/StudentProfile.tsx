@@ -10,6 +10,7 @@ import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { StudentXPCard } from "@/components/student/StudentXPCard";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
+import { UnjustifiedAbsencesCard } from "@/components/justifications/UnjustifiedAbsencesCard";
 
 export default function StudentProfile() {
   const { loading: authLoading } = useAuth();
@@ -22,6 +23,9 @@ export default function StudentProfile() {
     <RequireApproval>
       <DashboardLayout>
         <AnnouncementsBanner />
+        <div className="mt-4">
+          <UnjustifiedAbsencesCard />
+        </div>
         <PageHeader
           title="Meus Dados" 
           description="Seus dados, frequência e evolução no judô" 
