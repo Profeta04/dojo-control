@@ -202,6 +202,19 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        {notifications && notifications.length > 0 && (
+          <div className="border-t p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleClearAll}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Limpar todas
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
