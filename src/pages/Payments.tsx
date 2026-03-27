@@ -562,6 +562,17 @@ export default function PaymentsPage() {
         related_id: selectedPayment.id,
       };
       await supabase.from("notifications").insert(notification);
+
+      // Push notification for receipt status
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          userIds: [selectedPayment.student_id],
+          title: notification.title,
+          body: notification.message,
+          url: "/mensalidade",
+          type: "payment",
+        },
+      }).catch(() => {});
       const statusLabel = newReceiptStatus === "aprovado" ? "aprovado ✅" : "rejeitado ❌";
       toast({
         title: `Comprovante ${statusLabel}`,

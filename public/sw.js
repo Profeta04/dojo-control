@@ -1,5 +1,44 @@
 // Service Worker — Dojo Control (Push + Share Target + iOS PWA)
-const SW_VERSION = '2.1.0';
+const SW_VERSION = '3.0.0';
+
+// ─── Notification type configuration ───
+const TYPE_CONFIG = {
+  payment: {
+    icon: '/icons/payment.png',
+    badge: '/icons/badge.png',
+    actions: [{ action: 'open', title: '💳 Ver pagamento' }],
+  },
+  warning: {
+    icon: '/icons/warning.png',
+    badge: '/icons/badge.png',
+    actions: [{ action: 'open', title: '⚠️ Verificar' }],
+  },
+  training: {
+    icon: '/icons/training.png',
+    badge: '/icons/badge.png',
+    actions: [{ action: 'open', title: '🥋 Ver agenda' }],
+  },
+  announcement: {
+    icon: '/icons/info.png',
+    badge: '/icons/badge.png',
+    actions: [{ action: 'open', title: '📢 Ver aviso' }],
+  },
+  info: {
+    icon: '/icons/info.png',
+    badge: '/icons/badge.png',
+    actions: [],
+  },
+  level_up: {
+    icon: '/icons/info.png',
+    badge: '/icons/badge.png',
+    actions: [{ action: 'open', title: '⬆️ Ver progresso' }],
+  },
+  default: {
+    icon: '/favicon.png',
+    badge: '/favicon.png',
+    actions: [],
+  },
+};
 
 self.addEventListener('install', (event) => {
   console.log('[SW] Install v' + SW_VERSION);
@@ -13,7 +52,7 @@ self.addEventListener('activate', (event) => {
 
 // ─── Push Notifications (compatible with iOS 16.4+ PWA) ───
 self.addEventListener('push', (event) => {
-  let data = { title: 'Dojo Control', body: 'Nova notificação', url: '/', icon: '/favicon.png' };
+  let data = { title: 'Dojo Control', body: 'Nova notificação', url: '/', icon: '/favicon.png', type: 'default' };
 
   try {
     if (event.data) {
@@ -30,14 +69,19 @@ self.addEventListener('push', (event) => {
     console.error('[SW] Error reading push data:', e);
   }
 
+  const typeKey = data.type && TYPE_CONFIG[data.type] ? data.type : 'default';
+  const config = TYPE_CONFIG[typeKey];
+
   const options = {
     body: data.body,
-    icon: data.icon || '/favicon.png',
-    badge: '/favicon.png',
-    tag: 'dojo-' + Date.now(),
+    icon: data.icon || config.icon,
+    badge: config.badge || '/favicon.png',
+    tag: 'dojo-' + (typeKey !== 'default' ? typeKey + '-' : '') + Date.now(),
     renotify: true,
-    requireInteraction: false,
+    requireInteraction: typeKey === 'payment' || typeKey === 'warning',
     data: { url: data.url || '/' },
+    actions: config.actions,
+    ...(data.image ? { image: data.image } : {}),
     ...(isIOS() ? {} : { vibrate: [200, 100, 200] }),
   };
 
@@ -79,7 +123,6 @@ self.addEventListener('pushsubscriptionchange', (event) => {
 
         if (newSub) {
           const subJSON = newSub.toJSON();
-          // Notify all open clients to sync the new subscription to the database
           const allClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
           for (const client of allClients) {
             client.postMessage({
