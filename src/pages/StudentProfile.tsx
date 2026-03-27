@@ -23,7 +23,10 @@ export default function StudentProfile() {
     <RequireApproval>
       <DashboardLayout>
         <AnnouncementsBanner />
-        <PageHeader 
+        <div className="mt-4">
+          <StudentJustificationForm />
+        </div>
+        <PageHeader
           title="Meus Dados" 
           description="Seus dados, frequência e evolução no judô" 
         />

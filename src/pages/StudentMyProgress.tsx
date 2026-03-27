@@ -304,6 +304,10 @@ export default function StudentMyProgress() {
           )}
 
           <GraduationTimeline />
+
+          <div className="mt-2">
+            <StudentJustificationForm />
+          </div>
         </div>
       </DashboardLayout>
     </RequireApproval>
