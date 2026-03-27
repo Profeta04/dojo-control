@@ -100,6 +100,45 @@ export function StudentJustificationForm() {
         attachment_url: attachmentUrl,
       });
       if (error) throw error;
+
+      // Notify all senseis/admins from student's dojo
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, dojo_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile?.dojo_id) {
+        const { data: dojoSenseis } = await supabase
+          .from("dojo_senseis")
+          .select("sensei_id")
+          .eq("dojo_id", profile.dojo_id);
+
+        const senseiIds = (dojoSenseis || []).map(s => s.sensei_id);
+
+        if (senseiIds.length > 0) {
+          const categoryLabel = getCategoryLabel(category);
+          const notifications = senseiIds.map(senseiId => ({
+            user_id: senseiId,
+            title: "📋 Nova Justificativa de Falta",
+            message: `${profile.name} enviou uma justificativa: ${categoryLabel}`,
+            type: "info",
+          }));
+
+          await supabase.from("notifications").insert(notifications).throwOnError();
+
+          // Send push notification
+          supabase.functions.invoke("send-push-notification", {
+            body: {
+              userIds: senseiIds,
+              title: "📋 Nova Justificativa de Falta",
+              body: `${profile.name} enviou uma justificativa: ${categoryLabel}`,
+              url: "/attendance",
+              type: "info",
+            },
+          }).catch(() => {});
+        }
+      }
     },
     onSuccess: () => {
       toast({ title: "Justificativa enviada!", description: "Aguarde a aprovação do sensei." });
