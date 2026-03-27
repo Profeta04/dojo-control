@@ -102,6 +102,15 @@ export function NotificationBell() {
     queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
   };
 
+  const handleClearAll = useCallback(async () => {
+    if (!user) return;
+    await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", user.id);
+    queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+  }, [user, queryClient]);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
