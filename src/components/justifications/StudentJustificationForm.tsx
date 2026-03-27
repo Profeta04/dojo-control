@@ -217,6 +217,7 @@ export function StudentJustificationForm() {
                         <DialogContent className="max-w-md">
                           <DialogHeader>
                             <DialogTitle>Justificar Falta</DialogTitle>
+                            <DialogDescription>Preencha os campos abaixo para justificar sua ausência.</DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 pt-2">
                             <div className="text-sm text-muted-foreground">

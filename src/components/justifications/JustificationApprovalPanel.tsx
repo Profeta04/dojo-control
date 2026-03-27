@@ -66,6 +66,33 @@ export function JustificationApprovalPanel() {
         })
         .eq("id", id);
       if (error) throw error;
+
+      // Find the student to notify
+      const justification = justifications?.find(j => j.id === id);
+      if (justification?.student_id) {
+        const statusLabel = status === "aprovada" ? "aprovada ✅" : "rejeitada ❌";
+        const notification = {
+          user_id: justification.student_id,
+          title: `Justificativa ${statusLabel}`,
+          message: reviewNote.trim()
+            ? `Sua justificativa foi ${status}. Nota: ${reviewNote.trim()}`
+            : `Sua justificativa de falta foi ${status}.`,
+          type: status === "aprovada" ? "info" : "warning",
+        };
+
+        await supabase.from("notifications").insert(notification).throwOnError();
+
+        // Send push notification
+        supabase.functions.invoke("send-push-notification", {
+          body: {
+            userIds: [justification.student_id],
+            title: `Justificativa ${statusLabel}`,
+            body: notification.message,
+            url: "/perfil",
+            type: status === "aprovada" ? "info" : "warning",
+          },
+        }).catch(() => {});
+      }
     },
     onSuccess: (_, vars) => {
       toast({ title: vars.status === "aprovada" ? "Justificativa aprovada ✅" : "Justificativa rejeitada" });
