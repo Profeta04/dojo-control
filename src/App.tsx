@@ -133,7 +133,6 @@ function AnimatedRoutes() {
         <Route path="/ajuda" element={<SafePage><Help /></SafePage>} />
         <Route path="/announcements" element={<SafePage><Announcements /></SafePage>} />
         <Route path="/compartilhar" element={<SafePage><StudentPayments /></SafePage>} />
-        <Route path="/compartilhar" element={<SafePage><StudentPayments /></SafePage>} />
         <Route path="*" element={<SafePage><NotFound /></SafePage>} />
       </Routes>
     </AnimatePresence>
