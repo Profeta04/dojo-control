@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, XCircle, FileText, Download, Loader2, Eye } from "lucide-react";
+import { CheckCircle2, XCircle, FileText, Download, Loader2, Eye, Search, Filter } from "lucide-react";
 import { JUSTIFICATION_CATEGORIES, JUSTIFICATION_STATUS } from "./JustificationCategories";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
 
@@ -26,12 +28,40 @@ export function JustificationApprovalPanel() {
   const [reviewNote, setReviewNote] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [categoryFilter, setCategoryFilter] = useState<string>("todos");
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Realtime — debounced invalidation
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!currentDojoId) return;
+    const channel = supabase
+      .channel("justifications-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "absence_justifications" },
+        () => {
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ["dojo-justifications", currentDojoId] });
+          }, 800);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [currentDojoId, queryClient]);
+
   const { data: justifications, isLoading } = useQuery({
     queryKey: ["dojo-justifications", currentDojoId],
     queryFn: async () => {
       if (!currentDojoId) return [];
 
-      // Get students from this dojo
       const { data: students } = await supabase
         .from("profiles")
         .select("user_id, name")
@@ -46,7 +76,7 @@ export function JustificationApprovalPanel() {
         .select("*, attendance(date, classes(name))")
         .in("student_id", studentIds)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(100);
 
       if (error) throw error;
       return (data || []).map((j: any) => ({ ...j, student_name: studentMap[j.student_id] || "Aluno" }));
@@ -67,7 +97,6 @@ export function JustificationApprovalPanel() {
         .eq("id", id);
       if (error) throw error;
 
-      // Find the student to notify
       const justification = justifications?.find(j => j.id === id);
       if (justification?.student_id) {
         const statusLabel = status === "aprovada" ? "aprovada ✅" : "rejeitada ❌";
@@ -82,7 +111,6 @@ export function JustificationApprovalPanel() {
 
         await supabase.from("notifications").insert(notification).throwOnError();
 
-        // Send push notification
         supabase.functions.invoke("send-push-notification", {
           body: {
             userIds: [justification.student_id],
@@ -117,8 +145,25 @@ export function JustificationApprovalPanel() {
   const getCategoryLabel = (val: string) =>
     JUSTIFICATION_CATEGORIES.find(c => c.value === val)?.label || val;
 
-  const pending = justifications?.filter(j => j.status === "pendente") || [];
-  const reviewed = justifications?.filter(j => j.status !== "pendente") || [];
+  // Apply filters
+  const filtered = useMemo(() => {
+    if (!justifications) return [];
+    return justifications.filter((j: any) => {
+      if (statusFilter !== "todos" && j.status !== statusFilter) return false;
+      if (categoryFilter !== "todos" && j.category !== categoryFilter) return false;
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        const name = (j.student_name || "").toLowerCase();
+        const className = (j.attendance?.classes?.name || "").toLowerCase();
+        if (!name.includes(term) && !className.includes(term)) return false;
+      }
+      return true;
+    });
+  }, [justifications, statusFilter, categoryFilter, searchTerm]);
+
+  const pending = filtered.filter(j => j.status === "pendente");
+  const reviewed = filtered.filter(j => j.status !== "pendente");
+  const totalPending = justifications?.filter(j => j.status === "pendente").length || 0;
 
   if (isLoading) {
     return (
@@ -134,23 +179,60 @@ export function JustificationApprovalPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Pending */}
+      {/* Filters */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="h-5 w-5 text-warning" />
-            Justificativas Pendentes
-            {pending.length > 0 && (
-              <Badge variant="secondary" className="ml-1 text-xs">{pending.length}</Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {pending.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Nenhuma justificativa pendente.
-            </p>
-          ) : (
+        <CardContent className="py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-xs font-medium text-muted-foreground">Filtros</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Buscar aluno ou turma..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 h-8 text-xs"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os status</SelectItem>
+                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="aprovada">Aprovada</SelectItem>
+                <SelectItem value="rejeitada">Rejeitada</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas categorias</SelectItem>
+                {JUSTIFICATION_CATEGORIES.map(cat => (
+                  <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pending */}
+      {pending.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="h-5 w-5 text-warning" />
+              Pendentes
+              <Badge variant="secondary" className="ml-1 text-xs">{totalPending}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-3">
               {pending.map((j: any) => (
                 <div key={j.id} className="p-3 rounded-lg border bg-card space-y-2">
@@ -232,9 +314,22 @@ export function JustificationApprovalPanel() {
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Empty state when no pending after filter */}
+      {pending.length === 0 && statusFilter !== "aprovada" && statusFilter !== "rejeitada" && (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-sm text-muted-foreground text-center">
+              {searchTerm || categoryFilter !== "todos"
+                ? "Nenhuma justificativa encontrada com os filtros aplicados."
+                : "Nenhuma justificativa pendente."}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Reviewed history */}
       {reviewed.length > 0 && (
@@ -243,6 +338,7 @@ export function JustificationApprovalPanel() {
             <CardTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4 text-muted-foreground" />
               Histórico
+              <Badge variant="outline" className="ml-1 text-xs">{reviewed.length}</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -262,7 +358,11 @@ export function JustificationApprovalPanel() {
                         ? format(new Date(j.attendance.date + "T12:00:00"), "dd/MM", { locale: ptBR })
                         : "—"}
                       {" • "}{getCategoryLabel(j.category)}
+                      {j.attendance?.classes?.name ? ` • ${j.attendance.classes.name}` : ""}
                     </p>
+                    {j.review_note && (
+                      <p className="text-muted-foreground/80 italic">💬 {j.review_note}</p>
+                    )}
                   </div>
                 );
               })}
@@ -276,6 +376,7 @@ export function JustificationApprovalPanel() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Anexo</DialogTitle>
+            <DialogDescription>Visualize ou baixe o documento anexado à justificativa.</DialogDescription>
           </DialogHeader>
           {attachmentUrl && (
             <div className="space-y-3">
