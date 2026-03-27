@@ -515,6 +515,19 @@ export default function PaymentsPage() {
       });
       const { error } = await supabase.from("notifications").insert(notifications);
       if (error) throw error;
+
+      // Send push notifications so they arrive even with the app closed
+      const studentIds = Array.from(studentPayments.keys());
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          userIds: studentIds,
+          title: "💳 Lembrete de Pagamento",
+          body: "Você tem pagamentos pendentes. Acesse o app para verificar.",
+          url: "/mensalidade",
+          type: "payment",
+        },
+      }).catch(() => {});
+
       toast({ title: "Notificações enviadas!", description: `${notifications.length} aluno(s) foram notificados.` });
     } catch (error: any) {
       toast({ title: "Erro", description: error.message || "Erro ao enviar notificações", variant: "destructive" });
@@ -549,6 +562,17 @@ export default function PaymentsPage() {
         related_id: selectedPayment.id,
       };
       await supabase.from("notifications").insert(notification);
+
+      // Push notification for receipt status
+      supabase.functions.invoke("send-push-notification", {
+        body: {
+          userIds: [selectedPayment.student_id],
+          title: notification.title,
+          body: notification.message,
+          url: "/mensalidade",
+          type: "payment",
+        },
+      }).catch(() => {});
       const statusLabel = newReceiptStatus === "aprovado" ? "aprovado ✅" : "rejeitado ❌";
       toast({
         title: `Comprovante ${statusLabel}`,

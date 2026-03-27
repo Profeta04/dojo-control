@@ -21,6 +21,17 @@ type NotificationPayload = {
   body: string;
   url?: string;
   icon?: string;
+  type?: string;
+  image?: string;
+};
+
+const TYPE_ICONS: Record<string, string> = {
+  payment: "/icons/payment.png",
+  warning: "/icons/warning.png",
+  training: "/icons/training.png",
+  announcement: "/icons/info.png",
+  info: "/icons/info.png",
+  level_up: "/icons/info.png",
 };
 
 async function sendPush(
@@ -115,7 +126,9 @@ Deno.serve(
     }
 
     const url = typeof body.url === "string" ? body.url.slice(0, 200) : "/";
-    const icon = typeof body.icon === "string" ? body.icon.slice(0, 200) : "/favicon.png";
+    const notifType = typeof body.type === "string" ? body.type.slice(0, 50) : "info";
+    const icon = typeof body.icon === "string" ? body.icon.slice(0, 200) : (TYPE_ICONS[notifType] || "/favicon.png");
+    const image = typeof body.image === "string" ? body.image.slice(0, 500) : undefined;
 
     const expiredEndpoints: string[] = [];
     let sent = 0;
@@ -125,7 +138,7 @@ Deno.serve(
       (subs as SubscriptionRow[]).map(async (sub) => {
         const result = await sendPush(
           sub,
-          { title, body: bodyText, url, icon },
+          { title, body: bodyText, url, icon, type: notifType, ...(image ? { image } : {}) },
           vapidPublicKey,
           vapidPrivateKey,
           vapidSubject,
