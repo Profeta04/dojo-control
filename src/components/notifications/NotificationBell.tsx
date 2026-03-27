@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, CreditCard, AlertTriangle, Info } from "lucide-react";
+import { Bell, Check, CreditCard, AlertTriangle, Info, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playNotification } from "@/lib/sounds";
 import { formatDistanceToNow } from "date-fns";
