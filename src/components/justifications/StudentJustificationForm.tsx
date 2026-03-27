@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Loader2, FileText, Upload, CalendarX, Clock, CheckCircle2, XCircle } from "lucide-react";
 import { JUSTIFICATION_CATEGORIES, JUSTIFICATION_STATUS } from "./JustificationCategories";
@@ -100,6 +100,45 @@ export function StudentJustificationForm() {
         attachment_url: attachmentUrl,
       });
       if (error) throw error;
+
+      // Notify all senseis/admins from student's dojo
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("name, dojo_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (profile?.dojo_id) {
+        const { data: dojoSenseis } = await supabase
+          .from("dojo_senseis")
+          .select("sensei_id")
+          .eq("dojo_id", profile.dojo_id);
+
+        const senseiIds = (dojoSenseis || []).map(s => s.sensei_id);
+
+        if (senseiIds.length > 0) {
+          const categoryLabel = getCategoryLabel(category);
+          const notifications = senseiIds.map(senseiId => ({
+            user_id: senseiId,
+            title: "📋 Nova Justificativa de Falta",
+            message: `${profile.name} enviou uma justificativa: ${categoryLabel}`,
+            type: "info",
+          }));
+
+          await supabase.from("notifications").insert(notifications).throwOnError();
+
+          // Send push notification
+          supabase.functions.invoke("send-push-notification", {
+            body: {
+              userIds: senseiIds,
+              title: "📋 Nova Justificativa de Falta",
+              body: `${profile.name} enviou uma justificativa: ${categoryLabel}`,
+              url: "/attendance",
+              type: "info",
+            },
+          }).catch(() => {});
+        }
+      }
     },
     onSuccess: () => {
       toast({ title: "Justificativa enviada!", description: "Aguarde a aprovação do sensei." });
@@ -178,6 +217,7 @@ export function StudentJustificationForm() {
                         <DialogContent className="max-w-md">
                           <DialogHeader>
                             <DialogTitle>Justificar Falta</DialogTitle>
+                            <DialogDescription>Preencha os campos abaixo para justificar sua ausência.</DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4 pt-2">
                             <div className="text-sm text-muted-foreground">
