@@ -10,6 +10,7 @@ import { GuardianInfoCard } from "@/components/student/GuardianInfoCard";
 import { UpcomingTrainingsCard } from "@/components/student/UpcomingTrainingsCard";
 import { StudentXPCard } from "@/components/student/StudentXPCard";
 import { AnnouncementsBanner } from "@/components/announcements/AnnouncementsBanner";
+import { StudentJustificationForm } from "@/components/justifications/StudentJustificationForm";
 
 export default function StudentProfile() {
   const { loading: authLoading } = useAuth();
