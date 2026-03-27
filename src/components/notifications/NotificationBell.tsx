@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, Check, CreditCard, AlertTriangle, Info } from "lucide-react";
+import { Bell, Check, CreditCard, AlertTriangle, Info, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { playNotification } from "@/lib/sounds";
 import { formatDistanceToNow } from "date-fns";
@@ -101,6 +101,15 @@ export function NotificationBell() {
       .eq("read", false);
     queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
   };
+
+  const handleClearAll = useCallback(async () => {
+    if (!user) return;
+    await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", user.id);
+    queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+  }, [user, queryClient]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -193,6 +202,19 @@ export function NotificationBell() {
             </div>
           )}
         </ScrollArea>
+        {notifications && notifications.length > 0 && (
+          <div className="border-t p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleClearAll}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Limpar todas
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
