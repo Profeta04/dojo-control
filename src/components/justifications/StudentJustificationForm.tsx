@@ -292,6 +292,7 @@ export function StudentJustificationForm() {
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* History */}
       <Card>
