@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { BELT_SECTIONS, getBeltSectionKey } from "@/lib/beltOrder";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { CollapsibleSection } from "./CollapsibleSection";
 
 function renderInline(text: string) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
