@@ -47,7 +47,7 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   const [reviewMode, setReviewMode] = useState(false);
 
   const currentQ = questions[currentIndex];
-  const progress = ((currentIndex + 1) / total) * 100;
+  const progress = total > 0 ? ((currentIndex + 1) / total) * 100 : 0;
   const answered = answers.filter(a => a !== null).length;
 
   const selectAnswer = (optionIndex: number) => {
