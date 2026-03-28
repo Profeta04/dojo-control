@@ -100,11 +100,11 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
     if (reviewMode) {
       return (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Revisão — {exam.title}</h3>
-            <Button variant="outline" size="sm" onClick={() => setReviewMode(false)}>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setReviewMode(false)} className="flex-shrink-0">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
+            <h3 className="font-semibold text-sm leading-tight">Revisão — {exam.title}</h3>
           </div>
           {questions.map((q, i) => {
             const correct = answers[i] === getCorrect(q);
