@@ -1,15 +1,99 @@
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fixedMaterials, FixedStudyMaterial } from "@/data/fixedStudyContent";
-import { BeltBadge } from "@/components/shared/BeltBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, BookOpen, Download, ExternalLink } from "lucide-react";
+import { FileText, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
+function renderInline(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    return <Fragment key={i}>{part}</Fragment>;
+  });
+}
+
+function MarkdownRenderer({ content }: { content: string }) {
+  const lines = content.split("\n");
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Table detection: line contains | and next line is separator
+    if (line.includes("|") && i + 1 < lines.length && /^\|?[\s-:|]+\|/.test(lines[i + 1])) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].includes("|")) {
+        tableLines.push(lines[i]);
+        i++;
+      }
+      // Parse header
+      const parseRow = (row: string) =>
+        row.split("|").map(c => c.trim()).filter(c => c !== "");
+      const headers = parseRow(tableLines[0]);
+      const bodyRows = tableLines.slice(2).map(parseRow);
+
+      elements.push(
+        <div key={`table-${i}`} className="my-3 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-muted/50">
+                {headers.map((h, hi) => (
+                  <th key={hi} className="px-3 py-2 text-left font-semibold text-foreground border-b border-border">
+                    {renderInline(h)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyRows.map((row, ri) => (
+                <tr key={ri} className={ri % 2 === 0 ? "" : "bg-muted/20"}>
+                  {row.map((cell, ci) => (
+                    <td key={ci} className="px-3 py-2 text-muted-foreground border-b border-border/50">
+                      {renderInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
+
+    if (line.startsWith("# ")) {
+      elements.push(<h1 key={i} className="text-xl font-bold mt-4 mb-2">{renderInline(line.slice(2))}</h1>);
+    } else if (line.startsWith("## ")) {
+      elements.push(<h2 key={i} className="text-lg font-semibold mt-3 mb-1">{renderInline(line.slice(3))}</h2>);
+    } else if (line.startsWith("### ")) {
+      elements.push(<h3 key={i} className="text-base font-semibold mt-2 mb-1">{renderInline(line.slice(4))}</h3>);
+    } else if (line.startsWith("- ")) {
+      elements.push(<li key={i} className="ml-4 my-0.5">{renderInline(line.slice(2))}</li>);
+    } else if (/^\d+\.\s/.test(line)) {
+      elements.push(<li key={i} className="ml-4 my-0.5 list-decimal">{renderInline(line.replace(/^\d+\.\s/, ""))}</li>);
+    } else if (line.startsWith("> ")) {
+      elements.push(<blockquote key={i} className="border-l-2 border-primary pl-3 italic my-2">{renderInline(line.slice(2))}</blockquote>);
+    } else if (line.startsWith("⚠️")) {
+      elements.push(<p key={i} className="bg-warning/10 text-warning p-2 rounded text-sm mt-2">{line}</p>);
+    } else if (line.trim() === "") {
+      elements.push(<div key={i} className="h-2" />);
+    } else {
+      elements.push(<p key={i} className="my-1">{renderInline(line)}</p>);
+    }
+    i++;
+  }
+
+  return <>{elements}</>;
+}
 
 export function StudyMaterialsList() {
   const { profile } = useAuth();
