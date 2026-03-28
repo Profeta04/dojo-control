@@ -108,17 +108,8 @@ export function StudyMaterialsList() {
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {selectedMaterial?.content?.split("\n").map((line: string, i: number) => {
-                if (line.startsWith("# ")) return <h1 key={i} className="text-xl font-bold mt-4 mb-2">{line.slice(2)}</h1>;
-                if (line.startsWith("## ")) return <h2 key={i} className="text-lg font-semibold mt-3 mb-1">{line.slice(3)}</h2>;
-                if (line.startsWith("### ")) return <h3 key={i} className="text-base font-semibold mt-2 mb-1">{line.slice(4)}</h3>;
-                if (line.startsWith("- ")) return <li key={i} className="ml-4">{line.slice(2).replace(/\*\*(.*?)\*\*/g, '$1')}</li>;
-                if (line.startsWith("> ")) return <blockquote key={i} className="border-l-2 border-primary pl-3 italic my-2">{line.slice(2)}</blockquote>;
-                if (line.startsWith("⚠️")) return <p key={i} className="bg-warning/10 text-warning p-2 rounded text-sm mt-2">{line}</p>;
-                if (line.trim() === "") return <br key={i} />;
-                return <p key={i} className="my-1">{line.replace(/\*\*(.*?)\*\*/g, '$1')}</p>;
-              })}
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <MarkdownRenderer content={selectedMaterial?.content || ""} />
             </div>
           </ScrollArea>
         </DialogContent>
