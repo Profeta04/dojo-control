@@ -36,7 +36,8 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const questions: ExamQuestion[] = Array.isArray(exam.questions) ? exam.questions : [];
+  const rawQ = typeof exam.questions === 'string' ? JSON.parse(exam.questions) : exam.questions;
+  const questions: ExamQuestion[] = Array.isArray(rawQ) ? rawQ : [];
   const total = questions.length;
 
   const [currentIndex, setCurrentIndex] = useState(0);
