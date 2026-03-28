@@ -94,7 +94,7 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   // Result screen
   if (showResult) {
     const score = questions.reduce((acc, q, i) => acc + (answers[i] === getCorrect(q) ? 1 : 0), 0);
-    const pct = Math.round((score / total) * 100);
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
     const passed = pct >= 70;
 
     if (reviewMode) {
