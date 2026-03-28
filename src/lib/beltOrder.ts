@@ -37,6 +37,7 @@ export function getBeltSectionKey(beltLevel: string, title?: string): string {
 
   const mapping: Record<string, string> = {
     branca: "branca",
+    branca_ponta_bordo: "branca",
     cinza: "cinza",
     cinza_ponta_azul: "cinza_ponta_azul",
     cinza_ponta_azul_escura: "cinza_ponta_azul",
