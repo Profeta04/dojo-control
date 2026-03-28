@@ -106,7 +106,7 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
             </Button>
           </div>
           {questions.map((q, i) => {
-            const correct = answers[i] === q.correct_option;
+            const correct = answers[i] === getCorrect(q);
             return (
               <Card key={i} className={cn("border-l-4", correct ? "border-l-green-500" : "border-l-red-500")}>
                 <CardContent className="pt-4">
@@ -115,11 +115,11 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
                     {q.options.map((opt, oi) => (
                       <div key={oi} className={cn(
                         "text-xs px-3 py-1.5 rounded",
-                        oi === q.correct_option && "bg-green-500/10 text-green-700 font-medium",
-                        oi === answers[i] && oi !== q.correct_option && "bg-red-500/10 text-red-700 line-through",
+                        oi === getCorrect(q) && "bg-green-500/10 text-green-700 font-medium",
+                        oi === answers[i] && oi !== getCorrect(q) && "bg-red-500/10 text-red-700 line-through",
                       )}>
-                        {oi === q.correct_option && <CheckCircle2 className="h-3 w-3 inline mr-1" />}
-                        {oi === answers[i] && oi !== q.correct_option && <XCircle className="h-3 w-3 inline mr-1" />}
+                        {oi === getCorrect(q) && <CheckCircle2 className="h-3 w-3 inline mr-1" />}
+                        {oi === answers[i] && oi !== getCorrect(q) && <XCircle className="h-3 w-3 inline mr-1" />}
                         {opt}
                       </div>
                     ))}
