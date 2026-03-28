@@ -607,6 +607,91 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string
+          exam_template_id: string
+          id: string
+          score: number
+          student_id: string
+          total: number
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string
+          exam_template_id: string
+          id?: string
+          score?: number
+          student_id: string
+          total?: number
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string
+          exam_template_id?: string
+          id?: string
+          score?: number
+          student_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_exam_template_id_fkey"
+            columns: ["exam_template_id"]
+            isOneToOne: false
+            referencedRelation: "exam_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exam_templates: {
+        Row: {
+          belt_level: string
+          created_at: string
+          created_by: string
+          difficulty: string
+          dojo_id: string | null
+          id: string
+          martial_art: string
+          questions: Json
+          title: string
+          total_questions: number
+        }
+        Insert: {
+          belt_level?: string
+          created_at?: string
+          created_by: string
+          difficulty?: string
+          dojo_id?: string | null
+          id?: string
+          martial_art?: string
+          questions?: Json
+          title: string
+          total_questions?: number
+        }
+        Update: {
+          belt_level?: string
+          created_at?: string
+          created_by?: string
+          difficulty?: string
+          dojo_id?: string | null
+          id?: string
+          martial_art?: string
+          questions?: Json
+          title?: string
+          total_questions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_templates_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       graduation_history: {
         Row: {
           approved_by: string | null
@@ -1287,6 +1372,106 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      study_materials: {
+        Row: {
+          belt_level: string
+          content: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          dojo_id: string | null
+          file_url: string | null
+          id: string
+          martial_art: string
+          title: string
+          type: string
+        }
+        Insert: {
+          belt_level?: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          dojo_id?: string | null
+          file_url?: string | null
+          id?: string
+          martial_art?: string
+          title: string
+          type?: string
+        }
+        Update: {
+          belt_level?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dojo_id?: string | null
+          file_url?: string | null
+          id?: string
+          martial_art?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_materials_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_videos: {
+        Row: {
+          belt_level: string
+          created_at: string
+          created_by: string
+          description: string | null
+          dojo_id: string | null
+          id: string
+          martial_art: string
+          source: string
+          thumbnail_url: string | null
+          title: string
+          video_url: string
+        }
+        Insert: {
+          belt_level?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          dojo_id?: string | null
+          id?: string
+          martial_art?: string
+          source?: string
+          thumbnail_url?: string | null
+          title: string
+          video_url: string
+        }
+        Update: {
+          belt_level?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          dojo_id?: string | null
+          id?: string
+          martial_art?: string
+          source?: string
+          thumbnail_url?: string | null
+          title?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_videos_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_promotions: {
         Row: {
