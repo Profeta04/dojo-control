@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Megaphone,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
