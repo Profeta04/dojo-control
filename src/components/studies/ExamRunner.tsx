@@ -59,7 +59,7 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   const submitExam = async () => {
     if (!profile) return;
     setSubmitting(true);
-    const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.correct_option ? 1 : 0), 0);
+    const score = questions.reduce((acc, q, i) => acc + (answers[i] === getCorrect(q) ? 1 : 0), 0);
 
     try {
       await supabase.from("exam_attempts").insert({
