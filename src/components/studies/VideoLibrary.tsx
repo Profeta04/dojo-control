@@ -77,9 +77,8 @@ export function VideoLibrary() {
                 </div>
               </div>
               <CardContent className="p-3">
-                <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="mb-1">
                   <h3 className="text-sm font-semibold leading-tight line-clamp-2">{video.title}</h3>
-                  <BeltBadge grade={video.belt_level as any} size="sm" />
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2">{video.description}</p>
                 <div className="flex items-center gap-2 mt-2">

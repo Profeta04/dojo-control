@@ -79,7 +79,6 @@ export function StudyMaterialsList() {
                     </CardTitle>
                   </div>
                 </div>
-                <BeltBadge grade={material.belt_level as any} size="sm" />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
