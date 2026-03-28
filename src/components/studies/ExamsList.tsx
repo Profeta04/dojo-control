@@ -11,6 +11,7 @@ import { ExamRunner } from "./ExamRunner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BELT_SECTIONS, getBeltSectionKey } from "@/lib/beltOrder";
+import { CollapsibleSection } from "./CollapsibleSection";
 
 const difficultyConfig: Record<string, { label: string; color: string }> = {
   easy: { label: "Fácil", color: "bg-green-500/10 text-green-600 border-green-500/20" },
