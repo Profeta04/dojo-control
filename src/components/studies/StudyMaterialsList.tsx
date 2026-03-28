@@ -135,6 +135,14 @@ export function StudyMaterialsList() {
     }
   };
 
+  // Group materials by belt section
+  const grouped = BELT_SECTIONS.map((section) => ({
+    ...section,
+    items: allMaterials.filter(
+      (m) => getBeltSectionKey(m.belt_level || "branca", m.title) === section.key
+    ),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-4">
       {allMaterials.length === 0 && (
@@ -146,43 +154,50 @@ export function StudyMaterialsList() {
         </Card>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {allMaterials.map((material) => (
-          <Card
-            key={material.id}
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => openMaterial(material)}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-start gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <FileText className="h-5 w-5 text-primary" />
+      {grouped.map((group) => (
+        <div key={group.key} className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground px-1">
+            {group.label}
+          </h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {group.items.map((material) => (
+              <Card
+                key={material.id}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => openMaterial(material)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-semibold leading-tight">
+                          {material.title}
+                        </CardTitle>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-sm font-semibold leading-tight">
-                      {material.title}
-                    </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
+                    {material.description}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      {material.type === "pdf" ? "PDF" : "Texto"}
+                    </Badge>
+                    {material.isFixed && (
+                      <Badge variant="secondary" className="text-[10px]">Oficial</Badge>
+                    )}
                   </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                {material.description}
-              </p>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px]">
-                  {material.type === "pdf" ? "PDF" : "Texto"}
-                </Badge>
-                {material.isFixed && (
-                  <Badge variant="secondary" className="text-[10px]">Oficial</Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      ))}
 
       {/* Dialog for embedded content */}
       <Dialog open={!!selectedMaterial} onOpenChange={() => setSelectedMaterial(null)}>

@@ -59,6 +59,14 @@ export function ExamsList() {
     );
   }
 
+  // Group exams by belt section
+  const grouped = BELT_SECTIONS.map((section) => ({
+    ...section,
+    items: exams.filter(
+      (exam: any) => getBeltSectionKey(exam.belt_level || "branca", exam.title) === section.key
+    ),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <div className="space-y-4">
       {exams.length === 0 && (
@@ -71,60 +79,67 @@ export function ExamsList() {
         </Card>
       )}
 
-      <div className="grid gap-3">
-        {exams.map((exam: any) => {
-          const examAttempts = attempts.filter((a: any) => a.exam_template_id === exam.id);
-          const bestScore = examAttempts.length > 0
-            ? Math.max(...examAttempts.map((a: any) => Math.round((a.score / a.total) * 100)))
-            : null;
-          const lastAttempt = examAttempts[0];
-          const diff = difficultyConfig[exam.difficulty] || difficultyConfig.medium;
+      {grouped.map((group) => (
+        <div key={group.key} className="space-y-2">
+          <h3 className="text-sm font-semibold text-foreground px-1">
+            {group.label}
+          </h3>
+          <div className="grid gap-3">
+            {group.items.map((exam: any) => {
+              const examAttempts = attempts.filter((a: any) => a.exam_template_id === exam.id);
+              const bestScore = examAttempts.length > 0
+                ? Math.max(...examAttempts.map((a: any) => Math.round((a.score / a.total) * 100)))
+                : null;
+              const lastAttempt = examAttempts[0];
+              const diff = difficultyConfig[exam.difficulty] || difficultyConfig.medium;
 
-          return (
-            <Card key={exam.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-accent/10">
-                      <ClipboardCheck className="h-5 w-5 text-accent" />
+              return (
+                <Card key={exam.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-accent/10">
+                          <ClipboardCheck className="h-5 w-5 text-accent" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-sm font-semibold">{exam.title}</CardTitle>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {exam.total_questions} questões
+                          </p>
+                        </div>
+                      </div>
+                      <BeltBadge grade={exam.belt_level as any} size="sm" />
                     </div>
-                    <div>
-                      <CardTitle className="text-sm font-semibold">{exam.title}</CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {exam.total_questions} questões
-                      </p>
+                  </CardHeader>
+                  <CardContent className="pt-0 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className={diff.color}>{diff.label}</Badge>
+                      {bestScore !== null && (
+                        <Badge variant="secondary" className="gap-1">
+                          <Trophy className="h-3 w-3" />
+                          Melhor: {bestScore}%
+                        </Badge>
+                      )}
+                      {lastAttempt && (
+                        <span className="text-[10px] text-muted-foreground">
+                          Último: {format(new Date(lastAttempt.completed_at), "dd/MM", { locale: ptBR })}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                  <BeltBadge grade={exam.belt_level as any} size="sm" />
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className={diff.color}>{diff.label}</Badge>
-                  {bestScore !== null && (
-                    <Badge variant="secondary" className="gap-1">
-                      <Trophy className="h-3 w-3" />
-                      Melhor: {bestScore}%
-                    </Badge>
-                  )}
-                  {lastAttempt && (
-                    <span className="text-[10px] text-muted-foreground">
-                      Último: {format(new Date(lastAttempt.completed_at), "dd/MM", { locale: ptBR })}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  className="w-full"
-                  onClick={() => setActiveExam(exam)}
-                >
-                  {examAttempts.length > 0 ? "Refazer Simulado" : "Iniciar Simulado"}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => setActiveExam(exam)}
+                    >
+                      {examAttempts.length > 0 ? "Refazer Simulado" : "Iniciar Simulado"}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
