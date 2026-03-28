@@ -22,6 +22,7 @@ import {
   HelpCircle,
   Megaphone,
   FileText,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useDojoSettings } from "@/hooks/useDojoSettings";
@@ -51,7 +52,7 @@ const navItems: NavItem[] = [
   { title: "Dashboard", href: "/perfil", icon: <LayoutDashboard className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Meu Progresso", href: "/meu-progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Agenda", href: "/agenda", icon: <CalendarDays className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
-  { title: "Tarefas", href: "/tarefas", icon: <ClipboardList className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
+  { title: "Estudos", href: "/estudos", icon: <BookOpen className="h-[1.35rem] w-[1.35rem]" />, studentOnly: true },
   { title: "Alunos", href: "/students", icon: <Users className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Progresso", href: "/progresso", icon: <TrendingUp className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Senseis", href: "/senseis", icon: <UserCog className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
@@ -68,6 +69,7 @@ const navItems: NavItem[] = [
   { title: "Assinaturas", href: "/subscription-approvals", icon: <Crown className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Planos", href: "/planos", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Conteúdo", href: "/conteudo", icon: <BookOpen className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Ajuda", href: "/ajuda", icon: <HelpCircle className="h-[1.35rem] w-[1.35rem]" /> },
 ];
 
@@ -94,13 +96,13 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
 
   // Group items into sections
   const mainItems = filteredNavItems.filter(i => 
-    ["/dashboard", "/perfil", "/tarefas", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas"].includes(i.href)
+    ["/dashboard", "/perfil", "/estudos", "/students", "/progresso", "/senseis", "/classes", "/attendance", "/agenda", "/meu-progresso", "/conquistas"].includes(i.href)
   );
   const financeItems = filteredNavItems.filter(i => 
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
-    ["/planos", "/subscription-approvals", "/settings", "/ajuda"].includes(i.href)
+    ["/planos", "/subscription-approvals", "/settings", "/conteudo", "/ajuda"].includes(i.href)
   );
 
   const renderNavItem = (item: NavItem, index: number) => {

@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ChevronLeft,
   HelpCircle,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
@@ -41,7 +42,7 @@ interface TabItem {
 // Student pages — matching sidebar: Principal then Pagamentos
 const studentPage1: TabItem[] = [
   { title: "Início", href: "/perfil", icon: LayoutDashboard },
-  { title: "Tarefas", href: "/tarefas", icon: ClipboardList },
+  { title: "Estudos", href: "/estudos", icon: BookOpen },
   { title: "Perfil", href: "/config", icon: Settings, isProfile: true },
   { title: "Pagamentos", href: "/mensalidade", icon: CreditCard },
 ];

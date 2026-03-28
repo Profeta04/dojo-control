@@ -56,7 +56,7 @@ const PaymentHistory = lazyRetry(() => import("./pages/PaymentHistory"));
 const StudentPayments = lazyRetry(() => import("./pages/StudentPayments"));
 const Settings = lazyRetry(() => import("./pages/Settings"));
 const StudentProfile = lazyRetry(() => import("./pages/StudentProfile"));
-const StudentTasks = lazyRetry(() => import("./pages/StudentTasks"));
+const StudentStudies = lazyRetry(() => import("./pages/StudentStudies"));
 const StudentConfig = lazyRetry(() => import("./pages/StudentConfig"));
 const StudentProgress = lazyRetry(() => import("./pages/StudentProgress"));
 const Checkin = lazyRetry(() => import("./pages/Checkin"));
@@ -69,6 +69,7 @@ const SubscriptionApprovals = lazyRetry(() => import("./pages/SubscriptionApprov
 const Plans = lazyRetry(() => import("./pages/Plans"));
 const Help = lazyRetry(() => import("./pages/Help"));
 const Announcements = lazyRetry(() => import("./pages/Announcements"));
+const ContentManagement = lazyRetry(() => import("./pages/ContentManagement"));
 const NotFound = lazyRetry(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -119,7 +120,7 @@ function AnimatedRoutes() {
         <Route path="/graduations" element={<SafePage><Graduations /></SafePage>} />
         <Route path="/settings" element={<SafePage><Settings /></SafePage>} />
         <Route path="/perfil" element={<SafePage><StudentProfile /></SafePage>} />
-        <Route path="/tarefas" element={<SafePage><StudentTasks /></SafePage>} />
+        <Route path="/estudos" element={<SafePage><StudentStudies /></SafePage>} />
         <Route path="/config" element={<SafePage><StudentConfig /></SafePage>} />
         <Route path="/progresso" element={<SafePage><StudentProgress /></SafePage>} />
         <Route path="/checkin/:token" element={<SafePage><Checkin /></SafePage>} />
@@ -132,6 +133,7 @@ function AnimatedRoutes() {
         <Route path="/planos" element={<SafePage><Plans /></SafePage>} />
         <Route path="/ajuda" element={<SafePage><Help /></SafePage>} />
         <Route path="/announcements" element={<SafePage><Announcements /></SafePage>} />
+        <Route path="/conteudo" element={<SafePage><ContentManagement /></SafePage>} />
         <Route path="/compartilhar" element={<SafePage><StudentPayments /></SafePage>} />
         <Route path="*" element={<SafePage><NotFound /></SafePage>} />
       </Routes>
