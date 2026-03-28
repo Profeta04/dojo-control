@@ -102,7 +102,7 @@ export function SidebarNavContent({ logoUrl, onCloseMobile }: SidebarNavContentP
     ["/payments", "/payment-history", "/mensalidade", "/historico-pagamentos", "/graduations"].includes(i.href)
   );
   const adminItems = filteredNavItems.filter(i => 
-    ["/planos", "/subscription-approvals", "/settings", "/ajuda"].includes(i.href)
+    ["/planos", "/subscription-approvals", "/settings", "/conteudo", "/ajuda"].includes(i.href)
   );
 
   const renderNavItem = (item: NavItem, index: number) => {
