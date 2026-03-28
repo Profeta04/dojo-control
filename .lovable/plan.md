@@ -1,45 +1,16 @@
 
 
-## Plano: Mover Justificativas para "Meu Progresso" e Dashboard do Aluno
+## Plano: Módulo "Estudos" — IMPLEMENTADO ✅
 
-### O que muda
+A aba "Tarefas" foi renomeada para "Estudos" (`/estudos`) com 4 sub-abas: Tarefas, Apostilas, Simulados e Vídeos.
 
-As justificativas de faltas deixam de ter uma página própria (`/justificativas`) e passam a ser exibidas embutidas em duas páginas existentes:
+### O que foi feito
 
-1. **Meu Progresso** (`/meu-progresso`) — seção de justificativas no final da página, após a timeline de graduação
-2. **Perfil / Dashboard do aluno** (`/perfil`) — seção de justificativas logo abaixo do `AnnouncementsBanner`
-
-### Alterações
-
-| Arquivo | Mudança |
-|---|---|
-| `src/pages/StudentMyProgress.tsx` | Importar e renderizar `StudentJustificationForm` após `GraduationTimeline` |
-| `src/pages/StudentProfile.tsx` | Importar e renderizar `StudentJustificationForm` abaixo do `AnnouncementsBanner` |
-| `src/App.tsx` | Remover a rota `/justificativas` e o lazy import de `StudentJustifications` |
-| `src/pages/StudentJustifications.tsx` | Deletar o arquivo (página dedicada não mais necessária) |
-| `src/components/layout/StudentBottomNav.tsx` | Remover o item "Faltas" (`/justificativas`) da navegação inferior |
-| `src/components/layout/sidebar/SidebarNavContent.tsx` | Remover o item "Faltas" do menu lateral |
-
-### Layout
-
-**Meu Progresso** — no final:
-```text
-... stats cards ...
-... graduação timeline ...
-── Justificativa de Faltas ──   ← nova seção
-   [formulário + histórico]
-```
-
-**Perfil (Dashboard do aluno)** — após avisos:
-```text
-── Mural de Avisos ──
-── Justificativa de Faltas ──   ← nova seção
-── Meus Dados / Cards ──
-```
-
-### Detalhes técnicos
-
-- O componente `StudentJustificationForm` já é auto-contido (busca faltas, exibe formulário e histórico). Basta importá-lo e renderizá-lo.
-- Nenhuma mudança de banco de dados necessária.
-- A aba "Justificativas" no painel do Sensei (página Presenças) permanece inalterada.
-
+1. **Banco de dados**: 4 novas tabelas (`study_materials`, `study_videos`, `exam_templates`, `exam_attempts`) + bucket `study-materials` + RLS
+2. **Navegação**: Rota `/tarefas` → `/estudos`, sidebar e bottom nav atualizados com ícone `BookOpen`
+3. **Página `/estudos`**: 4 sub-abas com animação — Tarefas (quiz + ranking), Apostilas, Simulados, Vídeos
+4. **Apostilas**: Conteúdo fixo de Judô embutido + suporte a upload PDF pelo sensei
+5. **Vídeos**: Biblioteca fixa + YouTube links pelo sensei
+6. **Simulados**: Prova sem timer, revisão de respostas, XP por aprovação (≥70%)
+7. **Gestão de Conteúdo**: Página `/conteudo` para staff gerenciar apostilas, vídeos e simulados
+8. **Conteúdo fixo**: `src/data/fixedStudyContent.ts` com materiais e vídeos oficiais de Judô
