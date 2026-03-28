@@ -156,10 +156,7 @@ export function StudyMaterialsList() {
       )}
 
       {grouped.map((group) => (
-        <div key={group.key} className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground px-1">
-            {group.label}
-          </h3>
+        <CollapsibleSection key={group.key} label={group.label} count={group.items.length}>
           <div className="grid gap-3 sm:grid-cols-2">
             {group.items.map((material) => (
               <Card
@@ -197,7 +194,7 @@ export function StudyMaterialsList() {
               </Card>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       ))}
 
       {/* Dialog for embedded content */}
