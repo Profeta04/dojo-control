@@ -23,6 +23,7 @@ import {
   ChevronRight,
   ChevronLeft,
   HelpCircle,
+  BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSignedUrl } from "@/hooks/useSignedUrl";
