@@ -13,17 +13,23 @@ import { ExamsList } from "@/components/studies/ExamsList";
 import { Crown, ClipboardList, BookOpen, Video, ClipboardCheck, ArrowLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 type StudyTab = "tarefas" | "apostilas" | "simulados" | "videos";
 
-const tabs: { key: StudyTab; label: string; description: string; icon: typeof ClipboardList }[] = [
-  { key: "tarefas", label: "Tarefas", description: "Missões e ranking do dojo", icon: ClipboardList },
-  { key: "apostilas", label: "Apostilas", description: "Material de estudo por faixa", icon: BookOpen },
-  { key: "simulados", label: "Simulados", description: "Provas práticas por faixa", icon: ClipboardCheck },
-  { key: "videos", label: "Vídeos", description: "Videoaulas e demonstrações", icon: Video },
+const tabs: { key: StudyTab; label: string; description: string; icon: typeof ClipboardList; gradient: string }[] = [
+  { key: "tarefas", label: "Tarefas", description: "Missões e ranking do dojo", icon: ClipboardList, gradient: "from-primary/20 to-primary/5" },
+  { key: "apostilas", label: "Apostilas", description: "Material de estudo por faixa", icon: BookOpen, gradient: "from-blue-500/20 to-blue-500/5" },
+  { key: "simulados", label: "Simulados", description: "Provas práticas por faixa", icon: ClipboardCheck, gradient: "from-green-500/20 to-green-500/5" },
+  { key: "videos", label: "Vídeos", description: "Videoaulas e demonstrações", icon: Video, gradient: "from-purple-500/20 to-purple-500/5" },
 ];
+
+const tabIconColors: Record<StudyTab, string> = {
+  tarefas: "bg-primary/15 text-primary",
+  apostilas: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  simulados: "bg-green-500/15 text-green-600 dark:text-green-400",
+  videos: "bg-purple-500/15 text-purple-600 dark:text-purple-400",
+};
 
 export default function StudentStudies() {
   const { loading: authLoading } = useAuth();
@@ -38,6 +44,8 @@ export default function StudentStudies() {
     setActiveTab(null);
     setShowRanking(false);
   };
+
+  const currentTab = tabs.find(t => t.key === activeTab);
 
   return (
     <RequireApproval>
@@ -60,23 +68,27 @@ export default function StudentStudies() {
               <div className="grid gap-3 mt-4">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
+                  const iconStyle = tabIconColors[tab.key];
                   return (
-                    <Card
+                    <button
                       key={tab.key}
-                      className="cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+                      className={cn(
+                        "w-full flex items-center gap-3 p-4 rounded-xl border border-border",
+                        "bg-gradient-to-r transition-all active:scale-[0.98]",
+                        "hover:shadow-md hover:border-primary/20",
+                        tab.gradient
+                      )}
                       onClick={() => setActiveTab(tab.key)}
                     >
-                      <CardContent className="flex items-center gap-3 py-4 px-4">
-                        <div className="p-2.5 rounded-xl bg-primary/10 flex-shrink-0">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground">{tab.label}</p>
-                          <p className="text-xs text-muted-foreground">{tab.description}</p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </CardContent>
-                    </Card>
+                      <div className={cn("p-2.5 rounded-xl flex-shrink-0", iconStyle)}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="font-semibold text-sm text-foreground">{tab.label}</p>
+                        <p className="text-xs text-muted-foreground">{tab.description}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    </button>
                   );
                 })}
               </div>
@@ -90,20 +102,24 @@ export default function StudentStudies() {
               exit={{ opacity: 0, x: 20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Botão voltar + título */}
-              <div className="flex items-center gap-2 mb-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
+              {/* Header com voltar + título alinhados */}
+              <div className="flex items-center gap-3 mb-5">
+                <button
                   onClick={handleBack}
-                  className="gap-1 px-2"
+                  className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/50 hover:bg-muted transition-colors flex-shrink-0"
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                  Voltar
-                </Button>
-                <h2 className="font-semibold text-base text-foreground">
-                  {tabs.find(t => t.key === activeTab)?.label}
-                </h2>
+                  <ArrowLeft className="h-4 w-4 text-foreground" />
+                </button>
+                <div className="flex items-center gap-2">
+                  {currentTab && (
+                    <div className={cn("p-1.5 rounded-lg", tabIconColors[activeTab])}>
+                      <currentTab.icon className="h-4 w-4" />
+                    </div>
+                  )}
+                  <h2 className="font-bold text-lg text-foreground">
+                    {currentTab?.label}
+                  </h2>
+                </div>
               </div>
 
               {/* XP Bar para tarefas */}

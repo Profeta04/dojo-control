@@ -47,7 +47,7 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   const [reviewMode, setReviewMode] = useState(false);
 
   const currentQ = questions[currentIndex];
-  const progress = ((currentIndex + 1) / total) * 100;
+  const progress = total > 0 ? ((currentIndex + 1) / total) * 100 : 0;
   const answered = answers.filter(a => a !== null).length;
 
   const selectAnswer = (optionIndex: number) => {
@@ -94,17 +94,17 @@ export function ExamRunner({ exam, onFinish }: ExamRunnerProps) {
   // Result screen
   if (showResult) {
     const score = questions.reduce((acc, q, i) => acc + (answers[i] === getCorrect(q) ? 1 : 0), 0);
-    const pct = Math.round((score / total) * 100);
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0;
     const passed = pct >= 70;
 
     if (reviewMode) {
       return (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Revisão — {exam.title}</h3>
-            <Button variant="outline" size="sm" onClick={() => setReviewMode(false)}>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setReviewMode(false)} className="flex-shrink-0">
               <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
             </Button>
+            <h3 className="font-semibold text-sm leading-tight">Revisão — {exam.title}</h3>
           </div>
           {questions.map((q, i) => {
             const correct = answers[i] === getCorrect(q);
