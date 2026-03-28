@@ -69,6 +69,7 @@ const navItems: NavItem[] = [
   { title: "Assinaturas", href: "/subscription-approvals", icon: <Crown className="h-[1.35rem] w-[1.35rem]" />, ownerOnly: true },
   { title: "Planos", href: "/planos", icon: <CreditCard className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Config. Dojo", href: "/settings", icon: <Landmark className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
+  { title: "Conteúdo", href: "/conteudo", icon: <BookOpen className="h-[1.35rem] w-[1.35rem]" />, adminOnly: true },
   { title: "Ajuda", href: "/ajuda", icon: <HelpCircle className="h-[1.35rem] w-[1.35rem]" /> },
 ];
 
