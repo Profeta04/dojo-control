@@ -15,6 +15,11 @@ interface ExamQuestion {
   question: string;
   options: string[];
   correct_option: number;
+  correct?: number;
+}
+
+function getCorrect(q: ExamQuestion): number {
+  return q.correct_option ?? q.correct ?? -1;
 }
 
 interface ExamRunnerProps {
