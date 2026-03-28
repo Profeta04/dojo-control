@@ -119,7 +119,7 @@ function AnimatedRoutes() {
         <Route path="/graduations" element={<SafePage><Graduations /></SafePage>} />
         <Route path="/settings" element={<SafePage><Settings /></SafePage>} />
         <Route path="/perfil" element={<SafePage><StudentProfile /></SafePage>} />
-        <Route path="/tarefas" element={<SafePage><StudentTasks /></SafePage>} />
+        <Route path="/estudos" element={<SafePage><StudentStudies /></SafePage>} />
         <Route path="/config" element={<SafePage><StudentConfig /></SafePage>} />
         <Route path="/progresso" element={<SafePage><StudentProgress /></SafePage>} />
         <Route path="/checkin/:token" element={<SafePage><Checkin /></SafePage>} />
