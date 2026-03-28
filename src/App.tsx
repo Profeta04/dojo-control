@@ -56,7 +56,7 @@ const PaymentHistory = lazyRetry(() => import("./pages/PaymentHistory"));
 const StudentPayments = lazyRetry(() => import("./pages/StudentPayments"));
 const Settings = lazyRetry(() => import("./pages/Settings"));
 const StudentProfile = lazyRetry(() => import("./pages/StudentProfile"));
-const StudentTasks = lazyRetry(() => import("./pages/StudentTasks"));
+const StudentStudies = lazyRetry(() => import("./pages/StudentStudies"));
 const StudentConfig = lazyRetry(() => import("./pages/StudentConfig"));
 const StudentProgress = lazyRetry(() => import("./pages/StudentProgress"));
 const Checkin = lazyRetry(() => import("./pages/Checkin"));
