@@ -68,7 +68,7 @@ export function StudyMaterialsList() {
             onClick={() => openMaterial(material)}
           >
             <CardHeader className="pb-2">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-start gap-2">
                 <div className="flex items-center gap-2">
                   <div className="p-2 rounded-lg bg-primary/10">
                     <FileText className="h-5 w-5 text-primary" />
@@ -79,7 +79,6 @@ export function StudyMaterialsList() {
                     </CardTitle>
                   </div>
                 </div>
-                <BeltBadge grade={material.belt_level as any} size="sm" />
               </div>
             </CardHeader>
             <CardContent className="pt-0">
