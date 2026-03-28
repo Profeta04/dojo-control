@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, BookOpen } from "lucide-react";
+import { FileText, BookOpen, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { BELT_SECTIONS, getBeltSectionKey } from "@/lib/beltOrder";
+import { cn } from "@/lib/utils";
 
 function renderInline(text: string) {
   const parts = text.split(/(\*\*.*?\*\*)/g);
