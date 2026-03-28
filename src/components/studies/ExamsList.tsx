@@ -81,10 +81,7 @@ export function ExamsList() {
       )}
 
       {grouped.map((group) => (
-        <div key={group.key} className="space-y-2">
-          <h3 className="text-sm font-semibold text-foreground px-1">
-            {group.label}
-          </h3>
+        <CollapsibleSection key={group.key} label={group.label} count={group.items.length}>
           <div className="grid gap-3">
             {group.items.map((exam: any) => {
               const examAttempts = attempts.filter((a: any) => a.exam_template_id === exam.id);
@@ -139,7 +136,7 @@ export function ExamsList() {
               );
             })}
           </div>
-        </div>
+        </CollapsibleSection>
       ))}
     </div>
   );
