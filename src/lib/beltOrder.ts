@@ -13,7 +13,7 @@ export const BELT_SECTIONS = [
   { key: "amarela_ponta_laranja", label: "🟡🟠 Faixa Amarela Ponta Laranja — 5º KYŪ", color: "bg-yellow-500" },
   { key: "laranja", label: "🟠 Faixa Laranja — 4º KYŪ", color: "bg-orange-500" },
   { key: "verde", label: "🟢 Faixa Verde — 3º KYŪ", color: "bg-green-600" },
-  { key: "🟣", label: "🟣 Faixa Roxa — 2º KYŪ", color: "bg-purple-600" },
+  { key: "roxa", label: "🟣 Faixa Roxa — 2º KYŪ", color: "bg-purple-600" },
   { key: "marrom", label: "🟤 Faixa Marrom — 1º KYŪ", color: "bg-amber-800" },
 ] as const;
 
