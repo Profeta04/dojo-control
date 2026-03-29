@@ -4,9 +4,9 @@
  */
 export const BELT_SECTIONS = [
   { key: "geral", label: "📚 Conteúdo Geral", color: "bg-muted" },
-  { key: "branca", label: "⬜ Faixa Branca Ponta Bordô — 11º KYŪ", color: "bg-white border" },
-  { key: "cinza", label: "🩶 Faixa Cinza — 10º KYŪ", color: "bg-gray-300" },
-  { key: "cinza_ponta_azul", label: "🩶🔵 Faixa Cinza Ponta Azul Escura — 9º KYŪ", color: "bg-gray-400" },
+  { key: "branca", label: "⚪ Faixa Branca Ponta Bordô — 11º KYŪ", color: "bg-white border" },
+  { key: "cinza", label: "⚫ Faixa Cinza — 10º KYŪ", color: "bg-gray-300" },
+  { key: "cinza_ponta_azul", label: "⚫🔵 Faixa Cinza Ponta Azul Escura — 9º KYŪ", color: "bg-gray-400" },
   { key: "azul", label: "🔵 Faixa Azul Escura — 8º KYŪ", color: "bg-blue-800" },
   { key: "azul_ponta_amarela", label: "🔵🟡 Faixa Azul Ponta Amarela — 7º KYŪ", color: "bg-blue-600" },
   { key: "amarela", label: "🟡 Faixa Amarela — 6º KYŪ", color: "bg-yellow-400" },

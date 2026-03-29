@@ -21,7 +21,7 @@ const tabs: { key: StudyTab; label: string; description: string; icon: typeof Cl
   { key: "tarefas", label: "Tarefas", description: "Missões e ranking do dojo", icon: ClipboardList, gradient: "from-primary/20 to-primary/5" },
   { key: "apostilas", label: "Apostilas", description: "Material de estudo por faixa", icon: BookOpen, gradient: "from-blue-500/20 to-blue-500/5" },
   { key: "simulados", label: "Simulados", description: "Provas práticas por faixa", icon: ClipboardCheck, gradient: "from-green-500/20 to-green-500/5" },
-  { key: "videos", label: "Vídeos", description: "Videoaulas e demonstrações", icon: Video, gradient: "from-purple-500/20 to-purple-500/5" },
+  // { key: "videos", label: "Vídeos", description: "Videoaulas e demonstrações", icon: Video, gradient: "from-purple-500/20 to-purple-500/5" },
 ];
 
 const tabIconColors: Record<StudyTab, string> = {
