@@ -29,7 +29,14 @@ export function getBeltSectionKey(beltLevel: string, title?: string): string {
       t.includes("introdução") ||
       t.includes("vocabulário") ||
       t.includes("técnicas oficiais") ||
-      t.includes("geral")
+      t.includes("geral") ||
+      t.includes("história") ||
+      t.includes("etiqueta") ||
+      t.includes("reishiki") ||
+      t.includes("nage-waza") ||
+      t.includes("katame-waza") ||
+      t.includes("técnicas de projeção") ||
+      t.includes("técnicas de solo")
     ) {
       return "geral";
     }

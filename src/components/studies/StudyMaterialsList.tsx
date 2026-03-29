@@ -162,33 +162,33 @@ export function StudyMaterialsList() {
             {group.items.map((material) => (
               <Card
                 key={material.id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
+                className="cursor-pointer hover:shadow-md transition-all group border-l-4 border-l-primary/40"
                 onClick={() => openMaterial(material)}
               >
                 <CardHeader className="pb-2">
-                  <div className="flex items-start gap-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-semibold leading-tight">
-                          {material.title}
-                        </CardTitle>
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 group-hover:from-primary/25 group-hover:to-primary/10 transition-colors">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm font-semibold leading-tight">
+                        {material.title}
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                        {material.description}
+                      </p>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
-                    {material.description}
-                  </p>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px]">
-                      {material.type === "pdf" ? "PDF" : "Texto"}
+                    <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                      {material.type === "pdf" ? "📄 PDF" : "📝 Texto"}
                     </Badge>
                     {material.isFixed && (
-                      <Badge variant="secondary" className="text-[10px]">Oficial</Badge>
+                      <Badge className="text-[10px] bg-primary/10 text-primary hover:bg-primary/15 border-0">
+                        ✦ Oficial
+                      </Badge>
                     )}
                   </div>
                 </CardContent>
