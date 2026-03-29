@@ -34,9 +34,31 @@ const tabIconColors: Record<StudyTab, string> = {
 };
 
 export default function StudentStudies() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<StudyTab | null>(null);
   const [showRanking, setShowRanking] = useState(false);
+
+  // Detect student's martial arts from class enrollments
+  const { data: studentMartialArts = [] } = useQuery({
+    queryKey: ["student-martial-arts-studies", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data: enrollments } = await supabase
+        .from("class_students")
+        .select("class_id")
+        .eq("student_id", user.id);
+      if (!enrollments || enrollments.length === 0) return [];
+      const classIds = enrollments.map(e => e.class_id);
+      const { data: classes } = await supabase
+        .from("classes")
+        .select("martial_art")
+        .in("id", classIds);
+      return [...new Set(classes?.map(c => c.martial_art) || [])];
+    },
+    enabled: !!user,
+  });
+
+  const hasJudo = studentMartialArts.length === 0 || studentMartialArts.includes("judo");
 
   if (authLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
