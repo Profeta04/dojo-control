@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -10,10 +12,10 @@ import { XPBar } from "@/components/gamification/XPBar";
 import { StudyMaterialsList } from "@/components/studies/StudyMaterialsList";
 import { VideoLibrary } from "@/components/studies/VideoLibrary";
 import { ExamsList } from "@/components/studies/ExamsList";
-import { Crown, ClipboardList, BookOpen, Video, ClipboardCheck, ArrowLeft, ChevronRight } from "lucide-react";
+import { Crown, ClipboardList, BookOpen, Video, ClipboardCheck, ArrowLeft, ChevronRight, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type StudyTab = "tarefas" | "apostilas" | "simulados" | "videos";
 
