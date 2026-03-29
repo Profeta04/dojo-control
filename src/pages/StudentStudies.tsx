@@ -86,7 +86,7 @@ export default function StudentStudies() {
             >
               <PageHeader
                 title="Estudos"
-                description="Aprenda, pratique e evolua no Judô!"
+                description="Aprenda, pratique e evolua!"
               />
 
               <div className="grid gap-3 mt-4">
