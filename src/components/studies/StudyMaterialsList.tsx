@@ -200,15 +200,42 @@ export function StudyMaterialsList() {
 
       {/* Dialog for embedded content */}
       <Dialog open={!!selectedMaterial} onOpenChange={() => setSelectedMaterial(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              {selectedMaterial?.title}
-            </DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-[60vh] pr-4">
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+        <DialogContent className="max-w-2xl max-h-[85vh] p-0 overflow-hidden">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-6 pt-6 pb-4 border-b border-border/50">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/15 ring-1 ring-primary/20">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <DialogTitle className="text-base font-bold leading-snug">
+                    {selectedMaterial?.title}
+                  </DialogTitle>
+                  {selectedMaterial?.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                      {selectedMaterial.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {selectedMaterial?.isFixed && (
+                <div className="mt-3">
+                  <Badge variant="secondary" className="text-[10px] gap-1">
+                    <FileText className="h-3 w-3" /> Conteúdo Oficial
+                  </Badge>
+                </div>
+              )}
+            </DialogHeader>
+          </div>
+          {/* Content */}
+          <ScrollArea className="max-h-[60vh] px-6 py-4">
+            <div className="prose prose-sm dark:prose-invert max-w-none
+              prose-headings:text-foreground prose-headings:font-bold
+              prose-p:text-muted-foreground prose-p:leading-relaxed
+              prose-li:text-muted-foreground
+              prose-strong:text-foreground
+              prose-blockquote:border-primary/40 prose-blockquote:text-muted-foreground">
               <MarkdownRenderer content={selectedMaterial?.content || ""} />
             </div>
           </ScrollArea>
