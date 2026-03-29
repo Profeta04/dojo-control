@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
@@ -10,10 +12,10 @@ import { XPBar } from "@/components/gamification/XPBar";
 import { StudyMaterialsList } from "@/components/studies/StudyMaterialsList";
 import { VideoLibrary } from "@/components/studies/VideoLibrary";
 import { ExamsList } from "@/components/studies/ExamsList";
-import { Crown, ClipboardList, BookOpen, Video, ClipboardCheck, ArrowLeft, ChevronRight } from "lucide-react";
+import { Crown, ClipboardList, BookOpen, Video, ClipboardCheck, ArrowLeft, ChevronRight, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 type StudyTab = "tarefas" | "apostilas" | "simulados" | "videos";
 
@@ -32,9 +34,31 @@ const tabIconColors: Record<StudyTab, string> = {
 };
 
 export default function StudentStudies() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<StudyTab | null>(null);
   const [showRanking, setShowRanking] = useState(false);
+
+  // Detect student's martial arts from class enrollments
+  const { data: studentMartialArts = [] } = useQuery({
+    queryKey: ["student-martial-arts-studies", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data: enrollments } = await supabase
+        .from("class_students")
+        .select("class_id")
+        .eq("student_id", user.id);
+      if (!enrollments || enrollments.length === 0) return [];
+      const classIds = enrollments.map(e => e.class_id);
+      const { data: classes } = await supabase
+        .from("classes")
+        .select("martial_art")
+        .in("id", classIds);
+      return [...new Set(classes?.map(c => c.martial_art) || [])];
+    },
+    enabled: !!user,
+  });
+
+  const hasJudo = studentMartialArts.length === 0 || studentMartialArts.includes("judo");
 
   if (authLoading) {
     return <DashboardLayout><LoadingSpinner /></DashboardLayout>;
@@ -62,7 +86,7 @@ export default function StudentStudies() {
             >
               <PageHeader
                 title="Estudos"
-                description="Aprenda, pratique e evolua no Judô!"
+                description="Aprenda, pratique e evolua!"
               />
 
               <div className="grid gap-3 mt-4">
@@ -162,13 +186,29 @@ export default function StudentStudies() {
               {/* Conteúdo */}
               {activeTab === "tarefas" && !showRanking && <StudentTasksDashboard />}
               {activeTab === "tarefas" && showRanking && <LeaderboardPanel />}
-              {activeTab === "apostilas" && <StudyMaterialsList />}
-              {activeTab === "simulados" && <ExamsList />}
+              {activeTab === "apostilas" && (hasJudo ? <StudyMaterialsList /> : <ComingSoonCard label="Apostilas de Jiu-Jitsu" />)}
+              {activeTab === "simulados" && (hasJudo ? <ExamsList /> : <ComingSoonCard label="Simulados de Jiu-Jitsu" />)}
               {activeTab === "videos" && <VideoLibrary />}
             </motion.div>
           )}
         </AnimatePresence>
       </DashboardLayout>
     </RequireApproval>
+  );
+}
+
+function ComingSoonCard({ label }: { label: string }) {
+  return (
+    <Card className="border-dashed border-2 border-muted-foreground/20">
+      <CardContent className="py-12 text-center">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Clock className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="font-bold text-lg text-foreground mb-1">Em breve!</h3>
+        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+          {label} estarão disponíveis em breve. Fique ligado!
+        </p>
+      </CardContent>
+    </Card>
   );
 }
