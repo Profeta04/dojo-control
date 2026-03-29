@@ -196,3 +196,19 @@ export default function StudentStudies() {
     </RequireApproval>
   );
 }
+
+function ComingSoonCard({ label }: { label: string }) {
+  return (
+    <Card className="border-dashed border-2 border-muted-foreground/20">
+      <CardContent className="py-12 text-center">
+        <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+          <Clock className="h-7 w-7 text-primary" />
+        </div>
+        <h3 className="font-bold text-lg text-foreground mb-1">Em breve!</h3>
+        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+          {label} estarão disponíveis em breve. Fique ligado!
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
