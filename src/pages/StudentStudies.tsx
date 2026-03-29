@@ -186,8 +186,8 @@ export default function StudentStudies() {
               {/* Conteúdo */}
               {activeTab === "tarefas" && !showRanking && <StudentTasksDashboard />}
               {activeTab === "tarefas" && showRanking && <LeaderboardPanel />}
-              {activeTab === "apostilas" && <StudyMaterialsList />}
-              {activeTab === "simulados" && <ExamsList />}
+              {activeTab === "apostilas" && (hasJudo ? <StudyMaterialsList /> : <ComingSoonCard label="Apostilas de Jiu-Jitsu" />)}
+              {activeTab === "simulados" && (hasJudo ? <ExamsList /> : <ComingSoonCard label="Simulados de Jiu-Jitsu" />)}
               {activeTab === "videos" && <VideoLibrary />}
             </motion.div>
           )}
