@@ -21,8 +21,18 @@ import {
 } from "lucide-react";
 
 const BELT_OPTIONS = [
-  "branca", "cinza", "azul", "amarela", "laranja", "verde", "roxa", "marrom",
-  "preta_1dan", "preta_2dan", "preta_3dan",
+  { value: "geral", label: "Conteúdo Geral" },
+  { value: "branca", label: "Branca" },
+  { value: "cinza", label: "Cinza" },
+  { value: "azul", label: "Azul" },
+  { value: "amarela", label: "Amarela" },
+  { value: "laranja", label: "Laranja" },
+  { value: "verde", label: "Verde" },
+  { value: "roxa", label: "Roxa" },
+  { value: "marrom", label: "Marrom" },
+  { value: "preta_1dan", label: "Preta 1º Dan" },
+  { value: "preta_2dan", label: "Preta 2º Dan" },
+  { value: "preta_3dan", label: "Preta 3º Dan" },
 ];
 
 interface ParseResult {
@@ -396,7 +406,7 @@ export function MaterialsManager({ dojoId }: { dojoId: string | null }) {
                                 <Select value={selectedBelt} onValueChange={setSelectedBelt}>
                                   <SelectTrigger><SelectValue /></SelectTrigger>
                                   <SelectContent>
-                                    {BELT_OPTIONS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                                    {BELT_OPTIONS.map(b => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -455,7 +465,7 @@ export function MaterialsManager({ dojoId }: { dojoId: string | null }) {
                         <Select value={selectedBelt} onValueChange={setSelectedBelt}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {BELT_OPTIONS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            {BELT_OPTIONS.map(b => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
