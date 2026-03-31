@@ -1383,6 +1383,7 @@ export type Database = {
           dojo_id: string | null
           file_url: string | null
           id: string
+          is_active: boolean
           martial_art: string
           title: string
           type: string
@@ -1396,6 +1397,7 @@ export type Database = {
           dojo_id?: string | null
           file_url?: string | null
           id?: string
+          is_active?: boolean
           martial_art?: string
           title: string
           type?: string
@@ -1409,6 +1411,7 @@ export type Database = {
           dojo_id?: string | null
           file_url?: string | null
           id?: string
+          is_active?: boolean
           martial_art?: string
           title?: string
           type?: string
