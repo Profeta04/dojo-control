@@ -1746,6 +1746,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_dojo_integration_token: {
+        Args: { _dojo_id: string; _type: string }
+        Returns: string
+      }
       get_sensei_dojo_ids: { Args: { _user_id: string }; Returns: string[] }
       get_student_class_ids: {
         Args: { _student_id: string }
