@@ -110,6 +110,7 @@ export function StudyMaterialsList() {
         .from("study_materials")
         .select("*")
         .eq("martial_art", "judo")
+        .eq("is_active", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
