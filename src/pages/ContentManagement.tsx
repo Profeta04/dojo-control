@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { BeltBadge } from "@/components/shared/BeltBadge";
 import { cn } from "@/lib/utils";
 import { useDojoContext } from "@/hooks/useDojoContext";
+import { MaterialsManager } from "@/components/content/MaterialsManager";
 
 type ContentTab = "apostilas" | "videos" | "simulados";
 
