@@ -69,6 +69,7 @@ export default function ContentManagement() {
         </div>
 
         {activeTab === "apostilas" && <MaterialsManager dojoId={currentDojoId} />}
+        {/* Old MaterialsManager function below is no longer used for apostilas */}
         {activeTab === "videos" && <VideosManager dojoId={currentDojoId} />}
         {activeTab === "simulados" && <ExamsManager dojoId={currentDojoId} />}
       </DashboardLayout>
