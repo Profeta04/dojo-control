@@ -465,7 +465,7 @@ export function MaterialsManager({ dojoId }: { dojoId: string | null }) {
                         <Select value={selectedBelt} onValueChange={setSelectedBelt}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {BELT_OPTIONS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                            {BELT_OPTIONS.map(b => <SelectItem key={b.value} value={b.value}>{b.label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
