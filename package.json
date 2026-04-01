@@ -58,6 +58,7 @@
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
+    "pdfjs-dist": "^5.6.205",
     "pix-utils": "^2.8.2",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
