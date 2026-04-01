@@ -1696,7 +1696,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dojo_integrations_safe: {
+        Row: {
+          created_at: string | null
+          dojo_id: string | null
+          id: string | null
+          integration_type: string | null
+          is_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dojo_id?: string | null
+          id?: string | null
+          integration_type?: string | null
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dojo_id?: string | null
+          id?: string | null
+          integration_type?: string | null
+          is_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dojo_integrations_dojo_id_fkey"
+            columns: ["dojo_id"]
+            isOneToOne: false
+            referencedRelation: "dojos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       assign_user_role: {
@@ -1754,6 +1788,26 @@ export type Database = {
       get_student_class_ids: {
         Args: { _student_id: string }
         Returns: string[]
+      }
+      get_student_dojo_display: {
+        Args: { _user_id: string }
+        Returns: {
+          address: string
+          color_accent: string
+          color_primary: string
+          color_secondary: string
+          daily_interest_percent: number
+          email: string
+          grace_days: number
+          id: string
+          late_fee_fixed: number
+          late_fee_percent: number
+          logo_url: string
+          martial_arts: string
+          name: string
+          phone: string
+          pix_key: string
+        }[]
       }
       get_user_dojo_id: { Args: { _user_id: string }; Returns: string }
       get_user_dojo_id_safe: { Args: { _user_id: string }; Returns: string }
