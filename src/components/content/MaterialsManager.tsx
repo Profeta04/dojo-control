@@ -116,13 +116,16 @@ export function MaterialsManager({ dojoId }: { dojoId: string | null }) {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token;
 
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      console.log("[MaterialsManager] Calling parse-pdf edge function...");
       const resp = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/parse-pdf`,
+        `${supabaseUrl}/functions/v1/parse-pdf`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
+            apikey: anonKey,
           },
           body: formData,
         }
