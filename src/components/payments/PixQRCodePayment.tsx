@@ -48,18 +48,26 @@ export function PixQRCodePayment({
         .substring(0, 15)
         .trim();
 
-      const pixData = createStaticPix({
+      // Round to exactly 2 decimal places to avoid floating point issues
+      const safeAmount = Math.round(amount * 100) / 100;
+
+      const pixParams: Record<string, unknown> = {
         merchantName: safeName,
         merchantCity: safeCity,
         pixKey: pixKey.trim(),
-        infoAdicional: description
-          ? description
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .substring(0, 40)
-          : undefined,
-        transactionAmount: amount,
-      });
+        transactionAmount: safeAmount,
+      };
+
+      if (description) {
+        pixParams.infoAdicional = description
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9 ]/g, "")
+          .substring(0, 40)
+          .trim();
+      }
+
+      const pixData = createStaticPix(pixParams as Parameters<typeof createStaticPix>[0]);
 
       if (hasError(pixData)) {
         setError("Erro ao gerar código Pix. Verifique a chave Pix configurada.");
