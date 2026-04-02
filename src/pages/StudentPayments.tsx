@@ -813,10 +813,10 @@ export default function StudentPaymentsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          {pixDialogPayment && dojoData?.pix_key && (
+          {pixDialogPayment && dojoData?.pix_key && hasValidPixKey && (
             <div className="space-y-4">
               <PixQRCodePayment
-                pixKey={dojoData.pix_key}
+                pixKey={normalizedPixKey}
                 amount={(() => {
                   const fees = calculateLateFees(pixDialogPayment);
                   return fees ? fees.total : pixDialogPayment.amount;
@@ -825,7 +825,6 @@ export default function StudentPaymentsPage() {
                 description={`Ref ${pixDialogPayment.reference_month}`}
               />
 
-              {/* Late fee breakdown */}
               {(() => {
                 const fees = calculateLateFees(pixDialogPayment);
                 if (!fees) return null;
@@ -856,7 +855,6 @@ export default function StudentPaymentsPage() {
                 );
               })()}
 
-              {/* Upload receipt in same dialog */}
               <div className="space-y-2 border-t pt-4">
                 <p className="text-sm font-medium text-foreground">Após pagar, envie o comprovante:</p>
                 <div 
@@ -894,11 +892,13 @@ export default function StudentPaymentsPage() {
             </div>
           )}
 
-          {pixDialogPayment && !dojoData?.pix_key && (
+          {pixDialogPayment && (!dojoData?.pix_key || !hasValidPixKey) && (
             <div className="flex flex-col items-center gap-3 p-6 text-center">
               <AlertTriangle className="h-8 w-8 text-destructive" />
               <p className="text-sm text-destructive font-medium">
-                Chave Pix não configurada pelo dojo. Entre em contato com a administração.
+                {!dojoData?.pix_key
+                  ? "Chave Pix não configurada pelo dojo. Entre em contato com a administração."
+                  : "A chave Pix cadastrada no dojo é inválida para pagamento. Corrija a chave antes de tentar pagar."}
               </p>
             </div>
           )}
