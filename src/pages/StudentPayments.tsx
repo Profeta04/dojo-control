@@ -32,6 +32,7 @@ import { format, parseISO, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { PaymentStatus, PAYMENT_STATUS_LABELS, PAYMENT_CATEGORY_LABELS, PaymentCategory } from "@/lib/constants";
 import { differenceInCalendarDays } from "date-fns";
+import { isValidPixKey, normalizePixKey } from "@/lib/pix";
 
 type Payment = Tables<"payments">;
 
@@ -54,11 +55,9 @@ export default function StudentPaymentsPage() {
   const [pixDialogPayment, setPixDialogPayment] = useState<Payment | null>(null);
   const [sharedFile, setSharedFile] = useState<File | null>(null);
 
-  // Password gate state
   const [passwordVerified, setPasswordVerified] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(true);
 
-  // Fetch PIX key from the student's dojo
   const { data: dojoData } = useQuery({
     queryKey: ["student-dojo-pix", profile?.dojo_id],
     queryFn: async () => {
@@ -74,7 +73,6 @@ export default function StudentPaymentsPage() {
     enabled: !!profile?.dojo_id,
   });
 
-  // Fetch fee plans for per-plan late fee settings
   const { data: feePlans } = useQuery({
     queryKey: ["student-fee-plans", profile?.dojo_id],
     queryFn: async () => {
@@ -89,12 +87,13 @@ export default function StudentPaymentsPage() {
     enabled: !!profile?.dojo_id,
   });
 
+  const normalizedPixKey = dojoData?.pix_key ? normalizePixKey(dojoData.pix_key) : "";
+  const hasValidPixKey = !!normalizedPixKey && isValidPixKey(normalizedPixKey);
   const pixKey = dojoData?.pix_key || "Chave Pix não configurada";
 
   const calculateLateFees = (payment: Payment) => {
     if (payment.status !== "atrasado" || !dojoData) return null;
     
-    // Find matching plan by description
     const matchingPlan = feePlans?.find((p) => p.name === payment.description);
     
     const graceDays = matchingPlan?.grace_days ?? dojoData.grace_days ?? 0;
@@ -111,10 +110,6 @@ export default function StudentPaymentsPage() {
     return { fee, interest, total, daysLate };
   };
 
-
-
-
-
   const { data: payments, isLoading: paymentsLoading } = useQuery({
     queryKey: ["student-payments", user?.id],
     queryFn: async () => {
@@ -130,12 +125,10 @@ export default function StudentPaymentsPage() {
     enabled: !!user,
   });
 
-  // ─── Handle shared files from Web Share Target (iOS + Android) ───
   const processSharedFile = useCallback(async () => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('shared') !== '1') return;
     
-    // Small delay for iOS PWA — cache may not be ready immediately
     await new Promise(r => setTimeout(r, 300));
     
     try {
@@ -147,7 +140,6 @@ export default function StudentPaymentsPage() {
       }
       
       const blob = await response.blob();
-      // Decode the file name (encoded with encodeURIComponent in SW)
       const rawName = response.headers.get('X-File-Name') || 'comprovante.jpg';
       let fileName: string;
       try {
@@ -156,7 +148,6 @@ export default function StudentPaymentsPage() {
         fileName = rawName;
       }
       
-      // Use ArrayBuffer → File for iOS compatibility
       const arrayBuffer = await blob.arrayBuffer();
       const file = new File([arrayBuffer], fileName, { type: blob.type || 'image/jpeg' });
       
@@ -166,7 +157,6 @@ export default function StudentPaymentsPage() {
       url.searchParams.delete('shared');
       window.history.replaceState({}, '', url.pathname + url.search);
       
-      // Set the file — the SharedReceiptDialog will open automatically
       setSharedFile(file);
     } catch (error) {
       console.error('Error processing shared file:', error);
@@ -179,7 +169,6 @@ export default function StudentPaymentsPage() {
     }
   }, [paymentsLoading, payments, processSharedFile]);
 
-
   const handleCopyPix = async () => {
     if (!dojoData?.pix_key) {
       toast({
@@ -189,8 +178,18 @@ export default function StudentPaymentsPage() {
       });
       return;
     }
+
+    if (!hasValidPixKey) {
+      toast({
+        title: "Chave Pix inválida",
+        description: "A chave Pix do dojo precisa ser corrigida antes do pagamento.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await navigator.clipboard.writeText(dojoData.pix_key);
+      await navigator.clipboard.writeText(normalizedPixKey);
       setCopied(true);
       toast({ title: "Chave Pix copiada!", description: "Cole no seu aplicativo de banco para fazer o pagamento." });
       setTimeout(() => setCopied(false), 3000);
