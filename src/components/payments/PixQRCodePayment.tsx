@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Copy, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { isValidPixKey, normalizePixKey } from "@/lib/pix";
 
 interface PixQRCodePaymentProps {
   pixKey: string;
@@ -28,12 +29,20 @@ export function PixQRCodePayment({
 
   useEffect(() => {
     if (!pixKey || amount <= 0) {
+      setBrCode(null);
       setError("Chave Pix ou valor inválido.");
       return;
     }
 
     try {
-      // Sanitize merchant name: max 25 chars, no special chars
+      const normalizedPixKey = normalizePixKey(pixKey);
+
+      if (!isValidPixKey(normalizedPixKey)) {
+        setBrCode(null);
+        setError("A chave Pix configurada é inválida para pagamento. Revise a chave do dojo.");
+        return;
+      }
+
       const safeName = merchantName
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
@@ -46,30 +55,34 @@ export function PixQRCodePayment({
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9 ]/g, "")
         .substring(0, 15)
-        .trim();
+        .trim() || "SAO PAULO";
 
-      // Round to exactly 2 decimal places to avoid floating point issues
       const safeAmount = Math.round(amount * 100) / 100;
 
       const pixParams: Record<string, unknown> = {
         merchantName: safeName,
         merchantCity: safeCity,
-        pixKey: pixKey.trim(),
+        pixKey: normalizedPixKey,
         transactionAmount: safeAmount,
       };
 
       if (description) {
-        pixParams.infoAdicional = description
+        const normalizedDescription = description
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "")
           .replace(/[^a-zA-Z0-9 ]/g, "")
           .substring(0, 40)
           .trim();
+
+        if (normalizedDescription) {
+          pixParams.infoAdicional = normalizedDescription;
+        }
       }
 
       const pixData = createStaticPix(pixParams as Parameters<typeof createStaticPix>[0]);
 
       if (hasError(pixData)) {
+        setBrCode(null);
         setError("Erro ao gerar código Pix. Verifique a chave Pix configurada.");
         return;
       }
@@ -87,6 +100,7 @@ export function PixQRCodePayment({
       }
     } catch (err) {
       console.error("Error generating Pix BR Code:", err);
+      setBrCode(null);
       setError("Erro ao gerar QR Code Pix.");
     }
   }, [pixKey, amount, merchantName, merchantCity, description]);
