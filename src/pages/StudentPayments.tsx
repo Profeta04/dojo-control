@@ -549,7 +549,7 @@ export default function StudentPaymentsPage() {
               <Mail className="h-4 w-4 text-muted-foreground" />
             </div>
             <code className="flex-1 text-sm font-mono break-all text-foreground/80">
-              {pixKey}
+              {hasValidPixKey ? normalizedPixKey : pixKey}
             </code>
             <Button
               variant={copied ? "default" : "outline"}
@@ -565,10 +565,15 @@ export default function StudentPaymentsPage() {
             </Button>
           </div>
 
-          <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl">
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-xl space-y-2">
             <p className="text-sm text-muted-foreground">
               💡 Clique em <strong>"Pagar"</strong> em qualquer pagamento pendente para gerar um QR Code Pix com o valor já preenchido.
             </p>
+            {!hasValidPixKey && dojoData?.pix_key && (
+              <p className="text-sm text-destructive font-medium">
+                A chave Pix cadastrada no dojo está inválida para pagamentos. Ajuste o cadastro antes de tentar pagar.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
